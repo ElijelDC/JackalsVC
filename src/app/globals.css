@@ -1,0 +1,88 @@
+@import "tailwindcss";
+
+:root {
+  --background: #202121;
+  --foreground: #f5f5f5;
+  --jackals-red: #e8222a;
+  --jackals-red-hover: #ff2d35;
+  --jackals-red-light: #ff4d54;
+  --jackals-gray: #a3a3a3;
+  --jackals-surface: #2a2b2b;
+  --jackals-surface-muted: #252626;
+  --jackals-inset: #181919;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-jackals-red: var(--jackals-red);
+  --color-jackals-red-hover: var(--jackals-red-hover);
+  --color-jackals-red-light: var(--jackals-red-light);
+  --color-jackals-gray: var(--jackals-gray);
+  --color-jackals-surface: var(--jackals-surface);
+  --color-jackals-surface-muted: var(--jackals-surface-muted);
+  --color-jackals-inset: var(--jackals-inset);
+  --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-oswald);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+.font-display {
+  font-family: var(--font-display), var(--font-sans), system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Soft ambient backgrounds — no crossing lines */
+.hero-bg {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 55% 65% at 72% 42%, rgba(232, 34, 42, 0.1) 0%, transparent 68%),
+    radial-gradient(ellipse 40% 35% at 12% 75%, rgba(232, 34, 42, 0.04) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 25% at 88% 88%, rgba(255, 255, 255, 0.025) 0%, transparent 50%);
+}
+
+.ambient-bg {
+  background-color: var(--background);
+  background-image:
+    radial-gradient(ellipse 70% 45% at 50% 0%, rgba(232, 34, 42, 0.06) 0%, transparent 60%);
+}
+
+.red-glow {
+  box-shadow: 0 0 30px rgba(232, 34, 42, 0.25);
+}
+
+.red-glow-sm {
+  box-shadow: 0 0 15px rgba(232, 34, 42, 0.2);
+}
+
+/* Angular clip for CTAs matching logo sharpness */
+.clip-slash {
+  clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);
+}
+
+.clip-slash-reverse {
+  clip-path: polygon(8px 0, 100% 0, 100% 100%, 0 100%, 0 8px);
+}
+
+.section-divider {
+  height: 2px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--jackals-red) 20%,
+    var(--jackals-red) 80%,
+    transparent
+  );
+  opacity: 0.4;
+}

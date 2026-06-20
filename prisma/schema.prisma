@@ -1,0 +1,126 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id             String          @id @default(cuid())
+  name           String
+  email          String          @unique
+  passwordHash   String
+  role           String          @default("MEMBER")
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  memberships    Membership[]
+  orders         Order[]
+  eventReminders EventReminder[]
+}
+
+model TrainingSession {
+  id          String   @id @default(cuid())
+  title       String
+  dayOfWeek   Int
+  startTime   String
+  endTime     String
+  location    String
+  level       String
+  description String?
+  coach       String?
+  createdAt   DateTime @default(now())
+}
+
+model Event {
+  id          String          @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime?
+  type        String
+  location    String?
+  createdAt   DateTime        @default(now())
+  reminders   EventReminder[]
+}
+
+model EventReminder {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
+}
+
+model MembershipPlan {
+  id             String       @id @default(cuid())
+  name           String
+  description    String
+  price          Float
+  durationMonths Int
+  features       String
+  active         Boolean      @default(true)
+  memberships    Membership[]
+}
+
+model Membership {
+  id        String         @id @default(cuid())
+  userId    String
+  planId    String
+  status    String         @default("ACTIVE")
+  startDate DateTime       @default(now())
+  endDate   DateTime
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      MembershipPlan @relation(fields: [planId], references: [id])
+  createdAt DateTime       @default(now())
+}
+
+model GalleryImage {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  imageUrl    String
+  category    String
+  featured    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  description String
+  price       Float
+  imageUrl    String?
+  category    String
+  sizes       String?
+  stock       Int         @default(0)
+  active      Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id        String      @id @default(cuid())
+  userId    String
+  status    String      @default("PENDING")
+  total     Float
+  user      User        @relation(fields: [userId], references: [id])
+  items     OrderItem[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model OrderItem {
+  id        String  @id @default(cuid())
+  orderId   String
+  productId String
+  quantity  Int
+  price     Float
+  size      String?
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id])
+}
