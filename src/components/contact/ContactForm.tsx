@@ -94,7 +94,7 @@ export function ContactForm() {
 
       <FormError message={error} />
 
-      <Button type="submit" disabled={loading}>
+      <Button type="submit" size="lg" disabled={loading} className="w-full sm:w-auto">
         {loading ? "Sending..." : "Send message"}
       </Button>
     </form>

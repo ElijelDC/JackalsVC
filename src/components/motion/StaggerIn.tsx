@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 export function StaggerIn({
   children,
   className,
-  stagger = 70,
+  stagger = 80,
 }: {
   children: ReactNode;
   className?: string;
@@ -31,7 +31,7 @@ export function StaggerIn({
           observer.disconnect();
         }
       },
-      { threshold: 0.06, rootMargin: "0px 0px -4% 0px" },
+      { threshold: 0.04, rootMargin: "0px 0px -2% 0px" },
     );
 
     observer.observe(element);

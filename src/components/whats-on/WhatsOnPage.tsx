@@ -1,4 +1,8 @@
-import type { WhatsOnCalendarEvent } from "@/lib/whats-on";
+import {
+  type WhatsOnCalendarEvent,
+  whatsOnEventDetailPath,
+  WHATS_ON_SECTIONS,
+} from "@/lib/whats-on";
 import { groupSessionsByDay } from "@/lib/training-utils";
 import type { TrainingSessionCardData } from "@/types/training-session";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
@@ -9,15 +13,15 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { SessionCard } from "@/components/training/SessionCard";
 
 function WhatsOnSection({
+  id,
   title,
-  description,
   emptyTitle,
   emptyDescription,
   children,
   hasItems,
 }: {
+  id?: string;
   title: string;
-  description: string;
   emptyTitle: string;
   emptyDescription: string;
   children: React.ReactNode;
@@ -25,12 +29,12 @@ function WhatsOnSection({
 }) {
   return (
     <AnimateIn className="space-y-4">
-      <div>
-        <h2 className="font-display text-2xl font-semibold tracking-wide text-white">
-          {title}
-        </h2>
-        <p className="mt-1 text-sm text-zinc-400">{description}</p>
-      </div>
+      <h2
+        id={id}
+        className="scroll-mt-28 font-display text-2xl font-semibold tracking-wide text-white"
+      >
+        {title}
+      </h2>
       {!hasItems ? (
         <Card>
           <CardTitle>{emptyTitle}</CardTitle>
@@ -76,7 +80,7 @@ export function WhatsOnPage({
     <PageContainer>
       <PageHeader
         title="What's On?"
-        description="Open sessions, tournaments, and skills clinics you can join — no sign-in required to browse. Pay and register details are on each event page."
+        description="Available fun sessions, tournaments, and skills clinics you can join in on! Click on each to view more!"
       />
 
       {!hasAnything ? (
@@ -89,51 +93,44 @@ export function WhatsOnPage({
       ) : (
         <div className="space-y-12">
           <WhatsOnSection
+            id={WHATS_ON_SECTIONS.funSessions}
             title="Fun sessions"
-            description="Weekly social volleyball — pay the session fee and register on ReClub."
             emptyTitle="No fun sessions scheduled"
             emptyDescription="Fun session times will be posted here soon."
             hasItems={funSessions.length > 0}
           >
             <div className="space-y-8">
               {groupedFun.map(({ day, sessions }) => (
-                <div key={day}>
-                  <h3 className="mb-4 text-lg font-semibold text-jackals-red-light">
-                    {day}
-                  </h3>
-                  <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {sessions.map((session) => (
-                      <SessionCard
-                        key={session.id}
-                        session={session}
-                        detailBasePath="/fun-sessions"
-                      />
-                    ))}
-                  </StaggerIn>
-                </div>
+                <StaggerIn
+                  key={day}
+                  className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+                >
+                  {sessions.map((session) => (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      detailBasePath="/fun-sessions"
+                    />
+                  ))}
+                </StaggerIn>
               ))}
               {oneOff.length > 0 && (
-                <div>
-                  <h3 className="mb-4 text-lg font-semibold text-jackals-red-light">
-                    Special sessions
-                  </h3>
-                  <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                    {oneOff.map((session) => (
-                      <SessionCard
-                        key={session.id}
-                        session={session}
-                        detailBasePath="/fun-sessions"
-                      />
-                    ))}
-                  </StaggerIn>
-                </div>
+                <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {oneOff.map((session) => (
+                    <SessionCard
+                      key={session.id}
+                      session={session}
+                      detailBasePath="/fun-sessions"
+                    />
+                  ))}
+                </StaggerIn>
               )}
             </div>
           </WhatsOnSection>
 
           <WhatsOnSection
+            id={WHATS_ON_SECTIONS.tournaments}
             title="Tournaments"
-            description="Register your team on ReClub, then pay the entry fee by bank transfer."
             emptyTitle="No tournaments scheduled"
             emptyDescription="Tournament dates will appear here when announced."
             hasItems={tournaments.length > 0}
@@ -143,6 +140,7 @@ export function WhatsOnPage({
                 <EventListCard
                   key={event.id}
                   event={calendarEventToCard(event)}
+                  href={whatsOnEventDetailPath(event.id, "tournaments")}
                   cta="text"
                 />
               ))}
@@ -150,8 +148,8 @@ export function WhatsOnPage({
           </WhatsOnSection>
 
           <WhatsOnSection
+            id={WHATS_ON_SECTIONS.skillsClinics}
             title="Skills clinics"
-            description="Focused coaching sessions — pay on ReClub and register for your spot."
             emptyTitle="No skills clinics scheduled"
             emptyDescription="Clinic dates will appear here when announced."
             hasItems={skillsClinics.length > 0}
@@ -161,6 +159,7 @@ export function WhatsOnPage({
                 <EventListCard
                   key={event.id}
                   event={calendarEventToCard(event)}
+                  href={whatsOnEventDetailPath(event.id, "skillsClinics")}
                   cta="text"
                 />
               ))}

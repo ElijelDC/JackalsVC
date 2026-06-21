@@ -10,6 +10,7 @@ import {
 } from "@/lib/training-utils";
 import { getSiteUrl } from "@/lib/site-url.server";
 import { SessionDetailPage } from "@/components/training/SessionDetailPage";
+import { whatsOnSectionPath } from "@/lib/whats-on";
 
 export async function generateMetadata({
   params,
@@ -66,7 +67,7 @@ export default async function FunSessionPage({
       canAccessAttendance={canAccessAttendance}
       isLoggedIn={isLoggedIn}
       attendBasePath={config.attendPath}
-      listPath="/whats-on"
+      listPath={whatsOnSectionPath("funSessions")}
       listLabel="What's On?"
       siteOrigin={siteOrigin}
       openAttendance

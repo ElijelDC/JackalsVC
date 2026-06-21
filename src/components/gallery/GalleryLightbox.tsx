@@ -130,7 +130,7 @@ export function GalleryLightbox({
   );
 
   if (typeof document === "undefined") {
-    return content;
+    return null;
   }
 
   return createPortal(content, document.body);

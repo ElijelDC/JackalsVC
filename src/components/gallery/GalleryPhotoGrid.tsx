@@ -6,6 +6,7 @@ import { ZoomIn } from "lucide-react";
 import { GalleryLightbox } from "@/components/gallery/GalleryLightbox";
 import type { GalleryPhotoItem } from "@/components/gallery/types";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
+import { fillImageStyle } from "@/lib/fill-image-layout";
 import { cn } from "@/lib/utils";
 
 export type { GalleryPhotoItem };
@@ -37,7 +38,10 @@ function GalleryPhotoTile({
       className="motion-hover-lift group relative w-full scroll-mt-28 overflow-hidden border border-white/10 bg-jackals-surface/90 text-left shadow-[0_12px_40px_rgba(0,0,0,0.35)] transition-all duration-300 hover:border-jackals-red/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-jackals-red/60"
       aria-label={`View full size: ${label}`}
     >
-      <div className="relative aspect-[4/3] overflow-hidden bg-jackals-inset">
+      <div
+        className="relative aspect-[4/3] overflow-hidden bg-jackals-inset"
+        style={fillImageStyle("4 / 3")}
+      >
         {imageError ? (
           <ProductPlaceholder className="h-full w-full" size="md" />
         ) : (

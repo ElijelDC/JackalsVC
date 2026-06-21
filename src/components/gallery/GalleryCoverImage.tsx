@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
+import { fillImageStyle } from "@/lib/fill-image-layout";
 import { cn } from "@/lib/utils";
 
 export function GalleryCoverImage({
@@ -23,7 +24,10 @@ export function GalleryCoverImage({
   }
 
   return (
-    <div className={cn("relative overflow-hidden bg-jackals-inset", className)}>
+    <div
+      className={cn("relative overflow-hidden bg-jackals-inset", className)}
+      style={fillImageStyle()}
+    >
       <Image
         src={src}
         alt={alt}

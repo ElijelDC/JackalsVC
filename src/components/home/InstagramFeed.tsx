@@ -20,7 +20,7 @@ function InstagramPostCard({ post }: { post: InstagramPost }) {
         src={post.imageUrl}
         alt={alt}
         loading="lazy"
-        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
       <div
         aria-hidden
@@ -57,7 +57,7 @@ export function InstagramFeed({ posts }: { posts: InstagramPost[] }) {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(232,34,42,0.07),transparent_70%)]"
       />
       <PageContainer className="relative py-0">
-        <AnimateIn>
+        <AnimateIn variant="fade-up">
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-jackals-red-light">
@@ -80,7 +80,7 @@ export function InstagramFeed({ posts }: { posts: InstagramPost[] }) {
         </AnimateIn>
         <StaggerIn
           className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
-          stagger={60}
+          stagger={90}
         >
           {posts.map((post) => (
             <InstagramPostCard key={post.id} post={post} />

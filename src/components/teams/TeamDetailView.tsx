@@ -85,7 +85,7 @@ export function TeamDetailView({ team }: { team: TeamDetail }) {
         />
 
         <div className="relative mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
-          <AnimateIn immediate>
+          <AnimateIn immediate variant="slide-left">
             <Link
               href="/teams"
               className="mb-8 inline-flex items-center gap-2 border border-white/10 bg-white/5 px-4 py-2 text-sm text-zinc-300 backdrop-blur-sm transition-colors hover:border-jackals-red/40 hover:text-jackals-red-light clip-slash-reverse"
@@ -95,7 +95,7 @@ export function TeamDetailView({ team }: { team: TeamDetail }) {
             </Link>
           </AnimateIn>
 
-          <AnimateIn immediate delay={80} className="max-w-4xl">
+          <AnimateIn immediate variant="scale-in" delay={80} className="max-w-4xl">
             <div className="mb-6 inline-flex items-center gap-2 border border-jackals-red/40 bg-jackals-red/10 px-4 py-2 text-sm font-medium text-jackals-red-light clip-slash-reverse">
               <Shield className="h-4 w-4" />
               {team.level}

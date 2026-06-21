@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Images } from "lucide-react";
 import { GalleryCoverImage } from "@/components/gallery/GalleryCoverImage";
+import { fillImageStyle } from "@/lib/fill-image-layout";
 import { formatCategoryLabel } from "@/lib/utils";
 
 export type GalleryAlbumItem = {
@@ -25,7 +26,10 @@ export function GalleryAlbumCard({ album }: { album: GalleryAlbumItem }) {
           className="pointer-events-none absolute -right-16 -top-16 z-10 h-48 w-48 rounded-full bg-jackals-red/10 blur-3xl opacity-60 transition-opacity group-hover:opacity-100"
         />
 
-        <div className="relative aspect-[4/3]">
+        <div
+          className="relative aspect-[4/3]"
+          style={fillImageStyle("4 / 3")}
+        >
           <GalleryCoverImage
             src={album.coverImageUrl}
             alt={album.title}

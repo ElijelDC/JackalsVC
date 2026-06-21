@@ -1,13 +1,19 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { cn } from "@/lib/utils";
 
+/**
+ * Page enter animation runs only after mount so styles are loaded first.
+ */
 export function PageTransition({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    setReady(true);
+  }, []);
 
   return (
-    <div key={pathname} className="motion-page-enter">
-      {children}
-    </div>
+    <div className={cn(ready && "motion-page-enter")}>{children}</div>
   );
 }
