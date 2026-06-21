@@ -25,6 +25,7 @@ import {
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
 import { EventReminderButton } from "@/components/calendar/EventReminderButton";
 import { EventFiltersToolbar } from "@/components/events/EventFiltersToolbar";
+import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import {
@@ -395,17 +396,20 @@ export function CalendarView({
 
   return (
     <div className="space-y-6">
-      <EventFiltersToolbar
-        search={search}
-        onSearchChange={setSearch}
-        type={typeFilter}
-        onTypeChange={setTypeFilter}
-        typeOptions={getEventTypeOptions(isLoggedIn)}
-        onClear={filtersActive ? clearFilters : undefined}
-        searchPlaceholder="Search events…"
-      />
+      <AnimateIn immediate>
+        <EventFiltersToolbar
+          search={search}
+          onSearchChange={setSearch}
+          type={typeFilter}
+          onTypeChange={setTypeFilter}
+          typeOptions={getEventTypeOptions(isLoggedIn)}
+          onClear={filtersActive ? clearFilters : undefined}
+          searchPlaceholder="Search events…"
+        />
+      </AnimateIn>
 
-      <div className="grid gap-8 xl:grid-cols-5">
+      <AnimateIn delay={0.05}>
+        <div className="grid gap-8 xl:grid-cols-5">
         <div className="xl:col-span-3">
           <Card className="overflow-hidden p-0">
             <div className="border-b border-white/10 bg-jackals-surface-muted/40 px-4 py-4 sm:px-6">
@@ -649,6 +653,7 @@ export function CalendarView({
           </div>
         </div>
       </div>
+      </AnimateIn>
     </div>
   );
 }

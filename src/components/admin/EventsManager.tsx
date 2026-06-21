@@ -471,7 +471,7 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
                   placeholder="https://reclub.co/..."
                 />
               </div>
-              {form.type === "FUN" && (
+              {(form.type as string) === "FUN" && (
                 <div>
                   <Label htmlFor="event-paymentUrl">
                     Payment link (optional)

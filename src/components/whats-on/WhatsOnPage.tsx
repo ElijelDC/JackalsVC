@@ -7,6 +7,8 @@ import type { WhatsOnCalendarEvent } from "@/lib/whats-on";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { AnimateIn } from "@/components/motion/AnimateIn";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 import {
   eventDetailPath,
   formatEventDateTime,
@@ -41,7 +43,7 @@ function FunSessionCard({ session }: { session: FunSession }) {
 
   return (
     <Link href={`/fun-sessions/${session.id}`} className="group block h-full">
-      <Card className="h-full transition-colors group-hover:border-jackals-red/40 group-hover:bg-jackals-surface">
+      <Card className="motion-hover-lift h-full group-hover:border-jackals-red/40 group-hover:bg-jackals-surface">
         <div className="mb-3 flex items-start justify-between gap-2">
           <CardTitle>{session.title}</CardTitle>
           <Badge>{session.level}</Badge>
@@ -92,7 +94,7 @@ function CalendarEventCard({ event }: { event: WhatsOnCalendarEvent }) {
 
   return (
     <Link href={eventDetailPath(event.id)} className="group block h-full">
-      <Card className="h-full overflow-hidden p-0 transition-colors group-hover:border-jackals-red/40 group-hover:bg-jackals-surface">
+      <Card className="motion-hover-lift h-full overflow-hidden p-0 group-hover:border-jackals-red/40">
         <div className={cn("h-1", typeStyle.dot)} aria-hidden />
         <div className="p-6">
           <div className="mb-3 flex items-start justify-between gap-2">
@@ -158,7 +160,7 @@ function WhatsOnSection({
   hasItems: boolean;
 }) {
   return (
-    <section className="space-y-4">
+    <AnimateIn className="space-y-4">
       <div>
         <h2 className="font-display text-2xl font-semibold tracking-wide text-white">
           {title}
@@ -173,7 +175,7 @@ function WhatsOnSection({
       ) : (
         children
       )}
-    </section>
+    </AnimateIn>
   );
 }
 
@@ -233,11 +235,11 @@ export function WhatsOnPage({
                   <h3 className="mb-4 text-lg font-semibold text-jackals-red-light">
                     {day}
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {sessions.map((session) => (
                       <FunSessionCard key={session.id} session={session} />
                     ))}
-                  </div>
+                  </StaggerIn>
                 </div>
               ))}
               {oneOff.length > 0 && (
@@ -245,11 +247,11 @@ export function WhatsOnPage({
                   <h3 className="mb-4 text-lg font-semibold text-jackals-red-light">
                     Special sessions
                   </h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                     {oneOff.map((session) => (
                       <FunSessionCard key={session.id} session={session} />
                     ))}
-                  </div>
+                  </StaggerIn>
                 </div>
               )}
             </div>
@@ -262,11 +264,11 @@ export function WhatsOnPage({
             emptyDescription="Tournament dates will appear here when announced."
             hasItems={tournaments.length > 0}
           >
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {tournaments.map((event) => (
                 <CalendarEventCard key={event.id} event={event} />
               ))}
-            </div>
+            </StaggerIn>
           </WhatsOnSection>
 
           <WhatsOnSection
@@ -276,11 +278,11 @@ export function WhatsOnPage({
             emptyDescription="Clinic dates will appear here when announced."
             hasItems={skillsClinics.length > 0}
           >
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {skillsClinics.map((event) => (
                 <CalendarEventCard key={event.id} event={event} />
               ))}
-            </div>
+            </StaggerIn>
           </WhatsOnSection>
         </div>
       )}

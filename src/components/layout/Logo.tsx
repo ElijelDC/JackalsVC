@@ -30,24 +30,25 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <span
         className={cn(
-          "relative block shrink-0",
+          "logo-mark relative block shrink-0",
           sizeClass,
           glow && "red-glow-sm",
         )}
       >
         <Image
-          src="/logo.png"
+          src="/logo-transparent.png"
           alt=""
           width={px}
           height={px}
-          className="h-full w-full object-contain mix-blend-lighten"
+          className="h-full w-full object-contain"
           priority={size === "hero" || size === "nav"}
           aria-hidden
         />
       </span>
       {showText && (
-        <span className="hidden font-display text-lg font-bold tracking-wider text-white sm:inline lg:text-xl">
-          Jackals <span className="text-jackals-red">VC</span>
+        <span className="logo-text hidden font-display text-lg font-bold tracking-wider text-white sm:inline lg:text-xl">
+          <span className="logo-text-main text-zinc-200">Jackals </span>
+          <span className="logo-text-accent text-jackals-red">VC</span>
         </span>
       )}
     </span>
@@ -55,7 +56,11 @@ export function Logo({
 
   if (href) {
     return (
-      <Link href={href} className="transition-opacity hover:opacity-90" aria-label="Jackals VC home">
+      <Link
+        href={href}
+        className="logo-link rounded-sm"
+        aria-label="Jackals VC home"
+      >
         {content}
       </Link>
     );

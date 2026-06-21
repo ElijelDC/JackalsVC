@@ -1,15 +1,18 @@
+"use client";
+
 import Link from "next/link";
 import { Logo } from "@/components/layout/Logo";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 
 export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
     <footer className="relative border-t border-white/10 bg-background">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/40 to-transparent" />
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-8 md:grid-cols-3">
+        <StaggerIn className="grid gap-8 md:grid-cols-3">
           <div>
             <div className="mb-4">
-              <Logo size="lg" showText href={null} glow />
+              <Logo size="lg" showText href={null} />
             </div>
             <p className="text-sm leading-relaxed text-zinc-500">
               Volleyball club dedicated to training, competition, and community.
@@ -61,7 +64,7 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
               <li>Training hall, Sports Centre</li>
             </ul>
           </div>
-        </div>
+        </StaggerIn>
 
         <div className="section-divider my-8" />
 

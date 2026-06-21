@@ -23,6 +23,7 @@ import { FunSessionJoinFlow } from "@/components/training/FunSessionJoinFlow";
 import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
 import { EventReminderButton } from "@/components/calendar/EventReminderButton";
+import { AnimateIn } from "@/components/motion/AnimateIn";
 import { FUN_SESSION_CALENDAR_WEEKS } from "@/lib/event-filters";
 import { cn } from "@/lib/utils";
 
@@ -112,14 +113,17 @@ export function SessionDetailPage({
 
   return (
     <PageContainer>
-      <Link
-        href={listPath}
-        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to {listLabel}
-      </Link>
+      <AnimateIn immediate>
+        <Link
+          href={listPath}
+          className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to {listLabel}
+        </Link>
+      </AnimateIn>
 
+      <AnimateIn delay={50}>
       <div className="mb-8 overflow-hidden border border-jackals-red/25 bg-gradient-to-br from-jackals-red/15 via-jackals-surface to-jackals-surface">
         <div className="border-b border-jackals-red/20 px-6 py-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
@@ -164,7 +168,9 @@ export function SessionDetailPage({
           )}
         </div>
       </div>
+      </AnimateIn>
 
+      <AnimateIn delay={100}>
       <div className="grid gap-8 lg:grid-cols-3 lg:items-start">
         <div className="lg:col-span-2">
           <Card className="overflow-hidden p-0">
@@ -433,6 +439,7 @@ export function SessionDetailPage({
           </Card>
         </div>
       </div>
+      </AnimateIn>
     </PageContainer>
   );
 }

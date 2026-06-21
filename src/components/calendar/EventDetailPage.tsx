@@ -14,6 +14,7 @@ import { TournamentJoinFlow } from "@/components/training/TournamentJoinFlow";
 import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
 import { EventReminderButton } from "@/components/calendar/EventReminderButton";
+import { AnimateIn } from "@/components/motion/AnimateIn";
 import { cn } from "@/lib/utils";
 
 const typeColors: Record<string, string> = {
@@ -68,25 +69,30 @@ export function EventDetailPage({
 
   return (
     <PageContainer>
-      <Link
-        href="/calendar"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
-      >
-        ← Back to calendar
-      </Link>
-
-      <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <PageHeader title={event.title} description={dateLabel} />
-        <span
-          className={cn(
-            "rounded-full px-3 py-1 text-sm font-medium",
-            typeColor,
-          )}
+      <AnimateIn immediate>
+        <Link
+          href="/calendar"
+          className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
         >
-          {getEventTypeLabel(event.type)}
-        </span>
-      </div>
+          ← Back to calendar
+        </Link>
+      </AnimateIn>
 
+      <AnimateIn delay={50}>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <PageHeader title={event.title} description={dateLabel} />
+          <span
+            className={cn(
+              "rounded-full px-3 py-1 text-sm font-medium",
+              typeColor,
+            )}
+          >
+            {getEventTypeLabel(event.type)}
+          </span>
+        </div>
+      </AnimateIn>
+
+      <AnimateIn delay={100}>
       <div className="grid gap-8 lg:grid-cols-3 lg:items-start">
         <Card className="lg:col-span-2">
           <CardTitle>Event details</CardTitle>
@@ -261,6 +267,7 @@ export function EventDetailPage({
           )}
         </div>
       </div>
+      </AnimateIn>
     </PageContainer>
   );
 }

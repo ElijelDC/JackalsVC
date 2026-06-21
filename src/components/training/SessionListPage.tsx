@@ -6,6 +6,8 @@ import { DAYS_OF_WEEK } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { AnimateIn } from "@/components/motion/AnimateIn";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 
 type Session = {
   id: string;
@@ -124,11 +126,11 @@ export function SessionListPage({
       ) : (
         <div className="space-y-8">
           {grouped.map(({ day, sessions: daySessions }) => (
-            <div key={day}>
+            <AnimateIn key={day}>
               <h2 className="mb-4 text-xl font-semibold text-jackals-red-light">
                 {day}
               </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {daySessions.map((s) => (
                   <SessionCard
                     key={s.id}
@@ -137,16 +139,16 @@ export function SessionListPage({
                     detailBasePath={detailBasePath}
                   />
                 ))}
-              </div>
-            </div>
+              </StaggerIn>
+            </AnimateIn>
           ))}
 
           {oneOff.length > 0 && (
-            <div>
+            <AnimateIn>
               <h2 className="mb-4 text-xl font-semibold text-jackals-red-light">
                 Special sessions
               </h2>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {oneOff.map((s) => (
                   <SessionCard
                     key={s.id}
@@ -158,8 +160,8 @@ export function SessionListPage({
                     detailBasePath={detailBasePath}
                   />
                 ))}
-              </div>
-            </div>
+              </StaggerIn>
+            </AnimateIn>
           )}
         </div>
       )}

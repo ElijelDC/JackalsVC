@@ -8,7 +8,7 @@ export function Card({
   return (
     <div
       className={cn(
-        "border border-white/10 bg-jackals-surface/80 p-6 backdrop-blur-sm",
+        "border border-white/10 bg-jackals-surface/80 p-6 backdrop-blur-sm transition-colors duration-300",
         className,
       )}
       {...props}

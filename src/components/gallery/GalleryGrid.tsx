@@ -5,6 +5,8 @@ import { cn } from "@/lib/utils";
 import { FilterPills } from "@/components/ui/FilterPills";
 import { Badge } from "@/components/ui/Badge";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
+import { AnimateIn } from "@/components/motion/AnimateIn";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 
 type GalleryItem = {
   id: string;
@@ -26,20 +28,24 @@ export function GalleryGrid({ images }: { images: GalleryItem[] }) {
 
   return (
     <>
-      <FilterPills
-        options={[...CATEGORIES]}
-        active={filter}
-        onChange={setFilter}
-      />
+      <AnimateIn immediate>
+        <FilterPills
+          options={[...CATEGORIES]}
+          active={filter}
+          onChange={setFilter}
+        />
+      </AnimateIn>
 
       {filtered.length === 0 ? (
-        <p className="text-center text-zinc-400">No photos in this category.</p>
+        <AnimateIn delay={50}>
+          <p className="text-center text-zinc-400">No photos in this category.</p>
+        </AnimateIn>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerIn className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filtered.map((image) => (
             <div
               key={image.id}
-              className="group overflow-hidden border border-white/10 bg-jackals-surface"
+              className="motion-hover-lift group overflow-hidden border border-white/10 bg-jackals-surface"
             >
               <ProductPlaceholder className="aspect-[4/3] transition-transform group-hover:scale-[1.02]" />
               <div className="p-4">
@@ -53,7 +59,7 @@ export function GalleryGrid({ images }: { images: GalleryItem[] }) {
               </div>
             </div>
           ))}
-        </div>
+        </StaggerIn>
       )}
     </>
   );

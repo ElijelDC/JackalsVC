@@ -47,9 +47,19 @@ h4,
 .hero-bg {
   background-color: var(--background);
   background-image:
-    radial-gradient(ellipse 55% 65% at 72% 42%, rgba(232, 34, 42, 0.1) 0%, transparent 68%),
-    radial-gradient(ellipse 40% 35% at 12% 75%, rgba(232, 34, 42, 0.04) 0%, transparent 55%),
-    radial-gradient(ellipse 30% 25% at 88% 88%, rgba(255, 255, 255, 0.025) 0%, transparent 50%);
+    radial-gradient(ellipse 55% 65% at 72% 42%, rgba(232, 34, 42, 0.14) 0%, transparent 68%),
+    radial-gradient(ellipse 40% 35% at 12% 75%, rgba(232, 34, 42, 0.06) 0%, transparent 55%),
+    radial-gradient(ellipse 30% 25% at 88% 88%, rgba(255, 255, 255, 0.03) 0%, transparent 50%);
+}
+
+.home-hero-grid {
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    rgba(255, 255, 255, 0.06) 1px,
+    transparent 0
+  );
+  background-size: 28px 28px;
+  mask-image: radial-gradient(ellipse 80% 70% at 50% 40%, black 20%, transparent 75%);
 }
 
 .ambient-bg {
@@ -85,4 +95,185 @@ h4,
     transparent
   );
   opacity: 0.4;
+}
+
+/* ── Motion (respects prefers-reduced-motion) ── */
+
+@media (prefers-reduced-motion: no-preference) {
+  .motion-page-enter {
+    animation: motion-page-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .motion-header-enter {
+    animation: motion-header-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .motion-fade-up {
+    opacity: 0;
+    transform: translateY(18px);
+    transition:
+      opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: opacity, transform;
+  }
+
+  .motion-fade-up.motion-visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .motion-stagger > * {
+    opacity: 0;
+    transform: translateY(14px);
+    transition:
+      opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+      transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .motion-stagger.motion-visible > * {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .motion-stagger.motion-visible > *:nth-child(1) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 0);
+  }
+  .motion-stagger.motion-visible > *:nth-child(2) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 1);
+  }
+  .motion-stagger.motion-visible > *:nth-child(3) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 2);
+  }
+  .motion-stagger.motion-visible > *:nth-child(4) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 3);
+  }
+  .motion-stagger.motion-visible > *:nth-child(5) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 4);
+  }
+  .motion-stagger.motion-visible > *:nth-child(6) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 5);
+  }
+  .motion-stagger.motion-visible > *:nth-child(7) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 6);
+  }
+  .motion-stagger.motion-visible > *:nth-child(8) {
+    transition-delay: calc(var(--motion-stagger, 70ms) * 7);
+  }
+
+  .motion-hover-lift {
+    transition:
+      transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+      border-color 0.3s ease;
+  }
+
+  .motion-hover-lift:hover {
+    transform: translateY(-3px);
+  }
+
+  .motion-nav-link {
+    transition:
+      color 0.2s ease,
+      background-color 0.2s ease,
+      transform 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .motion-nav-link:active {
+    transform: scale(0.97);
+  }
+
+  .motion-mobile-menu {
+    animation: motion-menu-in 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .logo-link .logo-mark {
+    transition:
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      filter 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .logo-link .logo-text {
+    transition:
+      color 0.25s ease,
+      transform 0.25s cubic-bezier(0.22, 1, 0.36, 1),
+      text-shadow 0.25s ease;
+  }
+
+  .logo-link:hover .logo-mark {
+    transform: scale(1.12);
+    filter:
+      brightness(1.15)
+      drop-shadow(0 0 8px rgba(232, 34, 42, 0.7))
+      drop-shadow(0 0 20px rgba(232, 34, 42, 0.45));
+  }
+
+  .logo-link:hover .logo-text {
+    transform: translateX(3px);
+    text-shadow: 0 0 18px rgba(232, 34, 42, 0.35);
+  }
+
+  .logo-link:active .logo-mark {
+    transform: scale(1.06);
+  }
+
+  .logo-link:active .logo-text {
+    transform: translateX(1px);
+  }
+}
+
+.logo-link .logo-text-accent {
+  transition: color 0.25s ease;
+}
+
+.logo-link .logo-text-main {
+  transition: color 0.25s ease;
+}
+
+.logo-link:hover .logo-text-main {
+  color: #ffffff;
+}
+
+.logo-link:hover .logo-text-accent {
+  color: var(--jackals-red-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-fade-up,
+  .motion-stagger > * {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes motion-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes motion-header-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes motion-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
