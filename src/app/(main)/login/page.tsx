@@ -1,14 +1,14 @@
 import { Suspense } from "react";
-import { LoginForm } from "@/components/auth/LoginForm";
+import { AuthRedirect } from "@/components/auth/AuthRedirect";
 
 export const metadata = {
-  title: "Sign in | Jackals VC",
+  title: "Members only | Jackals VC",
 };
 
 export default function LoginPage() {
   return (
     <Suspense>
-      <LoginForm />
+      <AuthRedirect mode="signin" />
     </Suspense>
   );
 }

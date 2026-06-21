@@ -22,6 +22,30 @@ model User {
   payments           Payment[]
   eventReminders     EventReminder[]
   eventSignups       EventSignup[]
+  clubMember         ClubMember?
+}
+
+model ClubMember {
+  id        String   @id @default(cuid())
+  vlyNumber String   @unique
+  name      String
+  active    Boolean  @default(true)
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model EmailVerification {
+  id         String    @id @default(cuid())
+  email      String
+  vlyNumber  String
+  codeHash   String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, vlyNumber])
 }
 
 model RegistrationCode {

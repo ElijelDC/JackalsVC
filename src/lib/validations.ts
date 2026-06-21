@@ -1,11 +1,35 @@
 import { z } from "zod";
 
-export const registerSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
-  clubCode: z.string().min(4, "Club code is required"),
+export const validateVlySchema = z.object({
+  vlyNumber: z.string().min(3, "VLY number is required"),
 });
+
+export const sendEmailCodeSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  vlyNumber: z.string().min(3, "VLY number is required"),
+  registrationToken: z.string().min(1, "Registration session expired"),
+});
+
+export const verifyEmailCodeSchema = z.object({
+  email: z.string().email("Invalid email address"),
+  vlyNumber: z.string().min(3, "VLY number is required"),
+  registrationToken: z.string().min(1, "Registration session expired"),
+  code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code"),
+});
+
+export const registerSchema = z
+  .object({
+    vlyNumber: z.string().min(3, "VLY number is required"),
+    registrationToken: z.string().min(1, "Registration session expired"),
+    email: z.string().email("Invalid email address"),
+    emailCode: z.string().regex(/^\d{6}$/, "Enter the 6-digit verification code"),
+    password: z.string().min(8, "Password must be at least 8 characters"),
+    confirmPassword: z.string().min(8, "Confirm your password"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 import { PAYMENT_SCHEDULES } from "@/lib/membership-config";
 
@@ -220,6 +244,17 @@ export const membershipUpdateSchema = z.object({
   status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"]),
   endDate: z.string().min(1, "End date is required"),
   planId: z.string().optional(),
+});
+
+export const clubMemberCreateSchema = z.object({
+  vlyNumber: z.string().min(3, "VLY number is required"),
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  active: z.boolean().optional(),
+});
+
+export const clubMemberUpdateSchema = z.object({
+  name: z.string().min(2).optional(),
+  active: z.boolean().optional(),
 });
 
 export const orderUpdateSchema = z.object({

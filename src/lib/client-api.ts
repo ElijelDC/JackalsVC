@@ -100,6 +100,23 @@ export async function apiPut<T>(
   }
 }
 
+export async function apiPatch<T>(
+  url: string,
+  body: unknown,
+  fallbackError = "Something went wrong. Please try again.",
+): Promise<ApiResult<T>> {
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(body),
+    });
+    return parseResponse<T>(res, fallbackError);
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
 export async function apiDelete(
   url: string,
   fallbackError = "Something went wrong. Please try again.",

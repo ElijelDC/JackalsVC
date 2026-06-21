@@ -99,6 +99,40 @@ async function main() {
     });
   }
 
+  const rosterEntries = [
+    { vlyNumber: "VLY123", name: "Viktoriia", email: null },
+    { vlyNumber: "VLY122", name: "Elijel", email: null },
+    { vlyNumber: "VLY10001", name: "Demo Member", email: "member@jackalsvc.com" },
+    { vlyNumber: "VLY10002", name: "Sarah Jones", email: "sarah.jones@jackalsvc.com" },
+    { vlyNumber: "VLY10003", name: "Mike Chen", email: "mike.chen@jackalsvc.com" },
+    { vlyNumber: "VLY10004", name: "Emma Williams", email: "emma.williams@jackalsvc.com" },
+    { vlyNumber: "VLY10005", name: "James Patel", email: "james.patel@jackalsvc.com" },
+    { vlyNumber: "VLY10006", name: "Olivia Brown", email: "olivia.brown@jackalsvc.com" },
+    { vlyNumber: "VLY10007", name: "Liam Davis", email: "liam.davis@jackalsvc.com" },
+    { vlyNumber: "VLY10008", name: "Sophie Taylor", email: "sophie.taylor@jackalsvc.com" },
+    { vlyNumber: "VLY10009", name: "Alex Morgan", email: "alex.morgan@jackalsvc.com" },
+    { vlyNumber: "VLY10010", name: "Priya Sharma", email: "priya.sharma@jackalsvc.com" },
+    { vlyNumber: "VLY10011", name: "Noah Thompson", email: "noah.thompson@jackalsvc.com" },
+    { vlyNumber: "VLY10999", name: "New Member Test", email: null },
+  ] as const;
+
+  await prisma.clubMember.deleteMany();
+
+  for (const entry of rosterEntries) {
+    const linkedUser = entry.email
+      ? await prisma.user.findUnique({ where: { email: entry.email } })
+      : null;
+
+    await prisma.clubMember.create({
+      data: {
+        vlyNumber: entry.vlyNumber,
+        name: entry.name,
+        active: true,
+        userId: linkedUser?.id ?? null,
+      },
+    });
+  }
+
   const admin = await prisma.user.findUniqueOrThrow({
     where: { email: "admin@jackalsvc.com" },
   });
@@ -837,8 +871,8 @@ async function main() {
   console.log("Seed complete.");
   console.log(`Admin: admin@jackalsvc.com / password123`);
   console.log(`Member: member@jackalsvc.com / password123 (no membership — test checkout)`);
-  console.log(`Members: any *@jackalsvc.com account / password123`);
-  console.log(`Club codes: JACKALS-2026, JACKALS-TRIAL, JACKALS-ADMIN`);
+  console.log(`Register VLY: VLY123 (Viktoriia) · VLY122 (Elijel) — not yet linked`);
+  console.log(`Test register VLY: VLY10999 (New Member Test — not yet linked to an account)`);
 }
 
 main()

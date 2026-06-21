@@ -18,6 +18,7 @@ import {
   type PaymentSchedule,
 } from "@/lib/membership-config";
 import { apiPost } from "@/lib/client-api";
+import { useAuthModal } from "@/components/providers/AuthModalProvider";
 import { cn, formatPrice } from "@/lib/utils";
 
 type LockedMembership = {
@@ -75,6 +76,7 @@ export function MembershipLockedView({ membership }: { membership: LockedMembers
 export function MembershipCheckout() {
   const { data: session } = useSession();
   const router = useRouter();
+  const { openAuth } = useAuthModal();
   const [selectedSchedule, setSelectedSchedule] = useState<PaymentSchedule>("FULL");
   const [confirmedLock, setConfirmedLock] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -84,7 +86,7 @@ export function MembershipCheckout() {
 
   const subscribe = async () => {
     if (!session) {
-      router.push("/login?callbackUrl=/membership");
+      openAuth("signin", "/membership");
       return;
     }
 

@@ -69,7 +69,7 @@ export default async function DashboardPage() {
   return (
     <PageContainer>
       <PageHeader
-        title={`Welcome, ${session.user.name?.split(" ")[0]}`}
+        title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
         description="Manage your membership, payments, and event sign-ups"
       />
 
