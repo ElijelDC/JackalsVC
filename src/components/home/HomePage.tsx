@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
 import type { NavItem } from "@/lib/navigation";
 import type { EventListItem } from "@/lib/event-filters";
@@ -16,6 +17,9 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { Logo } from "@/components/layout/Logo";
 import { cn, formatPrice } from "@/lib/utils";
+import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import type { InstagramPost } from "@/lib/instagram";
+import { InstagramFeed } from "@/components/home/InstagramFeed";
 
 function SectionHeading({
   eyebrow,
@@ -134,21 +138,24 @@ type Product = {
   price: number;
 };
 
-type GalleryImage = {
+type FeaturedAlbum = {
   id: string;
   title: string;
+  coverImageUrl: string;
 };
 
 export function HomePage({
   featureItems,
   upcomingEvents,
   featuredProducts,
-  featuredImages,
+  featuredAlbums,
+  instagramPosts,
 }: {
   featureItems: NavItem[];
   upcomingEvents: EventListItem[];
   featuredProducts: Product[];
-  featuredImages: GalleryImage[];
+  featuredAlbums: FeaturedAlbum[];
+  instagramPosts: InstagramPost[];
 }) {
   return (
     <>
@@ -182,6 +189,28 @@ export function HomePage({
                     <Button size="lg">Join the club</Button>
                   </Link>
                 </div>
+                <a
+                  href={INSTAGRAM_PROFILE_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group mt-8 inline-flex items-center gap-2.5 border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:border-jackals-red/40 hover:bg-jackals-red/10 hover:text-jackals-red-light"
+                >
+                  <svg
+                    aria-hidden
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-4 w-4 transition-transform group-hover:scale-110"
+                  >
+                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+                  </svg>
+                  @jackalsvolleyball
+                </a>
               </div>
             </AnimateIn>
 
@@ -265,7 +294,9 @@ export function HomePage({
         </PageContainer>
       )}
 
-      {featuredImages.length > 0 && (
+      <InstagramFeed posts={instagramPosts} />
+
+      {featuredAlbums.length > 0 && (
         <section className="border-t border-white/10 bg-jackals-inset/50 py-16 sm:py-20">
           <PageContainer className="py-0">
             <AnimateIn>
@@ -277,15 +308,22 @@ export function HomePage({
               />
             </AnimateIn>
             <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-4" stagger={60}>
-              {featuredImages.map((image) => (
+              {featuredAlbums.map((album) => (
                 <Link
-                  key={image.id}
-                  href="/gallery"
+                  key={album.id}
+                  href={`/gallery/${album.id}`}
                   className="motion-hover-lift group relative aspect-square overflow-hidden border border-white/10 bg-jackals-surface hover:border-jackals-red/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
                 >
-                  <div className="flex h-full items-end p-4">
+                  <Image
+                    src={album.coverImageUrl}
+                    alt={album.title}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                  />
+                  <div className="absolute inset-0 flex items-end p-4">
                     <p className="text-sm font-medium text-white transition-colors group-hover:text-jackals-red-light">
-                      {image.title}
+                      {album.title}
                     </p>
                   </div>
                   <div

@@ -2,7 +2,11 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { visibleNavItems, isNavItemActive } from "@/lib/navigation";
+import {
+  visiblePrimaryNavItems,
+  isNavItemActive,
+} from "@/lib/navigation";
+import { InfoNavDropdown } from "@/components/layout/InfoNavDropdown";
 
 export function NavLinks({
   pathname,
@@ -15,9 +19,11 @@ export function NavLinks({
   variant?: "desktop" | "mobile";
   isLoggedIn?: boolean;
 }) {
+  const items = visiblePrimaryNavItems(isLoggedIn);
+
   return (
     <>
-      {visibleNavItems(isLoggedIn).map(({ href, label, icon: Icon }) => (
+      {items.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
@@ -25,8 +31,8 @@ export function NavLinks({
           className={cn(
             "motion-nav-link flex items-center font-medium",
             variant === "desktop"
-              ? "gap-1.5 px-3 py-2 text-sm clip-slash-reverse"
-              : "gap-2 px-3 py-2.5 text-sm",
+              ? "gap-1.5 px-2.5 py-2 text-sm clip-slash-reverse xl:px-3"
+              : "min-h-10 gap-2 px-3 py-2.5 text-sm active:bg-white/5",
             isNavItemActive(pathname, href)
               ? "bg-jackals-red/15 text-jackals-red-light"
               : variant === "desktop"
@@ -38,6 +44,12 @@ export function NavLinks({
           {label}
         </Link>
       ))}
+      <InfoNavDropdown
+        pathname={pathname}
+        onNavigate={onNavigate}
+        variant={variant}
+        isLoggedIn={isLoggedIn}
+      />
     </>
   );
 }

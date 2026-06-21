@@ -1,14 +1,17 @@
 import { prisma } from "@/lib/prisma";
-import { GalleryManager } from "@/components/admin/GalleryManager";
+import { GalleryAlbumManager } from "@/components/admin/GalleryAlbumManager";
 
 export const metadata = {
   title: "Admin · Gallery",
 };
 
 export default async function AdminGalleryPage() {
-  const images = await prisma.galleryImage.findMany({
-    orderBy: { createdAt: "desc" },
+  const albums = await prisma.galleryAlbum.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    include: {
+      _count: { select: { photos: true } },
+    },
   });
 
-  return <GalleryManager initialImages={images} />;
+  return <GalleryAlbumManager initialAlbums={albums} />;
 }

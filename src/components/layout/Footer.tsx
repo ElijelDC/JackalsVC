@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { CONTACT_EMAIL } from "@/lib/contact";
+import { SHOP_ENABLED } from "@/lib/features";
 import { Logo } from "@/components/layout/Logo";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 
@@ -47,11 +49,13 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
                   </Link>
                 </li>
               )}
-              <li>
-                <Link href="/shop" className="hover:text-jackals-red-light">
-                  Club shop
-                </Link>
-              </li>
+              {SHOP_ENABLED && (
+                <li>
+                  <Link href="/shop" className="hover:text-jackals-red-light">
+                    Club shop
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
 
@@ -60,8 +64,14 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
               Contact
             </h3>
             <ul className="space-y-2 text-sm text-zinc-500">
-              <li>info@jackalsvc.com</li>
-              <li>Training hall, Sports Centre</li>
+              <li>
+                <a
+                  href={`mailto:${CONTACT_EMAIL}`}
+                  className="hover:text-jackals-red-light"
+                >
+                  {CONTACT_EMAIL}
+                </a>
+              </li>
             </ul>
           </div>
         </StaggerIn>

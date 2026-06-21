@@ -23,7 +23,7 @@ export default async function MembershipPage() {
     <PageContainer>
       <PageHeader
         title="Club Membership"
-        description="Choose a plan that fits your schedule. All members get access to training sessions, club events, and member-only discounts in the shop."
+        description="Choose a plan that fits your schedule. All members get access to training sessions and club events."
         centered
       />
 
