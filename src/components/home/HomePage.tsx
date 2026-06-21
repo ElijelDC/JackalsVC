@@ -14,8 +14,9 @@ import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { Logo } from "@/components/layout/Logo";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 import { formatPrice } from "@/lib/utils";
-import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import { CLUB_SLOGAN } from "@/lib/brand";
 import type { InstagramPost } from "@/lib/instagram";
+import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 import { InstagramFeed } from "@/components/home/InstagramFeed";
 import type { Product } from "@/types/product";
 
@@ -75,50 +76,44 @@ export function HomePage({
         />
         <PageContainer className="relative py-20 sm:py-28">
           <div className="grid items-center gap-12 lg:grid-cols-2">
-            <AnimateIn immediate delay={0}>
+            <AnimateIn immediate variant="slide-left" delay={0}>
               <div>
                 <h1 className="font-display text-4xl font-bold tracking-wide text-white sm:text-6xl lg:text-7xl">
                   Jackals{" "}
-                  <span className="bg-gradient-to-r from-jackals-red-light to-jackals-red bg-clip-text text-transparent">
+                  <span className="motion-gradient-text bg-gradient-to-r from-jackals-red-light via-jackals-red to-jackals-red-light bg-clip-text text-transparent">
                     Volleyball
                   </span>
                 </h1>
                 <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
-                  Train hard, play fierce. Your home for volleyball — open
-                  sessions, tournaments, skills clinics, membership, and official
-                  club gear.
+                  {CLUB_SLOGAN} Your home for volleyball — open sessions,
+                  tournaments, skills clinics, membership, and official club gear.
                 </p>
-                <div className="mt-10 flex flex-wrap gap-4">
+                <div className="mt-10 flex flex-wrap items-center gap-4">
+                  <a
+                    href={INSTAGRAM_PROFILE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center justify-center gap-2.5 border border-white/20 bg-transparent px-6 py-3 text-base font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 hover:scale-[1.02] active:scale-[0.96]"
+                  >
+                    <InstagramIcon className="transition-transform group-hover:scale-110" />
+                    @jackalsvolleyball
+                  </a>
                   <Link href="/whats-on">
-                    <Button variant="outline" size="lg">
-                      What&apos;s on?
-                    </Button>
-                  </Link>
-                  <Link href="/register">
-                    <Button size="lg">Join the club</Button>
+                    <Button size="lg">What&apos;s on?</Button>
                   </Link>
                 </div>
-                <a
-                  href={INSTAGRAM_PROFILE_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group mt-8 inline-flex items-center gap-2.5 border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:border-jackals-red/40 hover:bg-jackals-red/10 hover:text-jackals-red-light"
-                >
-                  <InstagramIcon className="transition-transform group-hover:scale-110" />
-                  @jackalsvolleyball
-                </a>
               </div>
             </AnimateIn>
 
-            <AnimateIn immediate delay={120} className="relative flex justify-center lg:justify-end">
+            <AnimateIn immediate variant="scale-in" delay={160} className="relative flex justify-center lg:justify-end">
               <div
                 aria-hidden
-                className="pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-jackals-red/20 blur-3xl lg:left-auto lg:right-12 lg:translate-x-0"
+                className="motion-hero-glow pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-jackals-red/25 blur-3xl lg:left-auto lg:right-12 lg:translate-x-0"
               />
               <Logo
                 size="hero"
                 href={null}
-                className="relative drop-shadow-[0_8px_48px_rgba(232,34,42,0.35)]"
+                className="motion-hero-float relative drop-shadow-[0_8px_48px_rgba(232,34,42,0.45)]"
               />
             </AnimateIn>
           </div>
@@ -131,7 +126,7 @@ export function HomePage({
         <AnimateIn>
           <SectionHeading eyebrow="Explore" title="Everything you need" />
         </AnimateIn>
-        <StaggerIn className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <StaggerIn className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" stagger={90}>
           {featureItems.map((item) => (
             <FeatureCard key={item.href} {...item} />
           ))}
@@ -153,7 +148,7 @@ export function HomePage({
                 linkLabel="View all"
               />
             </AnimateIn>
-            <StaggerIn className="grid gap-5 md:grid-cols-3">
+            <StaggerIn className="grid gap-5 md:grid-cols-3" stagger={100}>
               {upcomingEvents.map((event) => (
                 <EventListCard key={event.id} event={event} />
               ))}
@@ -203,18 +198,19 @@ export function HomePage({
                 linkLabel="View gallery"
               />
             </AnimateIn>
-            <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-4" stagger={60}>
+            <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-4" stagger={80}>
               {featuredAlbums.map((album) => (
                 <Link
                   key={album.id}
                   href={`/gallery/${album.id}`}
-                  className="motion-hover-lift group relative aspect-square overflow-hidden border border-white/10 bg-jackals-surface hover:border-jackals-red/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+                  className="motion-hover-lift group relative block overflow-hidden border border-white/10 bg-jackals-surface hover:border-jackals-red/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
                 >
                   <Image
                     src={album.coverImageUrl}
                     alt={album.title}
-                    fill
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    width={400}
+                    height={400}
+                    className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, 25vw"
                   />
                   <div className="absolute inset-0 flex items-end p-4">

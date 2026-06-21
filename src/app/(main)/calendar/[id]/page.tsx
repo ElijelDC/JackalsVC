@@ -1,13 +1,14 @@
 import { auth } from "@/auth";
 import { EventDetailPage } from "@/components/calendar/EventDetailPage";
 import { hasAttendanceAccess } from "@/lib/membership";
-import { prisma } from "@/lib/prisma";
-import { getSiteUrl } from "@/lib/site-url.server";
 import {
   getEventAttendanceContext,
   getPublicEvent,
   sessionSchedulePath,
 } from "@/lib/public-events";
+import { prisma } from "@/lib/prisma";
+import { getSiteUrl } from "@/lib/site-url.server";
+import { resolveWhatsOnBackLink } from "@/lib/whats-on";
 
 export async function generateMetadata({
   params,
@@ -26,16 +27,20 @@ export async function generateMetadata({
 
 export default async function CalendarEventPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { id } = await params;
+  const { from } = await searchParams;
   const session = await auth();
   const isLoggedIn = Boolean(session?.user);
 
   const event = await getPublicEvent(id, isLoggedIn);
   const schedulePath = sessionSchedulePath(event);
   const attendance = await getEventAttendanceContext(event);
+  const whatsOnBack = resolveWhatsOnBackLink(from);
 
   const hasReminder = isLoggedIn
     ? Boolean(
@@ -64,6 +69,8 @@ export default async function CalendarEventPage({
       canAccessAttendance={canAccessAttendance}
       isLoggedIn={isLoggedIn}
       siteOrigin={siteOrigin}
+      listPath={whatsOnBack?.path}
+      listLabel={whatsOnBack?.label}
     />
   );
 }

@@ -10,6 +10,7 @@ import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
 function AuthActions({
   session,
@@ -100,14 +101,24 @@ function AuthActions({
 export function Header({ session }: { session: Session | null }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const closeMobile = () => setMobileOpen(false);
 
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <header className="motion-header-enter sticky top-0 z-50 border-b border-white/10 bg-background/95 backdrop-blur-md">
+    <header
+      className={cn(
+        "sticky top-0 z-50 border-b border-white/10 bg-background/95 backdrop-blur-md",
+        mounted && "motion-header-enter",
+      )}
+    >
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent" />
       <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Logo size="nav" showText className="min-w-[52px] shrink-0" />

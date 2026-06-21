@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { CalendarDays, ChevronRight, Clock, MapPin, User } from "lucide-react";
+import { ArrowLeft, CalendarDays, ChevronRight, Clock, MapPin, User } from "lucide-react";
 import type { EventListItem } from "@/lib/event-filters";
 import { getEventTypeLabel } from "@/lib/event-filters";
 import { getEventTypeStyle, formatEventDateTime } from "@/lib/event-display";
@@ -29,6 +29,8 @@ export function EventDetailPage({
   canAccessAttendance,
   isLoggedIn,
   siteOrigin,
+  listPath = "/calendar",
+  listLabel = "calendar",
 }: {
   event: EventListItem;
   hasReminder?: boolean;
@@ -41,6 +43,8 @@ export function EventDetailPage({
   canAccessAttendance: boolean;
   isLoggedIn: boolean;
   siteOrigin: string;
+  listPath?: string;
+  listLabel?: string;
 }) {
   const { dateLabel, timeLabel } = formatEventDateTime(
     event.startDate,
@@ -62,10 +66,11 @@ export function EventDetailPage({
     <PageContainer>
       <AnimateIn immediate>
         <Link
-          href="/calendar"
+          href={listPath}
           className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
         >
-          ← Back to calendar
+          <ArrowLeft className="h-4 w-4" />
+          Back to {listLabel}
         </Link>
       </AnimateIn>
 

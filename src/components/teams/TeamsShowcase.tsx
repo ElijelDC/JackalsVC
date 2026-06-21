@@ -51,7 +51,7 @@ export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
             />
           </AnimateIn>
         ) : (
-          <StaggerIn className="grid gap-6 md:grid-cols-2" stagger={100}>
+          <StaggerIn className="grid gap-6 md:grid-cols-2" stagger={120}>
             {teams.map((team) => (
               <TeamCard key={team.id} team={team} />
             ))}

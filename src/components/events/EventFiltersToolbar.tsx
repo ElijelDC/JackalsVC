@@ -9,6 +9,7 @@ import {
   EVENT_TYPE_OPTIONS,
   EventSourceFilter,
 } from "@/lib/event-filters";
+import { cn } from "@/lib/utils";
 
 type TypeOption = { value: string; label: string };
 
@@ -26,6 +27,8 @@ type EventFiltersToolbarProps = {
   showMonth?: boolean;
   onClear?: () => void;
   searchPlaceholder?: string;
+  className?: string;
+  bordered?: boolean;
 };
 
 export function EventFiltersToolbar({
@@ -42,9 +45,17 @@ export function EventFiltersToolbar({
   showMonth = false,
   onClear,
   searchPlaceholder = "Search title, location, type…",
+  className,
+  bordered = true,
 }: EventFiltersToolbarProps) {
   return (
-    <div className="space-y-3 rounded border border-white/10 bg-jackals-surface p-4">
+    <div
+      className={cn(
+        "space-y-3",
+        bordered && "rounded border border-white/10 bg-jackals-surface p-4",
+        className,
+      )}
+    >
       <AdminSearchBar
         value={search}
         onChange={onSearchChange}

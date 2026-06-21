@@ -31,3 +31,35 @@ export async function getWhatsOnPageData() {
 export type WhatsOnCalendarEvent = Awaited<
   ReturnType<typeof getWhatsOnCalendarEvents>
 >[number];
+
+export const WHATS_ON_SECTIONS = {
+  funSessions: "fun-sessions",
+  tournaments: "tournaments",
+  skillsClinics: "skills-clinics",
+} as const;
+
+export type WhatsOnSectionKey = keyof typeof WHATS_ON_SECTIONS;
+
+export function whatsOnSectionPath(section: WhatsOnSectionKey) {
+  return `/whats-on#${WHATS_ON_SECTIONS[section]}`;
+}
+
+export function whatsOnEventDetailPath(
+  eventId: string,
+  section: "tournaments" | "skillsClinics",
+) {
+  return `/calendar/${eventId}?from=whats-on-${WHATS_ON_SECTIONS[section]}`;
+}
+
+export function resolveWhatsOnBackLink(from: string | undefined) {
+  if (from === `whats-on-${WHATS_ON_SECTIONS.tournaments}`) {
+    return { path: whatsOnSectionPath("tournaments"), label: "What's On?" };
+  }
+  if (from === `whats-on-${WHATS_ON_SECTIONS.skillsClinics}`) {
+    return { path: whatsOnSectionPath("skillsClinics"), label: "What's On?" };
+  }
+  if (from === "whats-on" || from?.startsWith("whats-on-")) {
+    return { path: "/whats-on", label: "What's On?" };
+  }
+  return null;
+}
