@@ -1,11 +1,19 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
+import {
+  defaultEventMonthFilter,
+  EventFiltersToolbar,
+} from "@/components/events/EventFiltersToolbar";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
+import {
+  EventSourceFilter,
+  filterEvents,
+} from "@/lib/event-filters";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 
 type EventItem = {
@@ -16,9 +24,15 @@ type EventItem = {
   endDate: string | null;
   type: string;
   location: string | null;
+  trainingSessionId: string | null;
+  trainingOccurrenceDate: string | null;
+  occurrenceCustomized?: boolean;
+  coach?: string | null;
+  attendanceUrl?: string | null;
+  sessionDescription?: string | null;
 };
 
-const EVENT_TYPES = ["TRAINING", "TOURNAMENT", "SOCIAL", "MEETING"] as const;
+const EVENT_TYPES = ["TOURNAMENT", "SOCIAL", "MEETING"] as const;
 
 function toDatetimeLocal(value: string | null) {
   if (!value) return "";
@@ -30,23 +44,57 @@ const emptyForm = {
   description: "",
   startDate: "",
   endDate: "",
-  type: "TRAINING" as (typeof EVENT_TYPES)[number],
+  type: "TOURNAMENT" as (typeof EVENT_TYPES)[number],
   location: "",
+  coach: "",
+  attendanceUrl: "",
 };
 
 export function EventsManager({ initialEvents }: { initialEvents: EventItem[] }) {
   const router = useRouter();
   const [events, setEvents] = useState(initialEvents);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTrainingOccurrence, setEditingTrainingOccurrence] =
+    useState(false);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [sourceFilter, setSourceFilter] = useState<EventSourceFilter>("all");
+  const [monthFilter, setMonthFilter] = useState(defaultEventMonthFilter);
+
+  const filteredEvents = useMemo(
+    () =>
+      filterEvents(events, {
+        search,
+        type: typeFilter,
+        source: sourceFilter,
+        month: monthFilter,
+      }),
+    [events, search, typeFilter, sourceFilter, monthFilter],
+  );
+
+  const clearFilters = () => {
+    setSearch("");
+    setTypeFilter("");
+    setSourceFilter("all");
+    setMonthFilter(defaultEventMonthFilter());
+  };
+
+  const filtersActive =
+    Boolean(search.trim()) ||
+    Boolean(typeFilter) ||
+    sourceFilter !== "all" ||
+    monthFilter !== defaultEventMonthFilter() ||
+    monthFilter === "";
 
   const resetForm = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setEditingTrainingOccurrence(false);
     setError(null);
   };
 
@@ -58,6 +106,9 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
           ...e,
           startDate: new Date(e.startDate).toISOString(),
           endDate: e.endDate ? new Date(e.endDate).toISOString() : null,
+          trainingOccurrenceDate: e.trainingOccurrenceDate
+            ? new Date(e.trainingOccurrenceDate).toISOString()
+            : null,
         })),
       );
     }
@@ -65,13 +116,16 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
 
   const startEdit = (event: EventItem) => {
     setEditingId(event.id);
+    setEditingTrainingOccurrence(Boolean(event.trainingSessionId));
     setForm({
       title: event.title,
-      description: event.description ?? "",
+      description: event.sessionDescription ?? "",
       startDate: toDatetimeLocal(event.startDate),
       endDate: toDatetimeLocal(event.endDate),
       type: event.type as (typeof EVENT_TYPES)[number],
       location: event.location ?? "",
+      coach: event.coach ?? "",
+      attendanceUrl: event.attendanceUrl ?? "",
     });
     setError(null);
     setMessage(null);
@@ -83,18 +137,27 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
     setError(null);
     setMessage(null);
 
-    const payload = {
+    const occurrencePayload = {
       title: form.title,
       description: form.description || undefined,
       startDate: new Date(form.startDate).toISOString(),
       endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
-      type: form.type,
       location: form.location || undefined,
+      coach: form.coach || undefined,
+      attendanceUrl: form.attendanceUrl || undefined,
+    };
+
+    const manualPayload = {
+      ...occurrencePayload,
+      type: form.type,
     };
 
     const result = editingId
-      ? await apiPut(`/api/admin/events/${editingId}`, payload)
-      : await apiPost("/api/admin/events", payload);
+      ? await apiPut(
+          `/api/admin/events/${editingId}`,
+          editingTrainingOccurrence ? occurrencePayload : manualPayload,
+        )
+      : await apiPost("/api/admin/events", manualPayload);
 
     setLoading(false);
     if (!result.ok) {
@@ -102,22 +165,33 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
       return;
     }
 
-    setMessage(editingId ? "Event updated." : "Event added.");
+    setMessage(
+      editingTrainingOccurrence
+        ? "Training occurrence updated."
+        : editingId
+          ? "Event updated."
+          : "Event added.",
+    );
     resetForm();
     await loadEvents();
     router.refresh();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this event?")) return;
-    setDeletingId(id);
-    const result = await apiDelete(`/api/admin/events/${id}`);
+  const handleDelete = async (event: EventItem) => {
+    const prompt = event.trainingSessionId
+      ? "Cancel this training session on this date only? Other sessions in the series will stay scheduled."
+      : "Delete this event?";
+
+    if (!confirm(prompt)) return;
+
+    setDeletingId(event.id);
+    const result = await apiDelete(`/api/admin/events/${event.id}`);
     setDeletingId(null);
     if (!result.ok) {
       setError(result.error);
       return;
     }
-    if (editingId === id) resetForm();
+    if (editingId === event.id) resetForm();
     await loadEvents();
     router.refresh();
   };
@@ -128,11 +202,17 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
 
   return (
     <AdminSection
-      title="Events"
-      description="Manage calendar events shown on the public Events page."
+      title="Calendar events"
+      description="Calendar events including auto-synced training sessions. Edit a single training date here, or change the full recurring schedule under Weekly training."
     >
       <AdminFormCard
-        title={editingId ? "Edit event" : "Add new event"}
+        title={
+          editingTrainingOccurrence
+            ? "Edit this training occurrence"
+            : editingId
+              ? "Edit event"
+              : "Add new event"
+        }
         error={error}
         message={message}
         onSubmit={handleSubmit}
@@ -140,6 +220,20 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
         submitLabel={editingId ? "Save changes" : "Add event"}
         loading={loading}
       >
+        {editingTrainingOccurrence && (
+          <p className="rounded border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+            Changes apply to this date only. To update every session in the
+            series, use{" "}
+            <a
+              href="/admin/training"
+              className="font-medium text-jackals-red-light hover:text-jackals-red"
+            >
+              Weekly training
+            </a>
+            .
+          </p>
+        )}
+
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="sm:col-span-2">
             <Label htmlFor="event-title">Title</Label>
@@ -150,26 +244,28 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
               required
             />
           </div>
-          <div>
-            <Label htmlFor="event-type">Type</Label>
-            <Select
-              id="event-type"
-              value={form.type}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  type: e.target.value as (typeof EVENT_TYPES)[number],
-                })
-              }
-            >
-              {EVENT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div>
+          {!editingTrainingOccurrence && (
+            <div>
+              <Label htmlFor="event-type">Type</Label>
+              <Select
+                id="event-type"
+                value={form.type}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    type: e.target.value as (typeof EVENT_TYPES)[number],
+                  })
+                }
+              >
+                {EVENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+          <div className={editingTrainingOccurrence ? "sm:col-span-2" : ""}>
             <Label htmlFor="event-location">Location (optional)</Label>
             <Input
               id="event-location"
@@ -196,6 +292,32 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
               onChange={(e) => setForm({ ...form, endDate: e.target.value })}
             />
           </div>
+          {editingTrainingOccurrence && (
+            <>
+              <div>
+                <Label htmlFor="event-coach">Coach (optional)</Label>
+                <Input
+                  id="event-coach"
+                  value={form.coach}
+                  onChange={(e) => setForm({ ...form, coach: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label htmlFor="event-attendanceUrl">
+                  Reclub / attendance link (optional)
+                </Label>
+                <Input
+                  id="event-attendanceUrl"
+                  type="url"
+                  value={form.attendanceUrl}
+                  onChange={(e) =>
+                    setForm({ ...form, attendanceUrl: e.target.value })
+                  }
+                  placeholder="https://reclub.co/..."
+                />
+              </div>
+            </>
+          )}
           <div className="sm:col-span-2">
             <Label htmlFor="event-description">Description (optional)</Label>
             <Textarea
@@ -209,19 +331,61 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
       </AdminFormCard>
 
       <div className="space-y-3">
-        <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
-          Current events ({events.length})
-        </h3>
-        {events.map((event) => (
-          <AdminListItem
-            key={event.id}
-            title={event.title}
-            subtitle={`${format(new Date(event.startDate), "d MMM yyyy HH:mm")} · ${event.type}${event.location ? ` · ${event.location}` : ""}`}
-            onEdit={() => startEdit(event)}
-            onDelete={() => handleDelete(event.id)}
-            deleting={deletingId === event.id}
-          />
-        ))}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
+            Current events ({filteredEvents.length}
+            {filteredEvents.length !== events.length
+              ? ` of ${events.length}`
+              : ""})
+          </h3>
+        </div>
+
+        <EventFiltersToolbar
+          search={search}
+          onSearchChange={setSearch}
+          type={typeFilter}
+          onTypeChange={setTypeFilter}
+          source={sourceFilter}
+          onSourceChange={setSourceFilter}
+          month={monthFilter}
+          onMonthChange={setMonthFilter}
+          showSource
+          showMonth
+          onClear={filtersActive ? clearFilters : undefined}
+          searchPlaceholder="Search title, location, description…"
+        />
+
+        {filteredEvents.length === 0 ? (
+          <p className="text-sm text-zinc-400">
+            {filtersActive
+              ? "No events match your filters."
+              : "No events yet."}
+          </p>
+        ) : (
+          filteredEvents.map((event) => (
+            <AdminListItem
+              key={event.id}
+              title={event.title}
+              subtitle={`${format(new Date(event.startDate), "d MMM yyyy HH:mm")} · ${event.type}${event.location ? ` · ${event.location}` : ""}`}
+              note={
+                event.trainingSessionId
+                  ? event.occurrenceCustomized
+                    ? "Recurring training · this date customized"
+                    : "Recurring training"
+                  : undefined
+              }
+              secondaryHref={
+                event.trainingSessionId ? "/admin/training" : undefined
+              }
+              secondaryLabel={
+                event.trainingSessionId ? "Edit full series →" : undefined
+              }
+              onEdit={() => startEdit(event as EventItem)}
+              onDelete={() => handleDelete(event as EventItem)}
+              deleting={deletingId === event.id}
+            />
+          ))
+        )}
       </div>
     </AdminSection>
   );

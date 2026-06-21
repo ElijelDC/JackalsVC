@@ -8,11 +8,34 @@ async function parseResponse<T>(
   res: Response,
   fallbackError: string,
 ): Promise<ApiResult<T>> {
-  const data = await res.json();
-  if (!res.ok) {
-    return { ok: false, error: data.error ?? fallbackError };
+  const text = await res.text();
+  if (!text.trim()) {
+    return {
+      ok: false,
+      error: res.ok
+        ? fallbackError
+        : `${fallbackError} (HTTP ${res.status})`,
+    };
   }
-  return { ok: true, data: data as T };
+
+  try {
+    const data = JSON.parse(text) as T & { error?: string };
+    if (!res.ok) {
+      return {
+        ok: false,
+        error:
+          typeof data === "object" &&
+          data &&
+          "error" in data &&
+          typeof data.error === "string"
+            ? data.error
+            : fallbackError,
+      };
+    }
+    return { ok: true, data: data as T };
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
 }
 
 export async function apiGet<T>(

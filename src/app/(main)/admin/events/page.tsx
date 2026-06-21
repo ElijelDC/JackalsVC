@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/prisma";
+import { getAdminEventsPayload } from "@/lib/admin-events";
 import { EventsManager } from "@/components/admin/EventsManager";
 
 export const metadata = {
@@ -6,15 +6,6 @@ export const metadata = {
 };
 
 export default async function AdminEventsPage() {
-  const events = await prisma.event.findMany({
-    orderBy: { startDate: "asc" },
-  });
-
-  const serialized = events.map((e) => ({
-    ...e,
-    startDate: e.startDate.toISOString(),
-    endDate: e.endDate?.toISOString() ?? null,
-  }));
-
+  const serialized = await getAdminEventsPayload();
   return <EventsManager initialEvents={serialized} />;
 }

@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import {
+  syncTrainingSessionEvents,
+} from "@/lib/training-events";
+import { toTrainingSessionData } from "@/lib/training-utils";
 import { trainingSessionSchema } from "@/lib/validations";
 
 export async function GET() {
@@ -24,6 +28,9 @@ export async function POST(request: Request) {
   );
   if (parseError || !data) return parseError!;
 
-  const session = await prisma.trainingSession.create({ data });
+  const session = await prisma.trainingSession.create({
+    data: toTrainingSessionData(data),
+  });
+  await syncTrainingSessionEvents(session);
   return NextResponse.json({ session }, { status: 201 });
 }

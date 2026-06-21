@@ -3,20 +3,30 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Bell,
   Calendar,
   Camera,
+  CreditCard,
   Dumbbell,
   LayoutDashboard,
   Package,
   Settings,
+  ShoppingBag,
+  UserCheck,
+  Users,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
-  { href: "/admin/training", label: "Training", icon: Dumbbell },
-  { href: "/admin/events", label: "Events", icon: Calendar },
+  { href: "/admin/users", label: "Users", icon: Users },
+  { href: "/admin/membership", label: "Plans", icon: CreditCard },
+  { href: "/admin/members", label: "Members", icon: UserCheck },
+  { href: "/admin/training", label: "Weekly training", icon: Dumbbell },
+  { href: "/admin/events", label: "Calendar", icon: Calendar },
+  { href: "/admin/reminders", label: "Reminders", icon: Bell },
   { href: "/admin/products", label: "Products", icon: Package },
+  { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/gallery", label: "Gallery", icon: Camera },
 ];
 

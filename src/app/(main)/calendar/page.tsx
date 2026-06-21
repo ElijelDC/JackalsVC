@@ -30,7 +30,7 @@ export default async function CalendarPage() {
     <PageContainer>
       <PageHeader
         title="Events Calendar"
-        description="Browse club events and set personal reminders. Sign in to save reminders to your account."
+        description="Browse tournaments, socials, and club meetings. For weekly training times, see the Training page. Sign in to save reminders."
       />
       <CalendarView
         events={serializedEvents}

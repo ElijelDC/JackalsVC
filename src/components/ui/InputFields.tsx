@@ -31,10 +31,11 @@ Textarea.displayName = "Textarea";
 export const Checkbox = forwardRef<
   HTMLInputElement,
   InputHTMLAttributes<HTMLInputElement>
->(({ className, ...props }, ref) => (
+>(({ className, checked, ...props }, ref) => (
   <input
     ref={ref}
     type="checkbox"
+    checked={checked ?? false}
     className={cn("h-4 w-4 accent-jackals-red", className)}
     {...props}
   />

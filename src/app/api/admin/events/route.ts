@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getAdminEventsPayload } from "@/lib/admin-events";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validations";
@@ -19,7 +20,7 @@ export async function GET() {
   const { response } = await requireAdmin();
   if (response) return response;
 
-  const events = await prisma.event.findMany({ orderBy: { startDate: "asc" } });
+  const events = await getAdminEventsPayload();
   return NextResponse.json({ events });
 }
 

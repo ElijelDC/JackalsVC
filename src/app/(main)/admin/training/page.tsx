@@ -10,5 +10,14 @@ export default async function AdminTrainingPage() {
     orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
   });
 
-  return <TrainingManager initialSessions={sessions} />;
+  const serialized = sessions.map((s) => ({
+    ...s,
+    recurring: s.recurring ?? true,
+    recurrenceWeeks: s.recurrenceWeeks ?? 1,
+    recurringFrom: s.recurringFrom?.toISOString() ?? null,
+    recurringTo: s.recurringTo?.toISOString() ?? null,
+    sessionDate: s.sessionDate?.toISOString() ?? null,
+  }));
+
+  return <TrainingManager initialSessions={serialized} />;
 }

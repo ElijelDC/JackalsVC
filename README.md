@@ -52,23 +52,40 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Sign in as an admin (`admin@jackalsvc.com`) and click **Admin** in the nav, or go to [http://localhost:3000/admin](http://localhost:3000/admin).
 
-From there you can add, edit, and delete:
+From there you can manage every table — no Prisma Studio required:
 
-| Section | What it controls |
-|---------|------------------|
-| **Training** | Weekly session times and locations (`/training`) |
-| **Events** | Calendar events (`/calendar`) |
-| **Products** | Shop inventory (`/shop`) |
-| **Gallery** | Photo grid (`/gallery`) |
-
-Changes save to the database and appear on the public site immediately — no Prisma Studio required.
+| Section | Database table(s) |
+|---------|-------------------|
+| **Users** | `User` — accounts and roles |
+| **Plans** | `MembershipPlan` — pricing and features |
+| **Members** | `Membership` — active subscriptions |
+| **Weekly training** | `TrainingSession` — recurring schedule; auto-syncs to calendar |
+| **Calendar** | `Event` — training occurrences + one-off events |
+| **Reminders** | `EventReminder` — member event alerts |
+| **Products** | `Product` — shop inventory |
+| **Orders** | `Order` / `OrderItem` — shop purchases |
+| **Gallery** | `GalleryImage` — photos |
 
 ### Demo accounts
 
-| Role | Email | Password |
-|------|-------|----------|
-| Admin | admin@jackalsvc.com | password123 |
-| Member | member@jackalsvc.com | password123 |
+All demo accounts use password **`password123`**.
+
+| Role | Email |
+|------|-------|
+| Admin | admin@jackalsvc.com |
+| Member | member@jackalsvc.com |
+| Member | sarah.jones@jackalsvc.com |
+| Member | mike.chen@jackalsvc.com |
+| Member | emma.williams@jackalsvc.com |
+| Member | james.patel@jackalsvc.com |
+| Member | olivia.brown@jackalsvc.com |
+| Member | liam.davis@jackalsvc.com |
+| Member | sophie.taylor@jackalsvc.com |
+| Member | alex.morgan@jackalsvc.com |
+| Member | priya.sharma@jackalsvc.com |
+| Member | noah.thompson@jackalsvc.com |
+
+Re-run `npm run db:seed` to populate or refresh demo users and sample memberships.
 
 ## Environment variables
 
@@ -79,6 +96,8 @@ DATABASE_URL="file:./dev.db"
 AUTH_SECRET="your-secret-here"   # Generate with: openssl rand -base64 32
 ```
 
+The database lives at **`dev.db` in the project root** (not `prisma/dev.db`). Use `npm run db:studio` to inspect it.
+
 ## Scripts
 
 | Command | Description |
@@ -88,6 +107,7 @@ AUTH_SECRET="your-secret-here"   # Generate with: openssl rand -base64 32
 | `npm run start` | Start production server |
 | `npm run db:migrate` | Apply Prisma migrations |
 | `npm run db:seed` | Seed sample data |
+| `npm run db:studio` | Open Prisma Studio (uses `dev.db` at project root) |
 | `npm run db:reset` | Reset DB and re-seed (dev only) |
 
 ## Project structure

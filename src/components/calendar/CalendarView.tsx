@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import {
@@ -15,8 +15,10 @@ import {
   isToday,
 } from "date-fns";
 import { Bell, BellOff, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { EventFiltersToolbar } from "@/components/events/EventFiltersToolbar";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { filterEvents } from "@/lib/event-filters";
 import { apiDelete, apiPost } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 
@@ -43,6 +45,20 @@ export function CalendarView({
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [reminders, setReminders] = useState<Set<string>>(new Set(reminderIds));
   const [loading, setLoading] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+
+  const filteredEvents = useMemo(
+    () => filterEvents(events, { search, type: typeFilter }),
+    [events, search, typeFilter],
+  );
+
+  const filtersActive = Boolean(search.trim()) || Boolean(typeFilter);
+
+  const clearFilters = () => {
+    setSearch("");
+    setTypeFilter("");
+  };
 
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -55,7 +71,11 @@ export function CalendarView({
   ] as (Date | null)[];
 
   const eventsForDate = (date: Date) =>
-    events.filter((e) => isSameDay(new Date(e.startDate), date));
+    filteredEvents.filter((e) => isSameDay(new Date(e.startDate), date));
+
+  const upcomingEvents = filteredEvents.filter(
+    (event) => new Date(event.startDate) >= new Date(),
+  );
 
   const selectedEvents = selectedDate ? eventsForDate(selectedDate) : [];
 
@@ -94,8 +114,21 @@ export function CalendarView({
     MEETING: "bg-green-500/15 text-green-400",
   };
 
+  const typeColor = (type: string) =>
+    typeColors[type] ?? "bg-zinc-500/15 text-zinc-400";
+
   return (
-    <div className="grid gap-8 lg:grid-cols-3">
+    <div className="space-y-6">
+      <EventFiltersToolbar
+        search={search}
+        onSearchChange={setSearch}
+        type={typeFilter}
+        onTypeChange={setTypeFilter}
+        onClear={filtersActive ? clearFilters : undefined}
+        searchPlaceholder="Search events…"
+      />
+
+      <div className="grid gap-8 lg:grid-cols-3">
       <div className="lg:col-span-2">
         <Card className="p-4 sm:p-6">
           <div className="mb-6 flex items-center justify-between">
@@ -181,7 +214,9 @@ export function CalendarView({
           <Card>
             <CardDescription>
               {selectedDate
-                ? "No events on this day."
+                ? filtersActive
+                  ? "No matching events on this day."
+                  : "No events on this day."
                 : "Click a date to see events."}
             </CardDescription>
           </Card>
@@ -193,7 +228,7 @@ export function CalendarView({
                   <span
                     className={cn(
                       "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                      typeColors[event.type] ?? "bg-zinc-700 text-zinc-300",
+                      typeColor(event.type),
                     )}
                   >
                     {event.type}
@@ -235,10 +270,19 @@ export function CalendarView({
 
         <div className="mt-8">
           <h3 className="mb-4 text-sm font-semibold uppercase tracking-wider text-zinc-500">
-            All upcoming
+            All upcoming{filtersActive ? ` (${upcomingEvents.length} shown)` : ""}
           </h3>
           <div className="space-y-3">
-            {events.slice(0, 5).map((event) => (
+            {upcomingEvents.length === 0 ? (
+              <Card>
+                <CardDescription>
+                  {filtersActive
+                    ? "No upcoming events match your filters."
+                    : "No upcoming events."}
+                </CardDescription>
+              </Card>
+            ) : (
+              upcomingEvents.slice(0, 8).map((event) => (
               <div
                 key={event.id}
                 className="flex items-center justify-between rounded-lg border border-white/10 px-4 py-3"
@@ -252,16 +296,18 @@ export function CalendarView({
                 <span
                   className={cn(
                     "rounded-full px-2 py-0.5 text-xs",
-                    typeColors[event.type] ?? "bg-zinc-700 text-zinc-300",
+                    typeColor(event.type),
                   )}
                 >
                   {event.type}
                 </span>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
+    </div>
     </div>
   );
 }
