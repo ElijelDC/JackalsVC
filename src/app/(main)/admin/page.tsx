@@ -2,7 +2,9 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { AdminSection } from "@/components/admin/AdminShell";
+import { SHOP_ENABLED } from "@/lib/features";
 import {
+  Award,
   Bell,
   Calendar,
   Camera,
@@ -13,6 +15,7 @@ import {
   ShoppingBag,
   UserCheck,
   Users,
+  Volleyball,
 } from "lucide-react";
 
 export const metadata = { title: "Admin" };
@@ -88,6 +91,20 @@ const SECTIONS = [
     icon: Camera,
     countKey: "gallery" as const,
   },
+  {
+    href: "/admin/achievements",
+    title: "Achievements",
+    description: "Club milestones and titles",
+    icon: Award,
+    countKey: "achievements" as const,
+  },
+  {
+    href: "/admin/teams",
+    title: "Our teams",
+    description: "Squads on the teams page",
+    icon: Volleyball,
+    countKey: "teams" as const,
+  },
 ];
 
 export default async function AdminPage() {
@@ -102,6 +119,8 @@ export default async function AdminPage() {
     products,
     orders,
     gallery,
+    achievements,
+    teams,
   ] = await Promise.all([
     prisma.user.count(),
     prisma.membershipPlan.count(),
@@ -116,7 +135,9 @@ export default async function AdminPage() {
     prisma.eventReminder.count(),
     prisma.product.count(),
     prisma.order.count(),
-    prisma.galleryImage.count(),
+    prisma.galleryAlbum.count(),
+    prisma.achievement.count(),
+    prisma.clubTeam.count(),
   ]);
 
   const counts = {
@@ -130,6 +151,8 @@ export default async function AdminPage() {
     products,
     orders,
     gallery,
+    achievements,
+    teams,
   };
 
   return (
@@ -138,7 +161,12 @@ export default async function AdminPage() {
       description="Full database management — every table in one place. Changes go live immediately."
     >
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {SECTIONS.map(({ href, title, description, icon: Icon, countKey }) => (
+        {SECTIONS.filter(
+          (section) =>
+            SHOP_ENABLED ||
+            (section.href !== "/admin/products" &&
+              section.href !== "/admin/orders"),
+        ).map(({ href, title, description, icon: Icon, countKey }) => (
           <Link key={href} href={href}>
             <Card className="h-full transition-colors hover:border-jackals-red/40">
               <div className="mb-3 flex h-10 w-10 items-center justify-center bg-jackals-red/15 text-jackals-red-light">

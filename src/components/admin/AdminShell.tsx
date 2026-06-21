@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Award,
   Bell,
   Calendar,
   Camera,
@@ -15,7 +16,9 @@ import {
   ShoppingBag,
   UserCheck,
   Users,
+  Volleyball,
 } from "lucide-react";
+import { SHOP_ENABLED } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
 const ADMIN_LINKS = [
@@ -30,7 +33,13 @@ const ADMIN_LINKS = [
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
   { href: "/admin/gallery", label: "Gallery", icon: Camera },
-];
+  { href: "/admin/achievements", label: "Achievements", icon: Award },
+  { href: "/admin/teams", label: "Teams", icon: Volleyball },
+].filter(
+  (link) =>
+    SHOP_ENABLED ||
+    (link.href !== "/admin/products" && link.href !== "/admin/orders"),
+);
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

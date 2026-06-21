@@ -1,9 +1,15 @@
+import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { OrdersManager } from "@/components/admin/OrdersManager";
+import { SHOP_ENABLED } from "@/lib/features";
 
 export const metadata = { title: "Admin · Orders" };
 
 export default async function AdminOrdersPage() {
+  if (!SHOP_ENABLED) {
+    notFound();
+  }
+
   const orders = await prisma.order.findMany({
     include: {
       user: { select: { id: true, name: true, email: true } },

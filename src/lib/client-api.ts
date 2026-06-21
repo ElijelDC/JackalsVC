@@ -67,6 +67,22 @@ export async function apiPost<T>(
   }
 }
 
+export async function apiPostForm<T>(
+  url: string,
+  body: FormData,
+  fallbackError = "Something went wrong. Please try again.",
+): Promise<ApiResult<T>> {
+  try {
+    const res = await fetch(url, {
+      method: "POST",
+      body,
+    });
+    return parseResponse<T>(res, fallbackError);
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
 export async function apiPut<T>(
   url: string,
   body: unknown,

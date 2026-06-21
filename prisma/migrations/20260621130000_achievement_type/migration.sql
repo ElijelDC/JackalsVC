@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Achievement" ADD COLUMN "type" TEXT NOT NULL DEFAULT 'TOURNAMENT';

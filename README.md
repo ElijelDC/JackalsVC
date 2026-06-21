@@ -65,6 +65,8 @@ From there you can manage every table — no Prisma Studio required:
 | **Products** | `Product` — shop inventory |
 | **Orders** | `Order` / `OrderItem` — shop purchases |
 | **Gallery** | `GalleryImage` — photos |
+| **Achievements** | `Achievement` — club milestones and titles |
+| **Our teams** | `ClubTeam` — squads on the teams page |
 
 ### Demo accounts
 
@@ -94,7 +96,36 @@ Copy `.env` and update for production:
 ```env
 DATABASE_URL="file:./dev.db"
 AUTH_SECRET="your-secret-here"   # Generate with: openssl rand -base64 32
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+
+# Optional — live Instagram feed on the homepage
+INSTAGRAM_USER_ID=""             # Instagram Business/Creator account ID
+INSTAGRAM_ACCESS_TOKEN=""        # Long-lived token from Meta Graph API
+
+# Optional — contact form email delivery
+CONTACT_EMAIL="thunderjackals@gmail.com"
+SMTP_HOST=""                     # e.g. smtp.gmail.com
+SMTP_PORT="587"
+SMTP_USER=""                     # e.g. thunderjackals@gmail.com
+SMTP_PASS=""                     # Gmail app password
+SMTP_FROM=""                     # defaults to SMTP_USER
 ```
+
+### Instagram feed (optional)
+
+To show recent posts from [@jackalsvolleyball](https://www.instagram.com/jackalsvolleyball/) on the homepage:
+
+1. Convert the Instagram account to a **Business** or **Creator** account and link it to a Facebook Page.
+2. Create a [Meta Developer](https://developers.facebook.com/) app and add the **Instagram Graph API** product.
+3. Generate a long-lived access token with `instagram_basic` and `pages_show_list` permissions.
+4. Find your Instagram User ID (via Graph API Explorer: `GET /me/accounts` → page → `instagram_business_account`).
+5. Add `INSTAGRAM_USER_ID` and `INSTAGRAM_ACCESS_TOKEN` to `.env` and restart the dev server.
+
+Posts are cached for one hour. Without these variables, the homepage still shows the Instagram profile link but no feed section.
+
+### Contact form (optional)
+
+The contact page sends messages to `thunderjackals@gmail.com`. In development, submissions are logged to the console when SMTP is not configured. For production delivery, add Gmail (or other) SMTP credentials to `.env` and restart the server.
 
 The database lives at **`dev.db` in the project root** (not `prisma/dev.db`). Use `npm run db:studio` to inspect it.
 

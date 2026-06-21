@@ -410,52 +410,376 @@ async function main() {
     ],
   });
 
-  await prisma.galleryImage.deleteMany();
-  await prisma.galleryImage.createMany({
+  await prisma.galleryPhoto.deleteMany();
+  await prisma.galleryAlbum.deleteMany();
+
+  const galleryCover = (title: string) =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(title)}&background=7f1d1d&color=fca5a5&size=800&bold=true`;
+
+  const galleryPhoto = (label: string) =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(label)}&background=2a2b2b&color=fca5a5&size=800`;
+
+  await prisma.galleryAlbum.create({
+    data: {
+      title: "League Final Victory",
+      description: "Celebrating our 2025 league title — from the final whistle to the trophy lift.",
+      coverImageUrl: galleryCover("League Final"),
+      category: "MATCH",
+      featured: true,
+      sortOrder: 0,
+      photos: {
+        create: [
+          {
+            title: "Champions",
+            caption: "Lifting the league trophy together.",
+            imageUrl: galleryPhoto("Champions"),
+            sortOrder: 0,
+          },
+          {
+            title: "Final point",
+            caption: "The moment we clinched the title.",
+            imageUrl: galleryPhoto("Final Point"),
+            sortOrder: 1,
+          },
+          {
+            title: "Team huddle",
+            caption: "Pre-match huddle before the grand final.",
+            imageUrl: galleryPhoto("Team Huddle"),
+            sortOrder: 2,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.galleryAlbum.create({
+    data: {
+      title: "Tuesday Night Training",
+      description: "Intermediate squad sessions — blocking, attacking, and game play.",
+      coverImageUrl: galleryCover("Training Night"),
+      category: "TRAINING",
+      featured: true,
+      sortOrder: 1,
+      photos: {
+        create: [
+          {
+            caption: "Blocking drills at the net.",
+            imageUrl: galleryPhoto("Blocking Drills"),
+            sortOrder: 0,
+          },
+          {
+            caption: "Spike practice with the advanced squad.",
+            imageUrl: galleryPhoto("Spike Practice"),
+            sortOrder: 1,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.galleryAlbum.create({
+    data: {
+      title: "Summer BBQ Social",
+      description: "End of season celebration with the whole club off the court.",
+      coverImageUrl: galleryCover("Summer BBQ"),
+      category: "SOCIAL",
+      featured: true,
+      sortOrder: 2,
+      photos: {
+        create: [
+          {
+            caption: "Club members at the summer BBQ.",
+            imageUrl: galleryPhoto("BBQ Group"),
+            sortOrder: 0,
+          },
+          {
+            caption: "Awards and speeches in the sunshine.",
+            imageUrl: galleryPhoto("BBQ Awards"),
+            sortOrder: 1,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.galleryAlbum.create({
+    data: {
+      title: "Regional Tournament",
+      description: "Weekend tournament — pool play, knockouts, and team photos.",
+      coverImageUrl: galleryCover("Regional Tournament"),
+      category: "EVENT",
+      featured: true,
+      sortOrder: 3,
+      photos: {
+        create: [
+          {
+            caption: "Team photo before the semi-final.",
+            imageUrl: galleryPhoto("Tournament Team"),
+            sortOrder: 0,
+          },
+          {
+            caption: "Hard-fought 3-2 victory on the road.",
+            imageUrl: galleryPhoto("Away Day Win"),
+            sortOrder: 1,
+          },
+          {
+            caption: "Warm-up before first serve.",
+            imageUrl: galleryPhoto("Tournament Warmup"),
+            sortOrder: 2,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.achievement.deleteMany();
+  await prisma.achievement.createMany({
     data: [
       {
-        title: "League Final Victory",
-        description: "Celebrating our 2025 league title.",
-        imageUrl: "/gallery/match-1.jpg",
-        category: "MATCH",
-        featured: true,
+        title: "Division 3 Mens Champions",
+        season: "2024/25",
+        description:
+          "Secured 1st place in Volleyball Ireland's National League, being unbeaten in pool stages and playing 5-set thrillers in both quarter and semi finals against formidable opponents, finishing it off with a dominant win in the Grand Finals.",
+        imageUrl: "/achievements/d3m-champions.jpg",
+        type: "LEAGUE",
+        sortOrder: 0,
       },
       {
-        title: "Tuesday Night Training",
-        description: "Intermediate squad working on blocking drills.",
-        imageUrl: "/gallery/training-1.jpg",
-        category: "TRAINING",
-        featured: true,
+        title: "IVI Mens 2-Day Pre-Season Tournament Champions",
+        season: "2025",
+        description:
+          "Secured 1st place in IVI 2-day Preseason Tournament, after countless of tough battles against the other teams in day 1 the Jackal's Mens team managed to clinch play-offs, come day 2 they then manage to get past close battles in QF, SF and in the grand final edging out their opponents in a set for set battle, they came out on top!",
+        imageUrl: "/achievements/ivi-preseason-champions.jpg",
+        type: "TOURNAMENT",
+        sortOrder: 1,
       },
       {
-        title: "Summer BBQ Social",
-        description: "End of season celebration with the whole club.",
-        imageUrl: "/gallery/social-1.jpg",
-        category: "SOCIAL",
-        featured: true,
-      },
-      {
-        title: "Regional Tournament",
-        description: "Team photo before the semi-final.",
-        imageUrl: "/gallery/event-1.jpg",
-        category: "EVENT",
-        featured: true,
-      },
-      {
-        title: "Spike Practice",
-        description: "Advanced squad attacking drills.",
-        imageUrl: "/gallery/training-2.jpg",
-        category: "TRAINING",
-        featured: false,
-      },
-      {
-        title: "Away Day Win",
-        description: "Hard-fought 3-2 victory on the road.",
-        imageUrl: "/gallery/match-2.jpg",
-        category: "MATCH",
-        featured: false,
+        title: "IVI Mens Tournament Champions",
+        season: "2025",
+        description:
+          "Secured 1st place in IVI Men's Tournament, after fighting tough for a playoff's spot in their pool, they managed to clinch victory after a tough semi final's battle and closely edging out Pancada in the Men's Finals",
+        imageUrl: "/achievements/ivi-tournament-champions.jpg",
+        type: "TOURNAMENT",
+        sortOrder: 2,
       },
     ],
+  });
+
+  await prisma.clubTeamMember.deleteMany();
+  await prisma.clubTeam.deleteMany();
+
+  const teamAvatar = (name: string) =>
+    `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=7f1d1d&color=fca5a5&size=256&bold=true`;
+
+  await prisma.clubTeam.create({
+    data: {
+      name: "Men's 1st Team",
+      level: "Regional league",
+      description:
+        "Our top competitive squad, training twice weekly and competing in the regional league throughout the season.",
+      details:
+        "Training: Tuesdays & Thursdays, 7:30–9:30pm at the main hall.\n\nWe compete in Division 3 of the regional league and enter selected weekend tournaments. Selection is based on attendance, attitude, and match performance.",
+      sortOrder: 0,
+      members: {
+        create: [
+          {
+            name: "Alex Morgan",
+            role: "COACH",
+            position: "Head Coach",
+            photoUrl: teamAvatar("Alex Morgan"),
+            sortOrder: 0,
+          },
+          {
+            name: "James Patel",
+            role: "COACH",
+            position: "Assistant Coach",
+            photoUrl: teamAvatar("James Patel"),
+            sortOrder: 1,
+          },
+          {
+            name: "Mike Chen",
+            role: "PLAYER",
+            position: "Outside Hitter",
+            photoUrl: teamAvatar("Mike Chen"),
+            sortOrder: 0,
+          },
+          {
+            name: "Liam Davis",
+            role: "PLAYER",
+            position: "Setter",
+            photoUrl: teamAvatar("Liam Davis"),
+            sortOrder: 1,
+          },
+          {
+            name: "Tom Hughes",
+            role: "PLAYER",
+            position: "Opposite",
+            photoUrl: teamAvatar("Tom Hughes"),
+            sortOrder: 2,
+          },
+          {
+            name: "Sophie Taylor",
+            role: "PLAYER",
+            position: "Middle Blocker",
+            photoUrl: teamAvatar("Sophie Taylor"),
+            sortOrder: 3,
+          },
+          {
+            name: "Priya Sharma",
+            role: "PLAYER",
+            position: "Libero",
+            photoUrl: teamAvatar("Priya Sharma"),
+            sortOrder: 4,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.clubTeam.create({
+    data: {
+      name: "Women's 1st Team",
+      level: "Regional league",
+      description:
+        "A competitive women's side focused on league play, tournament weekends, and pushing for promotion.",
+      details:
+        "Training: Mondays & Wednesdays, 7:00–9:00pm.\n\nWe play in the regional women's league and target promotion this season. New players are welcome at open trials in September.",
+      sortOrder: 1,
+      members: {
+        create: [
+          {
+            name: "Sarah Jones",
+            role: "COACH",
+            position: "Head Coach",
+            photoUrl: teamAvatar("Sarah Jones"),
+            sortOrder: 0,
+          },
+          {
+            name: "Emma Williams",
+            role: "COACH",
+            position: "Assistant Coach",
+            photoUrl: teamAvatar("Emma Williams"),
+            sortOrder: 1,
+          },
+          {
+            name: "Olivia Brown",
+            role: "PLAYER",
+            position: "Outside Hitter",
+            photoUrl: teamAvatar("Olivia Brown"),
+            sortOrder: 0,
+          },
+          {
+            name: "Chloe Reid",
+            role: "PLAYER",
+            position: "Setter",
+            photoUrl: teamAvatar("Chloe Reid"),
+            sortOrder: 1,
+          },
+          {
+            name: "Hannah Clarke",
+            role: "PLAYER",
+            position: "Middle Blocker",
+            photoUrl: teamAvatar("Hannah Clarke"),
+            sortOrder: 2,
+          },
+          {
+            name: "Grace Miller",
+            role: "PLAYER",
+            position: "Libero",
+            photoUrl: teamAvatar("Grace Miller"),
+            sortOrder: 3,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.clubTeam.create({
+    data: {
+      name: "Development Squad",
+      level: "All levels welcome",
+      description:
+        "For players building confidence and skills — ideal if you are new to the club or working toward league selection.",
+      details:
+        "Sessions run every Friday, 6:30–8:00pm.\n\nFocused on fundamentals, game understanding, and match play in a supportive environment. No league commitment required.",
+      sortOrder: 2,
+      members: {
+        create: [
+          {
+            name: "James Patel",
+            role: "COACH",
+            position: "Lead Coach",
+            photoUrl: teamAvatar("James Patel"),
+            sortOrder: 0,
+          },
+          {
+            name: "Noah Brooks",
+            role: "PLAYER",
+            position: "Outside Hitter",
+            photoUrl: teamAvatar("Noah Brooks"),
+            sortOrder: 0,
+          },
+          {
+            name: "Ella Wright",
+            role: "PLAYER",
+            position: "Setter",
+            photoUrl: teamAvatar("Ella Wright"),
+            sortOrder: 1,
+          },
+          {
+            name: "Ryan Cooper",
+            role: "PLAYER",
+            position: "Middle Blocker",
+            photoUrl: teamAvatar("Ryan Cooper"),
+            sortOrder: 2,
+          },
+          {
+            name: "Mia Foster",
+            role: "PLAYER",
+            position: "Libero",
+            photoUrl: teamAvatar("Mia Foster"),
+            sortOrder: 3,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.clubTeam.create({
+    data: {
+      name: "Social & Fun Sessions",
+      level: "Open to everyone",
+      description:
+        "Mixed-level play with no league commitment. A great way to stay active, meet members, and enjoy the game.",
+      details:
+        "Drop-in every Sunday, 10:00am–12:00pm.\n\nMixed teams, relaxed rules, and all abilities welcome. Just turn up in comfortable kit — no selection or sign-up needed.",
+      sortOrder: 3,
+      members: {
+        create: [
+          {
+            name: "Alex Morgan",
+            role: "COACH",
+            position: "Session Coordinator",
+            photoUrl: teamAvatar("Alex Morgan"),
+            sortOrder: 0,
+          },
+          {
+            name: "Demo Member",
+            role: "PLAYER",
+            position: "All-rounder",
+            photoUrl: teamAvatar("Demo Member"),
+            sortOrder: 0,
+          },
+          {
+            name: "Club Admin",
+            role: "PLAYER",
+            position: "All-rounder",
+            photoUrl: teamAvatar("Club Admin"),
+            sortOrder: 1,
+          },
+        ],
+      },
+    },
   });
 
   await prisma.product.deleteMany();

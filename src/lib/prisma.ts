@@ -16,19 +16,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Bump when schema changes so dev hot-reload picks up a fresh client.
-const PRISMA_SCHEMA_VERSION = 10;
-
-function inlineSchemaIncludes(client: PrismaClient, marker: string) {
-  const schema = (
-    client as unknown as { _engineConfig?: { inlineSchema?: string } }
-  )._engineConfig?.inlineSchema;
-  return schema?.includes(marker) ?? false;
-}
+const PRISMA_SCHEMA_VERSION = 16;
 
 function isPrismaClientCurrent(client: PrismaClient) {
   return (
-    typeof client.trainingOccurrenceException?.findUnique === "function" &&
-    inlineSchemaIncludes(client, "clubIban")
+    typeof client.clubTeam?.findMany === "function" &&
+    typeof client.clubTeamMember?.findMany === "function" &&
+    typeof client.galleryAlbum?.findMany === "function" &&
+    typeof client.achievement?.findMany === "function"
   );
 }
 

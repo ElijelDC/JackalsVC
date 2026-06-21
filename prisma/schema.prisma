@@ -119,14 +119,61 @@ model Membership {
   createdAt DateTime       @default(now())
 }
 
-model GalleryImage {
+model GalleryAlbum {
+  id            String         @id @default(cuid())
+  title         String
+  description   String?
+  coverImageUrl String
+  category      String
+  featured      Boolean        @default(false)
+  sortOrder     Int            @default(0)
+  createdAt     DateTime       @default(now())
+  photos        GalleryPhoto[]
+}
+
+model GalleryPhoto {
+  id        String       @id @default(cuid())
+  albumId   String
+  album     GalleryAlbum @relation(fields: [albumId], references: [id], onDelete: Cascade)
+  title     String?
+  caption   String?
+  imageUrl  String
+  sortOrder Int          @default(0)
+  createdAt DateTime     @default(now())
+}
+
+model Achievement {
   id          String   @id @default(cuid())
   title       String
-  description String?
-  imageUrl    String
-  category    String
-  featured    Boolean  @default(false)
+  season      String
+  description String
+  imageUrl    String?
+  type        String   @default("TOURNAMENT")
+  sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
+}
+
+model ClubTeam {
+  id          String           @id @default(cuid())
+  name        String
+  level       String
+  description String
+  details     String?
+  sortOrder   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  members     ClubTeamMember[]
+}
+
+model ClubTeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      ClubTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  name      String
+  role      String
+  position  String?
+  photoUrl  String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
 }
 
 model Product {

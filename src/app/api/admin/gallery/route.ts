@@ -1,16 +1,19 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { galleryImageSchema } from "@/lib/validations";
+import { galleryAlbumSchema } from "@/lib/validations";
 
 export async function GET() {
   const { response } = await requireAdmin();
   if (response) return response;
 
-  const images = await prisma.galleryImage.findMany({
-    orderBy: { createdAt: "desc" },
+  const albums = await prisma.galleryAlbum.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    include: {
+      _count: { select: { photos: true } },
+    },
   });
-  return NextResponse.json({ images });
+  return NextResponse.json({ albums });
 }
 
 export async function POST(request: Request) {
@@ -19,10 +22,19 @@ export async function POST(request: Request) {
 
   const { data, response: parseError } = await parseJsonBody(
     request,
-    galleryImageSchema,
+    galleryAlbumSchema,
   );
   if (parseError || !data) return parseError!;
 
-  const image = await prisma.galleryImage.create({ data });
-  return NextResponse.json({ image }, { status: 201 });
+  const album = await prisma.galleryAlbum.create({
+    data: {
+      title: data.title,
+      description: data.description ?? null,
+      coverImageUrl: data.coverImageUrl,
+      category: data.category,
+      featured: data.featured,
+      sortOrder: data.sortOrder,
+    },
+  });
+  return NextResponse.json({ album }, { status: 201 });
 }

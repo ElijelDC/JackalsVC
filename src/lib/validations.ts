@@ -159,12 +159,29 @@ export const productSchema = z.object({
   active: z.boolean(),
 });
 
-export const galleryImageSchema = z.object({
+export const galleryAlbumSchema = z.object({
   title: z.string().min(1, "Title is required"),
-  description: z.string().optional(),
-  imageUrl: z.string().min(1, "Image URL is required"),
+  description: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  coverImageUrl: z.string().min(1, "Cover image URL is required"),
   category: z.enum(["MATCH", "TRAINING", "SOCIAL", "EVENT"]),
   featured: z.boolean(),
+  sortOrder: z.number().int().min(0).default(0),
+});
+
+export const galleryPhotoSchema = z.object({
+  title: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  caption: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  imageUrl: z.string().min(1, "Image URL is required"),
+  sortOrder: z.number().int().min(0).default(0),
 });
 
 export const membershipPlanSchema = z.object({
@@ -194,4 +211,48 @@ export const membershipUpdateSchema = z.object({
 
 export const orderUpdateSchema = z.object({
   status: z.enum(["PENDING", "PAID", "SHIPPED", "CANCELLED"]),
+});
+
+export const contactSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  subject: z.string().min(3, "Subject must be at least 3 characters"),
+  message: z.string().min(10, "Message must be at least 10 characters"),
+});
+
+export const achievementSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  season: z.string().min(1, "Season is required"),
+  description: z.string().min(1, "Description is required"),
+  imageUrl: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  sortOrder: z.number().int().min(0).default(0),
+  type: z.enum(["LEAGUE", "TOURNAMENT"]).default("TOURNAMENT"),
+});
+
+export const clubTeamSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  level: z.string().min(1, "Level is required"),
+  description: z.string().min(1, "Description is required"),
+  details: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  sortOrder: z.number().int().min(0).default(0),
+});
+
+export const clubTeamMemberSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  role: z.enum(["PLAYER", "COACH"]),
+  position: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  photoUrl: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  sortOrder: z.number().int().min(0).default(0),
 });

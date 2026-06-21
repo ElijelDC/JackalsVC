@@ -1,23 +1,28 @@
+import { GalleryShowcase } from "@/components/gallery/GalleryShowcase";
 import { prisma } from "@/lib/prisma";
-import { GalleryGrid } from "@/components/gallery/GalleryGrid";
-import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 
 export const metadata = {
   title: "Gallery",
 };
 
 export default async function GalleryPage() {
-  const images = await prisma.galleryImage.findMany({
-    orderBy: { createdAt: "desc" },
+  const albums = await prisma.galleryAlbum.findMany({
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    include: {
+      _count: { select: { photos: true } },
+    },
   });
 
   return (
-    <PageContainer>
-      <PageHeader
-        title="Gallery"
-        description="Match highlights, training sessions, and club socials — captured on and off the court."
-      />
-      <GalleryGrid images={images} />
-    </PageContainer>
+    <GalleryShowcase
+      albums={albums.map((album) => ({
+        id: album.id,
+        title: album.title,
+        description: album.description,
+        coverImageUrl: album.coverImageUrl,
+        category: album.category,
+        photoCount: album._count.photos,
+      }))}
+    />
   );
 }
