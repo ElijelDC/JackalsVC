@@ -3,6 +3,7 @@ import { getAdminEventsPayload } from "@/lib/admin-events";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validations";
+import { savesEventAttendanceUrl } from "@/lib/event-reclub";
 import type { z } from "zod";
 
 function toEventData(data: z.infer<typeof eventSchema>) {
@@ -13,6 +14,9 @@ function toEventData(data: z.infer<typeof eventSchema>) {
     endDate: data.endDate ? new Date(data.endDate) : null,
     type: data.type,
     location: data.location || null,
+    attendanceUrl: savesEventAttendanceUrl(data.type)
+      ? data.attendanceUrl || null
+      : null,
   };
 }
 

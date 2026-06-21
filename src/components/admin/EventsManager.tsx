@@ -13,7 +13,10 @@ import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import {
   EventSourceFilter,
   filterEvents,
+  getEventTypeLabel,
 } from "@/lib/event-filters";
+import { SESSION_CATEGORIES, SESSION_MANAGER_CONFIG } from "@/lib/training-utils";
+import { isOpenReclubEvent } from "@/lib/event-reclub";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 
 type EventItem = {
@@ -27,9 +30,14 @@ type EventItem = {
   trainingSessionId: string | null;
   trainingOccurrenceDate: string | null;
   occurrenceCustomized?: boolean;
+  hasOccurrenceOverride?: boolean;
   coach?: string | null;
   attendanceUrl?: string | null;
+  paymentUrl?: string | null;
+  seriesAttendanceUrl?: string | null;
+  seriesPaymentUrl?: string | null;
   sessionDescription?: string | null;
+  sessionCategory?: string | null;
 };
 
 const EVENT_TYPES = ["TOURNAMENT", "SOCIAL", "MEETING"] as const;
@@ -48,6 +56,7 @@ const emptyForm = {
   location: "",
   coach: "",
   attendanceUrl: "",
+  paymentUrl: "",
 };
 
 export function EventsManager({ initialEvents }: { initialEvents: EventItem[] }) {
@@ -125,7 +134,12 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
       type: event.type as (typeof EVENT_TYPES)[number],
       location: event.location ?? "",
       coach: event.coach ?? "",
-      attendanceUrl: event.attendanceUrl ?? "",
+      attendanceUrl: event.hasOccurrenceOverride
+        ? (event.attendanceUrl ?? "")
+        : (event.seriesAttendanceUrl ?? event.attendanceUrl ?? ""),
+      paymentUrl: event.hasOccurrenceOverride
+        ? (event.paymentUrl ?? "")
+        : (event.seriesPaymentUrl ?? event.paymentUrl ?? ""),
     });
     setError(null);
     setMessage(null);
@@ -144,7 +158,8 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
       endDate: form.endDate ? new Date(form.endDate).toISOString() : undefined,
       location: form.location || undefined,
       coach: form.coach || undefined,
-      attendanceUrl: form.attendanceUrl || undefined,
+      attendanceUrl: form.attendanceUrl.trim() ? form.attendanceUrl.trim() : null,
+      paymentUrl: form.paymentUrl.trim() ? form.paymentUrl.trim() : null,
     };
 
     const manualPayload = {
@@ -225,10 +240,18 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
             Changes apply to this date only. To update every session in the
             series, use{" "}
             <a
-              href="/admin/training"
+              href={
+                events.find((e) => e.id === editingId)?.sessionCategory ===
+                SESSION_CATEGORIES.FUN
+                  ? SESSION_MANAGER_CONFIG.FUN.adminPath
+                  : SESSION_MANAGER_CONFIG.WEEKLY.adminPath
+              }
               className="font-medium text-jackals-red-light hover:text-jackals-red"
             >
-              Weekly training
+              {events.find((e) => e.id === editingId)?.sessionCategory ===
+              SESSION_CATEGORIES.FUN
+                ? "Fun sessions"
+                : "Weekly training"}
             </a>
             .
           </p>
@@ -259,7 +282,7 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
               >
                 {EVENT_TYPES.map((type) => (
                   <option key={type} value={type}>
-                    {type}
+                    {getEventTypeLabel(type)}
                   </option>
                 ))}
               </Select>
@@ -292,6 +315,22 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
               onChange={(e) => setForm({ ...form, endDate: e.target.value })}
             />
           </div>
+          {!editingTrainingOccurrence && isOpenReclubEvent(form.type) && (
+            <div className="sm:col-span-2">
+              <Label htmlFor="event-attendanceUrl">
+                Reclub link (optional)
+              </Label>
+              <Input
+                id="event-attendanceUrl"
+                type="url"
+                value={form.attendanceUrl}
+                onChange={(e) =>
+                  setForm({ ...form, attendanceUrl: e.target.value })
+                }
+                placeholder="https://reclub.co/..."
+              />
+            </div>
+          )}
           {editingTrainingOccurrence && (
             <>
               <div>
@@ -316,6 +355,22 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
                   placeholder="https://reclub.co/..."
                 />
               </div>
+              {form.type === "FUN" && (
+                <div>
+                  <Label htmlFor="event-paymentUrl">
+                    Payment link (optional)
+                  </Label>
+                  <Input
+                    id="event-paymentUrl"
+                    type="url"
+                    value={form.paymentUrl}
+                    onChange={(e) =>
+                      setForm({ ...form, paymentUrl: e.target.value })
+                    }
+                    placeholder="https://..."
+                  />
+                </div>
+              )}
             </>
           )}
           <div className="sm:col-span-2">
@@ -366,16 +421,18 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
             <AdminListItem
               key={event.id}
               title={event.title}
-              subtitle={`${format(new Date(event.startDate), "d MMM yyyy HH:mm")} · ${event.type}${event.location ? ` · ${event.location}` : ""}`}
+              subtitle={`${format(new Date(event.startDate), "d MMM yyyy HH:mm")} · ${getEventTypeLabel(event.type)}${event.location ? ` · ${event.location}` : ""}`}
               note={
                 event.trainingSessionId
-                  ? event.occurrenceCustomized
-                    ? "Recurring training · this date customized"
-                    : "Recurring training"
+                  ? `${event.type === "FUN" ? "Fun session" : "Recurring training"}${event.occurrenceCustomized ? " · this date customized" : ""}`
                   : undefined
               }
               secondaryHref={
-                event.trainingSessionId ? "/admin/training" : undefined
+                event.trainingSessionId
+                  ? event.sessionCategory === SESSION_CATEGORIES.FUN
+                    ? SESSION_MANAGER_CONFIG.FUN.adminPath
+                    : SESSION_MANAGER_CONFIG.WEEKLY.adminPath
+                  : undefined
               }
               secondaryLabel={
                 event.trainingSessionId ? "Edit full series →" : undefined

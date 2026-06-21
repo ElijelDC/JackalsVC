@@ -32,6 +32,14 @@ export const trainingSessionSchema = z
       (val) => (val === "" || val == null ? undefined : val),
       z.string().url("Must be a valid URL").optional(),
     ),
+    paymentUrl: z.preprocess(
+      (val) => (val === "" || val == null ? undefined : val),
+      z.string().url("Must be a valid URL").optional(),
+    ),
+    reclubUsername: z.preprocess(
+      (val) => (val === "" || val == null ? undefined : val),
+      z.string().min(1).optional(),
+    ),
     recurring: z.boolean(),
     recurrenceWeeks: z.number().int().min(1).max(52),
     sessionDate: z.preprocess(
@@ -92,8 +100,12 @@ export const trainingOccurrenceSchema = z.object({
   location: z.string().optional(),
   coach: z.string().optional(),
   attendanceUrl: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
-    z.string().url("Must be a valid URL").optional(),
+    (val) => (val === "" || val === undefined ? null : val),
+    z.union([z.string().url("Must be a valid URL"), z.null()]).optional(),
+  ),
+  paymentUrl: z.preprocess(
+    (val) => (val === "" || val === undefined ? null : val),
+    z.union([z.string().url("Must be a valid URL"), z.null()]).optional(),
   ),
 });
 
@@ -104,6 +116,10 @@ export const eventSchema = z.object({
   endDate: z.string().optional(),
   type: z.enum(["TOURNAMENT", "SOCIAL", "MEETING"]),
   location: z.string().optional(),
+  attendanceUrl: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().url("Must be a valid URL").optional(),
+  ),
 });
 
 export const productSchema = z.object({

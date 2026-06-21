@@ -14,7 +14,7 @@ export default async function AppLayout({
     <SessionProvider session={session}>
       <Header session={session} />
       <main className="flex-1">{children}</main>
-      <Footer />
+      <Footer isLoggedIn={Boolean(session?.user)} />
     </SessionProvider>
   );
 }

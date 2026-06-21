@@ -1,8 +1,10 @@
+import { auth } from "@/auth";
 import Link from "next/link";
 import { Zap } from "lucide-react";
 import { format } from "date-fns";
 import { prisma } from "@/lib/prisma";
-import { FEATURE_ITEMS } from "@/lib/navigation";
+import { visibleFeatureItems } from "@/lib/navigation";
+import { getEventTypeLabel, MEMBER_ONLY_EVENT_TYPES } from "@/lib/event-filters";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,9 +18,18 @@ export const metadata = {
 };
 
 export default async function HomePage() {
+  const session = await auth();
+  const isLoggedIn = Boolean(session?.user);
+  const featureItems = visibleFeatureItems(isLoggedIn);
+
   const [upcomingEvents, featuredProducts, featuredImages] = await Promise.all([
     prisma.event.findMany({
-      where: { startDate: { gte: new Date() } },
+      where: {
+        startDate: { gte: new Date() },
+        ...(isLoggedIn
+          ? {}
+          : { type: { notIn: [...MEMBER_ONLY_EVENT_TYPES] } }),
+      },
       orderBy: { startDate: "asc" },
       take: 3,
     }),
@@ -44,11 +55,11 @@ export default async function HomePage() {
                 events, membership, and official club gear all in one place.
               </p>
               <div className="mt-10 flex flex-wrap gap-4">
+                <Link href="/fun-sessions">
+                  <Button variant="outline">Fun sessions</Button>
+                </Link>
                 <Link href="/register">
                   <Button>Join the club</Button>
-                </Link>
-                <Link href="/training">
-                  <Button variant="outline">View training times</Button>
                 </Link>
               </div>
             </div>
@@ -75,7 +86,7 @@ export default async function HomePage() {
           Everything you need
         </h2>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {FEATURE_ITEMS.map(({ href, icon: Icon, label, description }) => (
+          {featureItems.map(({ href, icon: Icon, label, description }) => (
             <Link key={href} href={href}>
               <Card className="h-full transition-colors hover:border-jackals-red/40 hover:bg-jackals-surface">
                 <div className="mb-4 flex h-10 w-10 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse">
@@ -103,7 +114,7 @@ export default async function HomePage() {
             <div className="grid gap-4 md:grid-cols-3">
               {upcomingEvents.map((event) => (
                 <Card key={event.id}>
-                  <Badge className="mb-2">{event.type}</Badge>
+                  <Badge className="mb-2">{getEventTypeLabel(event.type)}</Badge>
                   <CardTitle>{event.title}</CardTitle>
                   <CardDescription>
                     {format(event.startDate, "EEEE, d MMMM yyyy")}

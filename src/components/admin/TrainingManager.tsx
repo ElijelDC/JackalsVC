@@ -11,6 +11,8 @@ import {
   defaultRecurringFrom,
   defaultRecurringTo,
   formatRecurrenceLabel,
+  SESSION_CATEGORIES,
+  type SessionManagerConfig,
 } from "@/lib/training-utils";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import { DAYS_OF_WEEK } from "@/lib/utils";
@@ -26,6 +28,8 @@ type TrainingSession = {
   description: string | null;
   coach: string | null;
   attendanceUrl: string | null;
+  paymentUrl: string | null;
+  reclubUsername: string | null;
   recurring: boolean;
   recurrenceWeeks: number;
   recurringFrom: string | null;
@@ -50,6 +54,8 @@ function createEmptyForm() {
     description: "",
     coach: "",
     attendanceUrl: "",
+    paymentUrl: "",
+    reclubUsername: "",
     recurring: true,
     recurrenceWeeks: "1",
     recurringFrom: defaultRecurringFrom(),
@@ -81,6 +87,8 @@ function toFormState(session: TrainingSession) {
     description: normalized.description ?? "",
     coach: normalized.coach ?? "",
     attendanceUrl: normalized.attendanceUrl ?? "",
+    paymentUrl: normalized.paymentUrl ?? "",
+    reclubUsername: normalized.reclubUsername ?? "",
     recurring: normalized.recurring,
     recurrenceWeeks: String(normalized.recurrenceWeeks),
     recurringFrom: normalized.recurringFrom
@@ -97,8 +105,10 @@ function toFormState(session: TrainingSession) {
 
 export function TrainingManager({
   initialSessions,
+  config,
 }: {
   initialSessions: TrainingSession[];
+  config: SessionManagerConfig;
 }) {
   const router = useRouter();
   const [sessions, setSessions] = useState(initialSessions);
@@ -118,10 +128,10 @@ export function TrainingManager({
 
   const loadSessions = useCallback(async () => {
     const result = await apiGet<{ sessions: TrainingSession[] }>(
-      "/api/admin/training",
+      config.apiBasePath,
     );
     if (result.ok) setSessions(result.data.sessions.map(normalizeSession));
-  }, []);
+  }, [config.apiBasePath]);
 
   const startEdit = (session: TrainingSession) => {
     setEditingId(session.id);
@@ -149,6 +159,14 @@ export function TrainingManager({
       description: form.description || undefined,
       coach: form.coach || undefined,
       attendanceUrl: form.attendanceUrl || undefined,
+      paymentUrl:
+        config.category === SESSION_CATEGORIES.FUN
+          ? form.paymentUrl || undefined
+          : undefined,
+      reclubUsername:
+        config.category === SESSION_CATEGORIES.FUN
+          ? form.reclubUsername || undefined
+          : undefined,
       recurring,
       recurrenceWeeks: recurring ? Number(form.recurrenceWeeks) : 1,
       recurringFrom: recurring ? form.recurringFrom : undefined,
@@ -166,8 +184,8 @@ export function TrainingManager({
     const payload = buildPayload();
 
     const result = editingId
-      ? await apiPut(`/api/admin/training/${editingId}`, payload)
-      : await apiPost("/api/admin/training", payload);
+      ? await apiPut(`${config.apiBasePath}/${editingId}`, payload)
+      : await apiPost(config.apiBasePath, payload);
 
     setLoading(false);
 
@@ -176,19 +194,21 @@ export function TrainingManager({
       return;
     }
 
-    setMessage(editingId ? "Training session updated." : "Training session added.");
+    setMessage(
+      editingId ? "Session updated." : "Session added.",
+    );
     resetForm();
     await loadSessions();
     router.refresh();
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this training session and its calendar entries?")) return;
+    if (!confirm(config.deleteConfirm)) return;
 
     setDeletingId(id);
     setListError(null);
 
-    const result = await apiDelete(`/api/admin/training/${id}`);
+    const result = await apiDelete(`${config.apiBasePath}/${id}`);
     setDeletingId(null);
 
     if (!result.ok) {
@@ -208,8 +228,8 @@ export function TrainingManager({
 
   return (
     <AdminSection
-      title="Training schedule"
-      description="Set up recurring weekly sessions or one-off special sessions. All sessions sync to the calendar automatically."
+      title={config.sectionTitle}
+      description={config.sectionDescription}
     >
       <AdminFormCard
         title={editingId ? "Edit session" : "Add new session"}
@@ -217,7 +237,7 @@ export function TrainingManager({
         message={message}
         onSubmit={handleSubmit}
         onCancel={editingId ? resetForm : undefined}
-        submitLabel={editingId ? "Save changes" : "Add session"}
+        submitLabel={editingId ? "Save changes" : config.addLabel}
         loading={loading}
       >
         <p className="rounded border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
@@ -410,6 +430,35 @@ export function TrainingManager({
               placeholder="https://reclub.co/..."
             />
           </div>
+          {config.category === SESSION_CATEGORIES.FUN && (
+            <div>
+              <Label htmlFor="reclubUsername">
+                ReClub username (for payment reference)
+              </Label>
+              <Input
+                id="reclubUsername"
+                value={form.reclubUsername}
+                onChange={(e) =>
+                  setForm({ ...form, reclubUsername: e.target.value })
+                }
+                placeholder="e.g. JackalsVC"
+              />
+            </div>
+          )}
+          {config.category === SESSION_CATEGORIES.FUN && (
+            <div>
+              <Label htmlFor="paymentUrl">Payment link (optional)</Label>
+              <Input
+                id="paymentUrl"
+                type="url"
+                value={form.paymentUrl}
+                onChange={(e) =>
+                  setForm({ ...form, paymentUrl: e.target.value })
+                }
+                placeholder="https://..."
+              />
+            </div>
+          )}
 
           <div className="sm:col-span-2">
             <Label htmlFor="description">Description (optional)</Label>
@@ -433,26 +482,29 @@ export function TrainingManager({
           Current sessions ({sessions.length})
         </h3>
         {sessions.length === 0 ? (
-          <p className="text-sm text-zinc-400">No training sessions yet.</p>
+          <p className="text-sm text-zinc-400">{config.emptyListMessage}</p>
         ) : (
           sessions.map((session) => (
             <AdminListItem
               key={session.id}
               title={session.title}
-              subtitle={`${formatRecurrenceLabel({
-                recurring: session.recurring,
-                dayOfWeek: session.dayOfWeek,
-                recurrenceWeeks: session.recurrenceWeeks,
-                sessionDate: session.sessionDate
-                  ? new Date(session.sessionDate)
-                  : null,
-                recurringFrom: session.recurringFrom
-                  ? new Date(session.recurringFrom)
-                  : null,
-                recurringTo: session.recurringTo
-                  ? new Date(session.recurringTo)
-                  : null,
-              })} · ${session.startTime}–${session.endTime} · ${session.location} · ${session.level}`}
+              subtitle={`${formatRecurrenceLabel(
+                {
+                  recurring: session.recurring,
+                  dayOfWeek: session.dayOfWeek,
+                  recurrenceWeeks: session.recurrenceWeeks,
+                  sessionDate: session.sessionDate
+                    ? new Date(session.sessionDate)
+                    : null,
+                  recurringFrom: session.recurringFrom
+                    ? new Date(session.recurringFrom)
+                    : null,
+                  recurringTo: session.recurringTo
+                    ? new Date(session.recurringTo)
+                    : null,
+                },
+                { includeDateRange: true },
+              )} · ${session.startTime}–${session.endTime} · ${session.location} · ${session.level}`}
               onEdit={() => startEdit(session)}
               onDelete={() => handleDelete(session.id)}
               deleting={deletingId === session.id}

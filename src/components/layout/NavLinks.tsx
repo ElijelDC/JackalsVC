@@ -2,20 +2,22 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { NAV_ITEMS } from "@/lib/navigation";
+import { visibleNavItems } from "@/lib/navigation";
 
 export function NavLinks({
   pathname,
   onNavigate,
   variant = "desktop",
+  isLoggedIn = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
   variant?: "desktop" | "mobile";
+  isLoggedIn?: boolean;
 }) {
   return (
     <>
-      {NAV_ITEMS.map(({ href, label, icon: Icon }) => (
+      {visibleNavItems(isLoggedIn).map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}

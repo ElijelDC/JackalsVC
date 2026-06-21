@@ -116,7 +116,11 @@ export function Header({ session }: { session: Session | null }) {
         <Logo size="nav" showText className="min-w-[52px] shrink-0" />
 
         <nav className="hidden items-center gap-0.5 md:flex">
-          <NavLinks pathname={pathname} variant="desktop" />
+          <NavLinks
+            pathname={pathname}
+            variant="desktop"
+            isLoggedIn={Boolean(session?.user)}
+          />
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
@@ -135,7 +139,12 @@ export function Header({ session }: { session: Session | null }) {
       {mobileOpen && (
         <nav className="border-t border-white/10 bg-background px-4 py-4 md:hidden">
           <div className="flex flex-col gap-1">
-            <NavLinks pathname={pathname} onNavigate={closeMobile} variant="mobile" />
+            <NavLinks
+              pathname={pathname}
+              onNavigate={closeMobile}
+              variant="mobile"
+              isLoggedIn={Boolean(session?.user)}
+            />
             <hr className="my-2 border-white/10" />
             <AuthActions session={session} onNavigate={closeMobile} variant="mobile" />
           </div>

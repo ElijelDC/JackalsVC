@@ -80,7 +80,7 @@ async function main() {
   for (const user of demoUsers) {
     await prisma.user.upsert({
       where: { email: user.email },
-      update: { name: user.name, role: user.role },
+      update: { name: user.name, role: user.role, passwordHash },
       create: {
         name: user.name,
         email: user.email,
@@ -102,6 +102,7 @@ async function main() {
   await prisma.trainingSession.createMany({
     data: [
       {
+        category: "WEEKLY",
         title: "Beginners Session",
         dayOfWeek: 2,
         startTime: "18:00",
@@ -115,6 +116,7 @@ async function main() {
         recurringTo: seasonEnd,
       },
       {
+        category: "WEEKLY",
         title: "Intermediate Training",
         dayOfWeek: 2,
         startTime: "19:30",
@@ -128,6 +130,7 @@ async function main() {
         recurringTo: seasonEnd,
       },
       {
+        category: "WEEKLY",
         title: "Advanced Squad",
         dayOfWeek: 4,
         startTime: "19:00",
@@ -141,6 +144,7 @@ async function main() {
         recurringTo: seasonEnd,
       },
       {
+        category: "FUN",
         title: "Open Session",
         dayOfWeek: 6,
         startTime: "10:00",
@@ -148,8 +152,10 @@ async function main() {
         location: "Sports Hall A",
         level: "All Levels",
         coach: "Rotating coaches",
-        description: "Mixed-level play. All members welcome.",
+        description: "Mixed-level social play. Everyone welcome.",
         attendanceUrl: "https://forms.gle/example-open",
+        paymentUrl: "https://forms.gle/example-open-payment",
+        reclubUsername: "JackalsVC",
         recurringFrom: seasonStart,
         recurringTo: seasonEnd,
       },
@@ -166,6 +172,7 @@ async function main() {
         startDate: new Date(now.getFullYear(), now.getMonth() + 1, 15, 9, 0),
         type: "TOURNAMENT",
         location: "Regional Sports Centre",
+        attendanceUrl: "https://forms.gle/example-tournament",
       },
       {
         title: "End of Season Social",
@@ -188,6 +195,7 @@ async function main() {
         endDate: new Date(now.getFullYear(), now.getMonth() + 1, 6, 17, 0),
         type: "SOCIAL",
         location: "Sports Hall A & B",
+        attendanceUrl: "https://forms.gle/example-preseason-camp",
       },
     ],
   });

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { TrainingSession } from "@/generated/prisma/client";
 
 export function startOfOccurrenceDay(date: Date) {
   const result = new Date(date);
@@ -28,6 +29,7 @@ type OccurrenceOverrideInput = {
   location?: string | null;
   coach?: string | null;
   attendanceUrl?: string | null;
+  paymentUrl?: string | null;
 };
 
 export async function upsertOccurrenceOverride(
@@ -55,6 +57,7 @@ export async function upsertOccurrenceOverride(
       location: data.location ?? null,
       coach: data.coach ?? null,
       attendanceUrl: data.attendanceUrl ?? null,
+      paymentUrl: data.paymentUrl ?? null,
     },
     update: {
       cancelled: data.cancelled ?? false,
@@ -65,6 +68,7 @@ export async function upsertOccurrenceOverride(
       location: data.location ?? null,
       coach: data.coach ?? null,
       attendanceUrl: data.attendanceUrl ?? null,
+      paymentUrl: data.paymentUrl ?? null,
     },
   });
 }
@@ -82,6 +86,7 @@ export async function cancelTrainingOccurrence(
     location: null,
     coach: null,
     attendanceUrl: null,
+    paymentUrl: null,
   });
 }
 
@@ -113,8 +118,27 @@ export async function resolveOccurrenceAttendanceUrl(
     select: { attendanceUrl: true },
   });
 
-  if (override?.attendanceUrl) return override.attendanceUrl;
+  if (override) return override.attendanceUrl;
   return sessionAttendanceUrl;
+}
+
+export async function resolveOccurrencePaymentUrl(
+  trainingSessionId: string,
+  occurrenceDate: Date,
+  sessionPaymentUrl: string | null,
+) {
+  const override = await prisma.trainingOccurrenceException.findUnique({
+    where: {
+      trainingSessionId_occurrenceDate: {
+        trainingSessionId,
+        occurrenceDate: startOfOccurrenceDay(occurrenceDate),
+      },
+    },
+    select: { paymentUrl: true },
+  });
+
+  if (override) return override.paymentUrl;
+  return sessionPaymentUrl;
 }
 
 export function isOccurrenceCustomized(override: {
@@ -126,6 +150,7 @@ export function isOccurrenceCustomized(override: {
   location: string | null;
   coach: string | null;
   attendanceUrl: string | null;
+  paymentUrl: string | null;
 }) {
   return (
     !override.cancelled &&
@@ -136,7 +161,8 @@ export function isOccurrenceCustomized(override: {
         override.endDate ||
         override.location ||
         override.coach ||
-        override.attendanceUrl,
+        override.attendanceUrl ||
+        override.paymentUrl,
     )
   );
 }

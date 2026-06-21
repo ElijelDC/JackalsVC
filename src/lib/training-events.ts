@@ -4,9 +4,14 @@ import type { TrainingSession } from "@/generated/prisma/client";
 import {
   getOccurrenceOverridesMap,
   occurrenceDateKey,
+  resolveOccurrenceAttendanceUrl,
+  resolveOccurrencePaymentUrl,
   startOfOccurrenceDay,
 } from "@/lib/training-occurrence";
-import { buildTrainingEventDescription } from "@/lib/training-utils";
+import {
+  buildTrainingEventDescription,
+  calendarEventTypeForCategory,
+} from "@/lib/training-utils";
 
 export {
   toTrainingSessionData,
@@ -82,7 +87,7 @@ function buildEventPayload(
     description: buildSessionDescription(session),
     startDate,
     endDate,
-    type: "TRAINING",
+    type: calendarEventTypeForCategory(session.category),
     location: session.location,
     trainingSessionId: session.id,
     trainingOccurrenceDate: startOfOccurrenceDay(occurrenceDate),
@@ -111,7 +116,7 @@ function applyOverride(
         : buildSessionDescription(session),
     startDate: override.startDate ?? defaultStart,
     endDate: override.endDate ?? defaultEnd,
-    type: "TRAINING",
+    type: calendarEventTypeForCategory(session.category),
     location: override.location ?? session.location,
     trainingSessionId: session.id,
     trainingOccurrenceDate: startOfOccurrenceDay(occurrenceDate),
@@ -179,6 +184,62 @@ export function buildTrainingOccurrences(
   }
 
   return occurrences;
+}
+
+export async function getNextUpcomingOccurrence(session: TrainingSession) {
+  const overrides = await getOccurrenceOverridesMap(session.id);
+  const occurrences = buildTrainingOccurrences(session, overrides);
+  const now = new Date();
+
+  return (
+    occurrences
+      .filter((occurrence) => occurrence.endDate >= now)
+      .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0] ?? null
+  );
+}
+
+export async function resolveUpcomingAttendanceUrl(session: TrainingSession) {
+  const nextOccurrence = await getNextUpcomingOccurrence(session);
+
+  if (nextOccurrence) {
+    const url = await resolveOccurrenceAttendanceUrl(
+      session.id,
+      nextOccurrence.trainingOccurrenceDate,
+      session.attendanceUrl,
+    );
+
+    return {
+      url,
+      occurrenceDate: nextOccurrence.trainingOccurrenceDate,
+    };
+  }
+
+  return {
+    url: session.attendanceUrl,
+    occurrenceDate: null,
+  };
+}
+
+export async function resolveUpcomingPaymentUrl(session: TrainingSession) {
+  const nextOccurrence = await getNextUpcomingOccurrence(session);
+
+  if (nextOccurrence) {
+    const url = await resolveOccurrencePaymentUrl(
+      session.id,
+      nextOccurrence.trainingOccurrenceDate,
+      session.paymentUrl,
+    );
+
+    return {
+      url,
+      occurrenceDate: nextOccurrence.trainingOccurrenceDate,
+    };
+  }
+
+  return {
+    url: session.paymentUrl,
+    occurrenceDate: null,
+  };
 }
 
 export async function syncTrainingSessionEvents(session: TrainingSession) {

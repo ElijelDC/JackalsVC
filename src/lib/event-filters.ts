@@ -1,4 +1,5 @@
 import {
+  addWeeks,
   endOfDay,
   endOfMonth,
   parseISO,
@@ -17,6 +18,12 @@ export type EventListItem = {
   trainingSessionId?: string | null;
   trainingOccurrenceDate?: string | null;
   occurrenceCustomized?: boolean;
+  coach?: string | null;
+  attendanceUrl?: string | null;
+  paymentUrl?: string | null;
+  reclubUsername?: string | null;
+  sessionDescription?: string | null;
+  sessionCategory?: string | null;
 };
 
 export type EventSourceFilter = "all" | "training" | "manual";
@@ -24,10 +31,58 @@ export type EventSourceFilter = "all" | "training" | "manual";
 export const EVENT_TYPE_OPTIONS = [
   { value: "", label: "All types" },
   { value: "TRAINING", label: "Training" },
+  { value: "FUN", label: "Fun Sessions" },
   { value: "TOURNAMENT", label: "Tournament" },
-  { value: "SOCIAL", label: "Social" },
+  { value: "SOCIAL", label: "Skills Clinics" },
   { value: "MEETING", label: "Meeting" },
 ] as const;
+
+export const MEMBER_ONLY_EVENT_TYPES = ["TRAINING", "MEETING"] as const;
+
+export function getEventTypeLabel(type: string): string {
+  const option = EVENT_TYPE_OPTIONS.find((o) => o.value === type);
+  return option?.label ?? type;
+}
+
+export function getEventTypeOptions(isLoggedIn: boolean) {
+  if (isLoggedIn) return EVENT_TYPE_OPTIONS;
+  return EVENT_TYPE_OPTIONS.filter(
+    (option) =>
+      !MEMBER_ONLY_EVENT_TYPES.includes(
+        option.value as (typeof MEMBER_ONLY_EVENT_TYPES)[number],
+      ),
+  );
+}
+
+export function filterEventsForViewer<T extends { type: string }>(
+  events: T[],
+  isLoggedIn: boolean,
+): T[] {
+  if (isLoggedIn) return events;
+  return events.filter(
+    (event) =>
+      !MEMBER_ONLY_EVENT_TYPES.includes(
+        event.type as (typeof MEMBER_ONLY_EVENT_TYPES)[number],
+      ),
+  );
+}
+
+export const FUN_SESSION_CALENDAR_WEEKS = 3;
+
+export function filterFunSessionsWithinCalendarHorizon<
+  T extends { type: string; startDate: string | Date },
+>(
+  events: T[],
+  weeksAhead = FUN_SESSION_CALENDAR_WEEKS,
+  now = new Date(),
+): T[] {
+  const through = addWeeks(now, weeksAhead);
+
+  return events.filter((event) => {
+    if (event.type !== "FUN") return true;
+    return new Date(event.startDate) <= through;
+  });
+}
 
 export const EVENT_SOURCE_OPTIONS = [
   { value: "all", label: "All events" },
