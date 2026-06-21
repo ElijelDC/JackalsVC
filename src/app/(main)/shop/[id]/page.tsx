@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { ProductDetail } from "@/components/shop/ProductDetail";
 import { PageContainer } from "@/components/layout/PageShell";
-import { SHOP_ENABLED } from "@/lib/features";
+import { requireShopEnabled } from "@/lib/shop.server";
 
 export async function generateMetadata({
   params,
@@ -20,9 +20,7 @@ export default async function ProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  if (!SHOP_ENABLED) {
-    notFound();
-  }
+  requireShopEnabled();
 
   const { id } = await params;
   const product = await prisma.product.findUnique({ where: { id, active: true } });

@@ -31,7 +31,7 @@ type GalleryAlbum = {
   photos: GalleryPhoto[];
 };
 
-const CATEGORIES = ["MATCH", "TRAINING", "SOCIAL", "EVENT"] as const;
+import { GALLERY_CATEGORIES } from "@/lib/gallery-categories";
 
 const emptyPhotoForm = {
   title: "",
@@ -51,7 +51,7 @@ export function GalleryAlbumEditor({
     title: initialAlbum.title,
     description: initialAlbum.description ?? "",
     coverImageUrl: initialAlbum.coverImageUrl,
-    category: initialAlbum.category as (typeof CATEGORIES)[number],
+    category: initialAlbum.category as (typeof GALLERY_CATEGORIES)[number],
     featured: initialAlbum.featured,
     sortOrder: initialAlbum.sortOrder,
   });
@@ -207,7 +207,7 @@ export function GalleryAlbumEditor({
       title: initialAlbum.title,
       description: initialAlbum.description ?? "",
       coverImageUrl: initialAlbum.coverImageUrl,
-      category: initialAlbum.category as (typeof CATEGORIES)[number],
+      category: initialAlbum.category as (typeof GALLERY_CATEGORIES)[number],
       featured: initialAlbum.featured,
       sortOrder: initialAlbum.sortOrder,
     });
@@ -254,11 +254,11 @@ export function GalleryAlbumEditor({
               onChange={(event) =>
                 setAlbumForm({
                   ...albumForm,
-                  category: event.target.value as (typeof CATEGORIES)[number],
+                  category: event.target.value as (typeof GALLERY_CATEGORIES)[number],
                 })
               }
             >
-              {CATEGORIES.map((category) => (
+              {GALLERY_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>

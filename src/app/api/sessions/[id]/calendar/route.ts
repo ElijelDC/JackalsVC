@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { buildIcsContent, icsFilename } from "@/lib/calendar-export";
+import { buildIcsContent, createIcsDownloadResponse } from "@/lib/calendar-export";
 import {
   assertSessionCalendarAccess,
   getSessionCalendarExport,
@@ -60,11 +60,5 @@ export async function GET(
     },
   );
 
-  return new Response(ics, {
-    headers: {
-      "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${icsFilename(calendarExport.title)}"`,
-      "Cache-Control": "no-store",
-    },
-  });
+  return createIcsDownloadResponse(ics, calendarExport.title);
 }

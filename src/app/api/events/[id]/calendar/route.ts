@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { icsFilename, buildIcsContent } from "@/lib/calendar-export";
+import { buildIcsContent, createIcsDownloadResponse } from "@/lib/calendar-export";
 import { getPublicEvent } from "@/lib/public-events";
 import { absoluteSiteUrl, siteUrlFromRequest } from "@/lib/site-url";
 
@@ -27,11 +27,5 @@ export async function GET(
     { eventPageUrl },
   );
 
-  return new Response(ics, {
-    headers: {
-      "Content-Type": "text/calendar; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${icsFilename(event.title)}"`,
-      "Cache-Control": "no-store",
-    },
-  });
+  return createIcsDownloadResponse(ics, event.title);
 }

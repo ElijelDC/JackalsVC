@@ -95,3 +95,16 @@ export function icsFilename(title: string) {
     .slice(0, 60);
   return `${slug || "event"}.ics`;
 }
+
+export function createIcsDownloadResponse(
+  ics: string,
+  title: string,
+): Response {
+  return new Response(ics, {
+    headers: {
+      "Content-Type": "text/calendar; charset=utf-8",
+      "Content-Disposition": `attachment; filename="${icsFilename(title)}"`,
+      "Cache-Control": "no-store",
+    },
+  });
+}

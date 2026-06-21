@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { format } from "date-fns";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { EntryFeeBadge, JoinFlowStep } from "@/components/training/JoinFlowStep";
@@ -52,24 +51,6 @@ function PaymentInstructions({
   );
 }
 
-function JoinStep({
-  step,
-  title,
-  children,
-  isLast = false,
-}: {
-  step: number;
-  title: string;
-  children: ReactNode;
-  isLast?: boolean;
-}) {
-  return (
-    <JoinFlowStep step={step} title={title} isLast={isLast}>
-      {children}
-    </JoinFlowStep>
-  );
-}
-
 export function FunSessionJoinFlow({
   paymentUrl,
   payLabel = "Pay on ReClub",
@@ -107,7 +88,7 @@ export function FunSessionJoinFlow({
       </div>
 
       <div className="px-6 py-6">
-        <JoinStep step={1} title="Pay session fee">
+        <JoinFlowStep step={1} title="Pay session fee">
           {sessionFee != null && (
             <EntryFeeBadge amount={sessionFee} label="session fee" />
           )}
@@ -120,9 +101,9 @@ export function FunSessionJoinFlow({
           <div className="mt-4">
             <PaymentLink href={paymentUrl} label={payLabel} />
           </div>
-        </JoinStep>
+        </JoinFlowStep>
 
-        <JoinStep step={2} title="Register attendance" isLast>
+        <JoinFlowStep step={2} title="Register attendance" isLast>
           {attendanceUrl ? (
             <>
               <p className="text-sm text-zinc-400">
@@ -141,7 +122,7 @@ export function FunSessionJoinFlow({
           ) : (
             <ReclubLinkUnavailable />
           )}
-        </JoinStep>
+        </JoinFlowStep>
       </div>
     </Card>
   );
