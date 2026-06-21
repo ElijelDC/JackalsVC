@@ -15,8 +15,10 @@ export type EnrichedEvent = Event & {
   seriesAttendanceUrl: string | null;
   seriesPaymentUrl: string | null;
   reclubUsername: string | null;
+  sessionFee: number | null;
   sessionDescription: string | null;
   sessionCategory: string | null;
+  clubIban: string | null;
 };
 
 function enrichSingleEvent(
@@ -46,10 +48,12 @@ function enrichSingleEvent(
       : (session?.attendanceUrl ?? event.attendanceUrl ?? null),
     paymentUrl: override
       ? override.paymentUrl
-      : (session?.paymentUrl ?? null),
+      : (session?.paymentUrl ?? event.paymentUrl ?? null),
     seriesAttendanceUrl: session?.attendanceUrl ?? null,
     seriesPaymentUrl: session?.paymentUrl ?? null,
-    reclubUsername: session?.reclubUsername ?? null,
+    reclubUsername: session?.reclubUsername ?? event.reclubUsername ?? null,
+    sessionFee: session?.sessionFee ?? event.sessionFee ?? null,
+    clubIban: event.clubIban ?? null,
     sessionDescription:
       override?.description ?? session?.description ?? null,
     sessionCategory: session?.category ?? null,
@@ -97,6 +101,8 @@ export function serializeEnrichedEvent(event: EnrichedEvent) {
     seriesAttendanceUrl: event.seriesAttendanceUrl,
     seriesPaymentUrl: event.seriesPaymentUrl,
     reclubUsername: event.reclubUsername,
+    sessionFee: event.sessionFee,
+    clubIban: event.clubIban,
     sessionDescription: event.sessionDescription,
     sessionCategory: event.sessionCategory,
   };

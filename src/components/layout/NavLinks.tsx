@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { visibleNavItems } from "@/lib/navigation";
+import { visibleNavItems, isNavItemActive } from "@/lib/navigation";
 
 export function NavLinks({
   pathname,
@@ -27,7 +27,7 @@ export function NavLinks({
             variant === "desktop"
               ? "gap-1.5 px-3 py-2 text-sm clip-slash-reverse"
               : "gap-2 px-3 py-2.5 text-sm",
-            pathname === href
+            isNavItemActive(pathname, href)
               ? "bg-jackals-red/15 text-jackals-red-light"
               : variant === "desktop"
                 ? "text-zinc-400 hover:bg-white/5 hover:text-white"

@@ -34,6 +34,7 @@ model TrainingSession {
   attendanceUrl String?
   paymentUrl      String?
   reclubUsername  String?
+  sessionFee      Float?
   recurring       Boolean  @default(true)
   recurrenceWeeks Int      @default(1)
   recurringFrom   DateTime?
@@ -73,6 +74,10 @@ model Event {
   type              String
   location          String?
   attendanceUrl     String?
+  paymentUrl        String?
+  sessionFee        Float?
+  reclubUsername    String?
+  clubIban          String?
   trainingSessionId String?
   trainingSession   TrainingSession? @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
   trainingOccurrenceDate DateTime?

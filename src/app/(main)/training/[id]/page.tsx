@@ -62,6 +62,7 @@ export default async function TrainingSessionPage({
       attendanceUrl={context.attendanceUrl}
       paymentUrl={context.paymentUrl}
       reclubUsername={context.session.reclubUsername}
+      sessionFee={context.session.sessionFee}
       attendanceOccurrenceDate={context.attendanceOccurrenceDate}
       canAccessAttendance={canAccessAttendance}
       isLoggedIn

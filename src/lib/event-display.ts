@@ -1,5 +1,52 @@
 import { format } from "date-fns";
 
+export const EVENT_TYPE_STYLES: Record<
+  string,
+  { badge: string; dot: string; cell: string; accent: string }
+> = {
+  TRAINING: {
+    badge: "bg-blue-500/15 text-blue-400",
+    dot: "bg-blue-400",
+    cell: "bg-blue-500/10",
+    accent: "border-blue-400/50",
+  },
+  FUN: {
+    badge: "bg-amber-500/15 text-amber-400",
+    dot: "bg-amber-400",
+    cell: "bg-amber-500/10",
+    accent: "border-amber-400/50",
+  },
+  TOURNAMENT: {
+    badge: "bg-jackals-red/15 text-jackals-red-light",
+    dot: "bg-jackals-red-light",
+    cell: "bg-jackals-red/10",
+    accent: "border-jackals-red/50",
+  },
+  SOCIAL: {
+    badge: "bg-purple-500/15 text-purple-400",
+    dot: "bg-purple-400",
+    cell: "bg-purple-500/10",
+    accent: "border-purple-400/50",
+  },
+  MEETING: {
+    badge: "bg-green-500/15 text-green-400",
+    dot: "bg-green-400",
+    cell: "bg-green-500/10",
+    accent: "border-green-400/50",
+  },
+};
+
+export const DEFAULT_EVENT_TYPE_STYLE = {
+  badge: "bg-zinc-500/15 text-zinc-400",
+  dot: "bg-zinc-400",
+  cell: "bg-white/5",
+  accent: "border-white/20",
+};
+
+export function getEventTypeStyle(type: string) {
+  return EVENT_TYPE_STYLES[type] ?? DEFAULT_EVENT_TYPE_STYLE;
+}
+
 export function formatEventDateTime(
   startDate: string,
   endDate: string | null,

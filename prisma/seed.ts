@@ -11,6 +11,15 @@ const dbUrl =
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
 const prisma = new PrismaClient({ adapter });
 
+function formatDemoDate(date: Date) {
+  return date.toLocaleDateString("en-GB", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 12);
 
@@ -156,6 +165,7 @@ async function main() {
         attendanceUrl: "https://forms.gle/example-open",
         paymentUrl: "https://forms.gle/example-open-payment",
         reclubUsername: "JackalsVC",
+        sessionFee: 10,
         recurringFrom: seasonStart,
         recurringTo: seasonEnd,
       },
@@ -173,6 +183,8 @@ async function main() {
         type: "TOURNAMENT",
         location: "Regional Sports Centre",
         attendanceUrl: "https://forms.gle/example-tournament",
+        sessionFee: 60,
+        clubIban: "IE29 AIBK 9311 5212 3456 78",
       },
       {
         title: "End of Season Social",
@@ -201,6 +213,83 @@ async function main() {
   });
 
   await syncAllTrainingSessionEvents();
+
+  // Demo calendar days with multiple events (for UI testing)
+  const nextDay = (dayOfWeek: number) => {
+    const date = new Date();
+    date.setHours(0, 0, 0, 0);
+    const daysUntil = (dayOfWeek - date.getDay() + 7) % 7;
+    date.setDate(date.getDate() + daysUntil);
+    return date;
+  };
+
+  const atTime = (base: Date, hours: number, minutes = 0) => {
+    const date = new Date(base);
+    date.setHours(hours, minutes, 0, 0);
+    return date;
+  };
+
+  const busySaturday = nextDay(6);
+  const busyFriday = nextDay(5);
+
+  await prisma.event.createMany({
+    data: [
+      // 3 events on the same Saturday: Open Session (synced FUN) + clinic + mini tournament
+      {
+        title: "Serve & Pass Clinic",
+        description:
+          "Skills clinic focused on serving and passing — open to all members.",
+        startDate: atTime(busySaturday, 13, 0),
+        endDate: atTime(busySaturday, 15, 0),
+        type: "SOCIAL",
+        location: "Sports Hall B",
+        attendanceUrl: "https://forms.gle/example-clinic",
+        paymentUrl: "https://forms.gle/example-clinic-payment",
+        sessionFee: 15,
+        reclubUsername: "JackalsVC",
+      },
+      {
+        title: "Club Mini Tournament",
+        description:
+          "Friendly round-robin — mixed teams, all levels welcome.",
+        startDate: atTime(busySaturday, 16, 0),
+        endDate: atTime(busySaturday, 18, 0),
+        type: "TOURNAMENT",
+        location: "Sports Hall A",
+        attendanceUrl: "https://forms.gle/example-mini-tournament",
+        sessionFee: 35,
+        clubIban: "IE29 AIBK 9311 5212 3456 78",
+      },
+      // 2 events on the same Friday
+      {
+        title: "Setter Workshop",
+        description: "Hands-on setting drills with Coach Sarah.",
+        startDate: atTime(busyFriday, 18, 0),
+        endDate: atTime(busyFriday, 19, 30),
+        type: "SOCIAL",
+        location: "Sports Hall A",
+        attendanceUrl: "https://forms.gle/example-setter-workshop",
+        paymentUrl: "https://forms.gle/example-setter-workshop-payment",
+        sessionFee: 12,
+        reclubUsername: "JackalsVC",
+      },
+      {
+        title: "Friday Night Social",
+        description: "Casual mixed games and music after training.",
+        startDate: atTime(busyFriday, 20, 0),
+        endDate: atTime(busyFriday, 22, 0),
+        type: "SOCIAL",
+        location: "Sports Hall A",
+      },
+    ],
+  });
+
+  console.log(
+    `Calendar demo: ${formatDemoDate(busySaturday)} has Open Session + clinic + tournament (3 events).`,
+  );
+  console.log(
+    `Calendar demo: ${formatDemoDate(busyFriday)} has setter workshop + social (2 events).`,
+  );
 
   await prisma.membership.deleteMany();
   await prisma.membershipPlan.deleteMany();

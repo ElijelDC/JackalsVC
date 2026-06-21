@@ -16,7 +16,11 @@ import {
   getEventTypeLabel,
 } from "@/lib/event-filters";
 import { SESSION_CATEGORIES, SESSION_MANAGER_CONFIG } from "@/lib/training-utils";
-import { isOpenReclubEvent } from "@/lib/event-reclub";
+import {
+  isOpenReclubEvent,
+  savesClinicPaymentFields,
+  savesTournamentPaymentFields,
+} from "@/lib/event-reclub";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 
 type EventItem = {
@@ -34,6 +38,9 @@ type EventItem = {
   coach?: string | null;
   attendanceUrl?: string | null;
   paymentUrl?: string | null;
+  sessionFee?: number | null;
+  reclubUsername?: string | null;
+  clubIban?: string | null;
   seriesAttendanceUrl?: string | null;
   seriesPaymentUrl?: string | null;
   sessionDescription?: string | null;
@@ -57,6 +64,9 @@ const emptyForm = {
   coach: "",
   attendanceUrl: "",
   paymentUrl: "",
+  sessionFee: "40",
+  reclubUsername: "JackalsVC",
+  clubIban: "IE29 AIBK 9311 5212 3456 78",
 };
 
 export function EventsManager({ initialEvents }: { initialEvents: EventItem[] }) {
@@ -140,6 +150,14 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
       paymentUrl: event.hasOccurrenceOverride
         ? (event.paymentUrl ?? "")
         : (event.seriesPaymentUrl ?? event.paymentUrl ?? ""),
+      sessionFee:
+        event.sessionFee != null
+          ? String(event.sessionFee)
+          : event.type === "TOURNAMENT"
+            ? "40"
+            : "15",
+      reclubUsername: event.reclubUsername ?? "JackalsVC",
+      clubIban: event.clubIban ?? "IE29 AIBK 9311 5212 3456 78",
     });
     setError(null);
     setMessage(null);
@@ -165,6 +183,23 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
     const manualPayload = {
       ...occurrencePayload,
       type: form.type,
+      ...(savesClinicPaymentFields(form.type)
+        ? {
+            paymentUrl: form.paymentUrl.trim() || undefined,
+            sessionFee: form.sessionFee.trim()
+              ? Number(form.sessionFee)
+              : undefined,
+            reclubUsername: form.reclubUsername.trim() || undefined,
+          }
+        : {}),
+      ...(savesTournamentPaymentFields(form.type)
+        ? {
+            sessionFee: form.sessionFee.trim()
+              ? Number(form.sessionFee)
+              : undefined,
+            clubIban: form.clubIban.trim() || undefined,
+          }
+        : {}),
     };
 
     const result = editingId
@@ -318,7 +353,9 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
           {!editingTrainingOccurrence && isOpenReclubEvent(form.type) && (
             <div className="sm:col-span-2">
               <Label htmlFor="event-attendanceUrl">
-                Reclub link (optional)
+                {form.type === "TOURNAMENT"
+                  ? "Register team on ReClub link"
+                  : "Reclub link (optional)"}
               </Label>
               <Input
                 id="event-attendanceUrl"
@@ -331,6 +368,85 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
               />
             </div>
           )}
+          {!editingTrainingOccurrence && savesClinicPaymentFields(form.type) && (
+            <>
+              <div>
+                <Label htmlFor="event-sessionFee">Session fee (EUR)</Label>
+                <Input
+                  id="event-sessionFee"
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={form.sessionFee}
+                  onChange={(e) =>
+                    setForm({ ...form, sessionFee: e.target.value })
+                  }
+                  placeholder="15"
+                  required
+                />
+              </div>
+              <div>
+                <Label htmlFor="event-reclubUsername">
+                  ReClub username (for payment reference)
+                </Label>
+                <Input
+                  id="event-reclubUsername"
+                  value={form.reclubUsername}
+                  onChange={(e) =>
+                    setForm({ ...form, reclubUsername: e.target.value })
+                  }
+                  placeholder="e.g. JackalsVC"
+                />
+              </div>
+              <div className="sm:col-span-2">
+                <Label htmlFor="event-paymentUrl">Payment link</Label>
+                <Input
+                  id="event-paymentUrl"
+                  type="url"
+                  value={form.paymentUrl}
+                  onChange={(e) =>
+                    setForm({ ...form, paymentUrl: e.target.value })
+                  }
+                  placeholder="https://..."
+                  required
+                />
+              </div>
+            </>
+          )}
+          {!editingTrainingOccurrence &&
+            savesTournamentPaymentFields(form.type) && (
+              <>
+                <div>
+                  <Label htmlFor="event-tournamentFee">
+                    Tournament fee (EUR)
+                  </Label>
+                  <Input
+                    id="event-tournamentFee"
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={form.sessionFee}
+                    onChange={(e) =>
+                      setForm({ ...form, sessionFee: e.target.value })
+                    }
+                    placeholder="40"
+                    required
+                  />
+                </div>
+                <div className="sm:col-span-2">
+                  <Label htmlFor="event-clubIban">Club IBAN</Label>
+                  <Input
+                    id="event-clubIban"
+                    value={form.clubIban}
+                    onChange={(e) =>
+                      setForm({ ...form, clubIban: e.target.value })
+                    }
+                    placeholder="IE29 AIBK 9311 5212 3456 78"
+                    required
+                  />
+                </div>
+              </>
+            )}
           {editingTrainingOccurrence && (
             <>
               <div>

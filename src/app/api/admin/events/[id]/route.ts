@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { toManualEventData } from "@/lib/manual-event-data";
 import { prisma } from "@/lib/prisma";
 import { syncTrainingSessionEvents } from "@/lib/training-events";
 import {
@@ -9,22 +10,7 @@ import {
   upsertOccurrenceOverride,
 } from "@/lib/training-occurrence";
 import { eventSchema, trainingOccurrenceSchema } from "@/lib/validations";
-import { savesEventAttendanceUrl } from "@/lib/event-reclub";
 import type { z } from "zod";
-
-function toEventData(data: z.infer<typeof eventSchema>) {
-  return {
-    title: data.title,
-    description: data.description || null,
-    startDate: new Date(data.startDate),
-    endDate: data.endDate ? new Date(data.endDate) : null,
-    type: data.type,
-    location: data.location || null,
-    attendanceUrl: savesEventAttendanceUrl(data.type)
-      ? data.attendanceUrl || null
-      : null,
-  };
-}
 
 function toOccurrenceOverrideData(data: z.infer<typeof trainingOccurrenceSchema>) {
   return {
@@ -114,7 +100,7 @@ export async function PUT(
 
     const event = await prisma.event.update({
       where: { id },
-      data: toEventData(data),
+      data: toManualEventData(data),
     });
 
     return NextResponse.json({ success: true, event: serializeEvent(event) });

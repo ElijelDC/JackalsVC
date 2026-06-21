@@ -30,6 +30,7 @@ type TrainingSession = {
   attendanceUrl: string | null;
   paymentUrl: string | null;
   reclubUsername: string | null;
+  sessionFee: number | null;
   recurring: boolean;
   recurrenceWeeks: number;
   recurringFrom: string | null;
@@ -56,6 +57,7 @@ function createEmptyForm() {
     attendanceUrl: "",
     paymentUrl: "",
     reclubUsername: "",
+    sessionFee: "10",
     recurring: true,
     recurrenceWeeks: "1",
     recurringFrom: defaultRecurringFrom(),
@@ -89,6 +91,8 @@ function toFormState(session: TrainingSession) {
     attendanceUrl: normalized.attendanceUrl ?? "",
     paymentUrl: normalized.paymentUrl ?? "",
     reclubUsername: normalized.reclubUsername ?? "",
+    sessionFee:
+      normalized.sessionFee != null ? String(normalized.sessionFee) : "10",
     recurring: normalized.recurring,
     recurrenceWeeks: String(normalized.recurrenceWeeks),
     recurringFrom: normalized.recurringFrom
@@ -166,6 +170,10 @@ export function TrainingManager({
       reclubUsername:
         config.category === SESSION_CATEGORIES.FUN
           ? form.reclubUsername || undefined
+          : undefined,
+      sessionFee:
+        config.category === SESSION_CATEGORIES.FUN && form.sessionFee.trim()
+          ? Number(form.sessionFee)
           : undefined,
       recurring,
       recurrenceWeeks: recurring ? Number(form.recurrenceWeeks) : 1,
@@ -442,6 +450,23 @@ export function TrainingManager({
                   setForm({ ...form, reclubUsername: e.target.value })
                 }
                 placeholder="e.g. JackalsVC"
+              />
+            </div>
+          )}
+          {config.category === SESSION_CATEGORIES.FUN && (
+            <div>
+              <Label htmlFor="sessionFee">Session fee (EUR)</Label>
+              <Input
+                id="sessionFee"
+                type="number"
+                min="0.01"
+                step="0.01"
+                value={form.sessionFee}
+                onChange={(e) =>
+                  setForm({ ...form, sessionFee: e.target.value })
+                }
+                placeholder="10"
+                required
               />
             </div>
           )}

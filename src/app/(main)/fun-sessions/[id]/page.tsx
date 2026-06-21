@@ -61,12 +61,13 @@ export default async function FunSessionPage({
       attendanceUrl={context.attendanceUrl}
       paymentUrl={context.paymentUrl}
       reclubUsername={context.session.reclubUsername}
+      sessionFee={context.session.sessionFee}
       attendanceOccurrenceDate={context.attendanceOccurrenceDate}
       canAccessAttendance={canAccessAttendance}
       isLoggedIn={isLoggedIn}
       attendBasePath={config.attendPath}
-      listPath={config.publicPath}
-      listLabel={config.seriesName}
+      listPath="/whats-on"
+      listLabel="What's On?"
       siteOrigin={siteOrigin}
       openAttendance
     />

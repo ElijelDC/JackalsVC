@@ -4,8 +4,8 @@ import {
   Camera,
   Dumbbell,
   Home,
-  PartyPopper,
   ShoppingBag,
+  Sparkles,
   Users,
 } from "lucide-react";
 
@@ -20,11 +20,11 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
   {
-    href: "/fun-sessions",
-    label: "Fun Sessions",
-    icon: PartyPopper,
+    href: "/whats-on",
+    label: "What's On?",
+    icon: Sparkles,
     description:
-      "Social volleyball sessions open to everyone — drop in and play.",
+      "Fun sessions, tournaments, and skills clinics open to everyone.",
   },
   {
     href: "/training",
@@ -64,6 +64,12 @@ export const NAV_ITEMS: NavItem[] = [
       "Official jerseys, kit, and merchandise — show your club colours.",
   },
 ];
+
+export function isNavItemActive(pathname: string, href: string) {
+  if (pathname === href) return true;
+  if (href === "/whats-on" && pathname.startsWith("/fun-sessions")) return true;
+  return href !== "/" && pathname.startsWith(`${href}/`);
+}
 
 export function visibleNavItems(isLoggedIn: boolean) {
   return NAV_ITEMS.filter((item) => !item.requiresAuth || isLoggedIn);

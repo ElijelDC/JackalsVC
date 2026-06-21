@@ -22,6 +22,8 @@ export type EventListItem = {
   attendanceUrl?: string | null;
   paymentUrl?: string | null;
   reclubUsername?: string | null;
+  sessionFee?: number | null;
+  clubIban?: string | null;
   sessionDescription?: string | null;
   sessionCategory?: string | null;
 };
