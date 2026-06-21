@@ -8,16 +8,32 @@ datasource db {
 }
 
 model User {
-  id             String          @id @default(cuid())
-  name           String
-  email          String          @unique
-  passwordHash   String
-  role           String          @default("MEMBER")
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  memberships    Membership[]
-  orders         Order[]
-  eventReminders EventReminder[]
+  id                 String            @id @default(cuid())
+  name               String
+  email              String            @unique
+  passwordHash       String
+  role               String            @default("MEMBER")
+  registrationCodeId String?
+  registrationCode   RegistrationCode? @relation(fields: [registrationCodeId], references: [id])
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  memberships        Membership[]
+  orders             Order[]
+  payments           Payment[]
+  eventReminders     EventReminder[]
+  eventSignups       EventSignup[]
+}
+
+model RegistrationCode {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  label     String?
+  maxUses   Int?
+  usedCount Int       @default(0)
+  active    Boolean   @default(true)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  users     User[]
 }
 
 model TrainingSession {
@@ -66,23 +82,36 @@ model TrainingOccurrenceException {
 }
 
 model Event {
-  id                String           @id @default(cuid())
-  title             String
-  description       String?
-  startDate         DateTime
-  endDate           DateTime?
-  type              String
-  location          String?
-  attendanceUrl     String?
-  paymentUrl        String?
-  sessionFee        Float?
-  reclubUsername    String?
-  clubIban          String?
-  trainingSessionId String?
-  trainingSession   TrainingSession? @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  id                     String           @id @default(cuid())
+  title                  String
+  description            String?
+  startDate              DateTime
+  endDate                DateTime?
+  type                   String
+  location               String?
+  attendanceUrl          String?
+  paymentUrl             String?
+  sessionFee             Float?
+  reclubUsername         String?
+  clubIban               String?
+  trainingSessionId      String?
+  trainingSession        TrainingSession? @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
   trainingOccurrenceDate DateTime?
-  createdAt         DateTime         @default(now())
-  reminders         EventReminder[]
+  createdAt              DateTime         @default(now())
+  reminders              EventReminder[]
+  signups                EventSignup[]
+}
+
+model EventSignup {
+  id        String   @id @default(cuid())
+  userId    String
+  eventId   String
+  status    String   @default("CONFIRMED")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, eventId])
 }
 
 model EventReminder {
@@ -108,15 +137,73 @@ model MembershipPlan {
 }
 
 model Membership {
-  id        String         @id @default(cuid())
-  userId    String
-  planId    String
-  status    String         @default("ACTIVE")
-  startDate DateTime       @default(now())
-  endDate   DateTime
-  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan      MembershipPlan @relation(fields: [planId], references: [id])
-  createdAt DateTime       @default(now())
+  id              String         @id @default(cuid())
+  userId          String
+  planId          String
+  paymentSchedule String         @default("FULL")
+  status          String         @default("ACTIVE")
+  startDate       DateTime       @default(now())
+  endDate         DateTime
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan            MembershipPlan @relation(fields: [planId], references: [id])
+  payments        Payment[]
+  createdAt       DateTime       @default(now())
+}
+
+model Payment {
+  id                   String      @id @default(cuid())
+  userId               String
+  membershipId         String?
+  amount               Float
+  description          String
+  status               String      @default("PENDING")
+  method               String      @default("BANK_TRANSFER")
+  paymentReference     String
+  installmentNumber    Int?
+  dueDate              DateTime?
+  paidAt               DateTime?
+  sumupTransactionId   String?
+  sumupTransactionCode String?
+  sumupMatchedAt       DateTime?
+  proofScreenshotUrl   String?
+  proofSubmittedAt     DateTime?
+  user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  membership           Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
+  emailMatches         ProcessedPaymentEmail[]
+  createdAt            DateTime    @default(now())
+
+  @@unique([userId, paymentReference])
+  @@index([status, dueDate])
+  @@index([sumupTransactionId])
+}
+
+model ProcessedPaymentEmail {
+  id               String   @id @default(cuid())
+  messageId        String   @unique
+  fromAddress      String?
+  subject          String?
+  parsedAmount     Float?
+  parsedReference  String?
+  matchedPaymentId String?
+  matchedPayment   Payment? @relation(fields: [matchedPaymentId], references: [id], onDelete: SetNull)
+  status           String   @default("PROCESSED")
+  createdAt        DateTime @default(now())
+
+  @@index([status, createdAt])
+}
+
+model PaymentImportRecord {
+  id               String   @id @default(cuid())
+  rowKey           String   @unique
+  fileName         String?
+  amount           Float
+  reference        String?
+  transactionDate  DateTime?
+  matchedPaymentId String?
+  status           String
+  createdAt        DateTime @default(now())
+
+  @@index([status, createdAt])
 }
 
 model GalleryAlbum {

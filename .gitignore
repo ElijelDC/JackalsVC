@@ -45,3 +45,6 @@ next-env.d.ts
 /dev.db*
 /prisma/dev.db
 /prisma/dev.db-journal
+
+/public/uploads/payment-proofs/*
+!/public/uploads/payment-proofs/.gitkeep

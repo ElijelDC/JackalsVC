@@ -2,10 +2,16 @@ import path from "node:path";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@/generated/prisma/client";
 
-function createPrismaClient() {
-  const dbUrl =
-    process.env.DATABASE_URL ?? `file:${path.join(process.cwd(), "dev.db")}`;
+function resolveDatabaseUrl(): string {
+  if (process.env.DATABASE_URL?.trim()) {
+    return process.env.DATABASE_URL.trim();
+  }
 
+  return `file:${path.join(process.cwd(), "prisma", "dev.db")}`;
+}
+
+function createPrismaClient() {
+  const dbUrl = resolveDatabaseUrl();
   const adapter = new PrismaBetterSqlite3({ url: dbUrl });
   return new PrismaClient({ adapter });
 }
@@ -16,14 +22,16 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Bump when schema changes so dev hot-reload picks up a fresh client.
-const PRISMA_SCHEMA_VERSION = 16;
+const PRISMA_SCHEMA_VERSION = 17;
 
 function isPrismaClientCurrent(client: PrismaClient) {
   return (
     typeof client.clubTeam?.findMany === "function" &&
     typeof client.clubTeamMember?.findMany === "function" &&
     typeof client.galleryAlbum?.findMany === "function" &&
-    typeof client.achievement?.findMany === "function"
+    typeof client.achievement?.findMany === "function" &&
+    typeof client.registrationCode?.findMany === "function" &&
+    typeof client.paymentImportRecord?.findMany === "function"
   );
 }
 

@@ -111,3 +111,79 @@ export async function apiDelete(
     return { ok: false, error: fallbackError };
   }
 }
+
+type PaymentProofResponse = {
+  payment: {
+    id: string;
+    status: string;
+    proofScreenshotUrl: string | null;
+    proofSubmittedAt: string | null;
+  };
+  message: string;
+};
+
+export type CsvImportResult = {
+  matched: number;
+  scanned: number;
+  skippedDuplicates: number;
+  unmatchedRows: number;
+  unmatchedPayments: number;
+  fileName?: string;
+};
+
+export async function apiUploadPaymentProof(
+  paymentId: string,
+  file: File,
+  fallbackError = "Failed to upload screenshot",
+): Promise<ApiResult<PaymentProofResponse>> {
+  try {
+    const formData = new FormData();
+    formData.append("paymentId", paymentId);
+    formData.append("screenshot", file);
+
+    const res = await fetch("/api/payments/proof", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? fallbackError };
+    }
+
+    return { ok: true, data: data as PaymentProofResponse };
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
+export async function apiImportPaymentCsv(
+  file: File,
+  fallbackError = "Failed to import CSV",
+): Promise<ApiResult<CsvImportResult>> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch("/api/admin/payments/import-csv", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? fallbackError };
+    }
+
+    return { ok: true, data: data as CsvImportResult };
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
+export async function apiApprovePayment(
+  paymentId: string,
+  fallbackError = "Failed to approve payment",
+): Promise<ApiResult<{ payment: { id: string; status: string } }>> {
+  return apiPost(`/api/admin/payments/${paymentId}/approve`, {}, fallbackError);
+}

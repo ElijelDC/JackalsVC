@@ -103,6 +103,30 @@ async function main() {
     where: { email: "admin@jackalsvc.com" },
   });
 
+  await prisma.registrationCode.deleteMany();
+  await prisma.registrationCode.createMany({
+    data: [
+      {
+        code: "JACKALS-2026",
+        label: "2026 Season — All Squads",
+        maxUses: 100,
+        active: true,
+      },
+      {
+        code: "JACKALS-TRIAL",
+        label: "Trial Session Players",
+        maxUses: 20,
+        active: true,
+      },
+      {
+        code: "JACKALS-ADMIN",
+        label: "Committee Only",
+        maxUses: 5,
+        active: true,
+      },
+    ],
+  });
+
   await prisma.trainingSession.deleteMany();
   const seasonStart = new Date();
   const seasonEnd = new Date();
@@ -293,52 +317,20 @@ async function main() {
 
   await prisma.membership.deleteMany();
   await prisma.membershipPlan.deleteMany();
-  await prisma.membershipPlan.createMany({
-    data: [
-      {
-        name: "Casual",
-        description: "Perfect for occasional players.",
-        price: 25,
-        durationMonths: 1,
-        features: JSON.stringify([
-          "Access to open sessions",
-          "Club newsletter",
-          "Member events",
-        ]),
-      },
-      {
-        name: "Regular",
-        description: "Our most popular plan for weekly players.",
-        price: 60,
-        durationMonths: 3,
-        features: JSON.stringify([
-          "All training sessions",
-          "Tournament entry discounts",
-          "Club shop 10% off",
-          "Priority event booking",
-        ]),
-      },
-      {
-        name: "Competitive",
-        description: "Full access for league and tournament players.",
-        price: 100,
-        durationMonths: 6,
-        features: JSON.stringify([
-          "All training sessions",
-          "Squad selection eligibility",
-          "Free tournament entries",
-          "Club shop 15% off",
-          "Personalised kit discount",
-        ]),
-      },
-    ],
+  const seasonPlan = await prisma.membershipPlan.create({
+    data: {
+      name: "Season Membership",
+      description: "Full 7-month Jackals VC season membership for all club members.",
+      price: 400,
+      durationMonths: 7,
+      features: JSON.stringify([
+        "All training sessions",
+        "Club tournaments and events",
+        "Member shop discounts",
+        "Squad selection eligibility",
+      ]),
+    },
   });
-
-  const [casual, regular, competitive] = await Promise.all([
-    prisma.membershipPlan.findFirstOrThrow({ where: { name: "Casual" } }),
-    prisma.membershipPlan.findFirstOrThrow({ where: { name: "Regular" } }),
-    prisma.membershipPlan.findFirstOrThrow({ where: { name: "Competitive" } }),
-  ]);
 
   const memberUsers = await prisma.user.findMany({
     where: {
@@ -372,40 +364,39 @@ async function main() {
   await prisma.membership.createMany({
     data: [
       {
-        userId: userByEmail["member@jackalsvc.com"].id,
-        planId: casual.id,
-        status: "ACTIVE",
-        endDate: addMonths(1),
-      },
-      {
         userId: userByEmail["sarah.jones@jackalsvc.com"].id,
-        planId: regular.id,
+        planId: seasonPlan.id,
+        paymentSchedule: "FULL",
         status: "ACTIVE",
-        endDate: addMonths(3),
+        endDate: addMonths(7),
       },
       {
         userId: userByEmail["mike.chen@jackalsvc.com"].id,
-        planId: competitive.id,
+        planId: seasonPlan.id,
+        paymentSchedule: "INSTALLMENTS",
         status: "ACTIVE",
-        endDate: addMonths(6),
+        endDate: addMonths(7),
       },
       {
         userId: userByEmail["emma.williams@jackalsvc.com"].id,
-        planId: casual.id,
+        planId: seasonPlan.id,
+        paymentSchedule: "FULL",
         status: "EXPIRED",
         endDate: subtractMonths(1),
       },
       {
         userId: userByEmail["james.patel@jackalsvc.com"].id,
-        planId: regular.id,
+        planId: seasonPlan.id,
+        paymentSchedule: "MONTHLY",
         status: "CANCELLED",
         endDate: addMonths(2),
       },
       {
         userId: userByEmail["olivia.brown@jackalsvc.com"].id,
-        planId: casual.id,
+        planId: seasonPlan.id,
+        paymentSchedule: "MONTHLY",
         status: "ACTIVE",
-        endDate: addMonths(1),
+        endDate: addMonths(7),
       },
     ],
   });
@@ -845,8 +836,9 @@ async function main() {
 
   console.log("Seed complete.");
   console.log(`Admin: admin@jackalsvc.com / password123`);
+  console.log(`Member: member@jackalsvc.com / password123 (no membership — test checkout)`);
   console.log(`Members: any *@jackalsvc.com account / password123`);
-  console.log(`${demoUsers.length} demo users seeded (${demoUsers.length - 1} members + 1 admin).`);
+  console.log(`Club codes: JACKALS-2026, JACKALS-TRIAL, JACKALS-ADMIN`);
 }
 
 main()
