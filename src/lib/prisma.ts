@@ -16,14 +16,28 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Bump when schema changes so dev hot-reload picks up a fresh client.
-const PRISMA_SCHEMA_VERSION = 2;
+const PRISMA_SCHEMA_VERSION = 7;
+
+function inlineSchemaIncludes(client: PrismaClient, marker: string) {
+  const schema = (
+    client as unknown as { _engineConfig?: { inlineSchema?: string } }
+  )._engineConfig?.inlineSchema;
+  return schema?.includes(marker) ?? false;
+}
+
+function isPrismaClientCurrent(client: PrismaClient) {
+  return (
+    typeof client.trainingOccurrenceException?.findUnique === "function" &&
+    inlineSchemaIncludes(client, "reclubUsername")
+  );
+}
 
 function getPrismaClient() {
   const cached = globalForPrisma.prisma;
   if (
     cached &&
     globalForPrisma.prismaSchemaVersion === PRISMA_SCHEMA_VERSION &&
-    typeof cached.trainingOccurrenceException?.findMany === "function"
+    isPrismaClientCurrent(cached)
   ) {
     return cached;
   }

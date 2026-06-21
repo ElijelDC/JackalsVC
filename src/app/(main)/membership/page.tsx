@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { MembershipPlans } from "@/components/membership/MembershipPlans";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
@@ -7,6 +9,11 @@ export const metadata = {
 };
 
 export default async function MembershipPage() {
+  const session = await auth();
+  if (!session?.user) {
+    redirect("/login?callbackUrl=/membership");
+  }
+
   const plans = await prisma.membershipPlan.findMany({
     where: { active: true },
     orderBy: { price: "asc" },

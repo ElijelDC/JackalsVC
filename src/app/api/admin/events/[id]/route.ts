@@ -9,6 +9,7 @@ import {
   upsertOccurrenceOverride,
 } from "@/lib/training-occurrence";
 import { eventSchema, trainingOccurrenceSchema } from "@/lib/validations";
+import { savesEventAttendanceUrl } from "@/lib/event-reclub";
 import type { z } from "zod";
 
 function toEventData(data: z.infer<typeof eventSchema>) {
@@ -19,6 +20,9 @@ function toEventData(data: z.infer<typeof eventSchema>) {
     endDate: data.endDate ? new Date(data.endDate) : null,
     type: data.type,
     location: data.location || null,
+    attendanceUrl: savesEventAttendanceUrl(data.type)
+      ? data.attendanceUrl || null
+      : null,
   };
 }
 
@@ -30,7 +34,8 @@ function toOccurrenceOverrideData(data: z.infer<typeof trainingOccurrenceSchema>
     endDate: data.endDate ? new Date(data.endDate) : null,
     location: data.location || null,
     coach: data.coach?.trim() || null,
-    attendanceUrl: data.attendanceUrl || null,
+    attendanceUrl: data.attendanceUrl ?? null,
+    paymentUrl: data.paymentUrl ?? null,
   };
 }
 

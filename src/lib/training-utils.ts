@@ -1,11 +1,46 @@
-export function formatRecurrenceLabel(session: {
-  recurring: boolean;
-  dayOfWeek: number;
-  recurrenceWeeks: number;
-  sessionDate: Date | null;
-  recurringFrom?: Date | null;
-  recurringTo?: Date | null;
-}) {
+export const SESSION_CATEGORIES = {
+  WEEKLY: "WEEKLY",
+  FUN: "FUN",
+} as const;
+
+export type SessionCategory =
+  (typeof SESSION_CATEGORIES)[keyof typeof SESSION_CATEGORIES];
+
+export function calendarEventTypeForCategory(category: string) {
+  return category === SESSION_CATEGORIES.FUN ? "FUN" : "TRAINING";
+}
+
+export function serializeTrainingSession<
+  T extends {
+    recurring: boolean;
+    recurrenceWeeks: number;
+    recurringFrom: Date | null;
+    recurringTo: Date | null;
+    sessionDate: Date | null;
+  },
+>(session: T) {
+  return {
+    ...session,
+    recurring: session.recurring ?? true,
+    recurrenceWeeks: session.recurrenceWeeks ?? 1,
+    recurringFrom: session.recurringFrom?.toISOString() ?? null,
+    recurringTo: session.recurringTo?.toISOString() ?? null,
+    sessionDate: session.sessionDate?.toISOString() ?? null,
+  };
+}
+
+export function formatRecurrenceLabel(
+  session: {
+    recurring: boolean;
+    dayOfWeek: number;
+    recurrenceWeeks: number;
+    sessionDate: Date | null;
+    recurringFrom?: Date | null;
+    recurringTo?: Date | null;
+  },
+  options?: { includeDateRange?: boolean },
+) {
+  const includeDateRange = options?.includeDateRange ?? false;
   const days = [
     "Sunday",
     "Monday",
@@ -39,7 +74,7 @@ export function formatRecurrenceLabel(session: {
           ? `Every 4 weeks on ${day}`
           : `Every ${session.recurrenceWeeks} weeks on ${day}`;
 
-  if (session.recurringFrom && session.recurringTo) {
+  if (includeDateRange && session.recurringFrom && session.recurringTo) {
     return `${interval} · ${fmt(session.recurringFrom)} – ${fmt(session.recurringTo)}`;
   }
 
@@ -80,6 +115,8 @@ export function toTrainingSessionData(data: {
   description?: string;
   coach?: string;
   attendanceUrl?: string;
+  paymentUrl?: string;
+  reclubUsername?: string;
   recurring: boolean;
   recurrenceWeeks: number;
   sessionDate?: string;
@@ -96,6 +133,8 @@ export function toTrainingSessionData(data: {
     description: data.description || null,
     coach: data.coach || null,
     attendanceUrl: data.attendanceUrl || null,
+    paymentUrl: data.paymentUrl || null,
+    reclubUsername: data.reclubUsername || null,
     recurring: data.recurring,
     recurrenceWeeks: data.recurring ? data.recurrenceWeeks : 1,
     recurringFrom:
@@ -118,3 +157,38 @@ export function defaultRecurringTo(monthsAhead = 3) {
   date.setMonth(date.getMonth() + monthsAhead);
   return date.toISOString().slice(0, 10);
 }
+
+export const SESSION_MANAGER_CONFIG = {
+  WEEKLY: {
+    category: SESSION_CATEGORIES.WEEKLY,
+    apiBasePath: "/api/admin/training",
+    adminPath: "/admin/training",
+    publicPath: "/training",
+    attendPath: "/training",
+    sectionTitle: "Training schedule",
+    sectionDescription:
+      "Set up recurring weekly sessions or one-off special sessions. All sessions sync to the calendar automatically.",
+    emptyListMessage: "No training sessions yet.",
+    deleteConfirm:
+      "Delete this training session and its calendar entries?",
+    addLabel: "Add session",
+    seriesName: "Weekly training",
+  },
+  FUN: {
+    category: SESSION_CATEGORIES.FUN,
+    apiBasePath: "/api/admin/fun-sessions",
+    adminPath: "/admin/fun-sessions",
+    publicPath: "/fun-sessions",
+    attendPath: "/fun-sessions",
+    sectionTitle: "Fun sessions schedule",
+    sectionDescription:
+      "Set up recurring fun sessions or one-off social play. Add payment and Reclub links — visible to everyone and synced to the calendar.",
+    emptyListMessage: "No fun sessions yet.",
+    deleteConfirm: "Delete this fun session and its calendar entries?",
+    addLabel: "Add session",
+    seriesName: "Fun sessions",
+  },
+} as const;
+
+export type SessionManagerConfig =
+  (typeof SESSION_MANAGER_CONFIG)[keyof typeof SESSION_MANAGER_CONFIG];

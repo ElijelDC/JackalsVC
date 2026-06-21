@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Logo } from "@/components/layout/Logo";
 
-export function Footer() {
+export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
     <footer className="relative border-t border-white/10 bg-background">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/40 to-transparent" />
@@ -23,6 +23,11 @@ export function Footer() {
             </h3>
             <ul className="space-y-2 text-sm text-zinc-500">
               <li>
+                <Link href="/fun-sessions" className="hover:text-jackals-red-light">
+                  Fun sessions
+                </Link>
+              </li>
+              <li>
                 <Link href="/training" className="hover:text-jackals-red-light">
                   Training times
                 </Link>
@@ -32,11 +37,13 @@ export function Footer() {
                   Events calendar
                 </Link>
               </li>
-              <li>
-                <Link href="/membership" className="hover:text-jackals-red-light">
-                  Membership
-                </Link>
-              </li>
+              {isLoggedIn && (
+                <li>
+                  <Link href="/membership" className="hover:text-jackals-red-light">
+                    Membership
+                  </Link>
+                </li>
+              )}
               <li>
                 <Link href="/shop" className="hover:text-jackals-red-light">
                   Club shop

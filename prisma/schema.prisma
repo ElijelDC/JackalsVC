@@ -22,6 +22,7 @@ model User {
 
 model TrainingSession {
   id            String   @id @default(cuid())
+  category      String   @default("WEEKLY")
   title         String
   dayOfWeek     Int
   startTime     String
@@ -31,6 +32,8 @@ model TrainingSession {
   description   String?
   coach         String?
   attendanceUrl String?
+  paymentUrl      String?
+  reclubUsername  String?
   recurring       Boolean  @default(true)
   recurrenceWeeks Int      @default(1)
   recurringFrom   DateTime?
@@ -54,6 +57,7 @@ model TrainingOccurrenceException {
   location          String?
   coach             String?
   attendanceUrl     String?
+  paymentUrl        String?
   createdAt         DateTime        @default(now())
   updatedAt         DateTime        @updatedAt
 
@@ -68,6 +72,7 @@ model Event {
   endDate           DateTime?
   type              String
   location          String?
+  attendanceUrl     String?
   trainingSessionId String?
   trainingSession   TrainingSession? @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
   trainingOccurrenceDate DateTime?

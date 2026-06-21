@@ -4,6 +4,7 @@ import {
   Camera,
   Dumbbell,
   Home,
+  PartyPopper,
   ShoppingBag,
   Users,
 } from "lucide-react";
@@ -13,23 +14,32 @@ export type NavItem = {
   label: string;
   icon: LucideIcon;
   description?: string;
+  requiresAuth?: boolean;
 };
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
+  {
+    href: "/fun-sessions",
+    label: "Fun Sessions",
+    icon: PartyPopper,
+    description:
+      "Social volleyball sessions open to everyone — drop in and play.",
+  },
   {
     href: "/training",
     label: "Training",
     icon: Dumbbell,
     description:
       "Weekly sessions for all skill levels, from beginners to competitive players.",
+    requiresAuth: true,
   },
   {
     href: "/calendar",
     label: "Calendar",
     icon: Calendar,
     description:
-      "Stay on top of tournaments, socials, and club meetings with personal reminders.",
+      "Stay on top of tournaments, skills clinics, and club meetings — add them to your calendar or save club reminders when signed in.",
   },
   {
     href: "/membership",
@@ -37,6 +47,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Users,
     description:
       "Flexible plans to suit your schedule. Join the Jackals family today.",
+    requiresAuth: true,
   },
   {
     href: "/gallery",
@@ -54,4 +65,10 @@ export const NAV_ITEMS: NavItem[] = [
   },
 ];
 
-export const FEATURE_ITEMS = NAV_ITEMS.filter((item) => item.href !== "/");
+export function visibleNavItems(isLoggedIn: boolean) {
+  return NAV_ITEMS.filter((item) => !item.requiresAuth || isLoggedIn);
+}
+
+export function visibleFeatureItems(isLoggedIn: boolean) {
+  return visibleNavItems(isLoggedIn).filter((item) => item.href !== "/");
+}

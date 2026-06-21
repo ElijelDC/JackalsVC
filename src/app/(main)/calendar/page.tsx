@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { getPublicEvents } from "@/lib/public-events";
+import { prisma } from "@/lib/prisma";
 
 export const metadata = {
   title: "Calendar",
@@ -9,9 +10,10 @@ export const metadata = {
 
 export default async function CalendarPage() {
   const session = await auth();
+  const isLoggedIn = Boolean(session?.user);
 
   const [events, reminders] = await Promise.all([
-    prisma.event.findMany({ orderBy: { startDate: "asc" } }),
+    getPublicEvents(isLoggedIn),
     session?.user?.id
       ? prisma.eventReminder.findMany({
           where: { userId: session.user.id },
@@ -20,20 +22,15 @@ export default async function CalendarPage() {
       : Promise.resolve([]),
   ]);
 
-  const serializedEvents = events.map((e) => ({
-    ...e,
-    startDate: e.startDate.toISOString(),
-    endDate: e.endDate?.toISOString() ?? null,
-  }));
-
   return (
     <PageContainer>
       <PageHeader
         title="Events Calendar"
-        description="Browse tournaments, socials, and club meetings. For weekly training times, see the Training page. Sign in to save reminders."
+        description="Browse tournaments, skills clinics, and fun sessions. Add events to your calendar, or sign in to save club reminders."
       />
       <CalendarView
-        events={serializedEvents}
+        events={events}
+        isLoggedIn={isLoggedIn}
         reminderIds={reminders.map((r) => r.eventId)}
       />
     </PageContainer>

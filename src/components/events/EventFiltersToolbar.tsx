@@ -10,11 +10,14 @@ import {
   EventSourceFilter,
 } from "@/lib/event-filters";
 
+type TypeOption = { value: string; label: string };
+
 type EventFiltersToolbarProps = {
   search: string;
   onSearchChange: (value: string) => void;
   type: string;
   onTypeChange: (value: string) => void;
+  typeOptions?: readonly TypeOption[];
   source?: EventSourceFilter;
   onSourceChange?: (value: EventSourceFilter) => void;
   month?: string;
@@ -30,6 +33,7 @@ export function EventFiltersToolbar({
   onSearchChange,
   type,
   onTypeChange,
+  typeOptions = EVENT_TYPE_OPTIONS,
   source = "all",
   onSourceChange,
   month = "",
@@ -54,7 +58,7 @@ export function EventFiltersToolbar({
             value={type}
             onChange={(e) => onTypeChange(e.target.value)}
           >
-            {EVENT_TYPE_OPTIONS.map(({ value, label }) => (
+            {typeOptions.map(({ value, label }) => (
               <option key={value || "all"} value={value}>
                 {label}
               </option>

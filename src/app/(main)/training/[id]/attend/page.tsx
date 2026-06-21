@@ -1,8 +1,5 @@
-import { notFound, redirect } from "next/navigation";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { hasAttendanceAccess } from "@/lib/membership";
-import { resolveOccurrenceAttendanceUrl } from "@/lib/training-occurrence";
+import { redirectToSessionAttendance } from "@/lib/session-attend";
+import { SESSION_CATEGORIES } from "@/lib/training-utils";
 
 export default async function TrainingAttendPage({
   params,
@@ -13,31 +10,5 @@ export default async function TrainingAttendPage({
 }) {
   const { id } = await params;
   const { date } = await searchParams;
-
-  const trainingSession = await prisma.trainingSession.findUnique({
-    where: { id },
-    select: { attendanceUrl: true },
-  });
-
-  if (!trainingSession) notFound();
-
-  const attendanceUrl = date
-    ? await resolveOccurrenceAttendanceUrl(
-        id,
-        new Date(date),
-        trainingSession.attendanceUrl,
-      )
-    : trainingSession.attendanceUrl;
-
-  if (!attendanceUrl) notFound();
-
-  const session = await auth();
-  const canAccess =
-    session?.user && (await hasAttendanceAccess(session.user));
-
-  if (!canAccess) {
-    redirect("/membership");
-  }
-
-  redirect(attendanceUrl);
+  await redirectToSessionAttendance(id, SESSION_CATEGORIES.WEEKLY, date);
 }
