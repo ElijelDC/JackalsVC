@@ -4,6 +4,52 @@ type ApiResult<T> =
   | { ok: true; data: T }
   | { ok: false; error: string };
 
+async function parseResponse<T>(
+  res: Response,
+  fallbackError: string,
+): Promise<ApiResult<T>> {
+  const text = await res.text();
+  if (!text.trim()) {
+    return {
+      ok: false,
+      error: res.ok
+        ? fallbackError
+        : `${fallbackError} (HTTP ${res.status})`,
+    };
+  }
+
+  try {
+    const data = JSON.parse(text) as T & { error?: string };
+    if (!res.ok) {
+      return {
+        ok: false,
+        error:
+          typeof data === "object" &&
+          data &&
+          "error" in data &&
+          typeof data.error === "string"
+            ? data.error
+            : fallbackError,
+      };
+    }
+    return { ok: true, data: data as T };
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
+export async function apiGet<T>(
+  url: string,
+  fallbackError = "Failed to load data",
+): Promise<ApiResult<T>> {
+  try {
+    const res = await fetch(url);
+    return parseResponse<T>(res, fallbackError);
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
 export async function apiPost<T>(
   url: string,
   body: unknown,
@@ -15,11 +61,24 @@ export async function apiPost<T>(
       headers: JSON_HEADERS,
       body: JSON.stringify(body),
     });
-    const data = await res.json();
-    if (!res.ok) {
-      return { ok: false, error: data.error ?? fallbackError };
-    }
-    return { ok: true, data: data as T };
+    return parseResponse<T>(res, fallbackError);
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
+export async function apiPut<T>(
+  url: string,
+  body: unknown,
+  fallbackError = "Something went wrong. Please try again.",
+): Promise<ApiResult<T>> {
+  try {
+    const res = await fetch(url, {
+      method: "PUT",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(body),
+    });
+    return parseResponse<T>(res, fallbackError);
   } catch {
     return { ok: false, error: fallbackError };
   }
@@ -31,11 +90,7 @@ export async function apiDelete(
 ): Promise<ApiResult<{ success: boolean }>> {
   try {
     const res = await fetch(url, { method: "DELETE" });
-    const data = await res.json();
-    if (!res.ok) {
-      return { ok: false, error: data.error ?? fallbackError };
-    }
-    return { ok: true, data: data as { success: boolean } };
+    return parseResponse<{ success: boolean }>(res, fallbackError);
   } catch {
     return { ok: false, error: fallbackError };
   }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
-import { LogIn, LogOut, Menu, User, X, Zap } from "lucide-react";
+import { LogIn, LogOut, Menu, Settings, User, X, Zap } from "lucide-react";
 import { useState } from "react";
 import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
@@ -22,6 +22,20 @@ function AuthActions({
   if (session?.user) {
     return (
       <>
+        {session.user.role === "ADMIN" && (
+          <Link
+            href="/admin"
+            onClick={onNavigate}
+            className={
+              variant === "desktop"
+                ? "flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-jackals-red-light transition-colors hover:bg-white/5"
+                : "flex items-center gap-2 px-3 py-2.5 text-sm font-medium text-jackals-red-light"
+            }
+          >
+            <Settings className="h-4 w-4" />
+            Admin
+          </Link>
+        )}
         <Link
           href="/dashboard"
           onClick={onNavigate}

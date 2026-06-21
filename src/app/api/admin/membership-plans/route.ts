@@ -1,0 +1,42 @@
+import { NextResponse } from "next/server";
+import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { prisma } from "@/lib/prisma";
+import { membershipPlanSchema } from "@/lib/validations";
+import type { z } from "zod";
+
+function toPlanData(data: z.infer<typeof membershipPlanSchema>) {
+  return {
+    name: data.name,
+    description: data.description,
+    price: data.price,
+    durationMonths: data.durationMonths,
+    features: data.features,
+    active: data.active,
+  };
+}
+
+export async function GET() {
+  const { response } = await requireAdmin();
+  if (response) return response;
+
+  const plans = await prisma.membershipPlan.findMany({
+    orderBy: { price: "asc" },
+    include: { _count: { select: { memberships: true } } },
+  });
+
+  return NextResponse.json({ plans });
+}
+
+export async function POST(request: Request) {
+  const { response } = await requireAdmin();
+  if (response) return response;
+
+  const { data, response: parseError } = await parseJsonBody(
+    request,
+    membershipPlanSchema,
+  );
+  if (parseError || !data) return parseError!;
+
+  const plan = await prisma.membershipPlan.create({ data: toPlanData(data) });
+  return NextResponse.json({ plan }, { status: 201 });
+}

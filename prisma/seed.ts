@@ -3,9 +3,10 @@ import path from "node:path";
 import bcrypt from "bcryptjs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { syncAllTrainingSessionEvents } from "../src/lib/training-events";
 
 const dbUrl =
-  process.env.DATABASE_URL ?? `file:${path.join(process.cwd(), "prisma", "dev.db")}`;
+  process.env.DATABASE_URL ?? `file:${path.join(process.cwd(), "dev.db")}`;
 
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
 const prisma = new PrismaClient({ adapter });
@@ -13,29 +14,91 @@ const prisma = new PrismaClient({ adapter });
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 12);
 
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@jackalsvc.com" },
-    update: {},
-    create: {
+  const demoUsers = [
+    {
       name: "Club Admin",
       email: "admin@jackalsvc.com",
-      passwordHash,
       role: "ADMIN",
     },
-  });
-
-  await prisma.user.upsert({
-    where: { email: "member@jackalsvc.com" },
-    update: {},
-    create: {
+    {
       name: "Demo Member",
       email: "member@jackalsvc.com",
-      passwordHash,
       role: "MEMBER",
     },
+    {
+      name: "Sarah Jones",
+      email: "sarah.jones@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Mike Chen",
+      email: "mike.chen@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Emma Williams",
+      email: "emma.williams@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "James Patel",
+      email: "james.patel@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Olivia Brown",
+      email: "olivia.brown@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Liam Davis",
+      email: "liam.davis@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Sophie Taylor",
+      email: "sophie.taylor@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Alex Morgan",
+      email: "alex.morgan@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Priya Sharma",
+      email: "priya.sharma@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
+      name: "Noah Thompson",
+      email: "noah.thompson@jackalsvc.com",
+      role: "MEMBER",
+    },
+  ] as const;
+
+  for (const user of demoUsers) {
+    await prisma.user.upsert({
+      where: { email: user.email },
+      update: { name: user.name, role: user.role },
+      create: {
+        name: user.name,
+        email: user.email,
+        passwordHash,
+        role: user.role,
+      },
+    });
+  }
+
+  const admin = await prisma.user.findUniqueOrThrow({
+    where: { email: "admin@jackalsvc.com" },
   });
 
   await prisma.trainingSession.deleteMany();
+  const seasonStart = new Date();
+  const seasonEnd = new Date();
+  seasonEnd.setMonth(seasonEnd.getMonth() + 6);
+
   await prisma.trainingSession.createMany({
     data: [
       {
@@ -47,6 +110,9 @@ async function main() {
         level: "Beginner",
         coach: "Coach Sarah",
         description: "Fundamentals, passing, and serving for new players.",
+        attendanceUrl: "https://forms.gle/example-beginners",
+        recurringFrom: seasonStart,
+        recurringTo: seasonEnd,
       },
       {
         title: "Intermediate Training",
@@ -57,6 +123,9 @@ async function main() {
         level: "Intermediate",
         coach: "Coach Mike",
         description: "Drills, positioning, and game scenarios.",
+        attendanceUrl: "https://forms.gle/example-intermediate",
+        recurringFrom: seasonStart,
+        recurringTo: seasonEnd,
       },
       {
         title: "Advanced Squad",
@@ -67,6 +136,9 @@ async function main() {
         level: "Advanced",
         coach: "Coach James",
         description: "Competitive training for league and tournament players.",
+        attendanceUrl: "https://forms.gle/example-advanced",
+        recurringFrom: seasonStart,
+        recurringTo: seasonEnd,
       },
       {
         title: "Open Session",
@@ -77,6 +149,9 @@ async function main() {
         level: "All Levels",
         coach: "Rotating coaches",
         description: "Mixed-level play. All members welcome.",
+        attendanceUrl: "https://forms.gle/example-open",
+        recurringFrom: seasonStart,
+        recurringTo: seasonEnd,
       },
     ],
   });
@@ -107,16 +182,19 @@ async function main() {
         location: "Online (Zoom)",
       },
       {
-        title: "Pre-season Training Camp",
+        title: "Pre-season Camp",
         description: "Intensive weekend camp before the new season.",
         startDate: new Date(now.getFullYear(), now.getMonth() + 1, 5, 9, 0),
         endDate: new Date(now.getFullYear(), now.getMonth() + 1, 6, 17, 0),
-        type: "TRAINING",
+        type: "SOCIAL",
         location: "Sports Hall A & B",
       },
     ],
   });
 
+  await syncAllTrainingSessionEvents();
+
+  await prisma.membership.deleteMany();
   await prisma.membershipPlan.deleteMany();
   await prisma.membershipPlan.createMany({
     data: [
@@ -155,6 +233,82 @@ async function main() {
           "Club shop 15% off",
           "Personalised kit discount",
         ]),
+      },
+    ],
+  });
+
+  const [casual, regular, competitive] = await Promise.all([
+    prisma.membershipPlan.findFirstOrThrow({ where: { name: "Casual" } }),
+    prisma.membershipPlan.findFirstOrThrow({ where: { name: "Regular" } }),
+    prisma.membershipPlan.findFirstOrThrow({ where: { name: "Competitive" } }),
+  ]);
+
+  const memberUsers = await prisma.user.findMany({
+    where: {
+      email: {
+        in: [
+          "member@jackalsvc.com",
+          "sarah.jones@jackalsvc.com",
+          "mike.chen@jackalsvc.com",
+          "emma.williams@jackalsvc.com",
+          "james.patel@jackalsvc.com",
+          "olivia.brown@jackalsvc.com",
+        ],
+      },
+    },
+  });
+
+  const userByEmail = Object.fromEntries(memberUsers.map((u) => [u.email, u]));
+
+  const addMonths = (months: number) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() + months);
+    return date;
+  };
+
+  const subtractMonths = (months: number) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - months);
+    return date;
+  };
+
+  await prisma.membership.createMany({
+    data: [
+      {
+        userId: userByEmail["member@jackalsvc.com"].id,
+        planId: casual.id,
+        status: "ACTIVE",
+        endDate: addMonths(1),
+      },
+      {
+        userId: userByEmail["sarah.jones@jackalsvc.com"].id,
+        planId: regular.id,
+        status: "ACTIVE",
+        endDate: addMonths(3),
+      },
+      {
+        userId: userByEmail["mike.chen@jackalsvc.com"].id,
+        planId: competitive.id,
+        status: "ACTIVE",
+        endDate: addMonths(6),
+      },
+      {
+        userId: userByEmail["emma.williams@jackalsvc.com"].id,
+        planId: casual.id,
+        status: "EXPIRED",
+        endDate: subtractMonths(1),
+      },
+      {
+        userId: userByEmail["james.patel@jackalsvc.com"].id,
+        planId: regular.id,
+        status: "CANCELLED",
+        endDate: addMonths(2),
+      },
+      {
+        userId: userByEmail["olivia.brown@jackalsvc.com"].id,
+        planId: casual.id,
+        status: "ACTIVE",
+        endDate: addMonths(1),
       },
     ],
   });
@@ -270,7 +424,8 @@ async function main() {
 
   console.log("Seed complete.");
   console.log(`Admin: admin@jackalsvc.com / password123`);
-  console.log(`Member: member@jackalsvc.com / password123`);
+  console.log(`Members: any *@jackalsvc.com account / password123`);
+  console.log(`${demoUsers.length} demo users seeded (${demoUsers.length - 1} members + 1 admin).`);
 }
 
 main()

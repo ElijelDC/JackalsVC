@@ -21,28 +21,58 @@ model User {
 }
 
 model TrainingSession {
-  id          String   @id @default(cuid())
-  title       String
-  dayOfWeek   Int
-  startTime   String
-  endTime     String
-  location    String
-  level       String
-  description String?
-  coach       String?
-  createdAt   DateTime @default(now())
+  id            String   @id @default(cuid())
+  title         String
+  dayOfWeek     Int
+  startTime     String
+  endTime       String
+  location      String
+  level         String
+  description   String?
+  coach         String?
+  attendanceUrl String?
+  recurring       Boolean  @default(true)
+  recurrenceWeeks Int      @default(1)
+  recurringFrom   DateTime?
+  recurringTo     DateTime?
+  sessionDate     DateTime?
+  createdAt     DateTime @default(now())
+  events        Event[]
+  occurrenceExceptions TrainingOccurrenceException[]
+}
+
+model TrainingOccurrenceException {
+  id                String          @id @default(cuid())
+  trainingSessionId String
+  trainingSession   TrainingSession @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  occurrenceDate    DateTime
+  cancelled         Boolean         @default(false)
+  title             String?
+  description       String?
+  startDate         DateTime?
+  endDate           DateTime?
+  location          String?
+  coach             String?
+  attendanceUrl     String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  @@unique([trainingSessionId, occurrenceDate])
 }
 
 model Event {
-  id          String          @id @default(cuid())
-  title       String
-  description String?
-  startDate   DateTime
-  endDate     DateTime?
-  type        String
-  location    String?
-  createdAt   DateTime        @default(now())
-  reminders   EventReminder[]
+  id                String           @id @default(cuid())
+  title             String
+  description       String?
+  startDate         DateTime
+  endDate           DateTime?
+  type              String
+  location          String?
+  trainingSessionId String?
+  trainingSession   TrainingSession? @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
+  trainingOccurrenceDate DateTime?
+  createdAt         DateTime         @default(now())
+  reminders         EventReminder[]
 }
 
 model EventReminder {

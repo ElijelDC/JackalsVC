@@ -43,7 +43,7 @@ export function MembershipPlans({ plans }: { plans: Plan[] }) {
       return;
     }
 
-    setMessage("Membership activated! Visit your dashboard to view details.");
+    setMessage("Membership activated! You can now register attendance from the Training page.");
     router.refresh();
   };
 
