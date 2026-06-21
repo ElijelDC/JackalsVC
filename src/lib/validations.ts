@@ -4,6 +4,19 @@ export const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Invalid email address"),
   password: z.string().min(8, "Password must be at least 8 characters"),
+  clubCode: z.string().min(4, "Club code is required"),
+});
+
+import { PAYMENT_SCHEDULES } from "@/lib/membership-config";
+
+export const eventSignupSchema = z.object({
+  eventId: z.string().min(1, "Event ID required"),
+});
+
+export const membershipSubscribeSchema = z.object({
+  paymentSchedule: z.enum(PAYMENT_SCHEDULES, {
+    error: "Choose a payment option",
+  }),
 });
 
 export const orderSchema = z.object({

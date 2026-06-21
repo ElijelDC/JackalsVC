@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { MembershipPlans } from "@/components/membership/MembershipPlans";
+import { MembershipCheckout } from "@/components/membership/MembershipPlans";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { prisma } from "@/lib/prisma";
 
 export const metadata = {
   title: "Membership",
@@ -14,24 +14,26 @@ export default async function MembershipPage() {
     redirect("/login?callbackUrl=/membership");
   }
 
-  const plans = await prisma.membershipPlan.findMany({
-    where: { active: true },
-    orderBy: { price: "asc" },
+  const activeMembership = await prisma.membership.findFirst({
+    where: {
+      userId: session.user.id,
+      endDate: { gt: new Date() },
+    },
   });
+
+  if (activeMembership) {
+    redirect("/membership/payments");
+  }
 
   return (
     <PageContainer>
       <PageHeader
         title="Club Membership"
-        description="Choose a plan that fits your schedule. All members get access to training sessions and club events."
+        description="Every member has the same season membership. Choose your payment schedule once — it cannot be changed later."
         centered
       />
 
-      {plans.length === 0 ? (
-        <p className="text-center text-zinc-400">Membership plans coming soon.</p>
-      ) : (
-        <MembershipPlans plans={plans} />
-      )}
+      <MembershipCheckout />
     </PageContainer>
   );
 }

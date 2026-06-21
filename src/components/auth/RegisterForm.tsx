@@ -15,6 +15,7 @@ export function RegisterForm() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [clubCode, setClubCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -23,7 +24,11 @@ export function RegisterForm() {
     setLoading(true);
     setError(null);
 
-    const result = await apiPost("/api/auth/register", { name, email, password }, "Registration failed");
+    const result = await apiPost(
+      "/api/auth/register",
+      { name, email, password, clubCode },
+      "Registration failed",
+    );
 
     if (!result.ok) {
       setError(result.error);
@@ -51,7 +56,7 @@ export function RegisterForm() {
   return (
     <AuthShell
       title="Join the club"
-      description="Create your Jackals VC account"
+      description="Members only — you'll need your club invite code from the committee"
       footer={
         <p className="mt-6 text-center text-sm text-zinc-400">
           Already have an account?{" "}
@@ -82,6 +87,21 @@ export function RegisterForm() {
             required
             autoComplete="email"
           />
+        </div>
+        <div>
+          <Label htmlFor="clubCode">Club invite code</Label>
+          <Input
+            id="clubCode"
+            value={clubCode}
+            onChange={(e) => setClubCode(e.target.value.toUpperCase())}
+            required
+            placeholder="e.g. JACKALS-2026"
+            autoComplete="off"
+            spellCheck={false}
+          />
+          <p className="mt-1 text-xs text-zinc-500">
+            Ask your coach or committee if you don&apos;t have a code yet
+          </p>
         </div>
         <div>
           <Label htmlFor="password">Password</Label>

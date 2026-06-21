@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Award,
+  Banknote,
   Bell,
   Calendar,
   Camera,
@@ -25,6 +26,7 @@ const ADMIN_LINKS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, exact: true },
   { href: "/admin/users", label: "Users", icon: Users },
   { href: "/admin/membership", label: "Plans", icon: CreditCard },
+  { href: "/admin/payments", label: "Payments", icon: Banknote },
   { href: "/admin/members", label: "Members", icon: UserCheck },
   { href: "/admin/training", label: "Weekly training", icon: Dumbbell },
   { href: "/admin/fun-sessions", label: "Fun sessions", icon: PartyPopper },
