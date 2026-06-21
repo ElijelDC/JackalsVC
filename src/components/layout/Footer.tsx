@@ -23,8 +23,8 @@ export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
             </h3>
             <ul className="space-y-2 text-sm text-zinc-500">
               <li>
-                <Link href="/fun-sessions" className="hover:text-jackals-red-light">
-                  Fun sessions
+                <Link href="/whats-on" className="hover:text-jackals-red-light">
+                  What&apos;s on?
                 </Link>
               </li>
               <li>

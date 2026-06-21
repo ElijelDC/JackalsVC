@@ -64,7 +64,7 @@ export async function getEventAttendanceContext(event: EventListItem) {
       attendanceOccurrenceDate: null as string | null,
       attendBasePath: "/calendar" as string | null,
       openAttendance: true,
-      paymentUrl: null as string | null,
+      paymentUrl: event.paymentUrl ?? null,
     };
   }
 

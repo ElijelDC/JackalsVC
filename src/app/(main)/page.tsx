@@ -55,8 +55,8 @@ export default async function HomePage() {
                 events, membership, and official club gear all in one place.
               </p>
               <div className="mt-10 flex flex-wrap gap-4">
-                <Link href="/fun-sessions">
-                  <Button variant="outline">Fun sessions</Button>
+                <Link href="/whats-on">
+                  <Button variant="outline">What&apos;s on?</Button>
                 </Link>
                 <Link href="/register">
                   <Button>Join the club</Button>

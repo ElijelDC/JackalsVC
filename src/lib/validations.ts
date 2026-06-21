@@ -40,6 +40,13 @@ export const trainingSessionSchema = z
       (val) => (val === "" || val == null ? undefined : val),
       z.string().min(1).optional(),
     ),
+    sessionFee: z.preprocess(
+      (val) => (val === "" || val == null ? undefined : val),
+      z.coerce
+        .number()
+        .positive("Session fee must be greater than zero")
+        .optional(),
+    ),
     recurring: z.boolean(),
     recurrenceWeeks: z.number().int().min(1).max(52),
     sessionDate: z.preprocess(
@@ -119,6 +126,25 @@ export const eventSchema = z.object({
   attendanceUrl: z.preprocess(
     (val) => (val === "" || val == null ? undefined : val),
     z.string().url("Must be a valid URL").optional(),
+  ),
+  paymentUrl: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().url("Must be a valid URL").optional(),
+  ),
+  sessionFee: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.coerce
+      .number()
+      .positive("Session fee must be greater than zero")
+      .optional(),
+  ),
+  reclubUsername: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().min(1).optional(),
+  ),
+  clubIban: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().min(1).optional(),
   ),
 });
 

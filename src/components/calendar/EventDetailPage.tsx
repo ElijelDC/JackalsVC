@@ -3,13 +3,14 @@ import { CalendarDays, ChevronRight, Clock, MapPin, User } from "lucide-react";
 import type { EventListItem } from "@/lib/event-filters";
 import { getEventTypeLabel } from "@/lib/event-filters";
 import { formatEventDateTime } from "@/lib/event-display";
-import { isOpenReclubEvent } from "@/lib/event-reclub";
+import { isOpenReclubEvent, usesPaidJoinFlow, usesTournamentJoinFlow } from "@/lib/event-reclub";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { FunSessionJoinFlow } from "@/components/training/FunSessionJoinFlow";
+import { TournamentJoinFlow } from "@/components/training/TournamentJoinFlow";
 import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
 import { EventReminderButton } from "@/components/calendar/EventReminderButton";
@@ -60,7 +61,10 @@ export function EventDetailPage({
   const typeColor =
     typeColors[event.type] ?? "bg-zinc-500/15 text-zinc-400";
 
-  const showFunJoinFlow = openAttendance && Boolean(paymentUrl);
+  const showFunJoinFlow =
+    usesPaidJoinFlow(event.type) && Boolean(paymentUrl);
+  const showTournamentJoinFlow = usesTournamentJoinFlow(event);
+  const showStructuredJoinFlow = showFunJoinFlow || showTournamentJoinFlow;
 
   return (
     <PageContainer>
@@ -142,6 +146,16 @@ export function EventDetailPage({
         </Card>
 
         <div className="space-y-4">
+          {showTournamentJoinFlow && (
+            <TournamentJoinFlow
+              attendanceUrl={attendanceUrl}
+              sessionId={attendanceEntityId}
+              attendBasePath={attendBasePath ?? "/calendar"}
+              tournamentFee={event.sessionFee}
+              clubIban={event.clubIban}
+            />
+          )}
+
           {showFunJoinFlow && (
             <FunSessionJoinFlow
               paymentUrl={paymentUrl!}
@@ -149,6 +163,7 @@ export function EventDetailPage({
               sessionTitle={event.title}
               sessionDate={event.startDate}
               reclubUsername={event.reclubUsername}
+              sessionFee={event.sessionFee}
               attendanceUrl={attendanceUrl}
               sessionId={attendanceEntityId}
               attendBasePath={attendBasePath ?? "/fun-sessions"}
@@ -158,7 +173,7 @@ export function EventDetailPage({
             />
           )}
 
-          {showAttendance && !showFunJoinFlow && (
+          {showAttendance && !showStructuredJoinFlow && (
             <Card>
               <CardTitle>
                 {isOpenReclub ? "Registration" : "Attendance"}

@@ -117,6 +117,7 @@ export function toTrainingSessionData(data: {
   attendanceUrl?: string;
   paymentUrl?: string;
   reclubUsername?: string;
+  sessionFee?: number;
   recurring: boolean;
   recurrenceWeeks: number;
   sessionDate?: string;
@@ -135,6 +136,7 @@ export function toTrainingSessionData(data: {
     attendanceUrl: data.attendanceUrl || null,
     paymentUrl: data.paymentUrl || null,
     reclubUsername: data.reclubUsername || null,
+    sessionFee: data.sessionFee ?? null,
     recurring: data.recurring,
     recurrenceWeeks: data.recurring ? data.recurrenceWeeks : 1,
     recurringFrom:

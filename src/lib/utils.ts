@@ -12,6 +12,15 @@ export function formatPrice(amount: number): string {
   }).format(amount);
 }
 
+export function formatEuroFee(amount: number): string {
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: Number.isInteger(amount) ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 export const DAYS_OF_WEEK = [
   "Sunday",
   "Monday",

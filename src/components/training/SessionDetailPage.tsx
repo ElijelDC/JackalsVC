@@ -55,6 +55,7 @@ export function SessionDetailPage({
   attendanceUrl,
   paymentUrl,
   reclubUsername,
+  sessionFee,
   attendanceOccurrenceDate,
   canAccessAttendance,
   isLoggedIn,
@@ -74,6 +75,7 @@ export function SessionDetailPage({
   attendanceUrl: string | null;
   paymentUrl: string | null;
   reclubUsername: string | null;
+  sessionFee: number | null;
   attendanceOccurrenceDate: string | null;
   canAccessAttendance: boolean;
   isLoggedIn: boolean;
@@ -405,6 +407,7 @@ export function SessionDetailPage({
               sessionTitle={session.title}
               sessionDate={nextSessionStart ?? attendanceOccurrenceDate}
               reclubUsername={reclubUsername}
+              sessionFee={sessionFee}
               payLabel={
                 nextSessionStart
                   ? `Pay for ${format(nextSessionStart, "EEE d MMM")}`

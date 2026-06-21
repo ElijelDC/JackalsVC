@@ -1,12 +1,10 @@
 import type { ReactNode } from "react";
 import { format } from "date-fns";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
+import { EntryFeeBadge, JoinFlowStep } from "@/components/training/JoinFlowStep";
 import { PaymentLink } from "@/components/training/PaymentLink";
 import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
-import { cn } from "@/lib/utils";
-
-export const FUN_SESSION_FEE = "€10";
 
 export function formatReclubPaymentReference(
   sessionDate?: Date | string | null,
@@ -66,21 +64,9 @@ function JoinStep({
   isLast?: boolean;
 }) {
   return (
-    <div className="relative flex gap-4">
-      {!isLast && (
-        <div
-          aria-hidden
-          className="absolute bottom-0 left-4 top-9 w-px bg-white/10"
-        />
-      )}
-      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-jackals-red/40 bg-jackals-red/15 text-sm font-bold text-jackals-red-light">
-        {step}
-      </div>
-      <div className={cn("min-w-0 flex-1", !isLast && "pb-6")}>
-        <h3 className="font-medium text-white">{title}</h3>
-        <div className="mt-3">{children}</div>
-      </div>
-    </div>
+    <JoinFlowStep step={step} title={title} isLast={isLast}>
+      {children}
+    </JoinFlowStep>
   );
 }
 
@@ -95,6 +81,7 @@ export function FunSessionJoinFlow({
   sessionTitle,
   sessionDate,
   reclubUsername,
+  sessionFee,
   showPayBeforeNote = false,
 }: {
   paymentUrl: string;
@@ -107,6 +94,7 @@ export function FunSessionJoinFlow({
   sessionTitle?: string | null;
   sessionDate?: Date | string | null;
   reclubUsername?: string | null;
+  sessionFee?: number | null;
   showPayBeforeNote?: boolean;
 }) {
   return (
@@ -120,14 +108,9 @@ export function FunSessionJoinFlow({
 
       <div className="px-6 py-6">
         <JoinStep step={1} title="Pay session fee">
-          <div className="mb-3 inline-flex items-baseline gap-2 rounded-lg border border-jackals-red/30 bg-jackals-red/10 px-3 py-2">
-            <span className="font-display text-2xl font-bold text-white">
-              {FUN_SESSION_FEE}
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-jackals-red-light">
-              session fee
-            </span>
-          </div>
+          {sessionFee != null && (
+            <EntryFeeBadge amount={sessionFee} label="session fee" />
+          )}
           <PaymentInstructions
             sessionDate={sessionDate}
             sessionTitle={sessionTitle}
@@ -170,6 +153,7 @@ export function SessionPaymentSection({
   sessionTitle,
   sessionDate,
   reclubUsername,
+  sessionFee,
   showPayBeforeNote = false,
 }: {
   paymentUrl: string;
@@ -177,18 +161,14 @@ export function SessionPaymentSection({
   sessionTitle?: string | null;
   sessionDate?: Date | string | null;
   reclubUsername?: string | null;
+  sessionFee?: number | null;
   showPayBeforeNote?: boolean;
 }) {
   return (
     <div className="space-y-4">
-      <div className="inline-flex items-baseline gap-2 rounded-lg border border-jackals-red/30 bg-jackals-red/10 px-3 py-2">
-        <span className="font-display text-2xl font-bold text-white">
-          {FUN_SESSION_FEE}
-        </span>
-        <span className="text-xs font-semibold uppercase tracking-wide text-jackals-red-light">
-          session fee
-        </span>
-      </div>
+      {sessionFee != null && (
+        <EntryFeeBadge amount={sessionFee} label="session fee" />
+      )}
       <PaymentInstructions
         sessionDate={sessionDate}
         sessionTitle={sessionTitle}
