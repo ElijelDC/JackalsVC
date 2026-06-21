@@ -21,6 +21,7 @@ A full-stack Next.js website for **Jackals Volleyball Club**, featuring training
 - **Shop** — Product catalog, size selection, cart, and checkout
 - **Auth** — User registration and login
 - **Dashboard** — Membership status, orders, and saved reminders
+- **Admin panel** — Browser-based content management (admin users only)
 
 ## Getting started
 
@@ -46,6 +47,21 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+### Admin panel
+
+Sign in as an admin (`admin@jackalsvc.com`) and click **Admin** in the nav, or go to [http://localhost:3000/admin](http://localhost:3000/admin).
+
+From there you can add, edit, and delete:
+
+| Section | What it controls |
+|---------|------------------|
+| **Training** | Weekly session times and locations (`/training`) |
+| **Events** | Calendar events (`/calendar`) |
+| **Products** | Shop inventory (`/shop`) |
+| **Gallery** | Photo grid (`/gallery`) |
+
+Changes save to the database and appear on the public site immediately — no Prisma Studio required.
 
 ### Demo accounts
 
@@ -93,8 +109,7 @@ prisma/
 
 - **Database**: Switch `DATABASE_URL` to PostgreSQL for production and update the Prisma datasource provider.
 - **Payments**: Checkout currently marks orders as paid directly. Integrate [Stripe](https://stripe.com) for real payments.
-- **Images**: Gallery and product images use placeholders. Upload to [Cloudinary](https://cloudinary.com) or [Uploadthing](https://uploadthing.com) and store URLs in the database.
-- **Admin panel**: An admin role exists in the schema — a future `/admin` section can manage content, products, and events.
+- **Images**: Gallery and product images use placeholders. Upload to [Cloudinary](https://cloudinary.com) or [Uploadthing](https://uploadthing.com) and paste the URL in the admin panel.
 
 ## License
 

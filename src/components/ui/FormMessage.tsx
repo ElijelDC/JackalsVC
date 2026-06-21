@@ -11,3 +11,12 @@ export function AlertBanner({ message }: { message: string | null }) {
     </div>
   );
 }
+
+export function SuccessBanner({ message }: { message: string | null }) {
+  if (!message) return null;
+  return (
+    <div className="mb-6 border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+      {message}
+    </div>
+  );
+}

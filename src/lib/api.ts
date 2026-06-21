@@ -14,6 +14,15 @@ export async function requireSession() {
   return { session, response: null };
 }
 
+export async function requireAdmin() {
+  const { session, response } = await requireSession();
+  if (response) return { session: null, response };
+  if (session!.user.role !== "ADMIN") {
+    return { session: null, response: jsonError("Forbidden", 403) };
+  }
+  return { session, response: null };
+}
+
 export async function parseJsonBody<T>(
   request: Request,
   schema: ZodSchema<T>,

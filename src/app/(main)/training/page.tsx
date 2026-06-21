@@ -1,18 +1,28 @@
 import { Clock, MapPin, User } from "lucide-react";
+import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { hasAttendanceAccess } from "@/lib/membership";
 import { DAYS_OF_WEEK } from "@/lib/utils";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { AttendanceLink } from "@/components/training/AttendanceLink";
 
 export const metadata = {
   title: "Training Times",
 };
 
 export default async function TrainingPage() {
-  const sessions = await prisma.trainingSession.findMany({
-    orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
-  });
+  const [sessions, session] = await Promise.all([
+    prisma.trainingSession.findMany({
+      orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
+    }),
+    auth(),
+  ]);
+
+  const canAccessAttendance = session?.user
+    ? await hasAttendanceAccess(session.user)
+    : false;
 
   const grouped = DAYS_OF_WEEK.map((day, index) => ({
     day,
@@ -23,7 +33,7 @@ export default async function TrainingPage() {
     <PageContainer>
       <PageHeader
         title="Training Times"
-        description="All sessions are held at the club training hall unless stated otherwise. Arrive 10 minutes early to warm up."
+        description="All sessions are held at the club training hall unless stated otherwise. Arrive 10 minutes early to warm up. Paid membership is required to register session attendance."
       />
 
       {grouped.length === 0 ? (
@@ -69,6 +79,10 @@ export default async function TrainingPage() {
                       <p className="mt-3 text-sm text-zinc-500">
                         {session.description}
                       </p>
+                    )}
+
+                    {session.attendanceUrl && canAccessAttendance && (
+                      <AttendanceLink sessionId={session.id} />
                     )}
                   </Card>
                 ))}

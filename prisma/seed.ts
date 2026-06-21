@@ -47,6 +47,7 @@ async function main() {
         level: "Beginner",
         coach: "Coach Sarah",
         description: "Fundamentals, passing, and serving for new players.",
+        attendanceUrl: "https://forms.gle/example-beginners",
       },
       {
         title: "Intermediate Training",
@@ -57,6 +58,7 @@ async function main() {
         level: "Intermediate",
         coach: "Coach Mike",
         description: "Drills, positioning, and game scenarios.",
+        attendanceUrl: "https://forms.gle/example-intermediate",
       },
       {
         title: "Advanced Squad",
@@ -67,6 +69,7 @@ async function main() {
         level: "Advanced",
         coach: "Coach James",
         description: "Competitive training for league and tournament players.",
+        attendanceUrl: "https://forms.gle/example-advanced",
       },
       {
         title: "Open Session",
@@ -77,6 +80,7 @@ async function main() {
         level: "All Levels",
         coach: "Rotating coaches",
         description: "Mixed-level play. All members welcome.",
+        attendanceUrl: "https://forms.gle/example-open",
       },
     ],
   });

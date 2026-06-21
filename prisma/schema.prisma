@@ -30,6 +30,7 @@ model TrainingSession {
   level       String
   description String?
   coach       String?
+  attendanceUrl String?
   createdAt   DateTime @default(now())
 }
 
