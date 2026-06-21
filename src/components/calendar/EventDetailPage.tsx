@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronRight, Clock, MapPin, User } from "lucide-react";
 import type { EventListItem } from "@/lib/event-filters";
 import { getEventTypeLabel } from "@/lib/event-filters";
-import { formatEventDateTime } from "@/lib/event-display";
+import { getEventTypeStyle, formatEventDateTime } from "@/lib/event-display";
 import { isOpenReclubEvent, usesPaidJoinFlow, usesTournamentJoinFlow } from "@/lib/event-reclub";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,14 +16,6 @@ import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions
 import { EventReminderButton } from "@/components/calendar/EventReminderButton";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { cn } from "@/lib/utils";
-
-const typeColors: Record<string, string> = {
-  TRAINING: "bg-blue-500/15 text-blue-400",
-  FUN: "bg-amber-500/15 text-amber-400",
-  TOURNAMENT: "bg-jackals-red/15 text-jackals-red-light",
-  SOCIAL: "bg-purple-500/15 text-purple-400",
-  MEETING: "bg-green-500/15 text-green-400",
-};
 
 export function EventDetailPage({
   event,
@@ -59,8 +51,7 @@ export function EventDetailPage({
   const isOpenReclub = isOpenReclubEvent(event.type);
   const showAttendance = isSessionEvent || isOpenReclub;
   const attendanceEntityId = event.trainingSessionId ?? event.id;
-  const typeColor =
-    typeColors[event.type] ?? "bg-zinc-500/15 text-zinc-400";
+  const typeStyle = getEventTypeStyle(event.type);
 
   const showFunJoinFlow =
     usesPaidJoinFlow(event.type) && Boolean(paymentUrl);
@@ -84,7 +75,7 @@ export function EventDetailPage({
           <span
             className={cn(
               "rounded-full px-3 py-1 text-sm font-medium",
-              typeColor,
+              typeStyle.badge,
             )}
           >
             {getEventTypeLabel(event.type)}

@@ -1,61 +1,23 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { NavItem } from "@/lib/navigation";
 import type { EventListItem } from "@/lib/event-filters";
-import { getEventTypeLabel } from "@/lib/event-filters";
-import {
-  eventDetailPath,
-  formatEventDateTime,
-  getEventTypeStyle,
-} from "@/lib/event-display";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer } from "@/components/layout/PageShell";
+import { SectionHeading } from "@/components/layout/SectionHeading";
+import { EventListCard } from "@/components/events/EventListCard";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { Logo } from "@/components/layout/Logo";
-import { cn, formatPrice } from "@/lib/utils";
+import { InstagramIcon } from "@/components/ui/InstagramIcon";
+import { formatPrice } from "@/lib/utils";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 import type { InstagramPost } from "@/lib/instagram";
 import { InstagramFeed } from "@/components/home/InstagramFeed";
-
-function SectionHeading({
-  eyebrow,
-  title,
-  href,
-  linkLabel,
-}: {
-  eyebrow?: string;
-  title: string;
-  href?: string;
-  linkLabel?: string;
-}) {
-  return (
-    <div className="mb-8 flex items-end justify-between gap-4">
-      <div>
-        {eyebrow && (
-          <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-jackals-red-light">
-            {eyebrow}
-          </p>
-        )}
-        <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
-          {title}
-        </h2>
-      </div>
-      {href && linkLabel && (
-        <Link
-          href={href}
-          className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-jackals-red-light transition-colors hover:text-jackals-red"
-        >
-          {linkLabel}
-          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-        </Link>
-      )}
-    </div>
-  );
-}
+import type { Product } from "@/types/product";
 
 function FeatureCard({
   href,
@@ -84,59 +46,6 @@ function FeatureCard({
     </Link>
   );
 }
-
-function UpcomingEventCard({ event }: { event: EventListItem }) {
-  const style = getEventTypeStyle(event.type);
-  const { dateLabel, timeLabel } = formatEventDateTime(
-    event.startDate,
-    event.endDate,
-  );
-
-  return (
-    <Link href={eventDetailPath(event.id)} className="group block h-full">
-      <Card className="motion-hover-lift relative h-full overflow-hidden border-white/10 bg-jackals-surface/90 p-0 group-hover:border-jackals-red/30 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
-        <div className={cn("h-1 w-full", style.dot)} aria-hidden />
-        <div className="p-6">
-          <span
-            className={cn(
-              "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-              style.badge,
-            )}
-          >
-            {getEventTypeLabel(event.type)}
-          </span>
-          <CardTitle className="mt-3">{event.title}</CardTitle>
-          <div className="mt-4 space-y-2 text-sm text-zinc-400">
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 shrink-0 text-zinc-500" />
-              {dateLabel}
-            </div>
-            <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 shrink-0 text-zinc-500" />
-              {timeLabel}
-            </div>
-            {event.location && (
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 shrink-0 text-zinc-500" />
-                {event.location}
-              </div>
-            )}
-          </div>
-          <p className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-jackals-red-light/80 transition-colors group-hover:text-jackals-red-light">
-            View details
-            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-          </p>
-        </div>
-      </Card>
-    </Link>
-  );
-}
-
-type Product = {
-  id: string;
-  name: string;
-  price: number;
-};
 
 type FeaturedAlbum = {
   id: string;
@@ -195,20 +104,7 @@ export function HomePage({
                   rel="noopener noreferrer"
                   className="group mt-8 inline-flex items-center gap-2.5 border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:border-jackals-red/40 hover:bg-jackals-red/10 hover:text-jackals-red-light"
                 >
-                  <svg
-                    aria-hidden
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4 transition-transform group-hover:scale-110"
-                  >
-                    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
-                    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-                    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
-                  </svg>
+                  <InstagramIcon className="transition-transform group-hover:scale-110" />
                   @jackalsvolleyball
                 </a>
               </div>
@@ -259,7 +155,7 @@ export function HomePage({
             </AnimateIn>
             <StaggerIn className="grid gap-5 md:grid-cols-3">
               {upcomingEvents.map((event) => (
-                <UpcomingEventCard key={event.id} event={event} />
+                <EventListCard key={event.id} event={event} />
               ))}
             </StaggerIn>
           </PageContainer>

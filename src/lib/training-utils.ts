@@ -1,3 +1,6 @@
+import { DAYS_OF_WEEK } from "@/lib/utils";
+import type { TrainingSessionCardData } from "@/types/training-session";
+
 export const SESSION_CATEGORIES = {
   WEEKLY: "WEEKLY",
   FUN: "FUN",
@@ -41,15 +44,6 @@ export function formatRecurrenceLabel(
   options?: { includeDateRange?: boolean },
 ) {
   const includeDateRange = options?.includeDateRange ?? false;
-  const days = [
-    "Sunday",
-    "Monday",
-    "Tuesday",
-    "Wednesday",
-    "Thursday",
-    "Friday",
-    "Saturday",
-  ];
 
   const fmt = (date: Date) =>
     date.toLocaleDateString("en-GB", {
@@ -64,7 +58,7 @@ export function formatRecurrenceLabel(
       : "One-off";
   }
 
-  const day = days[session.dayOfWeek];
+  const day = DAYS_OF_WEEK[session.dayOfWeek];
   const interval =
     session.recurrenceWeeks === 1
       ? `Every ${day}`
@@ -194,3 +188,20 @@ export const SESSION_MANAGER_CONFIG = {
 
 export type SessionManagerConfig =
   (typeof SESSION_MANAGER_CONFIG)[keyof typeof SESSION_MANAGER_CONFIG];
+
+export function groupSessionsByDay(sessions: TrainingSessionCardData[]) {
+  const recurring = sessions.filter((s) => s.recurring);
+  const oneOff = sessions
+    .filter((s) => !s.recurring && s.sessionDate)
+    .sort(
+      (a, b) =>
+        new Date(a.sessionDate!).getTime() - new Date(b.sessionDate!).getTime(),
+    );
+
+  const grouped = DAYS_OF_WEEK.map((day, index) => ({
+    day,
+    sessions: recurring.filter((s) => s.dayOfWeek === index),
+  })).filter((group) => group.sessions.length > 0);
+
+  return { grouped, oneOff };
+}

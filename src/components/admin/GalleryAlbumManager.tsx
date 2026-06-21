@@ -19,13 +19,13 @@ type AlbumItem = {
   _count: { photos: number };
 };
 
-const CATEGORIES = ["MATCH", "TRAINING", "SOCIAL", "EVENT"] as const;
+import { GALLERY_CATEGORIES } from "@/lib/gallery-categories";
 
 const emptyForm = {
   title: "",
   description: "",
   coverImageUrl: "",
-  category: "TRAINING" as (typeof CATEGORIES)[number],
+  category: "TRAINING" as (typeof GALLERY_CATEGORIES)[number],
   featured: false,
   sortOrder: 0,
 };
@@ -61,7 +61,7 @@ export function GalleryAlbumManager({
       title: album.title,
       description: album.description ?? "",
       coverImageUrl: album.coverImageUrl,
-      category: album.category as (typeof CATEGORIES)[number],
+      category: album.category as (typeof GALLERY_CATEGORIES)[number],
       featured: album.featured,
       sortOrder: album.sortOrder,
     });
@@ -152,11 +152,11 @@ export function GalleryAlbumManager({
               onChange={(event) =>
                 setForm({
                   ...form,
-                  category: event.target.value as (typeof CATEGORIES)[number],
+                  category: event.target.value as (typeof GALLERY_CATEGORIES)[number],
                 })
               }
             >
-              {CATEGORIES.map((category) => (
+              {GALLERY_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
                   {category}
                 </option>

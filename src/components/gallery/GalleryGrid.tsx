@@ -14,7 +14,7 @@ import {
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 
-const CATEGORIES = ["ALL", "MATCH", "TRAINING", "SOCIAL", "EVENT"] as const;
+import { GALLERY_FILTER_OPTIONS } from "@/lib/gallery-categories";
 
 export function GalleryGrid({ albums }: { albums: GalleryAlbumItem[] }) {
   const [filter, setFilter] = useState<string>("ALL");
@@ -43,7 +43,7 @@ export function GalleryGrid({ albums }: { albums: GalleryAlbumItem[] }) {
 
       <AnimateIn immediate>
         <FilterPills
-          options={[...CATEGORIES]}
+          options={[...GALLERY_FILTER_OPTIONS]}
           active={filter}
           onChange={setFilter}
           className="mb-10"
