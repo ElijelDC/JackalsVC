@@ -6,6 +6,7 @@ import type { Product } from "@/types/product";
 import { useAddToCart } from "@/hooks/useAddToCart";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { SizeSelector } from "@/components/shop/SizeSelector";
+import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Button } from "@/components/ui/Button";
 import { formatPrice, parseJsonArray } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ export function ProductDetail({ product }: { product: Product }) {
   const { addToCart, added } = useAddToCart(product);
 
   return (
+    <AnimateIn immediate>
     <div className="grid gap-8 md:grid-cols-2">
       <ProductPlaceholder className="aspect-square" size="lg" />
 
@@ -75,5 +77,6 @@ export function ProductDetail({ product }: { product: Product }) {
         </div>
       </div>
     </div>
+    </AnimateIn>
   );
 }

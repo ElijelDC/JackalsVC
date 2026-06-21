@@ -1,4 +1,7 @@
+"use client";
+
 import { Logo } from "@/components/layout/Logo";
+import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 
 export function AuthShell({
@@ -14,15 +17,17 @@ export function AuthShell({
 }) {
   return (
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-12 ambient-bg">
-      <Card className="w-full max-w-md border-jackals-red/20">
-        <div className="mb-6 flex justify-center">
-          <Logo size="lg" href={null} glow />
-        </div>
-        <CardTitle className="text-center text-2xl">{title}</CardTitle>
-        <CardDescription className="mt-2 text-center">{description}</CardDescription>
-        {children}
-        {footer}
-      </Card>
+      <AnimateIn immediate className="w-full max-w-md">
+        <Card className="border-jackals-red/20">
+          <div className="mb-6 flex justify-center">
+            <Logo size="lg" href={null} glow />
+          </div>
+          <CardTitle className="text-center text-2xl">{title}</CardTitle>
+          <CardDescription className="mt-2 text-center">{description}</CardDescription>
+          {children}
+          {footer}
+        </Card>
+      </AnimateIn>
     </div>
   );
 }

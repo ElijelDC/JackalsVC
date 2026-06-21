@@ -17,7 +17,7 @@ export function ProductCard({ product }: { product: Product }) {
   const { addToCart, added } = useAddToCart(product);
 
   return (
-    <Card className="flex flex-col overflow-hidden p-0">
+    <Card className="motion-hover-lift flex flex-col overflow-hidden p-0">
       <Link href={`/shop/${product.id}`}>
         <ProductPlaceholder className="h-48 transition-colors hover:bg-jackals-surface-muted" />
       </Link>

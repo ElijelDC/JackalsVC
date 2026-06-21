@@ -110,7 +110,7 @@ export function Header({ session }: { session: Session | null }) {
   const closeMobile = () => setMobileOpen(false);
 
   return (
-    <header className="sticky top-0 z-50 border-b border-white/10 bg-background/95 backdrop-blur-md">
+    <header className="motion-header-enter sticky top-0 z-50 border-b border-white/10 bg-background/95 backdrop-blur-md">
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent" />
       <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Logo size="nav" showText className="min-w-[52px] shrink-0" />
@@ -137,7 +137,7 @@ export function Header({ session }: { session: Session | null }) {
       </div>
 
       {mobileOpen && (
-        <nav className="border-t border-white/10 bg-background px-4 py-4 md:hidden">
+        <nav className="motion-mobile-menu border-t border-white/10 bg-background px-4 py-4 md:hidden">
           <div className="flex flex-col gap-1">
             <NavLinks
               pathname={pathname}

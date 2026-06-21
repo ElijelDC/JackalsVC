@@ -23,7 +23,7 @@ export function NavLinks({
           href={href}
           onClick={onNavigate}
           className={cn(
-            "flex items-center font-medium transition-colors",
+            "motion-nav-link flex items-center font-medium",
             variant === "desktop"
               ? "gap-1.5 px-3 py-2 text-sm clip-slash-reverse"
               : "gap-2 px-3 py-2.5 text-sm",

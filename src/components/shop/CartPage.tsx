@@ -10,6 +10,7 @@ import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { Button } from "@/components/ui/Button";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { FormError } from "@/components/ui/FormMessage";
+import { AnimateIn } from "@/components/motion/AnimateIn";
 import { apiPost } from "@/lib/client-api";
 import { formatPrice } from "@/lib/utils";
 
@@ -52,20 +53,23 @@ export function CartPage() {
 
   if (items.length === 0) {
     return (
-      <Card className="text-center">
-        <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-zinc-600" />
-        <CardTitle>Your cart is empty</CardTitle>
-        <p className="mt-2 text-sm text-zinc-400">
-          Browse the shop to find jerseys and club merchandise.
-        </p>
-        <Link href="/shop">
-          <Button className="mt-6">Browse shop</Button>
-        </Link>
-      </Card>
+      <AnimateIn immediate>
+        <Card className="text-center">
+          <ShoppingBag className="mx-auto mb-4 h-12 w-12 text-zinc-600" />
+          <CardTitle>Your cart is empty</CardTitle>
+          <p className="mt-2 text-sm text-zinc-400">
+            Browse the shop to find jerseys and club merchandise.
+          </p>
+          <Link href="/shop">
+            <Button className="mt-6">Browse shop</Button>
+          </Link>
+        </Card>
+      </AnimateIn>
     );
   }
 
   return (
+    <AnimateIn immediate>
     <div className="grid gap-8 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
         {items.map((item) => (
@@ -146,5 +150,6 @@ export function CartPage() {
         </Card>
       </div>
     </div>
+    </AnimateIn>
   );
 }
