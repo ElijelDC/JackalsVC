@@ -5,6 +5,7 @@ import { CalendarDays, LayoutList } from "lucide-react";
 import { CalendarView } from "@/components/calendar/CalendarView";
 import { EventsListView } from "@/components/events/EventsListView";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { AnimateIn } from "@/components/motion/AnimateIn";
 import type { EventListItem } from "@/lib/event-filters";
 import type { EventsCalendarEvent } from "@/lib/events-config";
 import type { TrainingSessionCardData } from "@/types/training-session";
@@ -140,20 +141,22 @@ export function EventsPage({
         }
       />
 
-      <div className="mb-10">
+      <AnimateIn delay={50} className="mb-10">
         <EventsViewToggle view={view} onViewChange={setView} />
-      </div>
+      </AnimateIn>
 
-      {view === "list" ? (
-        <EventsListView
-          funSessions={funSessions}
-          tournaments={tournaments}
-          skillsClinics={skillsClinics}
-          socials={socials}
-        />
-      ) : (
-        <CalendarView events={calendarEvents} isLoggedIn={isLoggedIn} />
-      )}
+      <AnimateIn delay={100} key={view}>
+        {view === "list" ? (
+          <EventsListView
+            funSessions={funSessions}
+            tournaments={tournaments}
+            skillsClinics={skillsClinics}
+            socials={socials}
+          />
+        ) : (
+          <CalendarView events={calendarEvents} isLoggedIn={isLoggedIn} />
+        )}
+      </AnimateIn>
     </PageContainer>
   );
 }

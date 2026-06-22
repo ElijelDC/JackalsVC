@@ -23,6 +23,8 @@ import {
 } from "@/lib/membership-config";
 import { apiPost } from "@/lib/client-api";
 import { useAuthModal } from "@/components/providers/AuthModalProvider";
+import { AnimateIn } from "@/components/motion/AnimateIn";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 import { cn, formatEuroFee } from "@/lib/utils";
 
 export type MembershipPlanCheckout = {
@@ -47,7 +49,8 @@ export function MembershipLockedView({ membership }: { membership: LockedMembers
   const installments = buildInstallments(membership.paymentSchedule, pricing);
 
   return (
-    <Card className="border-jackals-red/30">
+    <AnimateIn immediate>
+      <Card className="border-jackals-red/30">
       <div className="flex items-start gap-3">
         <Lock className="mt-0.5 h-5 w-5 shrink-0 text-jackals-red-light" />
         <div>
@@ -86,6 +89,7 @@ export function MembershipLockedView({ membership }: { membership: LockedMembers
         ))}
       </ul>
     </Card>
+    </AnimateIn>
   );
 }
 
@@ -236,7 +240,7 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
   };
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
+    <StaggerIn className="mx-auto max-w-4xl space-y-8" stagger={100}>
       <AlertBanner message={message} />
 
       <Card className="overflow-hidden border-jackals-red/25 p-0">
@@ -272,20 +276,18 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
           </p>
         </div>
 
-        <div
-          className="grid gap-4 md:grid-cols-3"
-          role="radiogroup"
-          aria-label="Payment schedule"
-        >
-          {scheduleOptions.map((option) => (
-            <ScheduleOptionCard
-              key={option.id}
-              option={option}
-              pricing={pricing}
-              selected={selectedSchedule === option.id}
-              onSelect={() => handleScheduleSelect(option.id)}
-            />
-          ))}
+        <div role="radiogroup" aria-label="Payment schedule">
+          <StaggerIn className="grid gap-4 md:grid-cols-3" stagger={80}>
+            {scheduleOptions.map((option) => (
+              <ScheduleOptionCard
+                key={option.id}
+                option={option}
+                pricing={pricing}
+                selected={selectedSchedule === option.id}
+                onSelect={() => handleScheduleSelect(option.id)}
+              />
+            ))}
+          </StaggerIn>
         </div>
 
         {selectedSchedule && checkoutStep === 1 && (
@@ -296,6 +298,7 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
       </section>
 
       {selectedSchedule && checkoutStep === 2 && (
+        <AnimateIn immediate>
         <section className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -379,7 +382,8 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
             </p>
           </Card>
         </section>
+        </AnimateIn>
       )}
-    </div>
+    </StaggerIn>
   );
 }

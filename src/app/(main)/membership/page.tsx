@@ -4,6 +4,7 @@ import { auth } from "@/auth";
 import { MemberPaymentStatus } from "@/components/membership/MemberPaymentStatus";
 import { MembershipCheckout } from "@/components/membership/MembershipPlans";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { AnimatedBlock } from "@/components/motion/AnimatedBlock";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import {
   CLUB_MEMBERSHIP_PLAN_NAME,
@@ -80,13 +81,13 @@ export default async function MembershipPage() {
           clubBank={clubBank}
         />
 
-        <p className="mt-8 text-center text-sm text-zinc-500">
+        <AnimatedBlock delay={80} className="mt-8 text-center text-sm text-zinc-500">
           <Link href="/dashboard" className="text-jackals-red-light hover:text-jackals-red">
             Back to dashboard
           </Link>
           {" · "}
           Payment schedule cannot be changed
-        </p>
+        </AnimatedBlock>
       </PageContainer>
     );
   }
@@ -99,13 +100,15 @@ export default async function MembershipPage() {
           description="Club membership is not available right now."
           centered
         />
-        <Card>
-          <CardTitle>Check back soon</CardTitle>
-          <CardDescription className="mt-2">
-            The club hasn&apos;t published a membership plan yet. Contact an admin if you think
-            this is a mistake.
-          </CardDescription>
-        </Card>
+        <AnimatedBlock delay={80}>
+          <Card>
+            <CardTitle>Check back soon</CardTitle>
+            <CardDescription className="mt-2">
+              The club hasn&apos;t published a membership plan yet. Contact an admin if you think
+              this is a mistake.
+            </CardDescription>
+          </Card>
+        </AnimatedBlock>
       </PageContainer>
     );
   }

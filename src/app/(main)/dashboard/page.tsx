@@ -7,6 +7,7 @@ import {
   MemberPaymentsPanel,
 } from "@/components/dashboard/MemberDashboardPanels";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 import {
   enrichEventRecords,
   serializeEnrichedEvent,
@@ -87,30 +88,30 @@ export default async function DashboardPage() {
         description="Your membership, training, and matches at a glance"
       />
 
-      <MemberPaymentsPanel
-        memberships={memberships.map((m) => ({
-          id: m.id,
-          status: m.status,
-          paymentSchedule: m.paymentSchedule as "MONTHLY" | "INSTALLMENTS" | "FULL",
-          startDate: m.startDate.toISOString(),
-          endDate: m.endDate.toISOString(),
-          plan: { name: m.plan.name, price: m.plan.price },
-        }))}
-        payments={payments.map((p) => ({
-          id: p.id,
-          amount: p.amount,
-          status: p.status,
-          installmentNumber: p.installmentNumber,
-          dueDate: p.dueDate?.toISOString() ?? null,
-        }))}
-      />
+      <AnimatedPageSections>
+        <MemberPaymentsPanel
+          memberships={memberships.map((m) => ({
+            id: m.id,
+            status: m.status,
+            paymentSchedule: m.paymentSchedule as "MONTHLY" | "INSTALLMENTS" | "FULL",
+            startDate: m.startDate.toISOString(),
+            endDate: m.endDate.toISOString(),
+            plan: { name: m.plan.name, price: m.plan.price },
+          }))}
+          payments={payments.map((p) => ({
+            id: p.id,
+            amount: p.amount,
+            status: p.status,
+            installmentNumber: p.installmentNumber,
+            dueDate: p.dueDate?.toISOString() ?? null,
+          }))}
+        />
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-2">
-        <DashboardUpcomingTrainingCard teamName={team?.name ?? null} sessions={upcomingTraining} />
-        <DashboardUpcomingMatchesCard teamName={team?.name ?? null} matches={upcomingMatches} />
-      </div>
+        <div className="grid gap-8 lg:grid-cols-2">
+          <DashboardUpcomingTrainingCard teamName={team?.name ?? null} sessions={upcomingTraining} />
+          <DashboardUpcomingMatchesCard teamName={team?.name ?? null} matches={upcomingMatches} />
+        </div>
 
-      <div className="mt-8">
         <DashboardUpcomingClubEventsPanel
           upcomingEvents={upcomingClubEvents.map((e) => ({
             id: e.id,
@@ -124,7 +125,7 @@ export default async function DashboardPage() {
             trainingSessionId: e.trainingSessionId,
           }))}
         />
-      </div>
+      </AnimatedPageSections>
     </PageContainer>
   );
 }

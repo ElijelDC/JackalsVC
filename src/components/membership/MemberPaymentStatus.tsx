@@ -6,6 +6,7 @@ import { PaymentProofUpload } from "@/components/payments/PaymentProofUpload";
 import { IbanTransferDetails } from "@/components/payments/IbanTransferDetails";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 import type { PaymentSchedule } from "@/lib/membership-config";
 import { formatPrice } from "@/lib/utils";
 
@@ -80,7 +81,7 @@ export function MemberPaymentStatus({
   const isActive = membership.status === "ACTIVE";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <StaggerIn className="mx-auto max-w-2xl space-y-6" stagger={90}>
       <Card className="py-5">
         <div className="flex items-start gap-3">
           {isActive ? (
@@ -141,7 +142,7 @@ export function MemberPaymentStatus({
         <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-zinc-500">
           Full schedule
         </h3>
-        <div className="space-y-3">
+        <StaggerIn className="space-y-3" stagger={60}>
           {payments.map((payment) => (
             <Card key={payment.id} className="py-4">
               <div className="flex items-start justify-between gap-4">
@@ -173,7 +174,7 @@ export function MemberPaymentStatus({
               </div>
             </Card>
           ))}
-        </div>
+        </StaggerIn>
       </div>
 
       {!isActive && nextPayment && (
@@ -181,6 +182,6 @@ export function MemberPaymentStatus({
           Your membership activates once we receive your first bank transfer.
         </p>
       )}
-    </div>
+    </StaggerIn>
   );
 }

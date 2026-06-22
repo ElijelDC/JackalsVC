@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { AnimatedBlock } from "@/components/motion/AnimatedBlock";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = {
@@ -25,7 +26,8 @@ export default async function ProfilePage() {
         description="Your club member details from the Jackals roster"
       />
 
-      <Card className="max-w-lg">
+      <AnimatedBlock delay={80}>
+        <Card className="max-w-lg">
         <dl className="space-y-5">
           <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -53,6 +55,7 @@ export default async function ProfilePage() {
           </div>
         </dl>
       </Card>
+      </AnimatedBlock>
     </PageContainer>
   );
 }

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 import { getEventTypeLabel } from "@/lib/event-filters";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";
 import {
@@ -120,7 +121,7 @@ function UpcomingList({
   }
 
   return (
-    <>
+    <StaggerIn className="divide-y divide-white/10" stagger={60}>
       {preview.map((item) => {
         const startDate = new Date(item.startDate);
         const display = getDashboardResponseDisplay(item.userStatus, startDate);
@@ -144,7 +145,7 @@ function UpcomingList({
         {viewAllLabel}
         <ChevronRight className="h-3.5 w-3.5" />
       </Link>
-    </>
+    </StaggerIn>
   );
 }
 
@@ -179,7 +180,7 @@ export function DashboardUpcomingClubEventsPanel({
               No club events in the next 4 weeks.
             </p>
           ) : (
-            <>
+            <StaggerIn className="divide-y divide-white/10" stagger={60}>
               {clubEvents.slice(0, PREVIEW_LIMIT).map((event) => {
                 const startDate = new Date(event.startDate);
                 return (
@@ -203,7 +204,7 @@ export function DashboardUpcomingClubEventsPanel({
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               )}
-            </>
+            </StaggerIn>
           )}
         </div>
       </Card>
