@@ -26,7 +26,7 @@ export type PaymentScheduleOption = {
 };
 
 export const CLUB_MEMBERSHIP_SEASON_LABEL =
-  "for the full 2026/27 Irish National League Season";
+  "for the full 2026/27 Irish National League";
 
 export const CLUB_MEMBERSHIP_PLAN_NAME = "Club Membership 2026/27";
 

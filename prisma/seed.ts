@@ -422,7 +422,7 @@ async function main() {
   const seasonPlan = await prisma.membershipPlan.create({
     data: {
       name: CLUB_MEMBERSHIP_PLAN_NAME,
-      description: "Full 2026/27 Irish National League Season membership.",
+      description: "Full 2026/27 Irish National League membership.",
       price: 420,
       durationMonths: 7,
       features: JSON.stringify([
