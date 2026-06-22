@@ -1,4 +1,4 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
@@ -49,4 +49,15 @@ export async function savePaymentProofFile(
   await writeFile(path.join(directory, filename), buffer);
 
   return `/uploads/payment-proofs/${filename}`;
+}
+
+export async function deletePaymentProofFile(proofUrl: string): Promise<void> {
+  if (!proofUrl.startsWith("/uploads/payment-proofs/")) return;
+
+  const filePath = path.join(process.cwd(), "public", proofUrl);
+  try {
+    await unlink(filePath);
+  } catch {
+    // File may already be gone — clearing the DB record is enough.
+  }
 }

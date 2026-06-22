@@ -15,14 +15,13 @@ import type {
   SessionCalendarExport,
 } from "@/lib/session-calendar";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer } from "@/components/layout/PageShell";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { FunSessionJoinFlow } from "@/components/training/FunSessionJoinFlow";
 import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
+import { TrainingAttendanceActions } from "@/components/training/TrainingAttendanceActions";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
-import { EventReminderButton } from "@/components/calendar/EventReminderButton";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { FUN_SESSION_CALENDAR_WEEKS } from "@/lib/event-filters";
 import { cn } from "@/lib/utils";
@@ -51,8 +50,7 @@ export function SessionDetailPage({
   calendarExport,
   calendarIcsPath,
   sessionPagePath,
-  reminderEventId,
-  hasReminder,
+  linkedCalendarEventId,
   attendanceUrl,
   paymentUrl,
   reclubUsername,
@@ -65,14 +63,14 @@ export function SessionDetailPage({
   listLabel,
   siteOrigin,
   openAttendance = false,
+  signedUpEventIds = [],
 }: {
   session: Session;
   upcomingSchedule: ScheduleOccurrence[];
   calendarExport: SessionCalendarExport | null;
   calendarIcsPath: string;
   sessionPagePath: string;
-  reminderEventId: string | null;
-  hasReminder: boolean;
+  linkedCalendarEventId: string | null;
   attendanceUrl: string | null;
   paymentUrl: string | null;
   reclubUsername: string | null;
@@ -85,7 +83,9 @@ export function SessionDetailPage({
   listLabel: string;
   siteOrigin: string;
   openAttendance?: boolean;
+  signedUpEventIds?: string[];
 }) {
+  const signedUpIds = new Set(signedUpEventIds);
   const recurrenceLabel = formatRecurrenceLabel(session);
   const oneOffDate =
     !session.recurring && session.sessionDate
@@ -107,7 +107,7 @@ export function SessionDetailPage({
       ? new Date(calendarExport.endDate)
       : null;
   const nextCalendarEventId =
-    nextOccurrence?.calendarEventId ?? reminderEventId;
+    nextOccurrence?.calendarEventId ?? linkedCalendarEventId;
   const nextSessionLocation =
     nextOccurrence?.location ?? calendarExport?.location ?? session.location;
 
@@ -232,6 +232,24 @@ export function SessionDetailPage({
                             Next up
                           </span>
                         )}
+                        {!openAttendance &&
+                          occurrence.calendarEventId &&
+                          isLoggedIn &&
+                          canAccessAttendance && (
+                            <TrainingAttendanceActions
+                              eventId={occurrence.calendarEventId}
+                              initialStatus={
+                                signedUpIds.has(occurrence.calendarEventId)
+                                  ? "ATTENDING"
+                                  : "UNANSWERED"
+                              }
+                              canAccessAttendance={canAccessAttendance}
+                              isLoggedIn={isLoggedIn}
+                              signInUrl={`/login?callbackUrl=${sessionPagePath}`}
+                              compact
+                              detailHref={`/training/session/${occurrence.calendarEventId}`}
+                            />
+                          )}
                         {occurrence.calendarEventId && (
                           <ChevronRight className="h-4 w-4 text-zinc-500" />
                         )}
@@ -334,22 +352,6 @@ export function SessionDetailPage({
                 </p>
               )}
 
-              {isLoggedIn && reminderEventId && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-zinc-300">
-                    Club reminder
-                  </p>
-                  <p className="text-xs text-zinc-500">
-                    Save this date to your member dashboard. This is separate
-                    from adding it to your phone or desktop calendar.
-                  </p>
-                  <EventReminderButton
-                    eventId={reminderEventId}
-                    initialHasReminder={hasReminder}
-                  />
-                </div>
-              )}
-
               {openAttendance && !paymentUrl && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-zinc-300">
@@ -372,40 +374,21 @@ export function SessionDetailPage({
                   )}
                 </div>
               )}
-
-              {!openAttendance || !paymentUrl ? (
-                <>
-                  {!openAttendance && attendanceUrl && canAccessAttendance && (
-                    <AttendanceLink
-                      sessionId={session.id}
-                      basePath={attendBasePath}
-                      occurrenceDate={attendanceOccurrenceDate}
-                      label={
-                        nextSessionStart
-                          ? `Register for ${format(nextSessionStart, "EEE d MMM")} on Reclub`
-                          : "Register attendance on Reclub"
-                      }
-                      variant="primary"
-                    />
-                  )}
-
-                  {!openAttendance && attendanceUrl &&
-                    !canAccessAttendance &&
-                    isLoggedIn && (
-                      <Link href="/membership">
-                        <Button className="w-full">Get membership to register</Button>
-                      </Link>
-                    )}
-
-                  {!openAttendance && attendanceUrl && !isLoggedIn && (
-                    <Link href={`/login?callbackUrl=${attendBasePath}/${session.id}`}>
-                      <Button className="w-full">Sign in to register attendance</Button>
-                    </Link>
-                  )}
-                </>
-              ) : null}
             </div>
           </Card>
+
+          {!openAttendance && nextCalendarEventId && (
+            <TrainingAttendanceActions
+              eventId={nextCalendarEventId}
+              initialStatus={
+                signedUpIds.has(nextCalendarEventId) ? "ATTENDING" : "UNANSWERED"
+              }
+              canAccessAttendance={canAccessAttendance}
+              isLoggedIn={isLoggedIn}
+              signInUrl={`/login?callbackUrl=${sessionPagePath}`}
+              detailHref={`/training/session/${nextCalendarEventId}`}
+            />
+          )}
 
           {openAttendance && paymentUrl && (
             <FunSessionJoinFlow
@@ -434,7 +417,7 @@ export function SessionDetailPage({
           <Card>
             <CardDescription>
               Looking for one specific date? Pick it from the schedule — each
-              date has its own event page with calendar export and reminders.
+              date has its own event page with calendar export.
             </CardDescription>
           </Card>
         </div>

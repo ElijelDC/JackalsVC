@@ -49,6 +49,9 @@ export function SessionListPage({
                     session={session}
                     showRecurrence={formatRecurrenceLabel(session)}
                     detailBasePath={detailBasePath}
+                    accentType={
+                      detailBasePath.includes("fun-sessions") ? "FUN" : undefined
+                    }
                   />
                 ))}
               </StaggerIn>
@@ -70,6 +73,9 @@ export function SessionListPage({
                       "EEEE, d MMMM yyyy",
                     )}
                     detailBasePath={detailBasePath}
+                    accentType={
+                      detailBasePath.includes("fun-sessions") ? "FUN" : undefined
+                    }
                   />
                 ))}
               </StaggerIn>

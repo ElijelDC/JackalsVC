@@ -10,7 +10,7 @@ import {
 } from "@/lib/training-utils";
 import { getSiteUrl } from "@/lib/site-url.server";
 import { SessionDetailPage } from "@/components/training/SessionDetailPage";
-import { whatsOnSectionPath } from "@/lib/whats-on";
+import { eventsSectionPath } from "@/lib/events-config";
 
 export async function generateMetadata({
   params,
@@ -41,7 +41,6 @@ export default async function FunSessionPage({
   const context = await getSessionDetailPageContext(
     id,
     SESSION_CATEGORIES.FUN,
-    authSession?.user?.id,
   );
   const canAccessAttendance =
     isLoggedIn && authSession?.user
@@ -57,8 +56,7 @@ export default async function FunSessionPage({
       calendarExport={context.calendarExport}
       calendarIcsPath={sessionCalendarIcsPath(id, SESSION_CATEGORIES.FUN)}
       sessionPagePath={`${config.publicPath}/${id}`}
-      reminderEventId={context.reminderEventId}
-      hasReminder={context.hasReminder}
+      linkedCalendarEventId={context.linkedCalendarEventId}
       attendanceUrl={context.attendanceUrl}
       paymentUrl={context.paymentUrl}
       reclubUsername={context.session.reclubUsername}
@@ -67,8 +65,8 @@ export default async function FunSessionPage({
       canAccessAttendance={canAccessAttendance}
       isLoggedIn={isLoggedIn}
       attendBasePath={config.attendPath}
-      listPath={whatsOnSectionPath("funSessions")}
-      listLabel="What's On?"
+      listPath={eventsSectionPath("funSessions")}
+      listLabel="Events"
       siteOrigin={siteOrigin}
       openAttendance
     />

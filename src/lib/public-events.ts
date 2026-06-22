@@ -12,16 +12,31 @@ import {
 import { resolveOccurrenceAttendanceUrl, resolveOccurrencePaymentUrl } from "@/lib/training-occurrence";
 import { prisma } from "@/lib/prisma";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
+import { getTeamTrainingSession, getUserTrainingTeamKey } from "@/lib/training-teams";
 import { isOpenReclubEvent } from "@/lib/event-reclub";
 
-export async function getPublicEvents(isLoggedIn: boolean): Promise<EventListItem[]> {
+export async function getPublicEvents(
+  isLoggedIn: boolean,
+  userId?: string,
+): Promise<EventListItem[]> {
   const events = await prisma.event.findMany({ orderBy: { startDate: "asc" } });
   const enriched = await enrichEventRecords(events);
-  const serialized = enriched.map(serializeEnrichedEvent);
+  let serialized = enriched.map(serializeEnrichedEvent);
 
-  return filterFunSessionsWithinCalendarHorizon(
-    filterEventsForViewer(serialized, isLoggedIn),
-  );
+  serialized = filterEventsForViewer(serialized, isLoggedIn);
+
+  if (userId) {
+    const teamKey = await getUserTrainingTeamKey(userId);
+    const teamSession = teamKey ? await getTeamTrainingSession(teamKey) : null;
+
+    serialized = serialized.filter((event) => {
+      if (event.type !== "TRAINING") return true;
+      if (!teamSession) return false;
+      return event.trainingSessionId === teamSession.id;
+    });
+  }
+
+  return filterFunSessionsWithinCalendarHorizon(serialized);
 }
 
 export async function getPublicEvent(
@@ -52,7 +67,7 @@ export function sessionSchedulePath(event: EventListItem) {
     return `/fun-sessions/${event.trainingSessionId}`;
   }
   if (event.type === "TRAINING") {
-    return `/training/${event.trainingSessionId}`;
+    return `/training/session/${event.id}`;
   }
   return null;
 }

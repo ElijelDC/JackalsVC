@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { syncAllTrainingSessionEvents } from "../src/lib/training-events";
+import { CLUB_MEMBERSHIP_PLAN_NAME } from "../src/lib/membership-config";
 
 const dbUrl =
   process.env.DATABASE_URL ?? `file:${path.join(process.cwd(), "dev.db")}`;
@@ -99,6 +100,41 @@ async function main() {
     });
   }
 
+  const rosterEntries = [
+    { vlyNumber: "VLY123", name: "Viktoriia", email: null, trainingTeamKey: "DIV3_WOMENS" },
+    { vlyNumber: "VLY122", name: "Elijel", email: null, trainingTeamKey: "DIV2_MENS" },
+    { vlyNumber: "VLY10001", name: "Demo Member", email: "member@jackalsvc.com", trainingTeamKey: "DIV4_MENS" },
+    { vlyNumber: "VLY10002", name: "Sarah Jones", email: "sarah.jones@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
+    { vlyNumber: "VLY10003", name: "Mike Chen", email: "mike.chen@jackalsvc.com", trainingTeamKey: "DIV2_MENS" },
+    { vlyNumber: "VLY10004", name: "Emma Williams", email: "emma.williams@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
+    { vlyNumber: "VLY10005", name: "James Patel", email: "james.patel@jackalsvc.com", trainingTeamKey: "DIV2_MENS" },
+    { vlyNumber: "VLY10006", name: "Olivia Brown", email: "olivia.brown@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
+    { vlyNumber: "VLY10007", name: "Liam Davis", email: "liam.davis@jackalsvc.com", trainingTeamKey: "DIV4_MENS" },
+    { vlyNumber: "VLY10008", name: "Sophie Taylor", email: "sophie.taylor@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
+    { vlyNumber: "VLY10009", name: "Alex Morgan", email: "alex.morgan@jackalsvc.com", trainingTeamKey: "DIV2_MENS" },
+    { vlyNumber: "VLY10010", name: "Priya Sharma", email: "priya.sharma@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
+    { vlyNumber: "VLY10011", name: "Noah Thompson", email: "noah.thompson@jackalsvc.com", trainingTeamKey: "DIV4_MENS" },
+    { vlyNumber: "VLY10999", name: "New Member Test", email: null, trainingTeamKey: null },
+  ] as const;
+
+  await prisma.clubMember.deleteMany();
+
+  for (const entry of rosterEntries) {
+    const linkedUser = entry.email
+      ? await prisma.user.findUnique({ where: { email: entry.email } })
+      : null;
+
+    await prisma.clubMember.create({
+      data: {
+        vlyNumber: entry.vlyNumber,
+        name: entry.name,
+        active: true,
+        trainingTeamKey: entry.trainingTeamKey,
+        userId: linkedUser?.id ?? null,
+      },
+    });
+  }
+
   const admin = await prisma.user.findUniqueOrThrow({
     where: { email: "admin@jackalsvc.com" },
   });
@@ -136,43 +172,43 @@ async function main() {
     data: [
       {
         category: "WEEKLY",
-        title: "Beginners Session",
-        dayOfWeek: 2,
-        startTime: "18:00",
-        endTime: "19:30",
-        location: "Sports Hall A",
-        level: "Beginner",
-        coach: "Coach Sarah",
-        description: "Fundamentals, passing, and serving for new players.",
-        attendanceUrl: "https://forms.gle/example-beginners",
-        recurringFrom: seasonStart,
-        recurringTo: seasonEnd,
-      },
-      {
-        category: "WEEKLY",
-        title: "Intermediate Training",
-        dayOfWeek: 2,
-        startTime: "19:30",
-        endTime: "21:00",
-        location: "Sports Hall A",
-        level: "Intermediate",
-        coach: "Coach Mike",
-        description: "Drills, positioning, and game scenarios.",
-        attendanceUrl: "https://forms.gle/example-intermediate",
-        recurringFrom: seasonStart,
-        recurringTo: seasonEnd,
-      },
-      {
-        category: "WEEKLY",
-        title: "Advanced Squad",
+        trainingTeamKey: "DIV2_MENS",
+        title: "Division 2 Mens Training",
         dayOfWeek: 4,
         startTime: "19:00",
         endTime: "21:00",
         location: "Sports Hall B",
-        level: "Advanced",
+        level: "Division 2 Mens",
         coach: "Coach James",
-        description: "Competitive training for league and tournament players.",
-        attendanceUrl: "https://forms.gle/example-advanced",
+        description: "Weekly squad training for Division 2 Mens.",
+        recurringFrom: seasonStart,
+        recurringTo: seasonEnd,
+      },
+      {
+        category: "WEEKLY",
+        trainingTeamKey: "DIV3_WOMENS",
+        title: "Division 3 Womens Training",
+        dayOfWeek: 1,
+        startTime: "19:00",
+        endTime: "21:00",
+        location: "Sports Hall A",
+        level: "Division 3 Womens",
+        coach: "Coach Sarah",
+        description: "Weekly squad training for Division 3 Womens.",
+        recurringFrom: seasonStart,
+        recurringTo: seasonEnd,
+      },
+      {
+        category: "WEEKLY",
+        trainingTeamKey: "DIV4_MENS",
+        title: "Division 4 Mens Training",
+        dayOfWeek: 3,
+        startTime: "19:00",
+        endTime: "21:00",
+        location: "Sports Hall A",
+        level: "Division 4 Mens",
+        coach: "Coach Mike",
+        description: "Weekly squad training for Division 4 Mens.",
         recurringFrom: seasonStart,
         recurringTo: seasonEnd,
       },
@@ -196,8 +232,74 @@ async function main() {
     ],
   });
 
-  await prisma.event.deleteMany();
+  await prisma.teamMatch.deleteMany();
   const now = new Date();
+
+  const div4Match = new Date(now);
+  div4Match.setDate(div4Match.getDate() + 5);
+  div4Match.setHours(20, 0, 0, 0);
+  const div4WarmUp = new Date(div4Match);
+  div4WarmUp.setMinutes(div4WarmUp.getMinutes() - 30);
+
+  const div4LockedMatch = new Date(now);
+  div4LockedMatch.setDate(div4LockedMatch.getDate() + 25);
+  div4LockedMatch.setHours(19, 30, 0, 0);
+  const div4LockedWarmUp = new Date(div4LockedMatch);
+  div4LockedWarmUp.setMinutes(div4LockedWarmUp.getMinutes() - 30);
+
+  const div2Match = new Date(now);
+  div2Match.setDate(div2Match.getDate() + 12);
+  div2Match.setHours(19, 0, 0, 0);
+  const div2WarmUp = new Date(div2Match);
+  div2WarmUp.setMinutes(div2WarmUp.getMinutes() - 30);
+
+  const div3Match = new Date(div2Match);
+  div3Match.setDate(div3Match.getDate() + 2);
+  div3Match.setHours(18, 30, 0, 0);
+  const div3WarmUp = new Date(div3Match);
+  div3WarmUp.setMinutes(div3WarmUp.getMinutes() - 45);
+
+  await prisma.teamMatch.createMany({
+    data: [
+      {
+        trainingTeamKey: "DIV2_MENS",
+        opponentName: "Beach Kings VC",
+        venue: "HOME",
+        location: "Sports Hall B",
+        warmUpTime: div2WarmUp,
+        matchStart: div2Match,
+        notes: "White kit. Meet in the changing room before warm-up.",
+      },
+      {
+        trainingTeamKey: "DIV3_WOMENS",
+        opponentName: "Sand Stormers",
+        venue: "AWAY",
+        location: "North Beach Arena",
+        warmUpTime: div3WarmUp,
+        matchStart: div3Match,
+        notes: "Carpool from the club at 17:30.",
+      },
+      {
+        trainingTeamKey: "DIV4_MENS",
+        opponentName: "Coastal Spikers",
+        venue: "HOME",
+        location: "Sports Hall A",
+        warmUpTime: div4WarmUp,
+        matchStart: div4Match,
+      },
+      {
+        trainingTeamKey: "DIV4_MENS",
+        opponentName: "Harbour Volley",
+        venue: "AWAY",
+        location: "East Pier Courts",
+        warmUpTime: div4LockedWarmUp,
+        matchStart: div4LockedMatch,
+        notes: "Responses open 2 weeks before this match.",
+      },
+    ],
+  });
+
+  await prisma.event.deleteMany();
   await prisma.event.createMany({
     data: [
       {
@@ -319,15 +421,15 @@ async function main() {
   await prisma.membershipPlan.deleteMany();
   const seasonPlan = await prisma.membershipPlan.create({
     data: {
-      name: "Season Membership",
-      description: "Full 7-month Jackals VC season membership for all club members.",
-      price: 400,
+      name: CLUB_MEMBERSHIP_PLAN_NAME,
+      description: "Full 2026/27 Irish National League membership.",
+      price: 420,
       durationMonths: 7,
       features: JSON.stringify([
-        "All training sessions",
-        "Club tournaments and events",
-        "Member shop discounts",
-        "Squad selection eligibility",
+        "Training Sessions",
+        "Full Club Kit",
+        "League Matchdays",
+        "Merchandise Discounts",
       ]),
     },
   });
@@ -837,8 +939,8 @@ async function main() {
   console.log("Seed complete.");
   console.log(`Admin: admin@jackalsvc.com / password123`);
   console.log(`Member: member@jackalsvc.com / password123 (no membership — test checkout)`);
-  console.log(`Members: any *@jackalsvc.com account / password123`);
-  console.log(`Club codes: JACKALS-2026, JACKALS-TRIAL, JACKALS-ADMIN`);
+  console.log(`Register VLY: VLY123 (Viktoriia) · VLY122 (Elijel) — not yet linked`);
+  console.log(`Test register VLY: VLY10999 (New Member Test — not yet linked to an account)`);
 }
 
 main()

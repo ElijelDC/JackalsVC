@@ -7,7 +7,12 @@ import { AdminSection } from "@/components/admin/AdminShell";
 import { Checkbox, Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
-import { formatPrice, parseJsonArray } from "@/lib/utils";
+import {
+  createMembershipPricing,
+  getMonthlyFirstAmount,
+  getMonthlyRecurringAmount,
+} from "@/lib/membership-config";
+import { formatEuroFee, parseJsonArray } from "@/lib/utils";
 
 type MembershipPlan = {
   id: string;
@@ -134,10 +139,17 @@ export function MembershipPlansManager({
     setPlans(initialPlans);
   }, [initialPlans]);
 
+  const parsedPrice = Number(form.price);
+  const parsedDuration = Number(form.durationMonths);
+  const pricingPreview =
+    form.price && form.durationMonths
+      ? createMembershipPricing(parsedPrice, parsedDuration)
+      : null;
+
   return (
     <AdminSection
       title="Membership plans"
-      description="Manage pricing and features shown on the public Membership page. Hide a plan instead of deleting it if members are already subscribed."
+      description="Set the membership price and features shown on the membership checkout. The monthly schedule charges more in the first month, then a lower rate each month after."
     >
       <AdminFormCard
         title={editingId ? "Edit plan" : "Add new plan"}
@@ -172,7 +184,7 @@ export function MembershipPlansManager({
             />
           </div>
           <div>
-            <Label htmlFor="plan-price">Price (£)</Label>
+            <Label htmlFor="plan-price">Membership price (€)</Label>
             <Input
               id="plan-price"
               type="number"
@@ -182,6 +194,12 @@ export function MembershipPlansManager({
               onChange={(e) => setForm({ ...form, price: e.target.value })}
               required
             />
+            {pricingPreview && (
+              <p className="mt-1.5 text-xs text-zinc-500">
+                Monthly schedule preview: {formatEuroFee(getMonthlyFirstAmount(pricingPreview))} first
+                month, then {formatEuroFee(getMonthlyRecurringAmount(pricingPreview))}/mo.
+              </p>
+            )}
           </div>
           <div>
             <Label htmlFor="plan-duration">Duration (months)</Label>
@@ -203,7 +221,7 @@ export function MembershipPlansManager({
               rows={4}
               value={form.features}
               onChange={(e) => setForm({ ...form, features: e.target.value })}
-              placeholder="All training sessions, Club shop 10% off, Priority event booking"
+              placeholder="Training Sessions, Full Club Kit, League Matchdays, Merchandise Discounts"
               required
             />
           </div>
@@ -228,7 +246,7 @@ export function MembershipPlansManager({
             <AdminListItem
               key={plan.id}
               title={plan.name}
-              subtitle={`${formatPrice(plan.price)} / ${plan.durationMonths} mo · ${parseJsonArray(plan.features).length} features${plan._count?.memberships ? ` · ${plan._count.memberships} member${plan._count.memberships !== 1 ? "s" : ""}` : ""}${plan.active ? "" : " · Hidden"}`}
+              subtitle={`${formatEuroFee(plan.price)} / ${plan.durationMonths} mo · ${parseJsonArray(plan.features).length} features${plan._count?.memberships ? ` · ${plan._count.memberships} member${plan._count.memberships !== 1 ? "s" : ""}` : ""}${plan.active ? "" : " · Hidden"}`}
               onEdit={() => startEdit(plan)}
               onDelete={() => handleDelete(plan.id)}
               deleting={deletingId === plan.id}

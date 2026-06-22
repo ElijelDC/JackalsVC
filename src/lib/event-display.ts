@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { isSkillsClinicEvent } from "@/lib/events-config";
 
 export const EVENT_TYPE_STYLES: Record<
   string,
@@ -11,16 +12,22 @@ export const EVENT_TYPE_STYLES: Record<
     accent: "border-blue-400/50",
   },
   FUN: {
-    badge: "bg-amber-500/15 text-amber-400",
-    dot: "bg-amber-400",
-    cell: "bg-amber-500/10",
-    accent: "border-amber-400/50",
+    badge: "bg-yellow-500/15 text-yellow-300",
+    dot: "bg-yellow-400",
+    cell: "bg-yellow-500/10",
+    accent: "border-yellow-400/50",
   },
   TOURNAMENT: {
     badge: "bg-jackals-red/15 text-jackals-red-light",
     dot: "bg-jackals-red-light",
     cell: "bg-jackals-red/10",
     accent: "border-jackals-red/50",
+  },
+  SKILLS_CLINIC: {
+    badge: "bg-blue-500/15 text-blue-300",
+    dot: "bg-blue-400",
+    cell: "bg-blue-500/10",
+    accent: "border-blue-400/50",
   },
   SOCIAL: {
     badge: "bg-purple-500/15 text-purple-400",
@@ -45,6 +52,33 @@ export const DEFAULT_EVENT_TYPE_STYLE = {
 
 export function getEventTypeStyle(type: string) {
   return EVENT_TYPE_STYLES[type] ?? DEFAULT_EVENT_TYPE_STYLE;
+}
+
+export function getEventDisplayStyle(event: {
+  type: string;
+  title?: string;
+  description?: string | null;
+  sessionDescription?: string | null;
+}) {
+  return EVENT_TYPE_STYLES[getEventDisplayStyleKey(event)] ?? DEFAULT_EVENT_TYPE_STYLE;
+}
+
+export function getEventDisplayStyleKey(event: {
+  type: string;
+  title?: string;
+  description?: string | null;
+  sessionDescription?: string | null;
+}): string {
+  if (event.type === "SOCIAL" && event.title) {
+    return isSkillsClinicEvent({
+      title: event.title,
+      description: event.sessionDescription ?? event.description ?? null,
+    })
+      ? "SKILLS_CLINIC"
+      : "SOCIAL";
+  }
+
+  return event.type;
 }
 
 export function formatEventDateTime(

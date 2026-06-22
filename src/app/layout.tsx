@@ -43,10 +43,12 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} ${oswald.variable} h-full`}
       style={{ backgroundColor: "#202121" }}
+      suppressHydrationWarning
     >
       <body
         className="min-h-full flex flex-col bg-background text-zinc-100 antialiased"
         style={{ backgroundColor: "#202121", color: "#f5f5f5" }}
+        suppressHydrationWarning
       >
         <style
           dangerouslySetInnerHTML={{

@@ -94,7 +94,7 @@ export function ContactShowcase() {
             title="New to Jackals VC?"
             description="Browse open sessions and events to see what is coming up before you get in touch."
           >
-            <Link href="/whats-on" className="w-full sm:w-auto">
+            <Link href="/events" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
                 What&apos;s on?
               </Button>

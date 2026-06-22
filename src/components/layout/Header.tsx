@@ -4,26 +4,38 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
-import { LogIn, LogOut, Menu, Settings, User, X, Zap } from "lucide-react";
+import { Lock, LogOut, Menu, Settings, X } from "lucide-react";
 import { useState, useEffect } from "react";
+import { DashboardNavLink } from "@/components/layout/DashboardNavLink";
 import { Logo } from "@/components/layout/Logo";
 import { NavLinks } from "@/components/layout/NavLinks";
 import { UserMenu } from "@/components/layout/UserMenu";
 import { Button } from "@/components/ui/Button";
+import { useAuthModal } from "@/components/providers/AuthModalProvider";
 import { cn } from "@/lib/utils";
 
 function AuthActions({
   session,
+  pathname,
   onNavigate,
   variant,
 }: {
   session: Session | null;
+  pathname: string;
   onNavigate?: () => void;
   variant: "desktop" | "mobile";
 }) {
+  const { openAuth } = useAuthModal();
+
   if (session?.user) {
     if (variant === "desktop") {
-      return <UserMenu session={session} />;
+      return (
+        <div className="flex items-center gap-3">
+          <DashboardNavLink pathname={pathname} />
+          <div className="h-6 w-px bg-white/10" aria-hidden />
+          <UserMenu session={session} />
+        </div>
+      );
     }
 
     return (
@@ -38,14 +50,6 @@ function AuthActions({
             Admin
           </Link>
         )}
-        <Link
-          href="/dashboard"
-          onClick={onNavigate}
-          className="flex min-h-11 items-center gap-2 px-3 py-3 text-sm font-medium text-zinc-400 active:bg-white/5"
-        >
-          <User className="h-4 w-4" />
-          Dashboard
-        </Link>
         <button
           onClick={() => signOut({ callbackUrl: "/" })}
           className="flex min-h-11 items-center gap-2 px-3 py-3 text-sm font-medium text-zinc-500 active:bg-white/5"
@@ -59,42 +63,30 @@ function AuthActions({
 
   if (variant === "desktop") {
     return (
-      <>
-        <Link
-          href="/login"
-          className="flex items-center gap-1.5 px-3 py-2 text-sm font-medium text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
-        >
-          <LogIn className="h-4 w-4" />
-          Sign in
-        </Link>
-        <Link href="/register">
-          <Button size="sm" className="gap-1.5">
-            <Zap className="h-3.5 w-3.5" />
-            Join the club
-          </Button>
-        </Link>
-      </>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="gap-1.5 text-zinc-300 hover:text-white"
+        onClick={() => openAuth("signin", "/dashboard")}
+      >
+        <Lock className="h-3.5 w-3.5" />
+        Members Only
+      </Button>
     );
   }
 
   return (
-    <>
-      <Link
-        href="/login"
-        onClick={onNavigate}
-        className="flex min-h-11 items-center gap-2 px-3 py-3 text-sm font-medium text-zinc-400 active:bg-white/5"
-      >
-        <LogIn className="h-4 w-4" />
-        Sign in
-      </Link>
-      <Link
-        href="/register"
-        onClick={onNavigate}
-        className="flex min-h-11 items-center justify-center bg-jackals-red px-3 py-3 text-center text-sm font-semibold text-white active:bg-jackals-red/90"
-      >
-        Join the club
-      </Link>
-    </>
+    <button
+      type="button"
+      onClick={() => {
+        openAuth("signin", "/dashboard");
+        onNavigate?.();
+      }}
+      className="flex min-h-11 items-center gap-2 px-3 py-3 text-sm font-medium text-jackals-red-light active:bg-white/5"
+    >
+      <Lock className="h-4 w-4" />
+      Members Only
+    </button>
   );
 }
 
@@ -131,8 +123,12 @@ export function Header({ session }: { session: Session | null }) {
           />
         </nav>
 
-        <div className="hidden items-center gap-1 lg:flex">
-          <AuthActions session={session} variant="desktop" />
+        <div className="hidden items-center lg:flex">
+          <AuthActions
+            session={session}
+            pathname={pathname}
+            variant="desktop"
+          />
         </div>
 
         <button
@@ -152,6 +148,15 @@ export function Header({ session }: { session: Session | null }) {
           className="motion-mobile-menu border-t border-white/10 bg-background lg:hidden"
         >
           <div className="flex max-h-[calc(100dvh-4.25rem)] flex-col">
+            {session?.user && (
+              <div className="shrink-0 border-b border-white/10 px-4 py-3">
+                <DashboardNavLink
+                  pathname={pathname}
+                  onNavigate={closeMobile}
+                  variant="mobile"
+                />
+              </div>
+            )}
             <div className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-3">
               <div className="flex flex-col gap-0.5">
                 <NavLinks
@@ -166,6 +171,7 @@ export function Header({ session }: { session: Session | null }) {
               <div className="flex flex-col gap-0.5">
                 <AuthActions
                   session={session}
+                  pathname={pathname}
                   onNavigate={closeMobile}
                   variant="mobile"
                 />

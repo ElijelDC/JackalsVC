@@ -22,7 +22,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Bump when schema changes so dev hot-reload picks up a fresh client.
-const PRISMA_SCHEMA_VERSION = 17;
+const PRISMA_SCHEMA_VERSION = 23;
 
 function isPrismaClientCurrent(client: PrismaClient) {
   return (
@@ -31,7 +31,11 @@ function isPrismaClientCurrent(client: PrismaClient) {
     typeof client.galleryAlbum?.findMany === "function" &&
     typeof client.achievement?.findMany === "function" &&
     typeof client.registrationCode?.findMany === "function" &&
-    typeof client.paymentImportRecord?.findMany === "function"
+    typeof client.paymentImportRecord?.findMany === "function" &&
+    typeof client.clubMember?.findMany === "function" &&
+    typeof client.emailVerification?.findMany === "function" &&
+    typeof client.teamMatch?.findMany === "function" &&
+    typeof client.matchSignup?.findMany === "function"
   );
 }
 

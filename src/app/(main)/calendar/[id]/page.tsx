@@ -6,9 +6,9 @@ import {
   getPublicEvent,
   sessionSchedulePath,
 } from "@/lib/public-events";
-import { prisma } from "@/lib/prisma";
+import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
 import { getSiteUrl } from "@/lib/site-url.server";
-import { resolveWhatsOnBackLink } from "@/lib/whats-on";
+import { resolveEventsBackLink } from "@/lib/events-config";
 
 export async function generateMetadata({
   params,
@@ -40,26 +40,23 @@ export default async function CalendarEventPage({
   const event = await getPublicEvent(id, isLoggedIn);
   const schedulePath = sessionSchedulePath(event);
   const attendance = await getEventAttendanceContext(event);
-  const whatsOnBack = resolveWhatsOnBackLink(from);
-
-  const hasReminder = isLoggedIn
-    ? Boolean(
-        await prisma.eventReminder.findFirst({
-          where: { userId: session!.user!.id, eventId: id },
-        }),
-      )
-    : false;
+  const eventsBack = resolveEventsBackLink(from);
 
   const canAccessAttendance =
     isLoggedIn && session?.user
       ? await hasAttendanceAccess(session.user)
       : false;
+  const initialAttendanceStatus =
+    isLoggedIn && session?.user && event.type === "TRAINING"
+      ? (
+          await getUserEventAttendanceStatuses(session.user.id, [id])
+        ).get(id) ?? "UNANSWERED"
+      : "UNANSWERED";
   const siteOrigin = await getSiteUrl();
 
   return (
     <EventDetailPage
       event={event}
-      hasReminder={hasReminder}
       schedulePath={schedulePath}
       attendanceUrl={attendance.attendanceUrl}
       paymentUrl={attendance.paymentUrl}
@@ -69,8 +66,9 @@ export default async function CalendarEventPage({
       canAccessAttendance={canAccessAttendance}
       isLoggedIn={isLoggedIn}
       siteOrigin={siteOrigin}
-      listPath={whatsOnBack?.path}
-      listLabel={whatsOnBack?.label}
+      listPath={eventsBack?.path}
+      listLabel={eventsBack?.label}
+      initialAttendanceStatus={initialAttendanceStatus}
     />
   );
 }

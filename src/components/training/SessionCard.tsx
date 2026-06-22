@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { CalendarDays, Clock, MapPin, User } from "lucide-react";
+import { getEventTypeStyle } from "@/lib/event-display";
 import { formatRecurrenceLabel } from "@/lib/training-utils";
 import type { TrainingSessionCardData } from "@/types/training-session";
 import { Badge } from "@/components/ui/Badge";
@@ -22,14 +23,17 @@ export function SessionCard({
   detailBasePath,
   showRecurrence,
   className,
+  accentType,
 }: {
   session: TrainingSessionCardData;
   detailBasePath: string;
   showRecurrence?: string;
   className?: string;
+  accentType?: "FUN";
 }) {
   const recurrence =
     showRecurrence ?? sessionRecurrenceLabel(session);
+  const accentStyle = accentType ? getEventTypeStyle(accentType) : null;
 
   return (
     <Link
@@ -38,47 +42,65 @@ export function SessionCard({
     >
       <Card
         className={cn(
-          "motion-hover-lift h-full group-hover:border-jackals-red/40 group-hover:bg-jackals-surface",
+          "motion-hover-lift h-full overflow-hidden group-hover:border-jackals-red/40 group-hover:bg-jackals-surface",
+          accentStyle && "p-0",
           className,
         )}
       >
-        <div className="mb-3 flex items-start justify-between gap-2">
-          <CardTitle>{session.title}</CardTitle>
-          <Badge>{session.level}</Badge>
-        </div>
-
-        <div className="space-y-2 text-sm text-zinc-400">
-          {recurrence && (
-            <div className="flex items-center gap-2">
-              <CalendarDays className="h-4 w-4 shrink-0 text-zinc-500" />
-              {recurrence}
-            </div>
-          )}
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 shrink-0 text-zinc-500" />
-            {session.startTime} – {session.endTime}
-          </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="h-4 w-4 shrink-0 text-zinc-500" />
-            {session.location}
-          </div>
-          {session.coach && (
-            <div className="flex items-center gap-2">
-              <User className="h-4 w-4 shrink-0 text-zinc-500" />
-              Coach: {session.coach}
-            </div>
-          )}
-        </div>
-
-        {session.description && (
-          <p className="mt-3 line-clamp-2 text-sm text-zinc-500">
-            {session.description}
-          </p>
+        {accentStyle && (
+          <div className={cn("h-1 w-full", accentStyle.dot)} aria-hidden />
         )}
+        <div className={cn(accentStyle && "p-6")}>
+          <div className="mb-3 flex items-start justify-between gap-2">
+            {accentStyle ? (
+              <span
+                className={cn(
+                  "rounded-full px-2.5 py-0.5 text-xs font-medium",
+                  accentStyle.badge,
+                )}
+              >
+                Fun session
+              </span>
+            ) : (
+              <CardTitle>{session.title}</CardTitle>
+            )}
+            <Badge>{session.level}</Badge>
+          </div>
+          {accentStyle && <CardTitle className="mb-3">{session.title}</CardTitle>}
 
-        <p className="mt-4 text-sm font-medium text-jackals-red-light/80 transition-colors group-hover:text-jackals-red-light">
-          View details →
-        </p>
+          <div className="space-y-2 text-sm text-zinc-400">
+            {recurrence && (
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 shrink-0 text-zinc-500" />
+                {recurrence}
+              </div>
+            )}
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 shrink-0 text-zinc-500" />
+              {session.startTime} – {session.endTime}
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4 shrink-0 text-zinc-500" />
+              {session.location}
+            </div>
+            {session.coach && (
+              <div className="flex items-center gap-2">
+                <User className="h-4 w-4 shrink-0 text-zinc-500" />
+                Coach: {session.coach}
+              </div>
+            )}
+          </div>
+
+          {session.description && (
+            <p className="mt-3 line-clamp-2 text-sm text-zinc-500">
+              {session.description}
+            </p>
+          )}
+
+          <p className="mt-4 text-sm font-medium text-jackals-red-light/80 transition-colors group-hover:text-jackals-red-light">
+            View details →
+          </p>
+        </div>
       </Card>
     </Link>
   );

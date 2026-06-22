@@ -123,7 +123,6 @@ export async function getVisibleFunSessions(
 export async function getSessionDetailPageContext(
   id: string,
   category: SessionCategory,
-  userId?: string,
 ) {
   const session = await getPublicSession(id, category);
   const scheduleWeeksAhead =
@@ -136,22 +135,13 @@ export async function getSessionDetailPageContext(
     getUpcomingScheduleItems(session.id, scheduleWeeksAhead),
   ]);
 
-  let reminderEventId: string | null = null;
-  let hasReminder = false;
+  let linkedCalendarEventId: string | null = null;
 
   if (calendarExport) {
-    reminderEventId = await getLinkedCalendarEventId(
+    linkedCalendarEventId = await getLinkedCalendarEventId(
       session.id,
       calendarExport.occurrenceDate,
     );
-
-    if (userId && reminderEventId) {
-      hasReminder = Boolean(
-        await prisma.eventReminder.findFirst({
-          where: { userId, eventId: reminderEventId },
-        }),
-      );
-    }
   }
 
   return {
@@ -161,8 +151,7 @@ export async function getSessionDetailPageContext(
     paymentUrl: payment.url,
     reclubUsername: session.reclubUsername,
     calendarExport,
-    reminderEventId,
-    hasReminder,
+    linkedCalendarEventId,
     upcomingSchedule,
   };
 }

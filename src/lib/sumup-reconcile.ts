@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { buildPaymentReference } from "@/lib/payments";
 import { amountsMatch, completeMatchedPayment } from "@/lib/payment-match";
+import { CLUB_MEMBERSHIP_PLAN_NAME } from "@/lib/membership-config";
 import {
   getSumUpTransaction,
   isIncomingBusinessAccountCredit,
@@ -155,12 +156,17 @@ export async function createMembershipPayments(
       userId: input.userId,
       membershipId: input.membershipId,
       amount: installment.amount,
-      description: `Season membership · ${input.scheduleLabel} · ${installment.description}`,
+      description: `${CLUB_MEMBERSHIP_PLAN_NAME} · ${input.scheduleLabel} · ${installment.description}`,
       status: "PENDING",
       method: "BANK_TRANSFER",
       installmentNumber: installment.installmentNumber,
       dueDate: installment.dueDate,
-      paymentReference: buildPaymentReference(input.memberName, installment.dueDate),
+      paymentReference: buildPaymentReference(
+        input.memberName,
+        installment.dueDate,
+        installment.installmentNumber,
+        input.installments.length,
+      ),
     })),
   });
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AdminOverviewGrid } from "@/components/admin/AdminOverviewGrid";
 import { prisma } from "@/lib/prisma";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { AdminSection } from "@/components/admin/AdminShell";
@@ -11,6 +12,7 @@ import {
   CreditCard,
   Dumbbell,
   PartyPopper,
+  Trophy,
   Package,
   ShoppingBag,
   UserCheck,
@@ -48,6 +50,13 @@ const SECTIONS = [
     description: "Member-only recurring sessions",
     icon: Dumbbell,
     countKey: "training" as const,
+  },
+  {
+    href: "/admin/matches",
+    title: "Squad matches",
+    description: "League and friendly games per squad",
+    icon: Trophy,
+    countKey: "matches" as const,
   },
   {
     href: "/admin/fun-sessions",
@@ -113,6 +122,7 @@ export default async function AdminPage() {
     plans,
     members,
     training,
+    matches,
     funSessions,
     events,
     reminders,
@@ -128,6 +138,7 @@ export default async function AdminPage() {
     prisma.trainingSession.count({
       where: { category: "WEEKLY" },
     }),
+    prisma.teamMatch.count(),
     prisma.trainingSession.count({
       where: { category: "FUN" },
     }),
@@ -145,6 +156,7 @@ export default async function AdminPage() {
     plans,
     members,
     training,
+    matches,
     funSessions,
     events,
     reminders,
@@ -160,7 +172,7 @@ export default async function AdminPage() {
       title="Overview"
       description="Full database management — every table in one place. Changes go live immediately."
     >
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      <AdminOverviewGrid>
         {SECTIONS.filter(
           (section) =>
             SHOP_ENABLED ||
@@ -180,7 +192,7 @@ export default async function AdminPage() {
             </Card>
           </Link>
         ))}
-      </div>
+      </AdminOverviewGrid>
     </AdminSection>
   );
 }

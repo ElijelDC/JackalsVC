@@ -98,8 +98,8 @@ export function HomePage({
                     <InstagramIcon className="transition-transform group-hover:scale-110" />
                     @jackalsvolleyball
                   </a>
-                  <Link href="/whats-on">
-                    <Button size="lg">What&apos;s on?</Button>
+                  <Link href="/events">
+                    <Button size="lg">Events</Button>
                   </Link>
                 </div>
               </div>
@@ -144,7 +144,7 @@ export function HomePage({
               <SectionHeading
                 eyebrow="Don't miss out"
                 title="Upcoming events"
-                href="/whats-on"
+                href="/events"
                 linkLabel="View all"
               />
             </AnimateIn>

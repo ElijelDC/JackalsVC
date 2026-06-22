@@ -127,7 +127,7 @@ export function AboutShowcase() {
             title="Ready to see what we are about?"
             description="Browse open events, meet our squads, or get in touch — we would love to hear from you."
           >
-            <Link href="/whats-on" className="w-full sm:w-auto">
+            <Link href="/events" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">
                 What&apos;s on?
               </Button>

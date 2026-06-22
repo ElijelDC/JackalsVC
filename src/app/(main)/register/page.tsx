@@ -1,9 +1,14 @@
-import { RegisterForm } from "@/components/auth/RegisterForm";
+import { Suspense } from "react";
+import { AuthRedirect } from "@/components/auth/AuthRedirect";
 
 export const metadata = {
-  title: "Register | Jackals VC",
+  title: "Member register | Jackals VC",
 };
 
 export default function RegisterPage() {
-  return <RegisterForm />;
+  return (
+    <Suspense>
+      <AuthRedirect mode="register" />
+    </Suspense>
+  );
 }

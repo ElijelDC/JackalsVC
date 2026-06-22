@@ -54,7 +54,7 @@ export function RemindersManager({
   return (
     <AdminSection
       title="Event reminders"
-      description="See which members have set reminders for upcoming events, and remove them if needed."
+      description="Members get reminders automatically when they sign up for training. Remove entries here if needed."
     >
       {error && <p className="mb-4 text-sm text-jackals-red-light">{error}</p>}
 

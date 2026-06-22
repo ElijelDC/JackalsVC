@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { validateMembershipPlanPrice } from "@/lib/membership-config";
 import { prisma } from "@/lib/prisma";
 import { membershipPlanSchema } from "@/lib/validations";
 import type { z } from "zod";
@@ -13,6 +14,10 @@ function toPlanData(data: z.infer<typeof membershipPlanSchema>) {
     features: data.features,
     active: data.active,
   };
+}
+
+function validatePlanPricing(data: z.infer<typeof membershipPlanSchema>) {
+  return validateMembershipPlanPrice(data.price, data.durationMonths);
 }
 
 export async function GET() {
@@ -36,6 +41,9 @@ export async function POST(request: Request) {
     membershipPlanSchema,
   );
   if (parseError || !data) return parseError!;
+
+  const priceError = validatePlanPricing(data);
+  if (priceError) return jsonError(priceError, 400);
 
   const plan = await prisma.membershipPlan.create({ data: toPlanData(data) });
   return NextResponse.json({ plan }, { status: 201 });

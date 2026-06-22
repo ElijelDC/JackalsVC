@@ -100,6 +100,23 @@ export async function apiPut<T>(
   }
 }
 
+export async function apiPatch<T>(
+  url: string,
+  body: unknown,
+  fallbackError = "Something went wrong. Please try again.",
+): Promise<ApiResult<T>> {
+  try {
+    const res = await fetch(url, {
+      method: "PATCH",
+      headers: JSON_HEADERS,
+      body: JSON.stringify(body),
+    });
+    return parseResponse<T>(res, fallbackError);
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
 export async function apiDelete(
   url: string,
   fallbackError = "Something went wrong. Please try again.",
@@ -145,6 +162,27 @@ export async function apiUploadPaymentProof(
       method: "POST",
       body: formData,
     });
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? fallbackError };
+    }
+
+    return { ok: true, data: data as PaymentProofResponse };
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
+export async function apiRemovePaymentProof(
+  paymentId: string,
+  fallbackError = "Failed to remove screenshot",
+): Promise<ApiResult<PaymentProofResponse>> {
+  try {
+    const res = await fetch(
+      `/api/payments/proof?paymentId=${encodeURIComponent(paymentId)}`,
+      { method: "DELETE" },
+    );
     const data = await res.json();
 
     if (!res.ok) {

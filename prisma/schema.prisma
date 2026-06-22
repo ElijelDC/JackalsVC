@@ -22,6 +22,32 @@ model User {
   payments           Payment[]
   eventReminders     EventReminder[]
   eventSignups       EventSignup[]
+  matchSignups       MatchSignup[]
+  clubMember         ClubMember?
+}
+
+model ClubMember {
+  id              String   @id @default(cuid())
+  vlyNumber       String   @unique
+  name            String
+  active          Boolean  @default(true)
+  trainingTeamKey String?
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model EmailVerification {
+  id         String    @id @default(cuid())
+  email      String
+  vlyNumber  String
+  codeHash   String
+  expiresAt  DateTime
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([email, vlyNumber])
 }
 
 model RegistrationCode {
@@ -37,10 +63,11 @@ model RegistrationCode {
 }
 
 model TrainingSession {
-  id            String   @id @default(cuid())
-  category      String   @default("WEEKLY")
-  title         String
-  dayOfWeek     Int
+  id              String   @id @default(cuid())
+  category        String   @default("WEEKLY")
+  trainingTeamKey String?  @unique
+  title           String
+  dayOfWeek       Int
   startTime     String
   endTime       String
   location      String
@@ -106,7 +133,7 @@ model EventSignup {
   id        String   @id @default(cuid())
   userId    String
   eventId   String
-  status    String   @default("CONFIRMED")
+  status    String   @default("ATTENDING")
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
@@ -123,6 +150,34 @@ model EventReminder {
   createdAt DateTime @default(now())
 
   @@unique([userId, eventId])
+}
+
+model TeamMatch {
+  id              String        @id @default(cuid())
+  trainingTeamKey String
+  opponentName    String
+  venue           String
+  location        String
+  warmUpTime      DateTime
+  matchStart      DateTime
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  signups         MatchSignup[]
+
+  @@index([trainingTeamKey, matchStart])
+}
+
+model MatchSignup {
+  id        String    @id @default(cuid())
+  userId    String
+  matchId   String
+  status    String    @default("ATTENDING")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match     TeamMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+
+  @@unique([userId, matchId])
 }
 
 model MembershipPlan {

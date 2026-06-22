@@ -1,4 +1,4 @@
-import nodemailer from "nodemailer";
+import { getMailFromAddress, getMailTransporter } from "@/lib/email";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import type { z } from "zod";
 import type { contactSchema } from "@/lib/validations";
@@ -6,20 +6,7 @@ import type { contactSchema } from "@/lib/validations";
 type ContactFormData = z.infer<typeof contactSchema>;
 
 function getTransporter() {
-  const host = process.env.SMTP_HOST;
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
-
-  if (!host || !user || !pass) {
-    return null;
-  }
-
-  return nodemailer.createTransport({
-    host,
-    port: Number(process.env.SMTP_PORT ?? 587),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: { user, pass },
-  });
+  return getMailTransporter();
 }
 
 export async function sendContactEmail(data: ContactFormData) {
@@ -34,7 +21,7 @@ export async function sendContactEmail(data: ContactFormData) {
   }
 
   await transporter.sendMail({
-    from: process.env.SMTP_FROM ?? process.env.SMTP_USER,
+    from: getMailFromAddress() ?? process.env.SMTP_USER,
     to: CONTACT_EMAIL,
     replyTo: data.email,
     subject: `[Jackals VC] ${data.subject}`,

@@ -2,15 +2,37 @@ import { format } from "date-fns";
 
 export const CLUB_IBAN_DEFAULT = "IE89SUMU99036511293898";
 
-export function buildPaymentReference(memberName: string, dueDate: Date): string {
-  return `${memberName.trim()} ${format(dueDate, "d MMM yyyy")}`;
+export function buildPaymentReference(
+  memberName: string,
+  dueDate: Date,
+  installmentNumber?: number,
+  installmentTotal?: number,
+): string {
+  const dateLabel = format(dueDate, "d MMM yyyy");
+  const base = memberName.trim();
+
+  if (installmentNumber != null && installmentTotal != null) {
+    return `${base} · ${installmentNumber}/${installmentTotal} · ${dateLabel}`;
+  }
+
+  return `${base} ${dateLabel}`;
 }
 
 export function parsePaymentReference(reference: string): {
   memberName: string;
   dateLabel: string;
 } {
-  const parts = reference.trim().split(/\s+/);
+  const trimmed = reference.trim();
+  const segmented = trimmed.split(" · ").map((part) => part.trim());
+
+  if (segmented.length >= 3) {
+    return {
+      memberName: segmented.slice(0, -2).join(" · "),
+      dateLabel: segmented[segmented.length - 1]!,
+    };
+  }
+
+  const parts = trimmed.split(/\s+/);
 
   if (parts.length >= 4) {
     return {
@@ -19,7 +41,7 @@ export function parsePaymentReference(reference: string): {
     };
   }
 
-  return { memberName: reference.trim(), dateLabel: "" };
+  return { memberName: trimmed, dateLabel: "" };
 }
 
 export type ClubBankDetails = {

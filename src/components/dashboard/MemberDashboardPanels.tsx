@@ -1,21 +1,28 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Calendar, CreditCard, MapPin } from "lucide-react";
-import { IbanTransferDetails } from "@/components/payments/IbanTransferDetails";
-import { PaymentProofUpload } from "@/components/payments/PaymentProofUpload";
+import {
+  CalendarDays,
+  ChevronRight,
+  CreditCard,
+  Swords,
+} from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { AlertBanner } from "@/components/ui/FormMessage";
+import { StaggerIn } from "@/components/motion/StaggerIn";
+import { getEventTypeLabel } from "@/lib/event-filters";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";
-import { apiDelete, apiPost } from "@/lib/client-api";
+import {
+  getDashboardResponseDisplay,
+  itemNeedsUrgentResponse,
+  type TrainingAttendanceStatus,
+} from "@/lib/training-attendance-config";
 import { formatPrice } from "@/lib/utils";
 
-type SignupEvent = {
+const PREVIEW_LIMIT = 3;
+
+type DashboardEvent = {
   id: string;
   title: string;
   description: string | null;
@@ -23,126 +30,325 @@ type SignupEvent = {
   endDate: string | null;
   type: string;
   location: string | null;
+  coach?: string | null;
+  trainingSessionId?: string | null;
 };
 
-type MemberEventsPanelProps = {
-  upcomingEvents: SignupEvent[];
-  signedUpEventIds: string[];
+type DashboardUpcomingItem = {
+  id: string;
+  title: string;
+  startDate: string;
+  location: string | null;
+  userStatus: TrainingAttendanceStatus;
 };
 
-export function MemberEventsPanel({
+function DatePill({ date }: { date: Date }) {
+  return (
+    <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center border border-white/10 bg-jackals-surface text-center">
+      <span className="text-[10px] font-medium uppercase leading-none text-zinc-500">
+        {format(date, "MMM")}
+      </span>
+      <span className="text-sm font-bold leading-tight text-white">{format(date, "d")}</span>
+    </div>
+  );
+}
+
+function ResponseStatusBadge({
+  status,
+  eventDate,
+}: {
+  status: TrainingAttendanceStatus;
+  eventDate: Date;
+}) {
+  const display = getDashboardResponseDisplay(status, eventDate);
+
+  return <Badge className={display.badgeClassName}>{display.label}</Badge>;
+}
+
+function CompactEventRow({
+  href,
+  date,
+  title,
+  meta,
+  status,
+  eventDate,
+}: {
+  href: string;
+  date: Date;
+  title: string;
+  meta: string;
+  status?: TrainingAttendanceStatus;
+  eventDate?: Date;
+}) {
+  return (
+    <Link
+      href={href}
+      className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.03]"
+    >
+      <DatePill date={date} />
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="truncate font-medium text-white">{title}</p>
+          {status && eventDate && <ResponseStatusBadge status={status} eventDate={eventDate} />}
+        </div>
+        <p className="mt-0.5 truncate text-xs text-zinc-500">{meta}</p>
+      </div>
+      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400" />
+    </Link>
+  );
+}
+
+function UpcomingList({
+  items,
+  emptyMessage,
+  buildHref,
+  buildMeta,
+  viewAllHref,
+  viewAllLabel,
+}: {
+  items: DashboardUpcomingItem[];
+  emptyMessage: string;
+  buildHref: (item: DashboardUpcomingItem) => string;
+  buildMeta: (item: DashboardUpcomingItem, date: Date, statusLabel: string) => string;
+  viewAllHref: string;
+  viewAllLabel: string;
+}) {
+  const preview = items.slice(0, PREVIEW_LIMIT);
+  const remaining = items.length - preview.length;
+
+  if (items.length === 0) {
+    return <p className="px-4 py-6 text-center text-sm text-zinc-500">{emptyMessage}</p>;
+  }
+
+  return (
+    <StaggerIn className="divide-y divide-white/10" stagger={60}>
+      {preview.map((item) => {
+        const startDate = new Date(item.startDate);
+        const display = getDashboardResponseDisplay(item.userStatus, startDate);
+        return (
+          <CompactEventRow
+            key={item.id}
+            href={buildHref(item)}
+            date={startDate}
+            title={item.title}
+            meta={buildMeta(item, startDate, display.label)}
+            status={item.userStatus}
+            eventDate={startDate}
+          />
+        );
+      })}
+      <Link
+        href={viewAllHref}
+        className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
+      >
+        {remaining > 0 ? `+${remaining} more · ` : ""}
+        {viewAllLabel}
+        <ChevronRight className="h-3.5 w-3.5" />
+      </Link>
+    </StaggerIn>
+  );
+}
+
+export function DashboardUpcomingClubEventsPanel({
   upcomingEvents,
-  signedUpEventIds: initialSignedUpIds,
-}: MemberEventsPanelProps) {
-  const router = useRouter();
-  const [signedUpIds, setSignedUpIds] = useState(new Set(initialSignedUpIds));
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  const toggleSignup = async (eventId: string, isSignedUp: boolean) => {
-    setLoadingId(eventId);
-    setMessage(null);
-
-    const result = isSignedUp
-      ? await apiDelete(`/api/event-signups?eventId=${eventId}`, "Failed to cancel signup")
-      : await apiPost("/api/event-signups", { eventId }, "Failed to sign up");
-
-    setLoadingId(null);
-
-    if (!result.ok) {
-      setMessage(result.error);
-      return;
-    }
-
-    setSignedUpIds((prev) => {
-      const next = new Set(prev);
-      if (isSignedUp) next.delete(eventId);
-      else next.add(eventId);
-      return next;
-    });
-    router.refresh();
-  };
+}: {
+  upcomingEvents: DashboardEvent[];
+}) {
+  const clubEvents = upcomingEvents.filter((event) => event.type !== "TRAINING");
 
   return (
     <section>
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="font-display text-xl font-semibold text-white">
-          Trainings &amp; games
-        </h2>
+        <div>
+          <h2 className="font-display text-xl font-semibold text-white">
+            Upcoming club events
+          </h2>
+          <p className="mt-1 text-xs text-zinc-500">Tournaments and socials · next 4 weeks</p>
+        </div>
         <Link
-          href="/calendar"
-          className="text-sm text-jackals-red-light hover:text-jackals-red"
+          href="/events"
+          className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
         >
-          Full calendar
+          View all
         </Link>
       </div>
 
-      <AlertBanner message={message} />
-
-      {upcomingEvents.length === 0 ? (
-        <Card className="py-8 text-center text-zinc-400">
-          No upcoming events to sign up for right now. Check the{" "}
-          <Link href="/training" className="text-jackals-red-light hover:text-jackals-red">
-            training schedule
-          </Link>{" "}
-          for weekly sessions.
-        </Card>
-      ) : (
-        <div className="space-y-3">
-          {upcomingEvents.map((event) => {
-            const isSignedUp = signedUpIds.has(event.id);
-            const startDate = new Date(event.startDate);
-
-            return (
-              <Card key={event.id} className="py-4">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-medium text-white">{event.title}</p>
-                      <Badge>{event.type}</Badge>
-                      {isSignedUp && (
-                        <Badge className="border-green-500/30 bg-green-500/10 text-green-400">
-                          Signed up
-                        </Badge>
-                      )}
-                    </div>
-                    {event.description && (
-                      <p className="mt-1 text-sm text-zinc-400">{event.description}</p>
-                    )}
-                    <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-500">
-                      <span className="inline-flex items-center gap-1.5">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {format(startDate, "EEE, d MMM yyyy · HH:mm")}
-                        {event.endDate &&
-                          ` – ${format(new Date(event.endDate), "EEE, d MMM")}`}
-                      </span>
-                      {event.location && (
-                        <span className="inline-flex items-center gap-1.5">
-                          <MapPin className="h-3.5 w-3.5" />
-                          {event.location}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  <Button
-                    variant={isSignedUp ? "outline" : "primary"}
-                    size="sm"
-                    className="shrink-0"
-                    disabled={loadingId === event.id}
-                    onClick={() => toggleSignup(event.id, isSignedUp)}
-                  >
-                    {loadingId === event.id
-                      ? "Saving..."
-                      : isSignedUp
-                        ? "Cancel signup"
-                        : "Sign up"}
-                  </Button>
-                </div>
-              </Card>
-            );
-          })}
+      <Card className="overflow-hidden p-0">
+        <div className="divide-y divide-white/10">
+          {clubEvents.length === 0 ? (
+            <p className="px-4 py-6 text-center text-sm text-zinc-500">
+              No club events in the next 4 weeks.
+            </p>
+          ) : (
+            <StaggerIn className="divide-y divide-white/10" stagger={60}>
+              {clubEvents.slice(0, PREVIEW_LIMIT).map((event) => {
+                const startDate = new Date(event.startDate);
+                return (
+                  <CompactEventRow
+                    key={event.id}
+                    href={`/calendar/${event.id}`}
+                    date={startDate}
+                    title={event.title}
+                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}${
+                      event.location ? ` · ${event.location}` : ""
+                    }`}
+                  />
+                );
+              })}
+              {clubEvents.length > PREVIEW_LIMIT && (
+                <Link
+                  href="/events"
+                  className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
+                >
+                  +{clubEvents.length - PREVIEW_LIMIT} more events
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </StaggerIn>
+          )}
         </div>
-      )}
+      </Card>
+    </section>
+  );
+}
+
+/** @deprecated Use DashboardUpcomingClubEventsPanel */
+export function MemberEventsPanel({
+  upcomingEvents,
+}: {
+  upcomingEvents: DashboardEvent[];
+}) {
+  return <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingEvents} />;
+}
+
+export function DashboardUpcomingTrainingCard({
+  teamName,
+  sessions,
+}: {
+  teamName: string | null;
+  sessions: DashboardUpcomingItem[];
+}) {
+  const needsResponse = sessions.filter((session) =>
+    itemNeedsUrgentResponse(session.userStatus, new Date(session.startDate)),
+  ).length;
+
+  return (
+    <section className="flex h-full flex-col">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse">
+            <CalendarDays className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-white">Upcoming training</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              {!teamName
+                ? "No training team assigned"
+                : needsResponse > 0
+                  ? `${needsResponse} session${needsResponse === 1 ? "" : "s"} need your response this week`
+                  : `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"} · next 2 weeks`}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="flex flex-1 flex-col overflow-hidden p-0">
+        <div className="divide-y divide-white/10">
+          {!teamName ? (
+            <p className="px-4 py-6 text-center text-sm text-zinc-500">
+              Ask an admin to assign you to a training team.
+            </p>
+          ) : (
+            <UpcomingList
+              items={sessions}
+              emptyMessage="No training sessions in the next 2 weeks."
+              buildHref={(item) => `/training/session/${item.id}`}
+              buildMeta={(item, date, statusLabel) =>
+                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""} · ${statusLabel}`
+              }
+              viewAllHref="/training"
+              viewAllLabel="View training schedule"
+            />
+          )}
+        </div>
+      </Card>
+    </section>
+  );
+}
+
+/** @deprecated Use DashboardUpcomingTrainingCard */
+export function DashboardTrainingSignupsCard({
+  teamName,
+  signups,
+}: {
+  teamName: string | null;
+  signups: DashboardEvent[];
+}) {
+  return (
+    <DashboardUpcomingTrainingCard
+      teamName={teamName}
+      sessions={signups.map((event) => ({
+        id: event.id,
+        title: event.title,
+        startDate: event.startDate,
+        location: event.location,
+        userStatus: "ATTENDING",
+      }))}
+    />
+  );
+}
+
+export function DashboardUpcomingMatchesCard({
+  teamName,
+  matches,
+}: {
+  teamName: string | null;
+  matches: DashboardUpcomingItem[];
+}) {
+  const needsResponse = matches.filter((match) =>
+    itemNeedsUrgentResponse(match.userStatus, new Date(match.startDate)),
+  ).length;
+
+  return (
+    <section className="flex h-full flex-col">
+      <div className="mb-4 flex items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse">
+            <Swords className="h-5 w-5" />
+          </div>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-white">Upcoming matches</h2>
+            <p className="mt-1 text-xs text-zinc-500">
+              {!teamName
+                ? "No team assigned"
+                : needsResponse > 0
+                  ? `${needsResponse} match${needsResponse === 1 ? "" : "es"} need your response this week`
+                  : `${matches.length} match${matches.length === 1 ? "" : "es"} · next 2 weeks`}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <Card className="flex flex-1 flex-col overflow-hidden p-0">
+        <div className="divide-y divide-white/10">
+          {!teamName ? (
+            <p className="px-4 py-6 text-center text-sm text-zinc-500">
+              Ask an admin to assign you to a team.
+            </p>
+          ) : (
+            <UpcomingList
+              items={matches}
+              emptyMessage="No matches in the next 2 weeks."
+              buildHref={(item) => `/matches/${item.id}`}
+              buildMeta={(item, date, statusLabel) =>
+                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""} · ${statusLabel}`
+              }
+              viewAllHref="/matches"
+              viewAllLabel="View match schedule"
+            />
+          )}
+        </div>
+      </Card>
     </section>
   );
 }
@@ -150,16 +356,9 @@ export function MemberEventsPanel({
 type PaymentRecord = {
   id: string;
   amount: number;
-  description: string;
   status: string;
-  method: string;
-  paymentReference: string;
   installmentNumber: number | null;
   dueDate: string | null;
-  paidAt: string | null;
-  proofScreenshotUrl: string | null;
-  proofSubmittedAt: string | null;
-  createdAt: string;
 };
 
 type MembershipRecord = {
@@ -171,50 +370,14 @@ type MembershipRecord = {
   plan: { name: string; price: number };
 };
 
-type ClubBankDetails = {
-  accountHolder: string;
-  iban: string;
-  accountLabel: string;
-};
-
 type MemberPaymentsPanelProps = {
   memberships: MembershipRecord[];
   payments: PaymentRecord[];
-  clubBank: ClubBankDetails;
 };
-
-function paymentStatusBadge(
-  status: string,
-  dueDate: string | null,
-  proofSubmittedAt: string | null,
-) {
-  if (status === "COMPLETED") {
-    return (
-      <Badge className="border-green-500/30 bg-green-500/10 text-green-400">Paid</Badge>
-    );
-  }
-
-  if (proofSubmittedAt) {
-    return (
-      <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-300">Checking</Badge>
-    );
-  }
-
-  if (dueDate && new Date(dueDate) < new Date()) {
-    return (
-      <Badge className="border-amber-500/30 bg-amber-500/10 text-amber-400">Due</Badge>
-    );
-  }
-
-  return (
-    <Badge className="border-zinc-500/30 bg-zinc-500/10 text-zinc-300">Awaiting transfer</Badge>
-  );
-}
 
 export function MemberPaymentsPanel({
   memberships,
   payments,
-  clubBank,
 }: MemberPaymentsPanelProps) {
   const currentMembership = memberships.find((m) => new Date(m.endDate) > new Date());
   const activeMembership =
@@ -222,153 +385,102 @@ export function MemberPaymentsPanel({
   const pendingMembership =
     currentMembership?.status === "PENDING_PAYMENT" ? currentMembership : undefined;
 
+  const completedPayments = payments.filter((payment) => payment.status === "COMPLETED");
   const pendingPayments = payments.filter((payment) => payment.status === "PENDING");
   const nextPayment = pendingPayments[0];
-  const completedTotal = payments
-    .filter((payment) => payment.status === "COMPLETED")
-    .reduce((sum, payment) => sum + payment.amount, 0);
+  const completedTotal = completedPayments.reduce((sum, payment) => sum + payment.amount, 0);
+  const seasonTotal = currentMembership?.plan.price ?? payments.reduce((sum, p) => sum + p.amount, 0);
+  const paymentProgress =
+    payments.length > 0 ? Math.round((completedPayments.length / payments.length) * 100) : 0;
+  const schedule = currentMembership?.paymentSchedule;
+  const instalmentLabel = schedule === "MONTHLY" ? "months" : "instalments";
 
   return (
     <section>
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="font-display text-xl font-semibold text-white">
-          Membership &amp; payments
-        </h2>
-        {!currentMembership && (
-          <Link
-            href="/membership"
-            className="text-sm text-jackals-red-light hover:text-jackals-red"
-          >
-            Choose schedule
-          </Link>
-        )}
-        {currentMembership && (
-          <Link
-            href="/membership/payments"
-            className="text-sm text-jackals-red-light hover:text-jackals-red"
-          >
-            Payment status
-          </Link>
-        )}
+        <h2 className="font-display text-xl font-semibold text-white">Membership</h2>
+        <Link
+          href="/membership"
+          className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
+        >
+          {currentMembership ? "View more" : "Choose schedule"}
+        </Link>
       </div>
 
-      <Card className="mb-4 py-4">
-        <div className="flex items-start gap-3">
+      <Card className="overflow-hidden p-0">
+        <div className="flex items-start gap-3 px-4 py-4">
           <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-jackals-red-light" />
-          <div>
-            <p className="font-medium text-white">Current membership</p>
+          <div className="min-w-0 flex-1">
             {currentMembership ? (
               <>
-                <p className="mt-1 text-sm text-zinc-400">
+                <p className="font-medium text-white">
                   {activeMembership ? (
                     <span className="text-green-400">Active</span>
                   ) : (
                     <span className="text-amber-400">Awaiting first payment</span>
                   )}{" "}
-                  — {currentMembership.plan.name} ·{" "}
-                  {formatPaymentScheduleLabel(currentMembership.paymentSchedule)} · expires{" "}
+                  — {currentMembership.plan.name}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  {formatPaymentScheduleLabel(currentMembership.paymentSchedule)} ·{" "}
+                  {format(new Date(currentMembership.startDate), "d MMM yyyy")} –{" "}
                   {format(new Date(currentMembership.endDate), "d MMM yyyy")}
                 </p>
-                <p className="mt-1 text-sm text-zinc-500">
-                  Paid {formatPrice(completedTotal, "EUR")} so far · schedule locked
+                <p className="mt-1 text-xs text-zinc-500">
+                  {formatPrice(completedTotal, "EUR")} paid
+                  {seasonTotal > 0 && ` of ${formatPrice(seasonTotal, "EUR")}`}
                 </p>
+                {payments.length > 0 && (
+                  <div className="mt-3">
+                    <div className="mb-1.5 flex justify-between text-xs text-zinc-500">
+                      <span>Progress</span>
+                      <span>
+                        {completedPayments.length} of {payments.length} {instalmentLabel}
+                      </span>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-white/10">
+                      <div
+                        className="h-full rounded-full bg-green-500/80 transition-all"
+                        style={{ width: `${paymentProgress}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+                {nextPayment && (
+                  <p className="mt-3 text-sm text-zinc-400">
+                    Next:{" "}
+                    <span className="font-medium text-white">
+                      {formatPrice(nextPayment.amount, "EUR")}
+                    </span>
+                    {nextPayment.dueDate && (
+                      <span className="text-zinc-500">
+                        {" "}
+                        due {format(new Date(nextPayment.dueDate), "d MMM yyyy")}
+                      </span>
+                    )}
+                  </p>
+                )}
               </>
             ) : (
-              <p className="mt-1 text-sm text-zinc-400">
-                No membership yet.{" "}
-                <Link href="/membership" className="text-jackals-red-light hover:text-jackals-red">
-                  Choose your payment schedule
-                </Link>{" "}
-                — this choice is final for the season.
+              <p className="text-sm text-zinc-400">
+                No membership yet. Choose a payment schedule to get started.
               </p>
             )}
           </div>
         </div>
+
+        <Link
+          href="/membership"
+          className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
+        >
+          {currentMembership
+            ? pendingMembership
+              ? "Pay membership & upload proof"
+              : "View membership & payment schedule"
+            : "Set up membership"}
+          <ChevronRight className="h-3.5 w-3.5" />
+        </Link>
       </Card>
-
-      {nextPayment && (
-        <Card className="mb-4 py-4">
-          <p className="mb-3 font-medium text-white">Next payment</p>
-          <IbanTransferDetails
-            accountHolder={clubBank.accountHolder}
-            iban={clubBank.iban}
-            accountLabel={clubBank.accountLabel}
-            paymentReference={nextPayment.paymentReference}
-            amount={nextPayment.amount}
-          />
-          <p className="mt-3 text-xs text-zinc-500">
-            After you transfer, upload a screenshot below to confirm payment and start the SumUp
-            check.
-          </p>
-          <PaymentProofUpload
-            paymentId={nextPayment.id}
-            existingProofUrl={nextPayment.proofScreenshotUrl}
-            proofSubmittedAt={nextPayment.proofSubmittedAt}
-          />
-        </Card>
-      )}
-
-      {payments.length > 0 ? (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium uppercase tracking-wide text-zinc-500">
-            Payment schedule
-          </h3>
-          {payments.map((payment) => (
-            <Card key={payment.id} className="py-4">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-white">
-                      {payment.installmentNumber
-                        ? `Instalment ${payment.installmentNumber}`
-                        : "Payment"}
-                    </p>
-                    {paymentStatusBadge(
-                      payment.status,
-                      payment.dueDate,
-                      payment.proofSubmittedAt,
-                    )}
-                  </div>
-                  <p className="mt-1 text-sm text-zinc-400">{payment.description}</p>
-                  <p className="text-sm text-zinc-500">
-                    {payment.status === "COMPLETED" && payment.paidAt
-                      ? `Paid ${format(new Date(payment.paidAt), "d MMM yyyy")}`
-                      : payment.dueDate
-                        ? `Due ${format(new Date(payment.dueDate), "d MMM yyyy")}`
-                        : format(new Date(payment.createdAt), "d MMM yyyy")}{" "}
-                    · {payment.method.replace("_", " ")}
-                  </p>
-                  {payment.status === "PENDING" && (
-                    <p className="mt-1 text-xs text-zinc-500">
-                      Reference:{" "}
-                      <code className="text-zinc-300">{payment.paymentReference}</code>
-                    </p>
-                  )}
-                </div>
-                <span className="font-semibold text-jackals-red-light">
-                  {formatPrice(payment.amount, "EUR")}
-                </span>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <Card className="py-6 text-center text-sm text-zinc-400">
-          No payments yet. Your season payment schedule will appear here after you confirm a plan.
-        </Card>
-      )}
-
-      {pendingMembership && (
-        <p className="mt-4 text-sm text-amber-400/90">
-          Your membership activates once your first bank transfer is matched.
-        </p>
-      )}
-
-      {pendingPayments.length > 1 && (
-        <p className="mt-4 text-sm text-zinc-500">
-          {pendingPayments.length} payments remaining on your locked schedule.
-        </p>
-      )}
     </section>
   );
 }

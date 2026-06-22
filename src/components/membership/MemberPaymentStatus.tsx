@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { format } from "date-fns";
 import { CheckCircle2, Clock3, CreditCard } from "lucide-react";
 import { PaymentProofUpload } from "@/components/payments/PaymentProofUpload";
 import { IbanTransferDetails } from "@/components/payments/IbanTransferDetails";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { StaggerIn } from "@/components/motion/StaggerIn";
 import type { PaymentSchedule } from "@/lib/membership-config";
 import { formatPrice } from "@/lib/utils";
 
@@ -50,7 +50,9 @@ function statusBadge(
 
   if (proofSubmittedAt) {
     return (
-      <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-300">Checking</Badge>
+      <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-300">
+        Awaiting verification
+      </Badge>
     );
   }
 
@@ -79,7 +81,7 @@ export function MemberPaymentStatus({
   const isActive = membership.status === "ACTIVE";
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <StaggerIn className="mx-auto max-w-2xl space-y-6" stagger={90}>
       <Card className="py-5">
         <div className="flex items-start gap-3">
           {isActive ? (
@@ -92,7 +94,7 @@ export function MemberPaymentStatus({
               {isActive ? "Membership active" : "Awaiting your first payment"}
             </p>
             <p className="mt-1 text-sm text-zinc-400">
-              {membership.planName} · {membership.scheduleLabel} · season ends{" "}
+              {membership.planName} · {membership.scheduleLabel} · ends{" "}
               {format(new Date(membership.endDate), "d MMM yyyy")}
             </p>
             <p className="mt-1 text-sm text-zinc-500">
@@ -132,7 +134,7 @@ export function MemberPaymentStatus({
         <Card className="py-8 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-green-400" />
           <p className="mt-3 font-medium text-white">All payments complete</p>
-          <p className="mt-1 text-sm text-zinc-400">You&apos;re fully paid up for this season.</p>
+          <p className="mt-1 text-sm text-zinc-400">You&apos;re fully paid up.</p>
         </Card>
       )}
 
@@ -140,7 +142,7 @@ export function MemberPaymentStatus({
         <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-zinc-500">
           Full schedule
         </h3>
-        <div className="space-y-3">
+        <StaggerIn className="space-y-3" stagger={60}>
           {payments.map((payment) => (
             <Card key={payment.id} className="py-4">
               <div className="flex items-start justify-between gap-4">
@@ -172,7 +174,7 @@ export function MemberPaymentStatus({
               </div>
             </Card>
           ))}
-        </div>
+        </StaggerIn>
       </div>
 
       {!isActive && nextPayment && (
@@ -180,13 +182,6 @@ export function MemberPaymentStatus({
           Your membership activates once we receive your first bank transfer.
         </p>
       )}
-
-      <p className="text-center text-sm text-zinc-500">
-        Need help?{" "}
-        <Link href="/membership" className="text-jackals-red-light hover:text-jackals-red">
-          View membership
-        </Link>
-      </p>
-    </div>
+    </StaggerIn>
   );
 }
