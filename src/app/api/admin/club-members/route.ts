@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { isTrainingSquadKey } from "@/lib/training-squads";
 import { isValidVlyNumberFormat, normalizeVlyNumber } from "@/lib/vly-number";
 import { clubMemberCreateSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
+import { syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
 
 export async function GET() {
   const { response } = await requireAdmin();
@@ -33,6 +35,10 @@ export async function POST(request: Request) {
     return jsonError("Enter a valid VLY number (e.g. VLY12345)", 400);
   }
 
+  if (!(await isTrainingSquadKey(data.trainingTeamKey))) {
+    return jsonError("Select a valid squad", 400);
+  }
+
   const existing = await prisma.clubMember.findUnique({ where: { vlyNumber } });
   if (existing) {
     return jsonError("This VLY number is already on the roster", 409);
@@ -42,9 +48,13 @@ export async function POST(request: Request) {
     data: {
       vlyNumber,
       name: data.name.trim(),
+      trainingTeamKey: data.trainingTeamKey,
+      rosterRole: data.rosterRole,
       active: data.active ?? true,
     },
   });
+
+  await syncClubTeamsForSquadKey(data.trainingTeamKey);
 
   return NextResponse.json({ clubMember }, { status: 201 });
 }

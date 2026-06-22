@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ export function Modal({
   open: boolean;
   onClose: () => void;
   title: string;
-  description?: string;
+  description?: ReactNode;
   children: React.ReactNode;
   className?: string;
 }) {
@@ -66,7 +66,7 @@ export function Modal({
             <h2 id="auth-modal-title" className="font-display text-xl font-bold text-white">
               {title}
             </h2>
-            {description && <p className="mt-1 text-sm text-zinc-400">{description}</p>}
+            {description && <div className="mt-1">{description}</div>}
           </div>
           <button
             type="button"

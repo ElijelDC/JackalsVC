@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { format } from "date-fns";
 import { formatRecurrenceLabel, groupSessionsByDay } from "@/lib/training-utils";
 import type { TrainingSessionCardData } from "@/types/training-session";

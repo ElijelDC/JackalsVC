@@ -4,7 +4,9 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import {
   visiblePrimaryNavItems,
+  visibleMemberMobileMenuNavItems,
   isNavItemActive,
+  MEMBER_MOBILE_QUICK_NAV_HREFS,
 } from "@/lib/navigation";
 import { InfoNavDropdown } from "@/components/layout/InfoNavDropdown";
 
@@ -13,17 +15,27 @@ export function NavLinks({
   onNavigate,
   variant = "desktop",
   isLoggedIn = false,
+  isAdmin = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
   variant?: "desktop" | "mobile";
   isLoggedIn?: boolean;
+  isAdmin?: boolean;
 }) {
-  const items = visiblePrimaryNavItems(isLoggedIn);
+  const quickNavHrefs = new Set<string>(MEMBER_MOBILE_QUICK_NAV_HREFS);
+  const displayItems =
+    variant === "mobile" && isLoggedIn && !isAdmin
+      ? visibleMemberMobileMenuNavItems(isLoggedIn, isAdmin)
+      : variant === "mobile" && isLoggedIn
+        ? visiblePrimaryNavItems(isLoggedIn, isAdmin).filter(
+            (item) => !quickNavHrefs.has(item.href),
+          )
+        : visiblePrimaryNavItems(isLoggedIn, isAdmin);
 
   return (
     <>
-      {items.map(({ href, label, icon: Icon }) => (
+      {displayItems.map(({ href, label, icon: Icon }) => (
         <Link
           key={href}
           href={href}
@@ -49,6 +61,7 @@ export function NavLinks({
         onNavigate={onNavigate}
         variant={variant}
         isLoggedIn={isLoggedIn}
+        isAdmin={isAdmin}
       />
     </>
   );

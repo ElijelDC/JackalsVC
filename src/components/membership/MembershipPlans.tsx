@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Check, Circle, Lock, Sparkles } from "lucide-react";
+import { Check, Circle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { AlertBanner } from "@/components/ui/FormMessage";
@@ -93,6 +93,73 @@ export function MembershipLockedView({ membership }: { membership: LockedMembers
   );
 }
 
+function MembershipBenefitsPanel({ features }: { features: string[] }) {
+  return (
+    <div className="rounded-xl border border-white/10 bg-white/[0.02] px-5 py-4 sm:px-6">
+      <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+        What&apos;s included in the membership?
+      </p>
+      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+        {features.map((feature) => (
+          <li key={feature} className="flex items-center gap-2 text-sm text-zinc-300">
+            <Check className="h-3.5 w-3.5 shrink-0 text-jackals-red-light" />
+            {feature}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function PlanOptionCard({
+  plan,
+  selected,
+  onSelect,
+}: {
+  plan: MembershipPlanCheckout;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={selected}
+      onClick={onSelect}
+      className={cn(
+        "relative flex h-full flex-col overflow-hidden rounded-xl border p-5 text-left transition-all",
+        selected
+          ? "border-jackals-red/60 bg-jackals-red/10 shadow-[0_0_24px_rgba(232,34,42,0.12)] ring-1 ring-jackals-red/30"
+          : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]",
+      )}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="font-display text-lg font-semibold text-white">{plan.name}</p>
+        </div>
+        <span
+          className={cn(
+            "flex h-6 w-6 shrink-0 items-center justify-center rounded-full border",
+            selected
+              ? "border-jackals-red bg-jackals-red text-white"
+              : "border-white/20 bg-transparent text-transparent",
+          )}
+          aria-hidden
+        >
+          <Check className="h-3.5 w-3.5" />
+        </span>
+      </div>
+
+      <div className="mt-5">
+        <p className="font-display text-3xl font-bold text-white">
+          {formatEuroFee(plan.price)}
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">{CLUB_MEMBERSHIP_SEASON_LABEL}</p>
+      </div>
+    </button>
+  );
+}
+
 function ScheduleOptionCard({
   option,
   pricing,
@@ -105,7 +172,6 @@ function ScheduleOptionCard({
   onSelect: () => void;
 }) {
   const dueLabel = getScheduleDueNowLabel(option.id, pricing);
-  const isFull = option.id === "FULL";
 
   return (
     <button
@@ -123,12 +189,6 @@ function ScheduleOptionCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-display text-lg font-semibold text-white">{option.label}</p>
-          {isFull && (
-            <span className="mt-1 inline-flex items-center gap-1 rounded-full border border-jackals-red/30 bg-jackals-red/15 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-jackals-red-light">
-              <Sparkles className="h-3 w-3" />
-              Best value
-            </span>
-          )}
         </div>
         <span
           className={cn(
@@ -151,35 +211,49 @@ function ScheduleOptionCard({
   );
 }
 
-export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
+export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] }) {
   const { data: session, status: sessionStatus } = useSession();
   const { openAuth } = useAuthModal();
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
+    plans.length === 1 ? plans[0]!.id : null,
+  );
   const [selectedSchedule, setSelectedSchedule] = useState<PaymentSchedule | null>(null);
-  const [checkoutStep, setCheckoutStep] = useState<1 | 2>(1);
+  const [checkoutStep, setCheckoutStep] = useState<1 | 2 | 3>(1);
   const [confirmedLock, setConfirmedLock] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
+
   const pricing = useMemo(
-    () => createMembershipPricing(plan.price, plan.durationMonths),
-    [plan.durationMonths, plan.price],
+    () =>
+      selectedPlan
+        ? createMembershipPricing(selectedPlan.price, selectedPlan.durationMonths)
+        : null,
+    [selectedPlan],
   );
   const scheduleOptions = useMemo(
-    () => getPaymentScheduleOptions(pricing),
+    () => (pricing ? getPaymentScheduleOptions(pricing) : []),
     [pricing],
   );
 
   const previewInstallments = useMemo(
-    () => (selectedSchedule ? buildInstallments(selectedSchedule, pricing) : []),
+    () =>
+      selectedSchedule && pricing ? buildInstallments(selectedSchedule, pricing) : [],
     [pricing, selectedSchedule],
   );
-  const seasonTotalPrice = pricing.seasonTotalPrice;
+  const seasonTotalPrice = pricing?.seasonTotalPrice ?? 0;
 
   const subscribe = async () => {
     if (sessionStatus === "loading") return;
 
     if (!session) {
       openAuth("signin", "/membership");
+      return;
+    }
+
+    if (!selectedPlan) {
+      setMessage("Please choose a membership type first.");
       return;
     }
 
@@ -198,7 +272,7 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
 
     const result = await apiPost(
       "/api/membership",
-      { paymentSchedule: selectedSchedule },
+      { planId: selectedPlan.id, paymentSchedule: selectedSchedule },
       "Failed to create membership",
     );
 
@@ -216,25 +290,47 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
     window.location.assign("/membership");
   };
 
+  const handlePlanSelect = (planId: string) => {
+    setSelectedPlanId(planId);
+    setSelectedSchedule(null);
+    setCheckoutStep(1);
+    setConfirmedLock(false);
+    setMessage(null);
+  };
+
+  const scheduleStep = plans.length > 1 ? 2 : 1;
+  const reviewStep = plans.length > 1 ? 3 : 2;
+
   const handleScheduleSelect = (next: PaymentSchedule) => {
     setSelectedSchedule(next);
-    setCheckoutStep(1);
+    setCheckoutStep(scheduleStep);
     setConfirmedLock(false);
     setMessage(null);
   };
 
   const handleContinueToReview = () => {
+    if (!selectedPlan) {
+      setMessage("Please choose a membership type first.");
+      return;
+    }
     if (!selectedSchedule) {
       setMessage("Please choose a payment schedule first.");
       return;
     }
-    setCheckoutStep(2);
+    setCheckoutStep(reviewStep);
     setConfirmedLock(false);
     setMessage(null);
   };
 
   const handleBackToSchedule = () => {
+    setCheckoutStep(scheduleStep);
+    setConfirmedLock(false);
+    setMessage(null);
+  };
+
+  const handleBackToPlan = () => {
     setCheckoutStep(1);
+    setSelectedSchedule(null);
     setConfirmedLock(false);
     setMessage(null);
   };
@@ -243,37 +339,87 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
     <StaggerIn className="mx-auto max-w-4xl space-y-8" stagger={100}>
       <AlertBanner message={message} />
 
-      <Card className="overflow-hidden border-jackals-red/25 p-0">
-        <div className="border-b border-jackals-red/20 bg-jackals-red/5 px-6 py-5 sm:px-8">
-          <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-            {plan.name}
-          </p>
-          <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
-            <span className="font-display text-3xl font-bold text-white sm:text-4xl">
-              {formatEuroFee(plan.price)}
-            </span>
-            <span className="pb-1 text-sm text-zinc-400">{CLUB_MEMBERSHIP_SEASON_LABEL}</span>
+      {plans.length > 1 && (
+        <section>
+          <div className="mb-4">
+            <h2 className="font-display text-xl font-semibold text-white">
+              1. Choose your membership
+            </h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              Pick the rate that applies to you. Both cover the same season and benefits.
+            </p>
           </div>
-        </div>
-        <div className="grid gap-3 px-6 py-5 sm:grid-cols-2 sm:px-8">
-          {MEMBERSHIP_FEATURES.map((feature) => (
-            <div key={feature} className="flex items-center gap-2 text-sm text-zinc-300">
-              <Check className="h-4 w-4 shrink-0 text-jackals-red-light" />
-              {feature}
-            </div>
-          ))}
-        </div>
-      </Card>
 
+          <div role="radiogroup" aria-label="Membership type">
+            <StaggerIn className="grid gap-4 md:grid-cols-2" stagger={80}>
+              {plans.map((plan) => (
+                <PlanOptionCard
+                  key={plan.id}
+                  plan={plan}
+                  selected={selectedPlanId === plan.id}
+                  onSelect={() => handlePlanSelect(plan.id)}
+                />
+              ))}
+            </StaggerIn>
+          </div>
+
+          <div className="mt-5">
+            <MembershipBenefitsPanel features={MEMBERSHIP_FEATURES} />
+          </div>
+
+          {selectedPlan && checkoutStep === 1 && (
+            <Button className="mt-6 w-full sm:w-auto" onClick={() => setCheckoutStep(2)}>
+              Continue with {selectedPlan.name.toLowerCase()}
+            </Button>
+          )}
+        </section>
+      )}
+
+      {plans.length === 1 && selectedPlan && (
+        <Card className="overflow-hidden border-jackals-red/25 p-0">
+          <div className="border-b border-jackals-red/20 bg-jackals-red/5 px-6 py-5 sm:px-8">
+            <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+              {selectedPlan.name}
+            </p>
+            <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
+              <span className="font-display text-3xl font-bold text-white sm:text-4xl">
+                {formatEuroFee(selectedPlan.price)}
+              </span>
+              <span className="pb-1 text-sm text-zinc-400">{CLUB_MEMBERSHIP_SEASON_LABEL}</span>
+            </div>
+          </div>
+          <div className="grid gap-3 px-6 py-5 sm:grid-cols-2 sm:px-8">
+            {MEMBERSHIP_FEATURES.map((feature) => (
+              <div key={feature} className="flex items-center gap-2 text-sm text-zinc-300">
+                <Check className="h-4 w-4 shrink-0 text-jackals-red-light" />
+                {feature}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {selectedPlan && checkoutStep >= scheduleStep && (
       <section>
-        <div className="mb-4">
-          <h2 className="font-display text-xl font-semibold text-white">
-            1. Choose your payment schedule
-          </h2>
-          <p className="mt-1 text-sm text-zinc-400">
-            Pick one option — monthly, three instalments, or pay in full. You cannot change this
-            later.
-          </p>
+        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="font-display text-xl font-semibold text-white">
+              {scheduleStep}. Choose your payment schedule
+            </h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              {selectedPlan.name} · {formatEuroFee(selectedPlan.price)} — monthly, three
+              instalments, or pay in full. You cannot change this later.
+            </p>
+          </div>
+          {plans.length > 1 && (
+            <button
+              type="button"
+              onClick={handleBackToPlan}
+              className="text-sm text-jackals-red-light transition-colors hover:text-jackals-red"
+            >
+              Change membership type
+            </button>
+          )}
         </div>
 
         <div role="radiogroup" aria-label="Payment schedule">
@@ -282,7 +428,7 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
               <ScheduleOptionCard
                 key={option.id}
                 option={option}
-                pricing={pricing}
+                pricing={pricing!}
                 selected={selectedSchedule === option.id}
                 onSelect={() => handleScheduleSelect(option.id)}
               />
@@ -290,24 +436,25 @@ export function MembershipCheckout({ plan }: { plan: MembershipPlanCheckout }) {
           </StaggerIn>
         </div>
 
-        {selectedSchedule && checkoutStep === 1 && (
+        {selectedSchedule && checkoutStep === scheduleStep && (
           <Button className="mt-6 w-full sm:w-auto" onClick={handleContinueToReview}>
             Continue with {formatPaymentScheduleLabel(selectedSchedule).toLowerCase()}
           </Button>
         )}
       </section>
+      )}
 
-      {selectedSchedule && checkoutStep === 2 && (
+      {selectedPlan && selectedSchedule && checkoutStep === reviewStep && pricing && (
         <AnimateIn immediate>
         <section className="space-y-4">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h2 className="font-display text-xl font-semibold text-white">
-                2. Review & confirm
+                {reviewStep}. Review & confirm
               </h2>
               <p className="mt-1 text-sm text-zinc-400">
-                Pay by SEPA bank transfer to our SumUp Business Account. We match transfers using
-                your unique reference.
+                {selectedPlan.name} · {formatPaymentScheduleLabel(selectedSchedule)} — pay by SEPA
+                bank transfer to our SumUp Business Account.
               </p>
             </div>
             <button

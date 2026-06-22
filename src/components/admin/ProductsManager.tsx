@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Checkbox, Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
@@ -38,7 +39,7 @@ export function ProductsManager({
   initialProducts: Product[];
 }) {
   const router = useRouter();
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useSyncedListState(initialProducts);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
@@ -55,22 +56,24 @@ export function ProductsManager({
   const loadProducts = useCallback(async () => {
     const result = await apiGet<{ products: Product[] }>("/api/admin/products");
     if (result.ok) setProducts(result.data.products);
-  }, []);
+  }, [setProducts]);
 
   const startEdit = (product: Product) => {
-    setEditingId(product.id);
-    setForm({
-      name: product.name,
-      description: product.description,
-      price: String(product.price),
-      imageUrl: product.imageUrl ?? "",
-      category: product.category,
-      sizes: parseJsonArray(product.sizes).join(", "),
-      stock: String(product.stock),
-      active: product.active,
+    beginAdminEdit(() => {
+      setEditingId(product.id);
+      setForm({
+        name: product.name,
+        description: product.description,
+        price: String(product.price),
+        imageUrl: product.imageUrl ?? "",
+        category: product.category,
+        sizes: parseJsonArray(product.sizes).join(", "),
+        stock: String(product.stock),
+        active: product.active,
+      });
+      setError(null);
+      setMessage(null);
     });
-    setError(null);
-    setMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,16 +128,14 @@ export function ProductsManager({
     router.refresh();
   };
 
-  useEffect(() => {
-    setProducts(initialProducts);
-  }, [initialProducts]);
-
   return (
     <AdminSection
       title="Shop products"
       description="Manage items in the club shop."
     >
       <AdminFormCard
+        collapsible
+        openTriggerLabel="Add new product"
         title={editingId ? "Edit product" : "Add new product"}
         error={error}
         message={message}

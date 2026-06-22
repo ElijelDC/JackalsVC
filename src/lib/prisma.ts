@@ -22,7 +22,31 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Bump when schema changes so dev hot-reload picks up a fresh client.
-const PRISMA_SCHEMA_VERSION = 23;
+const PRISMA_SCHEMA_VERSION = 31;
+
+type RuntimeModel = {
+  fields: { name: string }[];
+};
+
+function clientHasModelField(
+  client: PrismaClient,
+  modelName: string,
+  fieldName: string,
+) {
+  const runtimeModel = (
+    client as {
+      _runtimeDataModel?: {
+        models: Record<string, RuntimeModel>;
+      };
+    }
+  )._runtimeDataModel;
+
+  return Boolean(
+    runtimeModel?.models?.[modelName]?.fields.some(
+      (field) => field.name === fieldName,
+    ),
+  );
+}
 
 function isPrismaClientCurrent(client: PrismaClient) {
   return (
@@ -35,7 +59,14 @@ function isPrismaClientCurrent(client: PrismaClient) {
     typeof client.clubMember?.findMany === "function" &&
     typeof client.emailVerification?.findMany === "function" &&
     typeof client.teamMatch?.findMany === "function" &&
-    typeof client.matchSignup?.findMany === "function"
+    typeof client.matchSignup?.findMany === "function" &&
+    typeof client.siteContent?.findMany === "function" &&
+    typeof client.trainingSquad?.findMany === "function" &&
+    clientHasModelField(client, "ClubMember", "profileImageUrl") &&
+    clientHasModelField(client, "ClubMember", "rosterRole") &&
+    clientHasModelField(client, "ClubTeam", "trainingTeamKey") &&
+    clientHasModelField(client, "ClubTeamMember", "clubMemberId") &&
+    clientHasModelField(client, "ClubTeamMember", "isCaptain")
   );
 }
 
@@ -47,6 +78,10 @@ function getPrismaClient() {
     isPrismaClientCurrent(cached)
   ) {
     return cached;
+  }
+
+  if (cached) {
+    void cached.$disconnect();
   }
 
   const client = createPrismaClient();

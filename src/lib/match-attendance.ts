@@ -8,7 +8,7 @@ import {
 } from "@/lib/training-attendance-config";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
-import { getTrainingTeamByKey } from "@/lib/training-teams-config";
+import { getTrainingTeamByKey } from "@/lib/training-squads";
 import { getUserTrainingTeamKey } from "@/lib/training-teams";
 
 export type MatchDetailData = {
@@ -72,7 +72,7 @@ export async function getMatchDetail(
     notFound();
   }
 
-  const team = getTrainingTeamByKey(match.trainingTeamKey);
+  const team = await getTrainingTeamByKey(match.trainingTeamKey);
   if (!team) notFound();
 
   const teammates = await prisma.clubMember.findMany({

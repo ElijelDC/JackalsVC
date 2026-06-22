@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PUBLIC_PATHS } from "@/lib/public-paths";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Oswald } from "next/font/google";
 import { CartProvider } from "@/components/shop/CartProvider";
@@ -28,8 +29,8 @@ export const metadata: Metadata = {
   description:
     "Jackals Volleyball Club — training sessions, events, membership, gallery, and official club shop.",
   icons: {
-    icon: "/logo.png",
-    apple: "/logo.png",
+    icon: PUBLIC_PATHS.brand.logo,
+    apple: PUBLIC_PATHS.brand.logo,
   },
 };
 

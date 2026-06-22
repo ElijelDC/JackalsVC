@@ -81,6 +81,14 @@ h4,
   box-shadow: 0 0 15px rgba(232, 34, 42, 0.2);
 }
 
+@media (max-width: 1023px) {
+  .logo-image-home-active {
+    filter: drop-shadow(0 0 6px rgba(255, 77, 84, 0.95))
+      drop-shadow(0 0 14px rgba(232, 34, 42, 0.75))
+      drop-shadow(0 0 24px rgba(232, 34, 42, 0.45));
+  }
+}
+
 /* Angular clip for CTAs matching logo sharpness */
 .clip-slash {
   clip-path: polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%);

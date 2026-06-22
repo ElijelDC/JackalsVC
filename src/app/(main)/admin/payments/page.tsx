@@ -1,6 +1,7 @@
 import { AdminSection } from "@/components/admin/AdminShell";
 import { AdminCsvImport } from "@/components/admin/AdminCsvImport";
 import { AdminPaymentQueue } from "@/components/admin/AdminPaymentQueue";
+import { adminPendingPaymentWhere } from "@/lib/admin-pending-payments";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = {
@@ -9,9 +10,14 @@ export const metadata = {
 
 export default async function AdminPaymentsPage() {
   const pendingPayments = await prisma.payment.findMany({
-    where: { status: "PENDING" },
+    where: adminPendingPaymentWhere(),
     include: {
       user: { select: { name: true, email: true } },
+      membership: {
+        include: {
+          plan: { select: { name: true } },
+        },
+      },
     },
     orderBy: [{ proofSubmittedAt: "desc" }, { dueDate: "asc" }, { createdAt: "asc" }],
   });
@@ -24,7 +30,7 @@ export default async function AdminPaymentsPage() {
   return (
     <AdminSection
       title="Payments"
-      description="Import bank CSV files and approve member payments after checking screenshots."
+      description="Import bank CSV files and approve member transfer screenshots once instalments are due."
     >
       <div className="space-y-8">
         <AdminCsvImport />
@@ -39,6 +45,12 @@ export default async function AdminPaymentsPage() {
             proofSubmittedAt: payment.proofSubmittedAt?.toISOString() ?? null,
             proofScreenshotUrl: payment.proofScreenshotUrl,
             user: payment.user,
+            subscriptionLabel: payment.membership
+              ? {
+                  planName: payment.membership.plan.name,
+                  paymentSchedule: payment.membership.paymentSchedule,
+                }
+              : null,
           }))}
         />
 

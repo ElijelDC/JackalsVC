@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   try {
     const plan = await prisma.membershipPlan.findFirst({
-      where: { active: true },
+      where: { id: data.planId, active: true },
     });
 
     if (!plan) return jsonError("Membership is not available right now", 404);
@@ -77,6 +77,7 @@ export async function POST(request: Request) {
         userId: session!.user.id,
         memberName: session!.user.name ?? "Member",
         membershipId: created.id,
+        planName: plan.name,
         scheduleLabel,
         installments,
       });

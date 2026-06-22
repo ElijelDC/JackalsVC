@@ -35,30 +35,30 @@ export function GalleryAlbumCard({ album }: { album: GalleryAlbumItem }) {
             alt={album.title}
             className="h-full w-full"
           />
-          <div className="absolute left-3 top-3 z-10 inline-flex items-center border border-jackals-red/30 bg-black/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-jackals-red-light backdrop-blur-sm">
+          <div className="absolute left-2 top-2 z-10 inline-flex items-center border border-jackals-red/30 bg-black/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-jackals-red-light backdrop-blur-sm sm:left-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs">
             {formatCategoryLabel(album.category)}
           </div>
-          <div className="absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 border border-white/20 bg-black/60 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm">
-            <Images className="h-3.5 w-3.5 text-jackals-red-light" />
+          <div className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 border border-white/20 bg-black/60 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm sm:right-3 sm:top-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs">
+            <Images className="h-3 w-3 text-jackals-red-light sm:h-3.5 sm:w-3.5" />
             {album.photoCount}
           </div>
-          <div className="absolute inset-x-0 bottom-0 z-10 p-4 sm:p-5">
-            <h3 className="font-display text-lg font-bold text-white sm:text-xl">
+          <div className="absolute inset-x-0 bottom-0 z-10 p-2 sm:p-5">
+            <h3 className="line-clamp-2 font-display text-sm font-bold leading-snug text-white sm:text-xl">
               {album.title}
             </h3>
             {album.description && (
-              <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-zinc-300">
+              <p className="mt-1 hidden line-clamp-2 text-sm leading-relaxed text-zinc-300 sm:block">
                 {album.description}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-t border-white/10 bg-jackals-inset/40 px-5 py-4">
-          <span className="text-sm font-semibold uppercase tracking-wide text-jackals-red-light transition-colors group-hover:text-white">
+        <div className="flex items-center justify-between border-t border-white/10 bg-jackals-inset/40 px-3 py-2.5 sm:px-5 sm:py-4">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-jackals-red-light transition-colors group-hover:text-white sm:text-sm">
             View album
           </span>
-          <ArrowRight className="h-4 w-4 text-jackals-red-light transition-transform group-hover:translate-x-1" />
+          <ArrowRight className="h-3.5 w-3.5 text-jackals-red-light transition-transform group-hover:translate-x-1 sm:h-4 sm:w-4" />
         </div>
       </article>
     </Link>

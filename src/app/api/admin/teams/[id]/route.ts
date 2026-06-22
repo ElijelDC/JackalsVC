@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import {
+  syncClubTeamFromRoster,
+  syncClubTeamsForSquadKey,
+} from "@/lib/club-team-roster-sync";
+import { isTrainingSquadKey } from "@/lib/training-squads";
 import { prisma } from "@/lib/prisma";
 import { clubTeamSchema } from "@/lib/validations";
 
@@ -42,7 +47,14 @@ export async function PUT(
   );
   if (parseError || !data) return parseError!;
 
+  if (data.trainingTeamKey && !(await isTrainingSquadKey(data.trainingTeamKey))) {
+    return jsonError("Select a valid squad", 400);
+  }
+
   try {
+    const existing = await prisma.clubTeam.findUnique({ where: { id } });
+    if (!existing) return jsonError("Team not found", 404);
+
     const team = await prisma.clubTeam.update({
       where: { id },
       data: {
@@ -50,9 +62,19 @@ export async function PUT(
         level: data.level,
         description: data.description,
         details: data.details ?? null,
+        trainingTeamKey: data.trainingTeamKey,
         sortOrder: data.sortOrder,
       },
     });
+
+    if (existing.trainingTeamKey && existing.trainingTeamKey !== team.trainingTeamKey) {
+      await syncClubTeamsForSquadKey(existing.trainingTeamKey);
+    }
+
+    if (team.trainingTeamKey) {
+      await syncClubTeamFromRoster(team.id);
+    }
+
     return NextResponse.json({ team });
   } catch {
     return jsonError("Team not found", 404);

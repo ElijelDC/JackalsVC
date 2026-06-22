@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { MemberSignInForm } from "@/components/auth/MemberSignInForm";
@@ -11,6 +11,12 @@ type AuthMode = "signin" | "register";
 type AuthModalContextValue = {
   openAuth: (mode?: AuthMode, callbackUrl?: string) => void;
   closeAuth: () => void;
+};
+
+type ManualAuthState = {
+  open: boolean;
+  mode: AuthMode;
+  callbackUrl: string;
 };
 
 const AuthModalContext = createContext<AuthModalContextValue | null>(null);
@@ -33,12 +39,23 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<AuthMode>("signin");
-  const [callbackUrl, setCallbackUrl] = useState("/dashboard");
+  const [manual, setManual] = useState<ManualAuthState | null>(null);
+
+  const authFromUrl = useMemo(() => {
+    const authParam = parseAuthMode(searchParams.get("auth"));
+    if (!authParam) return null;
+    return {
+      mode: authParam,
+      callbackUrl: searchParams.get("callbackUrl") ?? "/dashboard",
+    };
+  }, [searchParams]);
+
+  const open = manual?.open ?? authFromUrl !== null;
+  const mode = manual?.mode ?? authFromUrl?.mode ?? "signin";
+  const callbackUrl = manual?.callbackUrl ?? authFromUrl?.callbackUrl ?? "/dashboard";
 
   const closeAuth = useCallback(() => {
-    setOpen(false);
+    setManual(null);
 
     const params = new URLSearchParams(searchParams.toString());
     if (params.has("auth") || params.has("callbackUrl")) {
@@ -50,19 +67,19 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router, searchParams]);
 
   const openAuth = useCallback((nextMode: AuthMode = "signin", nextCallbackUrl = "/dashboard") => {
-    setMode(nextMode);
-    setCallbackUrl(nextCallbackUrl);
-    setOpen(true);
+    setManual({ open: true, mode: nextMode, callbackUrl: nextCallbackUrl });
   }, []);
 
-  useEffect(() => {
-    const authParam = parseAuthMode(searchParams.get("auth"));
-    if (!authParam) return;
-
-    setMode(authParam);
-    setCallbackUrl(searchParams.get("callbackUrl") ?? "/dashboard");
-    setOpen(true);
-  }, [searchParams]);
+  const setMode = useCallback(
+    (nextMode: AuthMode) => {
+      setManual((prev) => ({
+        open: true,
+        mode: nextMode,
+        callbackUrl: prev?.callbackUrl ?? authFromUrl?.callbackUrl ?? "/dashboard",
+      }));
+    },
+    [authFromUrl?.callbackUrl],
+  );
 
   const value = useMemo(() => ({ openAuth, closeAuth }), [openAuth, closeAuth]);
 
@@ -71,9 +88,19 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
       ? "Members only"
       : "Member register";
   const description =
-    mode === "signin"
-      ? "Sign in with your email and password to access member areas."
-      : "Verify your VLY number and email, then create your password.";
+    mode === "signin" ? (
+      "Sign in with your email and password to access member areas."
+    ) : (
+      <>
+        <p className="mt-3 font-display text-base font-bold uppercase leading-snug tracking-wide text-white">
+          Only for Registered{" "}
+          <span className="text-jackals-red-light">Jackal League</span> Members
+        </p>
+        <p className="mt-2 text-sm text-zinc-400">
+          Verify your VLY number and email, then create your password.
+        </p>
+      </>
+    );
 
   return (
     <AuthModalContext.Provider value={value}>

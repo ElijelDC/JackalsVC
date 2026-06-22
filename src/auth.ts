@@ -44,12 +44,27 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? "MEMBER";
       }
+
+      if (token.id) {
+        try {
+          const clubMember = await prisma.clubMember.findUnique({
+            where: { userId: token.id as string },
+            select: { profileImageUrl: true },
+          });
+          token.profileImageUrl = clubMember?.profileImageUrl ?? null;
+        } catch {
+          token.profileImageUrl = null;
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        session.user.profileImageUrl =
+          (token.profileImageUrl as string | null | undefined) ?? null;
       }
       return session;
     },

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { parseJsonBody, requireAdmin } from "@/lib/api";
+import { GALLERY_PLACEHOLDER_COVER } from "@/lib/gallery-config";
 import { prisma } from "@/lib/prisma";
 import { galleryAlbumSchema } from "@/lib/validations";
 
@@ -30,7 +31,7 @@ export async function POST(request: Request) {
     data: {
       title: data.title,
       description: data.description ?? null,
-      coverImageUrl: data.coverImageUrl,
+      coverImageUrl: data.coverImageUrl ?? GALLERY_PLACEHOLDER_COVER,
       category: data.category,
       featured: data.featured,
       sortOrder: data.sortOrder,

@@ -8,6 +8,7 @@ import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
 import {
   getMonthlyTeamTrainingEvents,
   getTrainingTeamByKey,
+  getTrainingSquads,
   getUserTrainingTeamKey,
   parseTrainingMonthParam,
 } from "@/lib/training-teams";
@@ -31,12 +32,14 @@ export default async function TrainingPage({
   const trainingTeamKey = await getUserTrainingTeamKey(session.user.id);
 
   if (!trainingTeamKey) {
-    return <NoTrainingTeamAssigned />;
+    const squads = await getTrainingSquads();
+    return <NoTrainingTeamAssigned squads={squads} />;
   }
 
-  const team = getTrainingTeamByKey(trainingTeamKey);
+  const team = await getTrainingTeamByKey(trainingTeamKey);
   if (!team) {
-    return <NoTrainingTeamAssigned />;
+    const squads = await getTrainingSquads();
+    return <NoTrainingTeamAssigned squads={squads} />;
   }
 
   const { events } = await getMonthlyTeamTrainingEvents(trainingTeamKey, month);

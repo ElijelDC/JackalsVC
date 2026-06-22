@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format, isPast, isSameMonth, startOfMonth } from "date-fns";
 import {
-  CalendarDays,
   ChevronLeft,
   ChevronRight,
   ChevronRight as RowChevron,
@@ -37,7 +36,6 @@ import {
 import {
   formatTrainingMonthParam,
   getAdjacentTrainingMonths,
-  TRAINING_TEAMS,
   type TrainingTeam,
 } from "@/lib/training-teams-config";
 import { cn } from "@/lib/utils";
@@ -252,47 +250,50 @@ export function TeamMatchesMonthView({
 
         <Card className="mb-6 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateMonth(previous)}
-                aria-label="Previous month"
-                className="h-9 w-9 p-0"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <div className="min-w-[10rem] px-2 text-center sm:text-left">
-                <p className="font-display text-base font-semibold text-white">
-                  {monthLabel}
-                </p>
-                {isCurrentMonth && (
-                  <p className="text-[11px] font-medium uppercase tracking-wider text-jackals-red-light">
-                    Current month
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start sm:gap-3">
+              <div className="flex items-center gap-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigateMonth(previous)}
+                  aria-label="Previous month"
+                  className="h-9 w-9 p-0"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="min-w-[10rem] px-2 text-center sm:text-left">
+                  <p className="font-display text-base font-semibold text-white">
+                    {monthLabel}
                   </p>
-                )}
+                  {isCurrentMonth && (
+                    <p className="text-[11px] font-medium uppercase tracking-wider text-jackals-red-light">
+                      Current month
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigateMonth(next)}
+                  aria-label="Next month"
+                  className="h-9 w-9 p-0"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
               </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigateMonth(next)}
-                aria-label="Next month"
-                className="h-9 w-9 p-0"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
 
-            {!isCurrentMonth && (
-              <button
-                type="button"
-                onClick={() => navigateMonth(startOfMonth(new Date()))}
-                className="group inline-flex items-center gap-2 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-4 py-2 text-sm font-medium text-jackals-red-light transition-all hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white"
-              >
-                <RotateCcw className="h-3.5 w-3.5 transition-transform group-hover:-rotate-45" />
-                Return to current month
-              </button>
-            )}
+              {!isCurrentMonth && (
+                <button
+                  type="button"
+                  onClick={() => navigateMonth(startOfMonth(new Date()))}
+                  aria-label="Return to current month"
+                  className="group inline-flex shrink-0 items-center gap-1 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-2 py-1 text-[11px] font-medium text-jackals-red-light transition-all hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white"
+                >
+                  <RotateCcw className="h-3 w-3 transition-transform group-hover:-rotate-45" />
+                  Current month
+                </button>
+              )}
+            </div>
 
             {upcomingMatches.length > 0 && (
               <p className="text-center text-sm text-zinc-500 sm:text-right">
@@ -492,7 +493,7 @@ export function TeamMatchesMonthView({
   );
 }
 
-export function NoMatchTeamAssigned() {
+export function NoMatchTeamAssigned({ squads }: { squads: TrainingTeam[] }) {
   return (
     <PageContainer>
       <PageHeader
@@ -514,7 +515,7 @@ export function NoMatchTeamAssigned() {
           </div>
 
           <div className="divide-y divide-white/10">
-            {TRAINING_TEAMS.map((team) => (
+            {squads.map((team) => (
               <div
                 key={team.key}
                 className="flex items-center justify-between gap-4 px-6 py-4"

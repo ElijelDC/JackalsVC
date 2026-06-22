@@ -13,6 +13,8 @@ import {
   serializeEnrichedEvent,
 } from "@/lib/event-enrichment";
 import { getUpcomingTeamMatches } from "@/lib/matches";
+import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
+import { getAttendanceAccessInfo } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import { TRAINING_RESPONSE_OPENS_DAYS } from "@/lib/training-attendance-config";
 import { getUpcomingTeamTrainingEvents } from "@/lib/training-attendance";
@@ -36,7 +38,7 @@ export default async function DashboardPage() {
   eventsThrough.setDate(eventsThrough.getDate() + DASHBOARD_WEEKS * 7);
 
   const trainingTeamKey = await getUserTrainingTeamKey(session.user.id);
-  const team = getTrainingTeamByKey(trainingTeamKey);
+  const team = await getTrainingTeamByKey(trainingTeamKey);
 
   const [memberships, matchEventsRaw, upcomingTraining, upcomingMatches] =
     await Promise.all([
@@ -48,7 +50,7 @@ export default async function DashboardPage() {
       prisma.event.findMany({
         where: {
           startDate: { gte: now, lte: eventsThrough },
-          type: { in: ["TOURNAMENT", "SOCIAL"] },
+          type: { in: ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"] },
         },
         orderBy: { startDate: "asc" },
       }),
@@ -78,6 +80,17 @@ export default async function DashboardPage() {
       })
     : [];
 
+  const paymentAccess = currentMembership
+    ? assessMembershipPaymentAccess({
+        membershipStatus: currentMembership.status,
+        paymentSchedule: currentMembership.paymentSchedule,
+        paymentOverdueOverride: currentMembership.paymentOverdueOverride,
+        payments,
+      })
+    : null;
+
+  const attendanceAccess = await getAttendanceAccessInfo(session.user);
+
   const enrichedMatches = await enrichEventRecords(matchEventsRaw);
   const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
 
@@ -94,6 +107,7 @@ export default async function DashboardPage() {
             id: m.id,
             status: m.status,
             paymentSchedule: m.paymentSchedule as "MONTHLY" | "INSTALLMENTS" | "FULL",
+            paymentOverdueOverride: m.paymentOverdueOverride,
             startDate: m.startDate.toISOString(),
             endDate: m.endDate.toISOString(),
             plan: { name: m.plan.name, price: m.plan.price },
@@ -105,11 +119,22 @@ export default async function DashboardPage() {
             installmentNumber: p.installmentNumber,
             dueDate: p.dueDate?.toISOString() ?? null,
           }))}
+          paymentAccess={paymentAccess}
         />
 
         <div className="grid gap-8 lg:grid-cols-2">
-          <DashboardUpcomingTrainingCard teamName={team?.name ?? null} sessions={upcomingTraining} />
-          <DashboardUpcomingMatchesCard teamName={team?.name ?? null} matches={upcomingMatches} />
+          <DashboardUpcomingTrainingCard
+            teamName={team?.name ?? null}
+            sessions={upcomingTraining}
+            attendanceBlocked={!attendanceAccess.canAccess}
+            attendanceBlockReason={attendanceAccess.blockReason}
+          />
+          <DashboardUpcomingMatchesCard
+            teamName={team?.name ?? null}
+            matches={upcomingMatches}
+            attendanceBlocked={!attendanceAccess.canAccess}
+            attendanceBlockReason={attendanceAccess.blockReason}
+          />
         </div>
 
         <DashboardUpcomingClubEventsPanel

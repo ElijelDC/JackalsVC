@@ -225,9 +225,6 @@ export function MemberRegisterWizard({
               autoComplete="off"
               spellCheck={false}
             />
-            <p className="mt-1 text-xs text-zinc-500">
-              Your VLY number must match the club roster maintained by the committee.
-            </p>
           </div>
 
           <FormError message={error} />
@@ -236,6 +233,10 @@ export function MemberRegisterWizard({
             {loading ? "Checking..." : "Continue"}
           </Button>
         </form>
+
+        <p className="mt-4 text-center text-xs leading-relaxed text-zinc-500">
+          Your VLY number must match the club roster maintained by the committee.
+        </p>
 
         <p className="mt-5 text-center text-sm text-zinc-400">
           Already registered?{" "}

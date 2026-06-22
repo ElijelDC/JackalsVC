@@ -1,13 +1,12 @@
 "use client";
 
 import {
-  useEffect,
-  useRef,
-  useState,
   type CSSProperties,
   type ElementType,
   type ReactNode,
 } from "react";
+import { useIntersectionVisible } from "@/hooks/useIntersectionVisible";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { cn } from "@/lib/utils";
 
 export type MotionVariant =
@@ -44,33 +43,12 @@ export function AnimateIn({
   immediate = false,
   variant = "fade-up",
 }: AnimateInProps) {
-  const ref = useRef<HTMLElement | null>(null);
-  const [visible, setVisible] = useState(immediate);
-
-  useEffect(() => {
-    if (immediate) return;
-
-    const element = ref.current;
-    if (!element) return;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.06, rootMargin: "0px 0px -2% 0px" },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [immediate]);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const skipAnimation = immediate || prefersReducedMotion;
+  const { ref, visible: intersecting } = useIntersectionVisible<HTMLElement>({
+    disabled: skipAnimation,
+  });
+  const visible = skipAnimation || intersecting;
 
   return (
     <Component

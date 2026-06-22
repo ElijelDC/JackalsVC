@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import type { TrainingSession } from "@/generated/prisma/client";
 
 export function startOfOccurrenceDay(date: Date) {
   const result = new Date(date);

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 function getInitials(name: string) {
@@ -12,17 +13,33 @@ function getInitials(name: string) {
     .join("");
 }
 
+function CaptainBadge({ className }: { className?: string }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border border-jackals-red/50 bg-jackals-red/15 px-2.5 py-1 text-[10px] font-bold uppercase tracking-widest text-jackals-red-light shadow-[0_0_20px_rgba(232,34,42,0.2)]",
+        className,
+      )}
+    >
+      <Crown className="h-3 w-3 shrink-0" aria-hidden />
+      Captain
+    </span>
+  );
+}
+
 export function TeamMemberCard({
   name,
   subtitle,
   photoUrl,
   variant = "player",
+  isCaptain = false,
   className,
 }: {
   name: string;
   subtitle?: string | null;
   photoUrl?: string | null;
   variant?: "coach" | "player";
+  isCaptain?: boolean;
   className?: string;
 }) {
   const isCoach = variant === "coach";
@@ -33,7 +50,9 @@ export function TeamMemberCard({
         "motion-hover-lift group relative overflow-hidden text-center",
         isCoach
           ? "border border-white/10 bg-jackals-surface/90 p-8 shadow-[0_20px_60px_rgba(0,0,0,0.35)] hover:border-jackals-red/40 hover:shadow-[0_24px_70px_rgba(232,34,42,0.12)]"
-          : "border border-white/10 bg-jackals-surface/70 p-6 hover:border-jackals-red/30 hover:bg-jackals-surface/90",
+          : isCaptain
+            ? "border border-jackals-red/40 bg-jackals-surface/80 p-4 shadow-[0_12px_40px_rgba(232,34,42,0.12)] hover:border-jackals-red/55 hover:bg-jackals-surface/90 sm:p-6"
+            : "border border-white/10 bg-jackals-surface/70 p-4 hover:border-jackals-red/30 hover:bg-jackals-surface/90 sm:p-6",
         className,
       )}
     >
@@ -52,10 +71,12 @@ export function TeamMemberCard({
 
       <div
         className={cn(
-          "relative mx-auto overflow-hidden rounded-full bg-jackals-inset ring-2 ring-white/10 transition-all duration-300 group-hover:ring-jackals-red/50",
+          "relative mx-auto overflow-hidden rounded-full bg-jackals-inset ring-2 transition-all duration-300",
           isCoach
-            ? "h-32 w-32 shadow-[0_12px_40px_rgba(232,34,42,0.2)] sm:h-36 sm:w-36"
-            : "h-28 w-28 shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
+            ? "h-32 w-32 shadow-[0_12px_40px_rgba(232,34,42,0.2)] ring-white/10 group-hover:ring-jackals-red/50 sm:h-36 sm:w-36"
+            : isCaptain
+              ? "h-20 w-20 shadow-[0_8px_32px_rgba(232,34,42,0.25)] ring-jackals-red/60 ring-offset-2 ring-offset-jackals-surface group-hover:ring-jackals-red-light/80 sm:h-28 sm:w-28"
+              : "h-20 w-20 shadow-[0_8px_32px_rgba(0,0,0,0.35)] ring-white/10 group-hover:ring-jackals-red/50 sm:h-28 sm:w-28",
         )}
       >
         {photoUrl ? (
@@ -64,10 +85,10 @@ export function TeamMemberCard({
             alt={name}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-110"
-            sizes={isCoach ? "144px" : "112px"}
+            sizes={isCoach ? "144px" : "(max-width: 640px) 80px, 112px"}
           />
         ) : (
-          <div className="flex h-full items-center justify-center bg-gradient-to-br from-jackals-red/20 to-jackals-red/5 font-display text-2xl font-bold text-jackals-red-light">
+          <div className="flex h-full items-center justify-center bg-gradient-to-br from-jackals-red/20 to-jackals-red/5 font-display text-lg font-bold text-jackals-red-light sm:text-2xl">
             {getInitials(name)}
           </div>
         )}
@@ -79,8 +100,8 @@ export function TeamMemberCard({
 
       <p
         className={cn(
-          "mt-5 font-display font-semibold text-white",
-          isCoach ? "text-xl sm:text-2xl" : "text-lg",
+          "mt-3 font-display font-semibold text-white sm:mt-5",
+          isCoach ? "text-xl sm:text-2xl" : "line-clamp-2 text-sm leading-snug sm:text-lg",
         )}
       >
         {name}
@@ -94,6 +115,11 @@ export function TeamMemberCard({
         >
           {subtitle}
         </p>
+      )}
+      {isCaptain && !isCoach && (
+        <div className="mt-2 flex justify-center sm:mt-2.5">
+          <CaptainBadge className="px-2 py-0.5 text-[9px] sm:px-2.5 sm:py-1 sm:text-[10px]" />
+        </div>
       )}
     </article>
   );

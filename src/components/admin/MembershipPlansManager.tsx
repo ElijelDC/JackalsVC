@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Checkbox, Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
@@ -40,7 +41,7 @@ export function MembershipPlansManager({
   initialPlans: MembershipPlan[];
 }) {
   const router = useRouter();
-  const [plans, setPlans] = useState(initialPlans);
+  const [plans, setPlans] = useSyncedListState(initialPlans);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
@@ -59,20 +60,22 @@ export function MembershipPlansManager({
       "/api/admin/membership-plans",
     );
     if (result.ok) setPlans(result.data.plans);
-  }, []);
+  }, [setPlans]);
 
   const startEdit = (plan: MembershipPlan) => {
-    setEditingId(plan.id);
-    setForm({
-      name: plan.name,
-      description: plan.description,
-      price: String(plan.price),
-      durationMonths: String(plan.durationMonths),
-      features: parseJsonArray(plan.features).join(", "),
-      active: plan.active,
+    beginAdminEdit(() => {
+      setEditingId(plan.id);
+      setForm({
+        name: plan.name,
+        description: plan.description,
+        price: String(plan.price),
+        durationMonths: String(plan.durationMonths),
+        features: parseJsonArray(plan.features).join(", "),
+        active: plan.active,
+      });
+      setError(null);
+      setMessage(null);
     });
-    setError(null);
-    setMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,10 +138,6 @@ export function MembershipPlansManager({
     router.refresh();
   };
 
-  useEffect(() => {
-    setPlans(initialPlans);
-  }, [initialPlans]);
-
   const parsedPrice = Number(form.price);
   const parsedDuration = Number(form.durationMonths);
   const pricingPreview =
@@ -152,6 +151,8 @@ export function MembershipPlansManager({
       description="Set the membership price and features shown on the membership checkout. The monthly schedule charges more in the first month, then a lower rate each month after."
     >
       <AdminFormCard
+        collapsible
+        openTriggerLabel="Add new plan"
         title={editingId ? "Edit plan" : "Add new plan"}
         error={error}
         message={message}
@@ -221,7 +222,7 @@ export function MembershipPlansManager({
               rows={4}
               value={form.features}
               onChange={(e) => setForm({ ...form, features: e.target.value })}
-              placeholder="Training Sessions, Full Club Kit, League Matchdays, Merchandise Discounts"
+              placeholder="Training Sessions, Personalized Club Kit, League Matchdays, Merchandise Discounts"
               required
             />
           </div>

@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
+import { useIntersectionVisible } from "@/hooks/useIntersectionVisible";
+import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { cn } from "@/lib/utils";
 
 export function StaggerIn({
@@ -12,31 +14,12 @@ export function StaggerIn({
   className?: string;
   stagger?: number;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [visible, setVisible] = useState(false);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element) return;
-
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setVisible(true);
-      return;
-    }
-
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setVisible(true);
-          observer.disconnect();
-        }
-      },
-      { threshold: 0.04, rootMargin: "0px 0px -2% 0px" },
-    );
-
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, []);
+  const prefersReducedMotion = usePrefersReducedMotion();
+  const { ref, visible: intersecting } = useIntersectionVisible<HTMLDivElement>({
+    disabled: prefersReducedMotion,
+    threshold: 0.04,
+  });
+  const visible = prefersReducedMotion || intersecting;
 
   return (
     <div

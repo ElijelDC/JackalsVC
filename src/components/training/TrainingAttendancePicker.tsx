@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AlertBanner } from "@/components/ui/FormMessage";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
@@ -49,6 +50,45 @@ export function TrainingAttendancePicker({
   itemLabel?: string;
   className?: string;
 }) {
+  const targetId = matchId ?? eventId;
+
+  return (
+    <TrainingAttendancePickerInner
+      key={`${targetId}-${initialStatus}`}
+      eventId={eventId}
+      matchId={matchId}
+      sessionStartDate={sessionStartDate}
+      initialStatus={initialStatus}
+      disabled={disabled}
+      layout={layout}
+      showLockedNotice={showLockedNotice}
+      itemLabel={itemLabel}
+      className={className}
+    />
+  );
+}
+
+function TrainingAttendancePickerInner({
+  eventId,
+  matchId,
+  sessionStartDate,
+  initialStatus = "UNANSWERED",
+  disabled = false,
+  layout = "row",
+  showLockedNotice = true,
+  itemLabel = "session",
+  className,
+}: {
+  eventId?: string;
+  matchId?: string;
+  sessionStartDate: string | Date;
+  initialStatus?: TrainingAttendanceStatus;
+  disabled?: boolean;
+  layout?: "row" | "stack";
+  showLockedNotice?: boolean;
+  itemLabel?: string;
+  className?: string;
+}) {
   const router = useRouter();
   const sessionDate = new Date(sessionStartDate);
   const canRespond = canRespondToTrainingSession(sessionDate);
@@ -61,10 +101,6 @@ export function TrainingAttendancePicker({
   const [message, setMessage] = useState<string | null>(null);
   const isMatch = Boolean(matchId);
   const targetId = matchId ?? eventId;
-
-  useEffect(() => {
-    setStatus(initialStatus);
-  }, [initialStatus]);
 
   const setAttendance = async (next: TrainingAttendanceResponseStatus) => {
     if (disabled || !canRespond || !targetId || next === status) return;
@@ -165,14 +201,28 @@ export function TrainingAttendancePicker({
           </p>
         )
       ) : (
-        <button
+        <Button
           type="button"
+          variant="outline"
+          size="sm"
           onClick={() => void clearAttendance()}
           disabled={disabled || loading !== null || clearing}
-          className="text-xs text-zinc-500 underline-offset-2 transition-colors hover:text-zinc-300 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          className={cn(
+            "gap-2 border-white/20 bg-white/[0.05] text-zinc-200 hover:border-white/30 hover:bg-white/[0.1] hover:text-white",
+            layout === "stack"
+              ? "h-11 w-full text-sm"
+              : "min-h-10 w-full text-sm sm:w-auto",
+          )}
         >
+          <RotateCcw
+            className={cn(
+              "h-4 w-4 shrink-0 text-zinc-400",
+              clearing && "animate-spin",
+            )}
+            aria-hidden
+          />
           {clearing ? "Clearing..." : "Clear response (back to unanswered)"}
-        </button>
+        </Button>
       )}
     </div>
   );

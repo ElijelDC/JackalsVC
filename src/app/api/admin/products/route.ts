@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { productSchema } from "@/lib/validations";
 import type { z } from "zod";

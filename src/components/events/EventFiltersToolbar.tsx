@@ -1,14 +1,16 @@
 "use client";
 
-import { format } from "date-fns";
 import { AdminSearchBar } from "@/components/admin/AdminSearchBar";
 import { Button } from "@/components/ui/Button";
-import { Input, Label, Select } from "@/components/ui/Input";
+import { Label, Select } from "@/components/ui/Input";
 import {
+  EVENT_MONTH_CURRENT,
   EVENT_SOURCE_OPTIONS,
   EVENT_TYPE_OPTIONS,
   EventSourceFilter,
+  formatEventMonthFilterLabel,
 } from "@/lib/event-filters";
+import type { TrainingTeam } from "@/lib/training-teams-config";
 import { cn } from "@/lib/utils";
 
 type TypeOption = { value: string; label: string };
@@ -23,8 +25,13 @@ type EventFiltersToolbarProps = {
   onSourceChange?: (value: EventSourceFilter) => void;
   month?: string;
   onMonthChange?: (value: string) => void;
+  monthOptions?: string[];
+  trainingTeamKey?: string;
+  onTrainingTeamKeyChange?: (value: string) => void;
+  trainingSquads?: TrainingTeam[];
   showSource?: boolean;
   showMonth?: boolean;
+  showTeam?: boolean;
   onClear?: () => void;
   searchPlaceholder?: string;
   className?: string;
@@ -41,13 +48,24 @@ export function EventFiltersToolbar({
   onSourceChange,
   month = "",
   onMonthChange,
+  monthOptions = [],
+  trainingTeamKey = "",
+  onTrainingTeamKeyChange,
+  trainingSquads = [],
   showSource = false,
   showMonth = false,
+  showTeam = false,
   onClear,
   searchPlaceholder = "Search title, location, type…",
   className,
   bordered = true,
 }: EventFiltersToolbarProps) {
+  const showTeamFilter =
+    showTeam &&
+    onTrainingTeamKeyChange &&
+    (!type || type === "TRAINING") &&
+    trainingSquads.length > 0;
+
   return (
     <div
       className={cn(
@@ -67,7 +85,13 @@ export function EventFiltersToolbar({
           <Select
             id="event-filter-type"
             value={type}
-            onChange={(e) => onTypeChange(e.target.value)}
+            onChange={(e) => {
+              const nextType = e.target.value;
+              onTypeChange(nextType);
+              if (nextType && nextType !== "TRAINING") {
+                onTrainingTeamKeyChange?.("");
+              }
+            }}
           >
             {typeOptions.map(({ value, label }) => (
               <option key={value || "all"} value={value}>
@@ -94,28 +118,47 @@ export function EventFiltersToolbar({
             </Select>
           </div>
         )}
+        {showTeamFilter && (
+          <div>
+            <Label htmlFor="event-filter-team">Team</Label>
+            <Select
+              id="event-filter-team"
+              value={trainingTeamKey}
+              onChange={(e) => {
+                const nextTeam = e.target.value;
+                onTrainingTeamKeyChange(nextTeam);
+                if (nextTeam && type !== "TRAINING") {
+                  onTypeChange("TRAINING");
+                }
+              }}
+            >
+              <option value="">All teams</option>
+              {trainingSquads.map((squad) => (
+                <option key={squad.key} value={squad.key}>
+                  {squad.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
         {showMonth && onMonthChange && (
           <div>
             <Label htmlFor="event-filter-month">Month</Label>
-            <div className="flex gap-2">
-              <Input
-                id="event-filter-month"
-                type="month"
-                value={month}
-                onChange={(e) => onMonthChange(e.target.value)}
-                className="min-w-0 flex-1"
-              />
-              {month && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onMonthChange("")}
-                >
-                  All
-                </Button>
-              )}
-            </div>
+            <Select
+              id="event-filter-month"
+              value={month}
+              onChange={(e) => onMonthChange(e.target.value)}
+            >
+              <option value="">All dates</option>
+              <option value={EVENT_MONTH_CURRENT}>
+                {formatEventMonthFilterLabel(EVENT_MONTH_CURRENT)}
+              </option>
+              {monthOptions.map((monthKey) => (
+                <option key={monthKey} value={monthKey}>
+                  {formatEventMonthFilterLabel(monthKey)}
+                </option>
+              ))}
+            </Select>
           </div>
         )}
         {onClear && (
@@ -129,14 +172,10 @@ export function EventFiltersToolbar({
       {showMonth && onMonthChange && (
         <p className="text-xs text-zinc-500">
           {month
-            ? `Showing ${format(new Date(`${month}-01`), "MMMM yyyy")}. Clear month to see all dates.`
+            ? `Showing ${formatEventMonthFilterLabel(month)}.`
             : "Showing all dates."}
         </p>
       )}
     </div>
   );
-}
-
-export function defaultEventMonthFilter() {
-  return format(new Date(), "yyyy-MM");
 }

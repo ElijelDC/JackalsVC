@@ -2,10 +2,12 @@ import {
   addWeeks,
   endOfDay,
   endOfMonth,
+  format,
   parseISO,
   startOfDay,
   startOfMonth,
 } from "date-fns";
+import { getManualEventTypeLabel } from "@/lib/events-config";
 
 export type EventListItem = {
   id: string;
@@ -26,6 +28,7 @@ export type EventListItem = {
   clubIban?: string | null;
   sessionDescription?: string | null;
   sessionCategory?: string | null;
+  trainingTeamKey?: string | null;
 };
 
 export type EventSourceFilter = "all" | "training" | "manual";
@@ -35,15 +38,16 @@ export const EVENT_TYPE_OPTIONS = [
   { value: "TRAINING", label: "Training" },
   { value: "FUN", label: "Fun Sessions" },
   { value: "TOURNAMENT", label: "Tournament" },
-  { value: "SOCIAL", label: "Skills Clinics" },
-  { value: "MEETING", label: "Meeting" },
+  { value: "SKILLS_CLINIC", label: "Skills Clinics" },
+  { value: "SOCIAL", label: "Social Activities" },
 ] as const;
 
-export const MEMBER_ONLY_EVENT_TYPES = ["TRAINING", "MEETING"] as const;
+export const MEMBER_ONLY_EVENT_TYPES = ["TRAINING"] as const;
 
 export function getEventTypeLabel(type: string): string {
   const option = EVENT_TYPE_OPTIONS.find((o) => o.value === type);
-  return option?.label ?? type;
+  if (option) return option.label;
+  return getManualEventTypeLabel(type);
 }
 
 export function getEventTypeOptions(isLoggedIn: boolean) {
@@ -86,6 +90,38 @@ export function filterFunSessionsWithinCalendarHorizon<
   });
 }
 
+export const EVENT_MONTH_CURRENT = "CURRENT";
+
+export function resolveEventMonthFilter(month: string) {
+  if (!month) return "";
+  if (month === EVENT_MONTH_CURRENT) return format(new Date(), "yyyy-MM");
+  return month;
+}
+
+export function getEventMonthFilterOptions(
+  events: { startDate: string | Date }[],
+) {
+  const currentKey = format(new Date(), "yyyy-MM");
+  const monthKeys = new Set<string>();
+
+  for (const event of events) {
+    monthKeys.add(format(new Date(event.startDate), "yyyy-MM"));
+  }
+
+  return Array.from(monthKeys)
+    .filter((key) => key !== currentKey)
+    .sort()
+    .reverse();
+}
+
+export function formatEventMonthFilterLabel(month: string) {
+  if (!month) return "All dates";
+  if (month === EVENT_MONTH_CURRENT) {
+    return `This month (${format(new Date(), "MMMM yyyy")})`;
+  }
+  return format(new Date(`${month}-01`), "MMMM yyyy");
+}
+
 export const EVENT_SOURCE_OPTIONS = [
   { value: "all", label: "All events" },
   { value: "training", label: "From training" },
@@ -107,6 +143,7 @@ export function filterEvents(
     month?: string;
     fromDate?: string;
     toDate?: string;
+    trainingTeamKey?: string;
   },
 ): EventListItem[] {
   const {
@@ -116,10 +153,15 @@ export function filterEvents(
     month = "",
     fromDate = "",
     toDate = "",
+    trainingTeamKey = "",
   } = options;
 
   return events.filter((event) => {
     if (type && event.type !== type) return false;
+
+    if (trainingTeamKey && event.trainingTeamKey !== trainingTeamKey) {
+      return false;
+    }
 
     if (source === "training" && !event.trainingSessionId) return false;
     if (source === "manual" && event.trainingSessionId) return false;
@@ -127,7 +169,8 @@ export function filterEvents(
     const start = new Date(event.startDate);
 
     if (month) {
-      const [year, monthIndex] = month.split("-").map(Number);
+      const monthKey = resolveEventMonthFilter(month);
+      const [year, monthIndex] = monthKey.split("-").map(Number);
       const rangeStart = startOfMonth(new Date(year, monthIndex - 1));
       const rangeEnd = endOfMonth(rangeStart);
       if (start < rangeStart || start > rangeEnd) return false;
@@ -153,6 +196,7 @@ export function hasActiveEventFilters(options: {
   month?: string;
   fromDate?: string;
   toDate?: string;
+  trainingTeamKey?: string;
 }): boolean {
   const {
     search = "",
@@ -161,6 +205,7 @@ export function hasActiveEventFilters(options: {
     month = "",
     fromDate = "",
     toDate = "",
+    trainingTeamKey = "",
   } = options;
 
   return Boolean(
@@ -169,6 +214,7 @@ export function hasActiveEventFilters(options: {
       source !== "all" ||
       month ||
       fromDate ||
-      toDate,
+      toDate ||
+      trainingTeamKey,
   );
 }

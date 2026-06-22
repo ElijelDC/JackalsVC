@@ -12,6 +12,7 @@ import {
   type PaymentSchedule,
 } from "@/lib/membership-config";
 import { getClubBankDetails } from "@/lib/payments";
+import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import { prisma } from "@/lib/prisma";
 import { parseJsonArray } from "@/lib/utils";
 
@@ -25,7 +26,7 @@ export default async function MembershipPage() {
     redirect("/login?callbackUrl=/membership");
   }
 
-  const [membership, activePlan] = await Promise.all([
+  const [membership, activePlans] = await Promise.all([
     prisma.membership.findFirst({
       where: {
         userId: session.user.id,
@@ -34,9 +35,9 @@ export default async function MembershipPage() {
       include: { plan: true },
       orderBy: { createdAt: "desc" },
     }),
-    prisma.membershipPlan.findFirst({
+    prisma.membershipPlan.findMany({
       where: { active: true },
-      orderBy: { price: "asc" },
+      orderBy: [{ price: "desc" }, { name: "asc" }],
     }),
   ]);
 
@@ -46,6 +47,12 @@ export default async function MembershipPage() {
       orderBy: [{ dueDate: "asc" }, { installmentNumber: "asc" }, { createdAt: "asc" }],
     });
     const clubBank = getClubBankDetails();
+    const paymentAccess = assessMembershipPaymentAccess({
+      membershipStatus: membership.status,
+      paymentSchedule: membership.paymentSchedule,
+      paymentOverdueOverride: membership.paymentOverdueOverride,
+      payments,
+    });
 
     return (
       <PageContainer>
@@ -65,7 +72,9 @@ export default async function MembershipPage() {
             scheduleLabel: formatPaymentScheduleLabel(
               membership.paymentSchedule as PaymentSchedule,
             ),
+            paymentOverdueOverride: membership.paymentOverdueOverride,
           }}
+          paymentAccess={paymentAccess}
           payments={payments.map((payment) => ({
             id: payment.id,
             amount: payment.amount,
@@ -92,7 +101,7 @@ export default async function MembershipPage() {
     );
   }
 
-  if (!activePlan) {
+  if (activePlans.length === 0) {
     return (
       <PageContainer>
         <PageHeader
@@ -117,19 +126,19 @@ export default async function MembershipPage() {
     <PageContainer>
       <PageHeader
         title={CLUB_MEMBERSHIP_PLAN_NAME}
-        description="Choose one payment plan — monthly, three instalments, or pay in full."
+        description="Choose your membership type, then pick how you want to pay."
         centered
       />
 
       <MembershipCheckout
-        plan={{
-          id: activePlan.id,
-          name: activePlan.name,
-          description: activePlan.description,
-          price: activePlan.price,
-          durationMonths: activePlan.durationMonths,
-          features: parseJsonArray(activePlan.features),
-        }}
+        plans={activePlans.map((plan) => ({
+          id: plan.id,
+          name: plan.name,
+          description: plan.description,
+          price: plan.price,
+          durationMonths: plan.durationMonths,
+          features: parseJsonArray(plan.features),
+        }))}
       />
     </PageContainer>
   );

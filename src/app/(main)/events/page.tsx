@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { auth } from "@/auth";
 import { EventsPage } from "@/components/events/EventsPage";
 import { getPublicEvents } from "@/lib/public-events";
-import { getWhatsOnPageData } from "@/lib/whats-on";
+import { getEventsPageData } from "@/lib/events-page-data";
 
 export const metadata = {
   title: "Events",
@@ -17,15 +17,15 @@ export default async function EventsRoute({
   const isLoggedIn = Boolean(session?.user);
   const { view } = await searchParams;
 
-  const [whatsOnData, calendarEvents] = await Promise.all([
-    getWhatsOnPageData(),
+  const [eventsData, calendarEvents] = await Promise.all([
+    getEventsPageData(),
     getPublicEvents(isLoggedIn, session?.user?.id),
   ]);
 
   return (
     <Suspense>
       <EventsPage
-        {...whatsOnData}
+        {...eventsData}
         calendarEvents={calendarEvents}
         isLoggedIn={isLoggedIn}
         initialView={view === "calendar" ? "calendar" : "list"}

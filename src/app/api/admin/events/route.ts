@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminEventsPayload } from "@/lib/admin-events";
-import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { parseJsonBody, requireAdmin } from "@/lib/api";
 import { toManualEventData } from "@/lib/manual-event-data";
 import { prisma } from "@/lib/prisma";
 import { eventSchema } from "@/lib/validations";

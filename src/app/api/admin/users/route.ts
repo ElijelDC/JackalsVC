@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { jsonError, requireAdmin } from "@/lib/api";
+import { requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 const userSelect = {
