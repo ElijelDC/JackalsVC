@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { isTrainingTeamKey } from "@/lib/training-teams";
 import { clubMemberUpdateSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
 
@@ -16,6 +17,14 @@ export async function PATCH(request: Request, context: RouteContext) {
   );
   if (parseError || !data) return parseError!;
 
+  if (
+    data.trainingTeamKey !== undefined &&
+    data.trainingTeamKey !== null &&
+    !isTrainingTeamKey(data.trainingTeamKey)
+  ) {
+    return jsonError("Invalid training team", 400);
+  }
+
   const existing = await prisma.clubMember.findUnique({ where: { id } });
   if (!existing) return jsonError("Roster entry not found", 404);
 
@@ -24,6 +33,9 @@ export async function PATCH(request: Request, context: RouteContext) {
     data: {
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(data.active !== undefined ? { active: data.active } : {}),
+      ...(data.trainingTeamKey !== undefined
+        ? { trainingTeamKey: data.trainingTeamKey }
+        : {}),
     },
   });
 

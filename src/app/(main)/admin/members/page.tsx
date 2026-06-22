@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ClubRosterManager } from "@/components/admin/ClubRosterManager";
 import { MembersManager } from "@/components/admin/MembersManager";
+import { TRAINING_TEAMS } from "@/lib/training-teams";
 
 export const metadata = { title: "Admin · Members" };
 
@@ -37,7 +38,10 @@ export default async function AdminMembersPage() {
 
   return (
     <div className="space-y-10">
-      <ClubRosterManager initialClubMembers={clubMembers} />
+      <ClubRosterManager
+        initialClubMembers={clubMembers}
+        trainingTeams={[...TRAINING_TEAMS]}
+      />
       <MembersManager
         initialMemberships={serialized}
         users={users}

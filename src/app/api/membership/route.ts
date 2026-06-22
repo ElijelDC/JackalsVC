@@ -1,8 +1,9 @@
 import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
 import {
   buildInstallments,
+  createMembershipPricing,
   formatPaymentScheduleLabel,
-  SEASON_DURATION_MONTHS,
+  validateMembershipPlanPrice,
   type PaymentSchedule,
 } from "@/lib/membership-config";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +25,12 @@ export async function POST(request: Request) {
 
     if (!plan) return jsonError("Membership is not available right now", 404);
 
+    const pricing = createMembershipPricing(plan.price, plan.durationMonths);
+    const priceError = validateMembershipPlanPrice(plan.price, plan.durationMonths);
+    if (priceError) {
+      return jsonError("Membership pricing is misconfigured. Please contact the club.", 503);
+    }
+
     const existingMembership = await prisma.membership.findFirst({
       where: {
         userId: session!.user.id,
@@ -38,12 +45,20 @@ export async function POST(request: Request) {
       );
     }
 
+    await prisma.payment.deleteMany({
+      where: {
+        userId: session!.user.id,
+        membershipId: null,
+        status: "PENDING",
+      },
+    });
+
     const schedule = data.paymentSchedule as PaymentSchedule;
     const startDate = new Date();
     const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + SEASON_DURATION_MONTHS);
+    endDate.setMonth(endDate.getMonth() + plan.durationMonths);
 
-    const installments = buildInstallments(schedule, startDate);
+    const installments = buildInstallments(schedule, pricing, startDate);
     const scheduleLabel = formatPaymentScheduleLabel(schedule);
 
     const membership = await prisma.$transaction(async (tx) => {

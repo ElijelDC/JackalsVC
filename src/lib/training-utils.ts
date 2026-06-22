@@ -117,6 +117,7 @@ export function toTrainingSessionData(data: {
   sessionDate?: string;
   recurringFrom?: string;
   recurringTo?: string;
+  trainingTeamKey?: string;
 }) {
   return {
     title: data.title,
@@ -133,6 +134,7 @@ export function toTrainingSessionData(data: {
     sessionFee: data.sessionFee ?? null,
     recurring: data.recurring,
     recurrenceWeeks: data.recurring ? data.recurrenceWeeks : 1,
+    trainingTeamKey: data.trainingTeamKey || null,
     recurringFrom:
       data.recurring && data.recurringFrom
         ? new Date(data.recurringFrom)
@@ -163,7 +165,7 @@ export const SESSION_MANAGER_CONFIG = {
     attendPath: "/training",
     sectionTitle: "Training schedule",
     sectionDescription:
-      "Set up recurring weekly sessions or one-off special sessions. All sessions sync to the calendar automatically.",
+      "One recurring session per squad. Assign players to a team on the members roster — they only see their own training dates.",
     emptyListMessage: "No training sessions yet.",
     deleteConfirm:
       "Delete this training session and its calendar entries?",

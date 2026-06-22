@@ -23,11 +23,11 @@ import {
   User,
 } from "lucide-react";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
-import { EventReminderButton } from "@/components/calendar/EventReminderButton";
 import { EventFiltersToolbar } from "@/components/events/EventFiltersToolbar";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { getBrowseEventTypeLabel, eventsCalendarEventDetailPath } from "@/lib/events-config";
 import {
   filterEvents,
   getEventTypeLabel,
@@ -35,21 +35,37 @@ import {
   type EventListItem,
 } from "@/lib/event-filters";
 import {
-  eventDetailPath,
   formatEventDateTime,
+  getEventDisplayStyle,
+  getEventDisplayStyleKey,
   getEventTypeStyle,
 } from "@/lib/event-display";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
+const UPCOMING_PREVIEW_LIMIT = 3;
 
 const LEGEND_TYPES = [
   "FUN",
   "TRAINING",
   "TOURNAMENT",
+  "SKILLS_CLINIC",
   "SOCIAL",
   "MEETING",
 ] as const;
+
+function getLegendLabel(type: (typeof LEGEND_TYPES)[number]) {
+  switch (type) {
+    case "FUN":
+      return "Fun sessions";
+    case "SKILLS_CLINIC":
+      return "Skills clinics";
+    case "SOCIAL":
+      return "Social activity";
+    default:
+      return getEventTypeLabel(type);
+  }
+}
 
 function getInitialSelectedDate(events: EventListItem[]) {
   const today = startOfDay(new Date());
@@ -69,17 +85,11 @@ function getInitialSelectedDate(events: EventListItem[]) {
 
 function EventPreviewCard({
   event,
-  isLoggedIn,
-  hasReminder,
-  onReminderChange,
 }: {
   event: EventListItem;
-  isLoggedIn: boolean;
-  hasReminder: boolean;
-  onReminderChange: (eventId: string, active: boolean) => void;
 }) {
   const { timeLabel } = formatEventDateTime(event.startDate, event.endDate);
-  const typeStyle = getEventTypeStyle(event.type);
+  const typeStyle = getEventDisplayStyle(event);
 
   return (
     <Card className="overflow-hidden p-0">
@@ -91,7 +101,11 @@ function EventPreviewCard({
             typeStyle.badge,
           )}
         >
-          {getEventTypeLabel(event.type)}
+          {getBrowseEventTypeLabel({
+            type: event.type,
+            title: event.title,
+            description: event.sessionDescription ?? event.description,
+          })}
         </span>
         <div className="flex items-center gap-1">
           <AddToCalendarActions
@@ -105,19 +119,11 @@ function EventPreviewCard({
               location: event.location,
             }}
           />
-          {isLoggedIn && (
-            <EventReminderButton
-              compact
-              eventId={event.id}
-              initialHasReminder={hasReminder}
-              onChange={(active) => onReminderChange(event.id, active)}
-            />
-          )}
         </div>
       </div>
 
       <Link
-        href={eventDetailPath(event.id)}
+        href={eventsCalendarEventDetailPath(event.id)}
         className="group block px-6 pb-6 pt-3 transition-colors hover:text-white"
       >
         <CardTitle>{event.title}</CardTitle>
@@ -155,6 +161,67 @@ function EventPreviewCard({
   );
 }
 
+function UpNextPreview({
+  events,
+  onSelectDate,
+}: {
+  events: EventListItem[];
+  onSelectDate: (date: Date) => void;
+}) {
+  const preview = events.slice(0, UPCOMING_PREVIEW_LIMIT);
+  const remaining = events.length - preview.length;
+
+  if (preview.length === 0) return null;
+
+  return (
+    <div className="border-t border-white/10 px-4 py-4 sm:px-6">
+      <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+        Up next
+      </p>
+      <ul className="space-y-2">
+        {preview.map((event) => {
+          const eventDate = new Date(event.startDate);
+          const style = getEventDisplayStyle(event);
+
+          return (
+            <li key={event.id}>
+              <Link
+                href={eventsCalendarEventDetailPath(event.id)}
+                onClick={() => onSelectDate(eventDate)}
+                className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-white/20 hover:bg-white/[0.04]"
+              >
+                <span className="w-12 shrink-0 text-xs font-medium text-zinc-500">
+                  {format(eventDate, "d MMM")}
+                </span>
+                <span className="min-w-0 flex-1 truncate text-sm text-white">
+                  {event.title}
+                </span>
+                <span
+                  className={cn(
+                    "hidden shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium sm:inline",
+                    style.badge,
+                  )}
+                >
+                  {getBrowseEventTypeLabel({
+            type: event.type,
+            title: event.title,
+            description: event.sessionDescription ?? event.description,
+          })}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      {remaining > 0 && (
+        <p className="mt-3 text-center text-xs text-zinc-600">
+          +{remaining} more on the calendar — pick a date to explore
+        </p>
+      )}
+    </div>
+  );
+}
+
 function CalendarDayCell({
   day,
   dayEvents,
@@ -171,10 +238,10 @@ function CalendarDayCell({
   const hasEvents = dayEvents.length > 0;
   const visibleEvents = dayEvents.slice(0, 2);
   const hiddenCount = dayEvents.length - visibleEvents.length;
-  const uniqueTypes = [...new Set(dayEvents.map((event) => event.type))];
-  const primaryStyle = hasEvents
-    ? getEventTypeStyle(dayEvents[0].type)
-    : null;
+  const uniqueTypes = [
+    ...new Set(dayEvents.map((event) => getEventDisplayStyleKey(event))),
+  ];
+  const primaryStyle = hasEvents ? getEventDisplayStyle(dayEvents[0]) : null;
   const multiType = uniqueTypes.length > 1;
 
   return (
@@ -233,7 +300,7 @@ function CalendarDayCell({
 
       <div className="mt-auto space-y-0.5 pt-1">
         {visibleEvents.map((event) => {
-          const style = getEventTypeStyle(event.type);
+          const style = getEventDisplayStyle(event);
           const { timeLabel } = formatEventDateTime(
             event.startDate,
             event.endDate,
@@ -285,7 +352,7 @@ function CalendarDayCell({
               key={event.id}
               className={cn(
                 "h-1 flex-1 max-w-3 rounded-full",
-                getEventTypeStyle(event.type).dot,
+                getEventDisplayStyle(event).dot,
               )}
             />
           ))}
@@ -298,11 +365,9 @@ function CalendarDayCell({
 export function CalendarView({
   events,
   isLoggedIn = false,
-  reminderIds = [],
 }: {
   events: EventListItem[];
   isLoggedIn?: boolean;
-  reminderIds?: string[];
 }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(() =>
@@ -310,11 +375,6 @@ export function CalendarView({
   );
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
-  const [reminders, setReminders] = useState<Set<string>>(new Set(reminderIds));
-
-  useEffect(() => {
-    setReminders(new Set(reminderIds));
-  }, [reminderIds]);
 
   const filteredEvents = useMemo(
     () => filterEvents(events, { search, type: typeFilter }),
@@ -334,15 +394,6 @@ export function CalendarView({
       return getInitialSelectedDate(filteredEvents);
     });
   }, [filteredEvents]);
-
-  const updateReminder = (eventId: string, active: boolean) => {
-    setReminders((prev) => {
-      const next = new Set(prev);
-      if (active) next.add(eventId);
-      else next.delete(eventId);
-      return next;
-    });
-  };
 
   const filtersActive = Boolean(search.trim()) || Boolean(typeFilter);
 
@@ -409,7 +460,7 @@ export function CalendarView({
       </AnimateIn>
 
       <AnimateIn delay={0.05}>
-        <div className="grid gap-8 xl:grid-cols-5">
+        <div className="grid gap-6 xl:grid-cols-5 xl:items-start">
         <div className="xl:col-span-3">
           <Card className="overflow-hidden p-0">
             <div className="border-b border-white/10 bg-jackals-surface-muted/40 px-4 py-4 sm:px-6">
@@ -467,7 +518,7 @@ export function CalendarView({
                         className={cn("h-2 w-2 rounded-full", style.dot)}
                         aria-hidden
                       />
-                      {getEventTypeLabel(type)}
+                      {getLegendLabel(type)}
                     </span>
                   );
                 })}
@@ -510,10 +561,12 @@ export function CalendarView({
                 )}
               </div>
             </div>
+
+            <UpNextPreview events={upcomingEvents} onSelectDate={selectDate} />
           </Card>
         </div>
 
-        <div className="space-y-6 xl:col-span-2">
+        <div className="xl:col-span-2 xl:sticky xl:top-24">
           <div>
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
@@ -548,108 +601,10 @@ export function CalendarView({
             ) : (
               <div className="space-y-4">
                 {selectedEvents.map((event) => (
-                  <EventPreviewCard
-                    key={event.id}
-                    event={event}
-                    isLoggedIn={isLoggedIn}
-                    hasReminder={reminders.has(event.id)}
-                    onReminderChange={updateReminder}
-                  />
+                  <EventPreviewCard key={event.id} event={event} />
                 ))}
               </div>
             )}
-          </div>
-
-          <div>
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
-                Coming up
-              </h3>
-              {filtersActive && (
-                <span className="text-xs text-zinc-600">
-                  {upcomingEvents.length} shown
-                </span>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              {upcomingEvents.length === 0 ? (
-                <Card>
-                  <CardDescription>
-                    {filtersActive
-                      ? "No upcoming events match your filters."
-                      : "No upcoming events scheduled."}
-                  </CardDescription>
-                </Card>
-              ) : (
-                upcomingEvents.slice(0, 10).map((event) => {
-                  const style = getEventTypeStyle(event.type);
-                  const eventDate = new Date(event.startDate);
-                  const isActive =
-                    selectedDate && isSameDay(eventDate, selectedDate);
-
-                  return (
-                    <div
-                      key={event.id}
-                      className={cn(
-                        "overflow-hidden rounded-lg border transition-colors",
-                        isActive
-                          ? "border-jackals-red/40 bg-jackals-red/5"
-                          : "border-white/10 bg-jackals-surface/60 hover:border-white/20",
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => selectDate(eventDate)}
-                        className="flex w-full items-start gap-3 px-4 py-3 text-left"
-                      >
-                        <div
-                          className={cn(
-                            "mt-0.5 flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-md border text-center",
-                            style.cell,
-                            style.accent,
-                          )}
-                        >
-                          <span className="text-[10px] font-semibold uppercase leading-none text-zinc-400">
-                            {format(eventDate, "MMM")}
-                          </span>
-                          <span className="text-lg font-bold leading-tight text-white">
-                            {format(eventDate, "d")}
-                          </span>
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="truncate font-medium text-white">
-                              {event.title}
-                            </p>
-                            <span
-                              className={cn(
-                                "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-medium",
-                                style.badge,
-                              )}
-                            >
-                              {getEventTypeLabel(event.type)}
-                            </span>
-                          </div>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            {format(eventDate, "EEEE · HH:mm")}
-                            {event.location ? ` · ${event.location}` : ""}
-                          </p>
-                        </div>
-                      </button>
-                      <div className="border-t border-white/5 px-4 py-2">
-                        <Link
-                          href={eventDetailPath(event.id)}
-                          className="text-xs font-medium text-jackals-red-light/80 transition-colors hover:text-jackals-red-light"
-                        >
-                          View full details →
-                        </Link>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
           </div>
         </div>
       </div>

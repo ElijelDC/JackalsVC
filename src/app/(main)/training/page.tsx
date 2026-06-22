@@ -1,32 +1,60 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
-import { SESSION_CATEGORIES } from "@/lib/training-utils";
-import { SessionListPage } from "@/components/training/SessionListPage";
+import {
+  NoTrainingTeamAssigned,
+  TeamTrainingMonthView,
+} from "@/components/training/TeamTrainingMonthView";
+import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
+import {
+  getMonthlyTeamTrainingEvents,
+  getTrainingTeamByKey,
+  getUserTrainingTeamKey,
+  parseTrainingMonthParam,
+} from "@/lib/training-teams";
 
 export const metadata = {
-  title: "Training Times",
+  title: "Training sign-ups",
 };
 
-export default async function TrainingPage() {
+export default async function TrainingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ month?: string }>;
+}) {
   const session = await auth();
   if (!session?.user) {
     redirect("/login?callbackUrl=/training");
   }
 
-  const sessions = await prisma.trainingSession.findMany({
-    where: { category: SESSION_CATEGORIES.WEEKLY },
-    orderBy: [{ dayOfWeek: "asc" }, { startTime: "asc" }],
-  });
+  const { month: monthParam } = await searchParams;
+  const month = parseTrainingMonthParam(monthParam);
+  const trainingTeamKey = await getUserTrainingTeamKey(session.user.id);
+
+  if (!trainingTeamKey) {
+    return <NoTrainingTeamAssigned />;
+  }
+
+  const team = getTrainingTeamByKey(trainingTeamKey);
+  if (!team) {
+    return <NoTrainingTeamAssigned />;
+  }
+
+  const { events } = await getMonthlyTeamTrainingEvents(trainingTeamKey, month);
+  const attendanceMap = await getUserEventAttendanceStatuses(
+    session.user.id,
+    events.map((event) => event.id),
+  );
 
   return (
-    <SessionListPage
-      sessions={sessions}
-      detailBasePath="/training"
-      title="Training Times"
-      description="Weekly recurring sessions for members. Paid membership is required to register session attendance via Reclub."
-      emptyTitle="No sessions scheduled yet"
-      emptyDescription="Training times will be posted here soon. Check back later."
+    <TeamTrainingMonthView
+      team={team}
+      month={month}
+      events={events.map((event) => ({
+        id: event.id,
+        title: event.title,
+        startDate: event.startDate.toISOString(),
+      }))}
+      attendanceByEventId={Object.fromEntries(attendanceMap)}
     />
   );
 }

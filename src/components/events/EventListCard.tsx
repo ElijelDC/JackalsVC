@@ -1,10 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock, MapPin } from "lucide-react";
-import { getEventTypeLabel } from "@/lib/event-filters";
+import { getBrowseEventTypeLabel } from "@/lib/events-config";
 import {
   eventDetailPath,
   formatEventDateTime,
-  getEventTypeStyle,
+  getEventDisplayStyle,
 } from "@/lib/event-display";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { cn, formatEuroFee } from "@/lib/utils";
@@ -34,7 +34,7 @@ export function EventListCard({
   cta?: "arrow" | "text";
   className?: string;
 }) {
-  const style = getEventTypeStyle(event.type);
+  const style = getEventDisplayStyle(event);
   const { dateLabel, timeLabel } = formatEventDateTime(
     event.startDate,
     event.endDate,
@@ -60,7 +60,11 @@ export function EventListCard({
               style.badge,
             )}
           >
-            {getEventTypeLabel(event.type)}
+            {getBrowseEventTypeLabel({
+              type: event.type,
+              title: event.title,
+              description: event.description ?? event.sessionDescription,
+            })}
           </span>
           <CardTitle className="mt-3">{event.title}</CardTitle>
           <div className="mt-4 space-y-2 text-sm text-zinc-400">

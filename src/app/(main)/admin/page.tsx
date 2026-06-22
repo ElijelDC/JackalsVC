@@ -11,6 +11,7 @@ import {
   CreditCard,
   Dumbbell,
   PartyPopper,
+  Trophy,
   Package,
   ShoppingBag,
   UserCheck,
@@ -48,6 +49,13 @@ const SECTIONS = [
     description: "Member-only recurring sessions",
     icon: Dumbbell,
     countKey: "training" as const,
+  },
+  {
+    href: "/admin/matches",
+    title: "Squad matches",
+    description: "League and friendly games per squad",
+    icon: Trophy,
+    countKey: "matches" as const,
   },
   {
     href: "/admin/fun-sessions",
@@ -113,6 +121,7 @@ export default async function AdminPage() {
     plans,
     members,
     training,
+    matches,
     funSessions,
     events,
     reminders,
@@ -128,6 +137,7 @@ export default async function AdminPage() {
     prisma.trainingSession.count({
       where: { category: "WEEKLY" },
     }),
+    prisma.teamMatch.count(),
     prisma.trainingSession.count({
       where: { category: "FUN" },
     }),
@@ -145,6 +155,7 @@ export default async function AdminPage() {
     plans,
     members,
     training,
+    matches,
     funSessions,
     events,
     reminders,

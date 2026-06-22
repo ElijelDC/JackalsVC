@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarDays, ChevronRight, Clock, MapPin, User } from "lucide-react";
 import type { EventListItem } from "@/lib/event-filters";
+import { getBrowseEventTypeLabel } from "@/lib/events-config";
+import { getEventDisplayStyle, formatEventDateTime } from "@/lib/event-display";
 import { getEventTypeLabel } from "@/lib/event-filters";
-import { getEventTypeStyle, formatEventDateTime } from "@/lib/event-display";
 import { isOpenReclubEvent, usesPaidJoinFlow, usesTournamentJoinFlow } from "@/lib/event-reclub";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -12,14 +13,14 @@ import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { FunSessionJoinFlow } from "@/components/training/FunSessionJoinFlow";
 import { TournamentJoinFlow } from "@/components/training/TournamentJoinFlow";
 import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
+import { TrainingAttendanceStatusBadge } from "@/components/training/TrainingAttendancePicker";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
-import { EventReminderButton } from "@/components/calendar/EventReminderButton";
+import type { TrainingAttendanceStatus } from "@/lib/training-attendance-config";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { cn } from "@/lib/utils";
 
 export function EventDetailPage({
   event,
-  hasReminder = false,
   schedulePath,
   attendanceUrl,
   paymentUrl,
@@ -29,11 +30,11 @@ export function EventDetailPage({
   canAccessAttendance,
   isLoggedIn,
   siteOrigin,
-  listPath = "/calendar",
-  listLabel = "calendar",
+  listPath = "/events",
+  listLabel = "events",
+  initialAttendanceStatus = "UNANSWERED",
 }: {
   event: EventListItem;
-  hasReminder?: boolean;
   schedulePath: string | null;
   attendanceUrl: string | null;
   paymentUrl: string | null;
@@ -45,6 +46,7 @@ export function EventDetailPage({
   siteOrigin: string;
   listPath?: string;
   listLabel?: string;
+  initialAttendanceStatus?: TrainingAttendanceStatus;
 }) {
   const { dateLabel, timeLabel } = formatEventDateTime(
     event.startDate,
@@ -53,9 +55,10 @@ export function EventDetailPage({
   const bodyDescription = event.sessionDescription ?? event.description;
   const isSessionEvent = Boolean(event.trainingSessionId);
   const isOpenReclub = isOpenReclubEvent(event.type);
-  const showAttendance = isSessionEvent || isOpenReclub;
+  const isTrainingEvent = event.type === "TRAINING";
+  const showAttendance = (isSessionEvent || isOpenReclub) && !isTrainingEvent;
   const attendanceEntityId = event.trainingSessionId ?? event.id;
-  const typeStyle = getEventTypeStyle(event.type);
+  const typeStyle = getEventDisplayStyle(event);
 
   const showFunJoinFlow =
     usesPaidJoinFlow(event.type) && Boolean(paymentUrl);
@@ -83,7 +86,11 @@ export function EventDetailPage({
               typeStyle.badge,
             )}
           >
-            {getEventTypeLabel(event.type)}
+            {getBrowseEventTypeLabel({
+              type: event.type,
+              title: event.title,
+              description: event.sessionDescription ?? event.description,
+            })}
           </span>
         </div>
       </AnimateIn>
@@ -175,6 +182,26 @@ export function EventDetailPage({
             />
           )}
 
+          {isTrainingEvent && (
+            <Card>
+              <CardTitle>Squad training</CardTitle>
+              <CardDescription className="mt-2">
+                Respond for this session and see which teammates are attending.
+              </CardDescription>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {isLoggedIn && initialAttendanceStatus !== "UNANSWERED" && (
+                  <TrainingAttendanceStatusBadge status={initialAttendanceStatus} />
+                )}
+                <Link href={`/training/session/${event.id}`}>
+                  <Button>
+                    View session
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
+
           {showAttendance && !showStructuredJoinFlow && (
             <Card>
               <CardTitle>
@@ -246,21 +273,6 @@ export function EventDetailPage({
               />
             </div>
           </Card>
-
-          {isLoggedIn && (
-            <Card className="bg-jackals-surface-muted/20">
-              <CardTitle className="text-sm">Club reminder</CardTitle>
-              <CardDescription className="mt-2 text-xs">
-                Bookmark this event on your member dashboard.
-              </CardDescription>
-              <div className="mt-4">
-                <EventReminderButton
-                  eventId={event.id}
-                  initialHasReminder={hasReminder}
-                />
-              </div>
-            </Card>
-          )}
         </div>
       </div>
       </AnimateIn>

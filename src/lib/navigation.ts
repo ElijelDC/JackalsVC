@@ -2,13 +2,14 @@ import type { LucideIcon } from "lucide-react";
 import {
   Award,
   BookOpen,
-  Calendar,
+  CalendarDays,
   Camera,
   Dumbbell,
   Home,
+  LayoutDashboard,
   Mail,
   ShoppingBag,
-  Sparkles,
+  Trophy,
   Users,
   Volleyball,
 } from "lucide-react";
@@ -25,26 +26,27 @@ export type NavItem = {
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
   {
-    href: "/whats-on",
-    label: "What's On?",
-    icon: Sparkles,
+    href: "/events",
+    label: "Events",
+    icon: CalendarDays,
     description:
-      "Fun sessions, tournaments, and skills clinics open to everyone.",
+      "Fun sessions, tournaments, and skills clinics — browse by category or calendar.",
   },
   {
     href: "/training",
-    label: "Training",
+    label: "Trainings",
     icon: Dumbbell,
     description:
-      "Weekly sessions for all skill levels, from beginners to competitive players.",
+      "Sign up for your squad's weekly training sessions throughout the month.",
     requiresAuth: true,
   },
   {
-    href: "/calendar",
-    label: "Calendar",
-    icon: Calendar,
+    href: "/matches",
+    label: "Matches",
+    icon: Trophy,
     description:
-      "Stay on top of tournaments, skills clinics, and club meetings — add them to your calendar or save club reminders when signed in.",
+      "Your squad's league and friendly matches — warm-up and kick-off times.",
+    requiresAuth: true,
   },
   {
     href: "/membership",
@@ -52,6 +54,13 @@ export const NAV_ITEMS: NavItem[] = [
     icon: Users,
     description:
       "Flexible plans to suit your schedule. Join the Jackals family today.",
+    requiresAuth: true,
+  },
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+    icon: LayoutDashboard,
+    description: "Your membership, payments, and event sign-ups.",
     requiresAuth: true,
   },
   {
@@ -72,9 +81,9 @@ export const NAV_ITEMS: NavItem[] = [
 
 const PRIMARY_NAV_HREFS = new Set([
   "/",
-  "/whats-on",
+  "/events",
   "/training",
-  "/calendar",
+  "/matches",
   "/membership",
 ]);
 
@@ -107,7 +116,9 @@ export const INFO_NAV_ITEMS: NavItem[] = [
 
 export function isNavItemActive(pathname: string, href: string) {
   if (pathname === href) return true;
-  if (href === "/whats-on" && pathname.startsWith("/fun-sessions")) return true;
+  if (href === "/events" && pathname.startsWith("/fun-sessions")) return true;
+  if (href === "/events" && pathname === "/whats-on") return true;
+  if (href === "/events" && pathname === "/calendar") return true;
   return href !== "/" && pathname.startsWith(`${href}/`);
 }
 
@@ -137,7 +148,8 @@ export function visiblePrimaryNavItems(isLoggedIn: boolean) {
 
 export function visibleMoreNavItems(isLoggedIn: boolean) {
   const secondaryNav = visibleNavItems(isLoggedIn).filter(
-    (item) => !PRIMARY_NAV_HREFS.has(item.href),
+    (item) =>
+      !PRIMARY_NAV_HREFS.has(item.href) && item.href !== "/dashboard",
   );
   return [...secondaryNav, ...INFO_NAV_ITEMS];
 }

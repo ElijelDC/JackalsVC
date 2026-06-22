@@ -16,7 +16,7 @@ export default async function HomePageRoute() {
 
   const [upcomingEvents, featuredProducts, featuredAlbums, instagramPosts] =
     await Promise.all([
-      getHomepageUpcomingEvents(isLoggedIn, 3),
+      getHomepageUpcomingEvents(isLoggedIn, session?.user?.id, 3),
       SHOP_ENABLED
         ? prisma.product.findMany({ where: { active: true }, take: 3 })
         : Promise.resolve([]),

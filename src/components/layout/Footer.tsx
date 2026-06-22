@@ -141,7 +141,7 @@ function GuestFooter() {
 
         <FooterColumn title="Explore">
           <li>
-            <FooterLink href="/whats-on">What&apos;s on?</FooterLink>
+            <FooterLink href="/events">Events</FooterLink>
           </li>
           <li>
             <FooterLink href="/teams">Our teams</FooterLink>
@@ -159,7 +159,7 @@ function GuestFooter() {
 
         <FooterColumn title="Plan ahead">
           <li>
-            <FooterLink href="/calendar">Events calendar</FooterLink>
+            <FooterLink href="/membership">Membership</FooterLink>
           </li>
           <li>
             <FooterLink href="/contact">Contact us</FooterLink>
@@ -194,13 +194,10 @@ function MemberFooter() {
             <FooterLink href="/membership">Membership</FooterLink>
           </li>
           <li>
-            <FooterLink href="/training">Training</FooterLink>
+            <FooterLink href="/events">Events</FooterLink>
           </li>
           <li>
-            <FooterLink href="/calendar">Calendar</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/whats-on">What&apos;s on?</FooterLink>
+            <FooterLink href="/training">Trainings</FooterLink>
           </li>
         </FooterColumn>
 

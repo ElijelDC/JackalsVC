@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { format } from "date-fns";
 import { CheckCircle2, Clock3, CreditCard } from "lucide-react";
 import { PaymentProofUpload } from "@/components/payments/PaymentProofUpload";
@@ -50,7 +49,9 @@ function statusBadge(
 
   if (proofSubmittedAt) {
     return (
-      <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-300">Checking</Badge>
+      <Badge className="border-blue-500/30 bg-blue-500/10 text-blue-300">
+        Awaiting verification
+      </Badge>
     );
   }
 
@@ -92,7 +93,7 @@ export function MemberPaymentStatus({
               {isActive ? "Membership active" : "Awaiting your first payment"}
             </p>
             <p className="mt-1 text-sm text-zinc-400">
-              {membership.planName} · {membership.scheduleLabel} · season ends{" "}
+              {membership.planName} · {membership.scheduleLabel} · ends{" "}
               {format(new Date(membership.endDate), "d MMM yyyy")}
             </p>
             <p className="mt-1 text-sm text-zinc-500">
@@ -132,7 +133,7 @@ export function MemberPaymentStatus({
         <Card className="py-8 text-center">
           <CheckCircle2 className="mx-auto h-8 w-8 text-green-400" />
           <p className="mt-3 font-medium text-white">All payments complete</p>
-          <p className="mt-1 text-sm text-zinc-400">You&apos;re fully paid up for this season.</p>
+          <p className="mt-1 text-sm text-zinc-400">You&apos;re fully paid up.</p>
         </Card>
       )}
 
@@ -180,13 +181,6 @@ export function MemberPaymentStatus({
           Your membership activates once we receive your first bank transfer.
         </p>
       )}
-
-      <p className="text-center text-sm text-zinc-500">
-        Need help?{" "}
-        <Link href="/membership" className="text-jackals-red-light hover:text-jackals-red">
-          View membership
-        </Link>
-      </p>
     </div>
   );
 }

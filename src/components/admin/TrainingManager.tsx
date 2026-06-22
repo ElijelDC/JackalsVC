@@ -14,12 +14,14 @@ import {
   SESSION_CATEGORIES,
   type SessionManagerConfig,
 } from "@/lib/training-utils";
+import { TRAINING_TEAMS } from "@/lib/training-teams-config";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import { DAYS_OF_WEEK } from "@/lib/utils";
 
 type TrainingSession = {
   id: string;
   title: string;
+  trainingTeamKey: string | null;
   dayOfWeek: number;
   startTime: string;
   endTime: string;
@@ -47,6 +49,7 @@ const RECURRENCE_OPTIONS = [
 function createEmptyForm() {
   return {
     title: "",
+    trainingTeamKey: "",
     dayOfWeek: "2",
     startTime: "18:00",
     endTime: "20:00",
@@ -69,6 +72,7 @@ function createEmptyForm() {
 function normalizeSession(session: TrainingSession): TrainingSession {
   return {
     ...session,
+    trainingTeamKey: session.trainingTeamKey ?? null,
     recurring: session.recurring ?? true,
     recurrenceWeeks: session.recurrenceWeeks ?? 1,
     recurringFrom: session.recurringFrom ?? null,
@@ -81,6 +85,7 @@ function toFormState(session: TrainingSession) {
   const normalized = normalizeSession(session);
   return {
     title: normalized.title,
+    trainingTeamKey: normalized.trainingTeamKey ?? "",
     dayOfWeek: String(normalized.dayOfWeek),
     startTime: normalized.startTime,
     endTime: normalized.endTime,
@@ -155,6 +160,10 @@ export function TrainingManager({
 
     return {
       title: form.title,
+      trainingTeamKey:
+        config.category === SESSION_CATEGORIES.WEEKLY
+          ? form.trainingTeamKey || undefined
+          : undefined,
       dayOfWeek,
       startTime: form.startTime,
       endTime: form.endTime,
@@ -261,6 +270,37 @@ export function TrainingManager({
         </p>
 
         <div className="grid gap-4 sm:grid-cols-2">
+          {config.category === SESSION_CATEGORIES.WEEKLY && (
+            <div className="sm:col-span-2">
+              <Label htmlFor="trainingTeamKey">Training squad</Label>
+              <Select
+                id="trainingTeamKey"
+                value={form.trainingTeamKey}
+                onChange={(e) => {
+                  const team = TRAINING_TEAMS.find(
+                    (entry) => entry.key === e.target.value,
+                  );
+                  setForm((prev) => ({
+                    ...prev,
+                    trainingTeamKey: e.target.value,
+                    dayOfWeek: team
+                      ? String(team.dayOfWeek)
+                      : prev.dayOfWeek,
+                    level: team?.name ?? prev.level,
+                    title: team ? `${team.name} Training` : prev.title,
+                  }));
+                }}
+              >
+                <option value="">Select squad</option>
+                {TRAINING_TEAMS.map((team) => (
+                  <option key={team.key} value={team.key}>
+                    {team.name} ({team.dayLabel})
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
+
           <div className="sm:col-span-2 rounded border border-white/10 bg-jackals-inset p-4">
             <label className="flex items-center gap-2 text-sm font-medium text-white">
               <Checkbox

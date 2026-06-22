@@ -14,9 +14,7 @@ export function UserMenu({ session }: { session: Session }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const isAdmin = session.user.role === "ADMIN";
   const isActive =
-    pathname.startsWith("/dashboard") ||
-    pathname.startsWith("/profile") ||
-    pathname.startsWith("/admin");
+    pathname.startsWith("/profile") || pathname.startsWith("/admin");
   const displayName = session.user.name?.split(" ")[0] ?? "Account";
 
   useEffect(() => {
@@ -68,19 +66,6 @@ export function UserMenu({ session }: { session: Session }) {
           >
             <User className="h-4 w-4 shrink-0" />
             Profile
-          </Link>
-          <Link
-            href="/dashboard"
-            onClick={() => setOpen(false)}
-            className={cn(
-              "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors",
-              pathname.startsWith("/dashboard")
-                ? "bg-jackals-red/10 text-jackals-red-light"
-                : "text-zinc-400 hover:bg-white/5 hover:text-white",
-            )}
-          >
-            <User className="h-4 w-4 shrink-0" />
-            Dashboard
           </Link>
           {isAdmin && (
             <Link

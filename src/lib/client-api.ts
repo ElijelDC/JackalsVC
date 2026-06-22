@@ -174,6 +174,27 @@ export async function apiUploadPaymentProof(
   }
 }
 
+export async function apiRemovePaymentProof(
+  paymentId: string,
+  fallbackError = "Failed to remove screenshot",
+): Promise<ApiResult<PaymentProofResponse>> {
+  try {
+    const res = await fetch(
+      `/api/payments/proof?paymentId=${encodeURIComponent(paymentId)}`,
+      { method: "DELETE" },
+    );
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? fallbackError };
+    }
+
+    return { ok: true, data: data as PaymentProofResponse };
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
 export async function apiImportPaymentCsv(
   file: File,
   fallbackError = "Failed to import CSV",
