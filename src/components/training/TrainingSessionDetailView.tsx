@@ -23,15 +23,18 @@ import {
   TRAINING_ATTENDANCE_LABELS,
   TRAINING_RESPONSE_OPENS_DAYS,
 } from "@/lib/training-attendance-config";
-import { cn } from "@/lib/utils";
+
+import type { AttendanceBlockReason } from "@/lib/membership";
 
 export function TrainingSessionDetailView({
   detail,
   canAccessAttendance,
+  attendanceBlockReason = null,
   monthParam,
 }: {
   detail: TrainingSessionDetailData;
   canAccessAttendance: boolean;
+  attendanceBlockReason?: AttendanceBlockReason | null;
   monthParam: string;
 }) {
   const eventDate = new Date(detail.event.startDate);
@@ -97,7 +100,9 @@ export function TrainingSessionDetailView({
               {past
                 ? "This session has already started."
                 : !canAccessAttendance
-                  ? "Active membership is required to respond."
+                  ? attendanceBlockReason === "overdue"
+                    ? "Your membership payment is overdue. Pay outstanding instalments to respond to training."
+                    : "Active membership is required to respond."
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the session — from ${format(responseOpensOn, "d MMMM")}.`
                     : "Let coaches and teammates know if you're coming."}
@@ -123,7 +128,9 @@ export function TrainingSessionDetailView({
                 href="/membership"
                 className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-jackals-red-light hover:text-jackals-red"
               >
-                Get membership to respond
+                {attendanceBlockReason === "overdue"
+                  ? "View payment schedule"
+                  : "Get membership to respond"}
                 <ChevronRight className="h-4 w-4" />
               </Link>
             )}

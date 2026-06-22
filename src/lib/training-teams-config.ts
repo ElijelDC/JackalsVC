@@ -7,37 +7,19 @@ import {
   subMonths,
 } from "date-fns";
 
-export const TRAINING_TEAMS = [
-  {
-    key: "DIV2_MENS",
-    name: "Division 2 Mens",
-    dayOfWeek: 4,
-    dayLabel: "Thursday",
-  },
-  {
-    key: "DIV3_WOMENS",
-    name: "Division 3 Womens",
-    dayOfWeek: 1,
-    dayLabel: "Monday",
-  },
-  {
-    key: "DIV4_MENS",
-    name: "Division 4 Mens",
-    dayOfWeek: 3,
-    dayLabel: "Wednesday",
-  },
-] as const;
+export type TrainingTeam = {
+  key: string;
+  name: string;
+  dayOfWeek: number;
+  dayLabel: string;
+};
 
-export type TrainingTeamKey = (typeof TRAINING_TEAMS)[number]["key"];
-
-export type TrainingTeam = (typeof TRAINING_TEAMS)[number];
-
-export function getTrainingTeamByKey(key: string | null | undefined) {
-  return TRAINING_TEAMS.find((team) => team.key === key) ?? null;
-}
-
-export function isTrainingTeamKey(value: string): value is TrainingTeamKey {
-  return TRAINING_TEAMS.some((team) => team.key === value);
+export function getTrainingTeamFromList(
+  teams: TrainingTeam[],
+  key: string | null | undefined,
+) {
+  if (!key) return null;
+  return teams.find((team) => team.key === key) ?? null;
 }
 
 export function parseTrainingMonthParam(value: string | undefined) {

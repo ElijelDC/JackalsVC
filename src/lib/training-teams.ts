@@ -3,17 +3,25 @@ import "server-only";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
+import {
+  getTrainingSquads,
+  getTrainingTeamByKey,
+  isTrainingSquadKey,
+} from "@/lib/training-squads";
 
 export {
-  TRAINING_TEAMS,
   formatTrainingMonthParam,
   getAdjacentTrainingMonths,
-  getTrainingTeamByKey,
-  isTrainingTeamKey,
+  getTrainingTeamFromList,
   parseTrainingMonthParam,
   type TrainingTeam,
-  type TrainingTeamKey,
 } from "@/lib/training-teams-config";
+
+export {
+  getTrainingSquads,
+  getTrainingTeamByKey,
+  isTrainingSquadKey,
+} from "@/lib/training-squads";
 
 export async function getUserTrainingTeamKey(userId: string | undefined) {
   if (!userId) return null;

@@ -24,6 +24,12 @@ export async function PUT(
         status: data.status,
         endDate: new Date(data.endDate),
         ...(data.planId ? { planId: data.planId } : {}),
+        ...(data.paymentOverdueOverride !== undefined
+          ? { paymentOverdueOverride: data.paymentOverdueOverride }
+          : {}),
+        ...(data.paymentOverdueOverrideNote !== undefined
+          ? { paymentOverdueOverrideNote: data.paymentOverdueOverrideNote }
+          : {}),
       },
       include: {
         user: { select: { id: true, name: true, email: true } },

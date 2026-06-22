@@ -44,6 +44,7 @@ export const matchSignupSchema = z.object({
 });
 
 export const membershipSubscribeSchema = z.object({
+  planId: z.string().min(1, "Choose a membership type"),
   paymentSchedule: z.enum(PAYMENT_SCHEDULES, {
     error: "Choose a payment option",
   }),
@@ -168,7 +169,7 @@ export const eventSchema = z.object({
   description: z.string().optional(),
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().optional(),
-  type: z.enum(["TOURNAMENT", "SOCIAL", "MEETING"]),
+  type: z.enum(["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"]),
   location: z.string().optional(),
   attendanceUrl: z.preprocess(
     (val) => (val === "" || val == null ? undefined : val),
@@ -212,7 +213,10 @@ export const galleryAlbumSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
-  coverImageUrl: z.string().min(1, "Cover image URL is required"),
+  coverImageUrl: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
   category: z.enum(["MATCH", "TRAINING", "SOCIAL", "EVENT"]),
   featured: z.boolean(),
   sortOrder: z.number().int().min(0).default(0),
@@ -254,17 +258,22 @@ export const membershipUpdateSchema = z.object({
   status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"]),
   endDate: z.string().min(1, "End date is required"),
   planId: z.string().optional(),
+  paymentOverdueOverride: z.boolean().optional(),
+  paymentOverdueOverrideNote: z.string().max(500).nullable().optional(),
 });
 
 export const clubMemberCreateSchema = z.object({
   vlyNumber: z.string().min(3, "VLY number is required"),
-  name: z.string().min(2, "Name must be at least 2 characters"),
+  name: z.string().min(2, "Full name is required"),
+  trainingTeamKey: z.string().min(1, "Team is required"),
+  rosterRole: z.enum(["PLAYER", "COACH"]).default("PLAYER"),
   active: z.boolean().optional(),
 });
 
 export const clubMemberUpdateSchema = z.object({
   name: z.string().min(2).optional(),
   active: z.boolean().optional(),
+  rosterRole: z.enum(["PLAYER", "COACH"]).optional(),
   trainingTeamKey: z.string().nullable().optional(),
 });
 
@@ -299,6 +308,11 @@ export const clubTeamSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  trainingTeamKey: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val?.trim() ? val.trim() : null)),
   sortOrder: z.number().int().min(0).default(0),
 });
 
@@ -314,10 +328,39 @@ export const clubTeamMemberSchema = z.object({
     .optional()
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
   sortOrder: z.number().int().min(0).default(0),
+  isCaptain: z.boolean().optional().default(false),
+});
+
+export const clubTeamMemberDisplaySchema = z.object({
+  position: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+  sortOrder: z.number().int().min(0).optional(),
+  isCaptain: z.boolean().optional(),
 });
 
 import { MATCH_VENUES } from "@/lib/match-config";
-import { isTrainingTeamKey } from "@/lib/training-teams-config";
+
+export const trainingSquadCreateSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  dayOfWeek: z.coerce.number().int().min(0).max(6),
+  sortOrder: z.coerce.number().int().min(0).default(0),
+  active: z.boolean().default(true),
+  key: z
+    .string()
+    .min(1)
+    .max(48)
+    .regex(/^[A-Z0-9_]+$/, "Key must use uppercase letters, numbers, and underscores")
+    .optional(),
+});
+
+export const trainingSquadUpdateSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  dayOfWeek: z.coerce.number().int().min(0).max(6).optional(),
+  sortOrder: z.coerce.number().int().min(0).optional(),
+  active: z.boolean().optional(),
+});
 
 export const teamMatchSchema = z
   .object({
@@ -331,10 +374,6 @@ export const teamMatchSchema = z
       .string()
       .optional()
       .transform((val) => (val?.trim() ? val.trim() : undefined)),
-  })
-  .refine((data) => isTrainingTeamKey(data.trainingTeamKey), {
-    message: "Select a valid squad",
-    path: ["trainingTeamKey"],
   })
   .refine(
     (data) => new Date(data.matchStart).getTime() >= new Date(data.warmUpTime).getTime(),

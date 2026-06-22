@@ -1,0 +1,1 @@
+ALTER TABLE "ClubTeamMember" ADD COLUMN "isCaptain" BOOLEAN NOT NULL DEFAULT false;

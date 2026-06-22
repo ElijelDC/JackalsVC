@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
-import { isTrainingTeamKey } from "@/lib/training-teams";
+import { handleClubMemberSquadChange, syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
+import { isTrainingSquadKey } from "@/lib/training-squads";
 import { clubMemberUpdateSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
 
@@ -20,9 +21,9 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (
     data.trainingTeamKey !== undefined &&
     data.trainingTeamKey !== null &&
-    !isTrainingTeamKey(data.trainingTeamKey)
+    !(await isTrainingSquadKey(data.trainingTeamKey))
   ) {
-    return jsonError("Invalid training team", 400);
+    return jsonError("Invalid squad", 400);
   }
 
   const existing = await prisma.clubMember.findUnique({ where: { id } });
@@ -33,11 +34,36 @@ export async function PATCH(request: Request, context: RouteContext) {
     data: {
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(data.active !== undefined ? { active: data.active } : {}),
+      ...(data.rosterRole !== undefined ? { rosterRole: data.rosterRole } : {}),
       ...(data.trainingTeamKey !== undefined
         ? { trainingTeamKey: data.trainingTeamKey }
         : {}),
     },
   });
+
+  const squadChanged =
+    data.trainingTeamKey !== undefined &&
+    data.trainingTeamKey !== existing.trainingTeamKey;
+  const roleOrActiveChanged =
+    data.rosterRole !== undefined ||
+    data.active !== undefined ||
+    data.name !== undefined;
+
+  if (squadChanged) {
+    await handleClubMemberSquadChange(
+      id,
+      existing.trainingTeamKey,
+      clubMember.trainingTeamKey,
+    );
+  } else if (roleOrActiveChanged && clubMember.trainingTeamKey) {
+    await syncClubTeamsForSquadKey(clubMember.trainingTeamKey);
+  } else if (data.active === false) {
+    await handleClubMemberSquadChange(
+      id,
+      existing.trainingTeamKey,
+      null,
+    );
+  }
 
   return NextResponse.json({ clubMember });
 }

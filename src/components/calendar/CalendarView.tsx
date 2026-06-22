@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   format,
   startOfMonth,
@@ -51,7 +51,6 @@ const LEGEND_TYPES = [
   "TOURNAMENT",
   "SKILLS_CLINIC",
   "SOCIAL",
-  "MEETING",
 ] as const;
 
 function getLegendLabel(type: (typeof LEGEND_TYPES)[number]) {
@@ -59,9 +58,9 @@ function getLegendLabel(type: (typeof LEGEND_TYPES)[number]) {
     case "FUN":
       return "Fun sessions";
     case "SKILLS_CLINIC":
-      return "Skills clinics";
+      return "Skills Clinics";
     case "SOCIAL":
-      return "Social activity";
+      return "Social Activities";
     default:
       return getEventTypeLabel(type);
   }
@@ -381,19 +380,17 @@ export function CalendarView({
     [events, search, typeFilter],
   );
 
-  useEffect(() => {
-    setSelectedDate((prev) => {
-      if (
-        prev &&
-        filteredEvents.some((event) =>
-          isSameDay(new Date(event.startDate), prev),
-        )
-      ) {
-        return prev;
-      }
-      return getInitialSelectedDate(filteredEvents);
-    });
-  }, [filteredEvents]);
+  const effectiveSelectedDate = useMemo(() => {
+    if (
+      selectedDate &&
+      filteredEvents.some((event) =>
+        isSameDay(new Date(event.startDate), selectedDate),
+      )
+    ) {
+      return selectedDate;
+    }
+    return getInitialSelectedDate(filteredEvents);
+  }, [selectedDate, filteredEvents]);
 
   const filtersActive = Boolean(search.trim()) || Boolean(typeFilter);
 
@@ -427,7 +424,9 @@ export function CalendarView({
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     );
 
-  const selectedEvents = selectedDate ? eventsForDate(selectedDate) : [];
+  const selectedEvents = effectiveSelectedDate
+    ? eventsForDate(effectiveSelectedDate)
+    : [];
 
   const monthEventCount = days.reduce(
     (count, day) => count + eventsForDate(day).length,
@@ -442,7 +441,7 @@ export function CalendarView({
   };
 
   const visibleLegendTypes = LEGEND_TYPES.filter((type) =>
-    isLoggedIn ? true : type !== "TRAINING" && type !== "MEETING",
+    isLoggedIn ? true : type !== "TRAINING",
   );
 
   return (
@@ -546,7 +545,8 @@ export function CalendarView({
                       day={day}
                       dayEvents={eventsForDate(day)}
                       isSelected={Boolean(
-                        selectedDate && isSameDay(day, selectedDate),
+                        effectiveSelectedDate &&
+                          isSameDay(day, effectiveSelectedDate),
                       )}
                       inCurrentMonth={isSameMonth(day, currentMonth)}
                       onSelect={selectDate}
@@ -574,8 +574,8 @@ export function CalendarView({
                   Selected day
                 </p>
                 <h2 className="mt-1 font-display text-xl font-semibold text-white">
-                  {selectedDate
-                    ? format(selectedDate, "EEEE, d MMMM")
+                  {effectiveSelectedDate
+                    ? format(effectiveSelectedDate, "EEEE, d MMMM")
                     : "Pick a date"}
                 </h2>
               </div>
@@ -591,7 +591,7 @@ export function CalendarView({
               <Card className="flex items-start gap-3">
                 <CalendarDays className="mt-0.5 h-5 w-5 shrink-0 text-zinc-600" />
                 <CardDescription>
-                  {selectedDate
+                  {effectiveSelectedDate
                     ? filtersActive
                       ? "No matching events on this day. Try clearing your filters."
                       : "Nothing scheduled on this day."

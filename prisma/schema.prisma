@@ -27,15 +27,18 @@ model User {
 }
 
 model ClubMember {
-  id              String   @id @default(cuid())
-  vlyNumber       String   @unique
+  id              String           @id @default(cuid())
+  vlyNumber       String           @unique
   name            String
-  active          Boolean  @default(true)
+  active          Boolean          @default(true)
+  rosterRole      String           @default("PLAYER")
   trainingTeamKey String?
-  userId          String?  @unique
-  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  profileImageUrl String?
+  userId          String?          @unique
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  clubTeamMember  ClubTeamMember?
 }
 
 model EmailVerification {
@@ -60,6 +63,17 @@ model RegistrationCode {
   expiresAt DateTime?
   createdAt DateTime  @default(now())
   users     User[]
+}
+
+model TrainingSquad {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  name      String
+  dayOfWeek Int
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model TrainingSession {
@@ -192,17 +206,19 @@ model MembershipPlan {
 }
 
 model Membership {
-  id              String         @id @default(cuid())
-  userId          String
-  planId          String
-  paymentSchedule String         @default("FULL")
-  status          String         @default("ACTIVE")
-  startDate       DateTime       @default(now())
-  endDate         DateTime
-  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  plan            MembershipPlan @relation(fields: [planId], references: [id])
-  payments        Payment[]
-  createdAt       DateTime       @default(now())
+  id                        String         @id @default(cuid())
+  userId                    String
+  planId                    String
+  paymentSchedule           String         @default("FULL")
+  status                    String         @default("ACTIVE")
+  paymentOverdueOverride      Boolean        @default(false)
+  paymentOverdueOverrideNote  String?
+  startDate                 DateTime       @default(now())
+  endDate                   DateTime
+  user                      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan                      MembershipPlan @relation(fields: [planId], references: [id])
+  payments                  Payment[]
+  createdAt                 DateTime       @default(now())
 }
 
 model Payment {
@@ -296,26 +312,30 @@ model Achievement {
 }
 
 model ClubTeam {
-  id          String           @id @default(cuid())
-  name        String
-  level       String
-  description String
-  details     String?
-  sortOrder   Int              @default(0)
-  createdAt   DateTime         @default(now())
-  members     ClubTeamMember[]
+  id              String           @id @default(cuid())
+  name            String
+  level           String
+  description     String
+  details         String?
+  trainingTeamKey String?          @unique
+  sortOrder       Int              @default(0)
+  createdAt       DateTime         @default(now())
+  members         ClubTeamMember[]
 }
 
 model ClubTeamMember {
-  id        String   @id @default(cuid())
-  teamId    String
-  team      ClubTeam @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  name      String
-  role      String
-  position  String?
-  photoUrl  String?
-  sortOrder Int      @default(0)
-  createdAt DateTime @default(now())
+  id           String      @id @default(cuid())
+  teamId       String
+  team         ClubTeam    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  clubMemberId String?     @unique
+  clubMember   ClubMember? @relation(fields: [clubMemberId], references: [id], onDelete: SetNull)
+  name         String
+  role         String
+  position     String?
+  isCaptain    Boolean     @default(false)
+  photoUrl     String?
+  sortOrder    Int         @default(0)
+  createdAt    DateTime    @default(now())
 }
 
 model Product {
@@ -352,4 +372,10 @@ model OrderItem {
   size      String?
   order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id])
+}
+
+model SiteContent {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
 }

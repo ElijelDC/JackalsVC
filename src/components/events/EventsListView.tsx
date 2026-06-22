@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
 import { usePathname } from "next/navigation";
 import {
   type EventsCalendarEvent,
@@ -45,16 +45,16 @@ const BROWSE_FILTERS: {
   },
   {
     key: "skills-clinics",
-    label: "Skills clinics",
+    label: "Skills Clinics",
     sectionId: EVENTS_SECTIONS.skillsClinics,
     emptyTitle: "No skills clinics scheduled",
     emptyDescription: "Clinic dates will appear here when announced.",
   },
   {
     key: "socials",
-    label: "Social Activity",
+    label: "Social Activities",
     sectionId: EVENTS_SECTIONS.socials,
-    emptyTitle: "No social activity scheduled",
+    emptyTitle: "No social activities scheduled",
     emptyDescription:
       "Social events and club nights will appear here when announced.",
   },
@@ -81,7 +81,7 @@ function BrowseTypeFilters({
 }) {
   return (
     <div
-      className="flex flex-wrap gap-2"
+      className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3"
       role="tablist"
       aria-label="Filter events by type"
     >
@@ -97,16 +97,16 @@ function BrowseTypeFilters({
             aria-selected={isActive}
             onClick={() => onChange(filter.key)}
             className={cn(
-              "inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-all duration-200",
+              "flex h-[4.75rem] w-full items-center justify-between gap-2 rounded-lg border px-3 py-2.5 text-left text-xs font-medium transition-all duration-200 sm:h-auto sm:min-h-[3.25rem] sm:px-4 sm:text-sm",
               isActive
                 ? "border-jackals-red/50 bg-jackals-red/20 text-white shadow-[0_0_20px_rgba(232,34,42,0.12)]"
                 : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
             )}
           >
-            {filter.label}
+            <span className="min-w-0 flex-1 leading-snug">{filter.label}</span>
             <span
               className={cn(
-                "rounded-full px-2 py-0.5 text-xs font-semibold",
+                "shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold",
                 isActive
                   ? "bg-white/15 text-white"
                   : "bg-white/5 text-zinc-500",
@@ -202,6 +202,15 @@ function CalendarEventsGrid({
   );
 }
 
+function subscribeToHash(onStoreChange: () => void) {
+  window.addEventListener("hashchange", onStoreChange);
+  return () => window.removeEventListener("hashchange", onStoreChange);
+}
+
+function getHashSnapshot() {
+  return window.location.hash;
+}
+
 export function EventsListView({
   funSessions,
   tournaments,
@@ -214,6 +223,7 @@ export function EventsListView({
   socials: EventsCalendarEvent[];
 }) {
   const pathname = usePathname();
+  const hash = useSyncExternalStore(subscribeToHash, getHashSnapshot, () => "");
   const counts = useMemo(
     () => ({
       "fun-sessions": funSessions.length,
@@ -224,18 +234,43 @@ export function EventsListView({
     [funSessions.length, tournaments.length, skillsClinics.length, socials.length],
   );
 
-  const [activeFilter, setActiveFilter] = useState<BrowseFilter>(() =>
-    defaultBrowseFilter(counts),
-  );
+  const filterKey = `${hash}:${counts["fun-sessions"]}:${counts.tournaments}:${counts["skills-clinics"]}:${counts.socials}`;
 
-  useEffect(() => {
-    const fromHash = browseFilterFromHash(window.location.hash);
-    if (fromHash) {
-      setActiveFilter(fromHash);
-      return;
-    }
-    setActiveFilter(defaultBrowseFilter(counts));
-  }, [counts]);
+  return (
+    <EventsListViewInner
+      key={filterKey}
+      pathname={pathname}
+      hash={hash}
+      counts={counts}
+      funSessions={funSessions}
+      tournaments={tournaments}
+      skillsClinics={skillsClinics}
+      socials={socials}
+    />
+  );
+}
+
+function EventsListViewInner({
+  pathname,
+  hash,
+  counts,
+  funSessions,
+  tournaments,
+  skillsClinics,
+  socials,
+}: {
+  pathname: string;
+  hash: string;
+  counts: Record<BrowseFilter, number>;
+  funSessions: TrainingSessionCardData[];
+  tournaments: EventsCalendarEvent[];
+  skillsClinics: EventsCalendarEvent[];
+  socials: EventsCalendarEvent[];
+}) {
+
+  const [activeFilter, setActiveFilter] = useState<BrowseFilter>(
+    () => browseFilterFromHash(hash) ?? defaultBrowseFilter(counts),
+  );
 
   const setFilter = (filter: BrowseFilter) => {
     setActiveFilter(filter);

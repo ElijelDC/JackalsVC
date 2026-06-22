@@ -22,6 +22,13 @@ export async function POST(
     return jsonError("Team not found", 404);
   }
 
+  if (team.trainingTeamKey && data.role === "PLAYER") {
+    return jsonError(
+      "Players are added automatically from the club roster. Assign members on the roster page instead.",
+      400,
+    );
+  }
+
   const member = await prisma.clubTeamMember.create({
     data: {
       teamId,
@@ -30,6 +37,7 @@ export async function POST(
       position: data.position ?? null,
       photoUrl: data.photoUrl ?? null,
       sortOrder: data.sortOrder,
+      isCaptain: data.isCaptain ?? false,
     },
   });
 

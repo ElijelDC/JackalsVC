@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { GALLERY_MAX_UPLOAD_BYTES } from "@/lib/gallery-upload-config";
+import { galleryImageUrl, PUBLIC_PATHS } from "@/lib/public-paths";
 
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
@@ -36,14 +37,19 @@ export async function saveGalleryImageFile(file: File, albumId: string) {
 
   const ext = EXT_BY_TYPE[file.type] ?? ".jpg";
   const filename = `${Date.now()}-${randomBytes(4).toString("hex")}${ext}`;
-  const dir = path.join(process.cwd(), "public", "gallery", albumId);
+  const dir = path.join(
+    process.cwd(),
+    "public",
+    PUBLIC_PATHS.uploads.gallery.slice(1),
+    albumId,
+  );
 
   await mkdir(dir, { recursive: true });
 
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(dir, filename), buffer);
 
-  return `/gallery/${albumId}/${filename}`;
+  return galleryImageUrl(albumId, filename);
 }
 
 export function photoTitleFromFilename(filename: string) {

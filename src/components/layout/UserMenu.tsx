@@ -4,8 +4,9 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
-import { ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { ChevronDown, LogOut, Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { MemberAvatar } from "@/components/member/MemberAvatar";
 import { cn } from "@/lib/utils";
 
 export function UserMenu({ session }: { session: Session }) {
@@ -16,6 +17,7 @@ export function UserMenu({ session }: { session: Session }) {
   const isActive =
     pathname.startsWith("/profile") || pathname.startsWith("/admin");
   const displayName = session.user.name?.split(" ")[0] ?? "Account";
+  const profileImageUrl = session.user.profileImageUrl;
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -45,7 +47,12 @@ export function UserMenu({ session }: { session: Session }) {
             : "text-zinc-400 hover:bg-white/5 hover:text-white",
         )}
       >
-        <User className="h-4 w-4" />
+        <MemberAvatar
+          name={session.user.name ?? displayName}
+          imageUrl={profileImageUrl}
+          size="sm"
+          className="border-0"
+        />
         {displayName}
         <ChevronDown
           className={cn("h-4 w-4 transition-transform", open && "rotate-180")}
@@ -64,7 +71,12 @@ export function UserMenu({ session }: { session: Session }) {
                 : "text-zinc-400 hover:bg-white/5 hover:text-white",
             )}
           >
-            <User className="h-4 w-4 shrink-0" />
+            <MemberAvatar
+              name={session.user.name ?? displayName}
+              imageUrl={profileImageUrl}
+              size="sm"
+              className="border-0"
+            />
             Profile
           </Link>
           {isAdmin && (
@@ -79,7 +91,7 @@ export function UserMenu({ session }: { session: Session }) {
               )}
             >
               <Settings className="h-4 w-4 shrink-0" />
-              Admin
+              Admin Panel
             </Link>
           )}
           <button

@@ -12,8 +12,29 @@ export function createMembershipPricing(
   return { seasonTotalPrice, durationMonths };
 }
 
-/** Default pricing when no plan is loaded (matches seed data). */
-export const DEFAULT_MEMBERSHIP_PRICING = createMembershipPricing(420, 7);
+export const CLUB_MEMBERSHIP_SEASON_LABEL =
+  "for the full 2026/27 Irish National League";
+
+export const CLUB_MEMBERSHIP_PLAN_NAME = "Club Membership 2026/27";
+
+export const MEMBERSHIP_PLAN_ADULT_NAME = "Adult";
+export const MEMBERSHIP_PLAN_STUDENT_NAME = "Student / U18";
+export const MEMBERSHIP_PLAN_ADULT_PRICE = 450;
+export const MEMBERSHIP_PLAN_STUDENT_PRICE = 385;
+export const MEMBERSHIP_PLAN_DURATION_MONTHS = 7;
+
+export const MEMBERSHIP_FEATURES = [
+  "Training Sessions",
+  "Personalized Club Kit",
+  "League Matchdays",
+  "Merchandise Discounts",
+];
+
+/** Default pricing when no plan is loaded (adult tier). */
+export const DEFAULT_MEMBERSHIP_PRICING = createMembershipPricing(
+  MEMBERSHIP_PLAN_ADULT_PRICE,
+  MEMBERSHIP_PLAN_DURATION_MONTHS,
+);
 
 export const PAYMENT_SCHEDULES = ["MONTHLY", "INSTALLMENTS", "FULL"] as const;
 export type PaymentSchedule = (typeof PAYMENT_SCHEDULES)[number];
@@ -24,18 +45,6 @@ export type PaymentScheduleOption = {
   description: string;
   summary: string;
 };
-
-export const CLUB_MEMBERSHIP_SEASON_LABEL =
-  "for the full 2026/27 Irish National League";
-
-export const CLUB_MEMBERSHIP_PLAN_NAME = "Club Membership 2026/27";
-
-export const MEMBERSHIP_FEATURES = [
-  "Training Sessions",
-  "Full Club Kit",
-  "League Matchdays",
-  "Merchandise Discounts",
-];
 
 type InstallmentTemplate = {
   monthsCovered: number;
@@ -148,10 +157,13 @@ export function getMonthlyFirstAmount(pricing: MembershipPricing): number {
 
 export function validateMembershipPlanPrice(
   price: number,
-  _durationMonths: number,
+  durationMonths: number,
 ): string | null {
   if (price <= 0) {
     return "Membership price must be greater than zero.";
+  }
+  if (durationMonths <= 0) {
+    return "Membership duration must be at least one month.";
   }
   return null;
 }
@@ -181,7 +193,7 @@ export function getPaymentScheduleOptions(
       id: "FULL",
       label: "Pay in full",
       description: `One upfront payment for the entire ${pricing.durationMonths}-month membership`,
-      summary: "Pay once · best value",
+      summary: "Pay once upfront",
     },
   ];
 }
@@ -236,6 +248,38 @@ export function getScheduleOption(
 
 export function formatPaymentScheduleLabel(schedule: PaymentSchedule): string {
   return getScheduleOption(schedule).label;
+}
+
+export function formatPaymentScheduleShortLabel(schedule: PaymentSchedule): string {
+  switch (schedule) {
+    case "MONTHLY":
+      return "Monthly";
+    case "INSTALLMENTS":
+      return "3 payments";
+    case "FULL":
+      return "Full";
+    default:
+      return formatPaymentScheduleLabel(schedule);
+  }
+}
+
+export function formatMembershipPlanShortName(planName: string): string {
+  if (planName === MEMBERSHIP_PLAN_ADULT_NAME || planName === "Adult (full waged)") {
+    return "Adult";
+  }
+  if (planName === MEMBERSHIP_PLAN_STUDENT_NAME) return "Student/U18";
+  return planName.replace(/\s*\([^)]*\)/, "").trim() || planName;
+}
+
+export function formatMembershipSubscriptionLabel(
+  planName: string,
+  paymentSchedule: PaymentSchedule | string,
+): string {
+  const schedule = PAYMENT_SCHEDULES.includes(paymentSchedule as PaymentSchedule)
+    ? (paymentSchedule as PaymentSchedule)
+    : "FULL";
+
+  return `${formatMembershipPlanShortName(planName)} - ${formatPaymentScheduleShortLabel(schedule)}`;
 }
 
 export function getFirstInstallmentAmount(

@@ -15,10 +15,18 @@ import { Logo } from "@/components/layout/Logo";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 import { formatPrice } from "@/lib/utils";
 import { CLUB_SLOGAN } from "@/lib/brand";
+import { EditableText } from "@/components/site-edit/EditableText";
 import type { InstagramPost } from "@/lib/instagram";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 import { InstagramFeed } from "@/components/home/InstagramFeed";
+import { FeatureCarousel } from "@/components/home/FeatureCarousel";
 import type { Product } from "@/types/product";
+
+type FeaturedAlbum = {
+  id: string;
+  title: string;
+  coverImageUrl: string;
+};
 
 function FeatureCard({
   href,
@@ -28,7 +36,7 @@ function FeatureCard({
 }: NavItem) {
   return (
     <Link href={href} className="group block h-full">
-      <Card className="motion-hover-lift relative h-full overflow-hidden border-white/10 bg-jackals-surface/80 group-hover:border-jackals-red/35 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+      <Card className="motion-hover-lift relative h-full overflow-hidden border-white/10 bg-jackals-surface/80 p-5 group-hover:border-jackals-red/35 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] sm:p-6">
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100"
@@ -40,19 +48,13 @@ function FeatureCard({
           {label}
           <ArrowRight className="h-4 w-4 shrink-0 text-zinc-600 transition-all group-hover:translate-x-0.5 group-hover:text-jackals-red-light" />
         </CardTitle>
-        <CardDescription className="mt-2 leading-relaxed">
+        <CardDescription className="mt-2 text-sm leading-relaxed">
           {description}
         </CardDescription>
       </Card>
     </Link>
   );
 }
-
-type FeaturedAlbum = {
-  id: string;
-  title: string;
-  coverImageUrl: string;
-};
 
 export function HomePage({
   featureItems,
@@ -77,18 +79,22 @@ export function HomePage({
         <PageContainer className="relative py-20 sm:py-28">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <AnimateIn immediate variant="slide-left" delay={0}>
-              <div>
+              <div className="text-center lg:text-left">
                 <h1 className="font-display text-4xl font-bold tracking-wide text-white sm:text-6xl lg:text-7xl">
                   Jackals{" "}
                   <span className="motion-gradient-text bg-gradient-to-r from-jackals-red-light via-jackals-red to-jackals-red-light bg-clip-text text-transparent">
                     Volleyball
                   </span>
                 </h1>
-                <p className="mt-6 max-w-xl text-lg leading-relaxed text-zinc-400">
-                  {CLUB_SLOGAN} Your home for volleyball — open sessions,
-                  tournaments, skills clinics, membership, and official club gear.
+                <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-400 lg:mx-0">
+                  <EditableText
+                    contentKey="home.hero.subtitle"
+                    fallback={`${CLUB_SLOGAN} Your home for competitive volleyball — open sessions, tournaments, skills clinics and social activities!`}
+                    label="Home hero subtitle"
+                    multiline
+                  />
                 </p>
-                <div className="mt-10 flex flex-wrap items-center gap-4">
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
                   <a
                     href={INSTAGRAM_PROFILE_URL}
                     target="_blank"
@@ -124,9 +130,21 @@ export function HomePage({
 
       <PageContainer className="py-16 sm:py-20">
         <AnimateIn>
-          <SectionHeading eyebrow="Explore" title="Everything you need" />
+          <SectionHeading eyebrow="Explore" title="Browse Around" />
         </AnimateIn>
-        <StaggerIn className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3" stagger={90}>
+        <div className="md:hidden">
+          <FeatureCarousel
+            items={featureItems.map(({ href, label, description }) => ({
+              href,
+              label,
+              description,
+            }))}
+          />
+        </div>
+        <StaggerIn
+          className="hidden grid-cols-3 gap-5 md:grid"
+          stagger={90}
+        >
           {featureItems.map((item) => (
             <FeatureCard key={item.href} {...item} />
           ))}

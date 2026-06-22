@@ -1,4 +1,5 @@
 import { getAdminEventsPayload } from "@/lib/admin-events";
+import { getTrainingSquads } from "@/lib/training-squads";
 import { EventsManager } from "@/components/admin/EventsManager";
 
 export const metadata = {
@@ -6,6 +7,11 @@ export const metadata = {
 };
 
 export default async function AdminEventsPage() {
-  const serialized = await getAdminEventsPayload();
-  return <EventsManager initialEvents={serialized} />;
+  const [serialized, trainingSquads] = await Promise.all([
+    getAdminEventsPayload(),
+    getTrainingSquads({ includeInactive: true }),
+  ]);
+  return (
+    <EventsManager initialEvents={serialized} trainingSquads={trainingSquads} />
+  );
 }

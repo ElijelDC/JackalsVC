@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { deleteAchievementImageFile } from "@/lib/achievement-image";
 import { prisma } from "@/lib/prisma";
 import { achievementSchema } from "@/lib/validations";
 
@@ -18,6 +19,9 @@ export async function PUT(
   if (parseError || !data) return parseError!;
 
   try {
+    const existing = await prisma.achievement.findUnique({ where: { id } });
+    if (!existing) return jsonError("Achievement not found", 404);
+
     const achievement = await prisma.achievement.update({
       where: { id },
       data: {
@@ -29,6 +33,14 @@ export async function PUT(
         type: data.type,
       },
     });
+
+    if (
+      existing.imageUrl &&
+      existing.imageUrl !== achievement.imageUrl
+    ) {
+      await deleteAchievementImageFile(existing.imageUrl);
+    }
+
     return NextResponse.json({ achievement });
   } catch {
     return jsonError("Achievement not found", 404);
@@ -45,7 +57,11 @@ export async function DELETE(
   const { id } = await params;
 
   try {
+    const existing = await prisma.achievement.findUnique({ where: { id } });
+    if (!existing) return jsonError("Achievement not found", 404);
+
     await prisma.achievement.delete({ where: { id } });
+    await deleteAchievementImageFile(existing.imageUrl);
     return NextResponse.json({ success: true });
   } catch {
     return jsonError("Achievement not found", 404);

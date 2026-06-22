@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { Card } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { AnimatedBlock } from "@/components/motion/AnimatedBlock";
+import { MemberAvatar } from "@/components/member/MemberAvatar";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = {
@@ -28,6 +29,21 @@ export default async function ProfilePage() {
 
       <AnimatedBlock delay={80}>
         <Card className="max-w-lg">
+        <div className="mb-6 flex items-center gap-4">
+          <MemberAvatar
+            name={displayName}
+            imageUrl={clubMember?.profileImageUrl}
+            size="xl"
+          />
+          <div>
+            <p className="font-display text-xl font-bold text-white">{displayName}</p>
+            <p className="text-sm text-zinc-500">
+              {clubMember
+                ? "Club profile photo is managed by admins."
+                : "Link your VLY roster entry to unlock club profile details."}
+            </p>
+          </div>
+        </div>
         <dl className="space-y-5">
           <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">

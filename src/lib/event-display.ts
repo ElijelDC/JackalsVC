@@ -69,13 +69,21 @@ export function getEventDisplayStyleKey(event: {
   description?: string | null;
   sessionDescription?: string | null;
 }): string {
-  if (event.type === "SOCIAL" && event.title) {
-    return isSkillsClinicEvent({
-      title: event.title,
-      description: event.sessionDescription ?? event.description ?? null,
-    })
-      ? "SKILLS_CLINIC"
-      : "SOCIAL";
+  if (event.type === "SKILLS_CLINIC") {
+    return "SKILLS_CLINIC";
+  }
+
+  if (event.type === "SOCIAL") {
+    if (
+      event.title &&
+      isSkillsClinicEvent({
+        title: event.title,
+        description: event.sessionDescription ?? event.description ?? null,
+      })
+    ) {
+      return "SKILLS_CLINIC";
+    }
+    return "SOCIAL";
   }
 
   return event.type;

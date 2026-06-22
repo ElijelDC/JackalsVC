@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { fillImageStyle } from "@/lib/fill-image-layout";
+import { normalizePublicAssetUrl } from "@/lib/public-paths";
 import { cn } from "@/lib/utils";
 
 export function GalleryCoverImage({
@@ -18,6 +19,7 @@ export function GalleryCoverImage({
   sizes?: string;
 }) {
   const [imageError, setImageError] = useState(false);
+  const imageSrc = normalizePublicAssetUrl(src);
 
   if (imageError) {
     return <ProductPlaceholder className={className} size="md" />;
@@ -29,7 +31,7 @@ export function GalleryCoverImage({
       style={fillImageStyle()}
     >
       <Image
-        src={src}
+        src={imageSrc}
         alt={alt}
         fill
         className="object-cover transition-transform duration-500 group-hover:scale-105"

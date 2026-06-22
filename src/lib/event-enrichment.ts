@@ -18,6 +18,7 @@ export type EnrichedEvent = Event & {
   sessionFee: number | null;
   sessionDescription: string | null;
   sessionCategory: string | null;
+  trainingTeamKey: string | null;
   clubIban: string | null;
 };
 
@@ -57,6 +58,7 @@ function enrichSingleEvent(
     sessionDescription:
       override?.description ?? session?.description ?? null,
     sessionCategory: session?.category ?? null,
+    trainingTeamKey: session?.trainingTeamKey ?? null,
   };
 }
 
@@ -105,5 +107,6 @@ export function serializeEnrichedEvent(event: EnrichedEvent) {
     clubIban: event.clubIban,
     sessionDescription: event.sessionDescription,
     sessionCategory: event.sessionCategory,
+    trainingTeamKey: event.trainingTeamKey,
   };
 }

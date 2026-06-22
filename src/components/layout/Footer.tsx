@@ -2,21 +2,48 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Mail } from "lucide-react";
+import { useState } from "react";
+import { ArrowUpRight, ChevronDown, Mail } from "lucide-react";
 import { CLUB_SLOGAN } from "@/lib/brand";
+import { Logo } from "@/components/layout/Logo";
+import { EditableText } from "@/components/site-edit/EditableText";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { SHOP_ENABLED } from "@/lib/features";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
+import { cn } from "@/lib/utils";
 
-function FooterWordmark() {
+function FooterBrand({
+  contentKey,
+  fallback,
+  label,
+}: {
+  contentKey: string;
+  fallback: string;
+  label: string;
+}) {
+  const tagline = (
+    <p className="min-w-0 text-sm leading-relaxed text-zinc-500 lg:w-full">
+      <EditableText
+        contentKey={contentKey}
+        fallback={fallback}
+        label={label}
+        multiline
+      />
+    </p>
+  );
+
   return (
-    <Link
-      href="/"
-      className="font-display inline-block text-xl font-bold tracking-wider text-white transition-colors hover:text-jackals-red-light sm:text-2xl"
-    >
-      Jackals <span className="text-jackals-red">VC</span>
-    </Link>
+    <>
+      <div className="flex items-center gap-3 sm:gap-4 lg:hidden">
+        <Logo size="lg" href="/" className="shrink-0" />
+        {tagline}
+      </div>
+      <div className="hidden lg:flex lg:max-w-xs lg:flex-col lg:items-center lg:gap-4">
+        <Logo size="footer" href="/" className="shrink-0" />
+        {tagline}
+      </div>
+    </>
   );
 }
 
@@ -118,12 +145,35 @@ function FooterColumn({
   title: string;
   children: ReactNode;
 }) {
+  const [open, setOpen] = useState(false);
+
   return (
-    <div>
-      <h3 className="font-display mb-4 text-xs font-semibold tracking-[0.2em] text-jackals-red-light">
-        {title}
-      </h3>
-      <ul className="space-y-3">{children}</ul>
+    <div className="border-b border-white/10 sm:border-b-0">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between py-4 text-left sm:pointer-events-none sm:cursor-default sm:py-0"
+        onClick={() => setOpen((current) => !current)}
+        aria-expanded={open}
+      >
+        <h3 className="font-display text-xs font-semibold tracking-[0.2em] text-jackals-red-light sm:mb-4">
+          {title}
+        </h3>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 text-zinc-500 transition-transform sm:hidden",
+            open && "rotate-180",
+          )}
+          aria-hidden
+        />
+      </button>
+      <ul
+        className={cn(
+          "space-y-3 overflow-hidden pb-4 sm:block sm:pb-0",
+          open ? "block" : "hidden",
+        )}
+      >
+        {children}
+      </ul>
     </div>
   );
 }
@@ -133,10 +183,11 @@ function GuestFooter() {
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
         <div className="sm:col-span-2 lg:col-span-1">
-          <FooterWordmark />
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500">
-            {CLUB_SLOGAN} Your home for volleyball in the community.
-          </p>
+          <FooterBrand
+            contentKey="footer.guest.tagline"
+            fallback={`${CLUB_SLOGAN} Your home for volleyball in the community.`}
+            label="Footer tagline (guests)"
+          />
         </div>
 
         <FooterColumn title="Explore">
@@ -162,6 +213,9 @@ function GuestFooter() {
             <FooterLink href="/membership">Membership</FooterLink>
           </li>
           <li>
+            <FooterLink href="/sponsors">For sponsors</FooterLink>
+          </li>
+          <li>
             <FooterLink href="/contact">Contact us</FooterLink>
           </li>
         </FooterColumn>
@@ -179,11 +233,11 @@ function MemberFooter() {
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
         <div className="sm:col-span-2 lg:col-span-1">
-          <FooterWordmark />
-          <p className="mt-4 max-w-xs text-sm leading-relaxed text-zinc-500">
-            {CLUB_SLOGAN} See what&apos;s on, manage your membership, and stay
-            match-ready.
-          </p>
+          <FooterBrand
+            contentKey="footer.member.tagline"
+            fallback={`${CLUB_SLOGAN} See what's on, manage your membership, and stay match-ready.`}
+            label="Footer tagline (members)"
+          />
         </div>
 
         <FooterColumn title="Your club">
@@ -231,12 +285,12 @@ function MemberFooter() {
 
 export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
   return (
-    <footer className="relative mt-auto border-t border-white/10 bg-jackals-inset/40">
+    <footer className="relative mt-auto border-t border-white/10 bg-jackals-inset/65">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent" />
 
       {isLoggedIn ? <MemberFooter /> : <GuestFooter />}
 
-      <div className="border-t border-white/10 bg-background/80">
+      <div className="border-t border-white/10 bg-jackals-inset/90">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
           <p className="text-center text-xs text-zinc-600 sm:text-left">
             © {new Date().getFullYear()} Jackals Volleyball Club

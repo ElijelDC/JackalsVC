@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import {
   ArrowLeft,
   ClipboardList,
@@ -15,13 +15,19 @@ import {
   TeamMemberAvatar,
   TeamMemberCard,
 } from "@/components/teams/TeamMemberCard";
+import {
+  getSquadPositionFilters,
+  playerMatchesPositionFilter,
+} from "@/lib/team-positions";
 import { splitTeamName } from "@/lib/teams";
+import { cn } from "@/lib/utils";
 
 export type TeamMember = {
   id: string;
   name: string;
   role: string;
   position: string | null;
+  isCaptain: boolean;
   photoUrl: string | null;
 };
 
@@ -59,6 +65,128 @@ function SectionHeader({
         </span>
       )}
     </div>
+  );
+}
+
+function SquadPositionFilter({
+  options,
+  active,
+  onChange,
+}: {
+  options: { value: string; label: string; count: number }[];
+  active: string;
+  onChange: (value: string) => void;
+}) {
+  const pills = [{ value: "all", label: "All", count: 0 }, ...options];
+
+  return (
+    <div className="-mx-4 mb-5 overflow-x-auto px-4 pb-1 sm:mx-0 sm:mb-6 sm:overflow-visible sm:px-0">
+      <div
+        className="flex min-w-min gap-2 sm:flex-wrap"
+        role="tablist"
+        aria-label="Filter squad by position"
+      >
+        {pills.map((option) => {
+          const isActive = active === option.value;
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onChange(option.value)}
+              className={cn(
+                "shrink-0 border px-3 py-1.5 text-xs font-medium transition-all duration-200 sm:px-4 sm:py-2 sm:text-sm",
+                isActive
+                  ? "border-jackals-red/40 bg-jackals-red text-white clip-slash shadow-[0_0_20px_rgba(232,34,42,0.25)]"
+                  : "border-white/10 bg-jackals-surface/80 text-zinc-400 hover:border-jackals-red/30 hover:text-white",
+              )}
+            >
+              {option.label}
+              {option.value !== "all" && (
+                <span
+                  className={cn(
+                    "ml-1.5 tabular-nums",
+                    isActive ? "text-white/80" : "text-zinc-500",
+                  )}
+                >
+                  {option.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function SquadSection({ players }: { players: TeamMember[] }) {
+  const [positionFilter, setPositionFilter] = useState("all");
+  const positionOptions = useMemo(
+    () => getSquadPositionFilters(players),
+    [players],
+  );
+  const filteredPlayers = useMemo(
+    () =>
+      players.filter((player) =>
+        playerMatchesPositionFilter(player, positionFilter),
+      ),
+    [players, positionFilter],
+  );
+  const showPositionFilter = positionOptions.length > 1;
+
+  return (
+    <section>
+      <AnimateIn>
+        <SectionHeader
+          icon={<Users className="h-5 w-5" />}
+          title="The squad"
+          count={
+            positionFilter === "all"
+              ? players.length
+              : filteredPlayers.length
+          }
+        />
+      </AnimateIn>
+
+      {showPositionFilter && (
+        <SquadPositionFilter
+          options={positionOptions}
+          active={positionFilter}
+          onChange={setPositionFilter}
+        />
+      )}
+
+      {filteredPlayers.length === 0 ? (
+        <p className="text-sm text-zinc-400">
+          No players in this position. Try another filter.
+        </p>
+      ) : (
+        <StaggerIn
+          className="grid grid-cols-2 gap-3 sm:gap-5 md:grid-cols-3 lg:grid-cols-4"
+          stagger={70}
+        >
+          {filteredPlayers.map((player) => (
+            <TeamMemberCard
+              key={player.id}
+              name={player.name}
+              subtitle={player.position}
+              photoUrl={player.photoUrl}
+              variant="player"
+              isCaptain={player.isCaptain}
+            />
+          ))}
+        </StaggerIn>
+      )}
+
+      {positionFilter !== "all" && filteredPlayers.length > 0 && (
+        <p className="mt-4 text-center text-xs text-zinc-500 sm:text-left">
+          Showing {filteredPlayers.length} of {players.length} players
+        </p>
+      )}
+    </section>
   );
 }
 
@@ -232,31 +360,7 @@ export function TeamDetailView({ team }: { team: TeamDetail }) {
           </section>
         )}
 
-        {players.length > 0 && (
-          <section>
-            <AnimateIn>
-              <SectionHeader
-                icon={<Users className="h-5 w-5" />}
-                title="The squad"
-                count={players.length}
-              />
-            </AnimateIn>
-            <StaggerIn
-              className="grid gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
-              stagger={70}
-            >
-              {players.map((player) => (
-                <TeamMemberCard
-                  key={player.id}
-                  name={player.name}
-                  subtitle={player.position}
-                  photoUrl={player.photoUrl}
-                  variant="player"
-                />
-              ))}
-            </StaggerIn>
-          </section>
-        )}
+        {players.length > 0 && <SquadSection players={players} />}
 
         {coaches.length === 0 && players.length === 0 && (
           <AnimateIn>

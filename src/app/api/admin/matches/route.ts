@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { parseJsonBody, requireAdmin } from "@/lib/api";
+import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { isTrainingSquadKey } from "@/lib/training-squads";
 import { prisma } from "@/lib/prisma";
 import { teamMatchSchema } from "@/lib/validations";
 
@@ -43,6 +44,10 @@ export async function POST(request: Request) {
     teamMatchSchema,
   );
   if (parseError || !data) return parseError!;
+
+  if (!(await isTrainingSquadKey(data.trainingTeamKey))) {
+    return jsonError("Select a valid squad", 400);
+  }
 
   const match = await prisma.teamMatch.create({
     data: toMatchData(data),

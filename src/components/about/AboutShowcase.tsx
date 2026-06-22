@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { CLUB_SLOGAN_PARTS } from "@/lib/brand";
+import { EditableText } from "@/components/site-edit/EditableText";
 import { ShowcaseCard, ShowcaseCtaBand } from "@/components/layout/ShowcaseCard";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
 import { AnimateIn } from "@/components/motion/AnimateIn";
@@ -55,11 +56,30 @@ function AboutFeatureCard({
   );
 }
 
-function ValueCard({ title, description }: { title: string; description: string }) {
+function ValueCard({
+  title,
+  description,
+  titleKey,
+  descriptionKey,
+}: {
+  title: string;
+  description: string;
+  titleKey: string;
+  descriptionKey: string;
+}) {
   return (
     <article className="motion-hover-lift relative h-full overflow-hidden border border-white/10 bg-jackals-surface/80 p-5 sm:p-6">
-      <h3 className="font-display text-lg font-bold text-white">{title}</h3>
-      <p className="mt-2 text-sm leading-relaxed text-zinc-400">{description}</p>
+      <h3 className="font-display text-lg font-bold text-white">
+        <EditableText contentKey={titleKey} fallback={title} label="Value title" />
+      </h3>
+      <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+        <EditableText
+          contentKey={descriptionKey}
+          fallback={description}
+          label="Value description"
+          multiline
+        />
+      </p>
     </article>
   );
 }
@@ -70,16 +90,37 @@ export function AboutShowcase() {
       <ShowcaseHero
         title="About"
         highlight="Jackals VC"
-        description="A community volleyball club built around open sessions, competitive training, and a welcoming team spirit."
+        description={
+          <EditableText
+            contentKey="about.hero.description"
+            fallback="A community volleyball club built around open sessions, competitive training, and a welcoming team spirit."
+            label="About hero description"
+            multiline
+          />
+        }
       />
 
       <section className="relative border-b border-white/10 bg-jackals-inset/30 py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <AnimateIn variant="scale-in" className="text-center">
             <p className="font-display mx-auto max-w-3xl text-2xl font-bold tracking-wide text-white sm:text-3xl">
-              {CLUB_SLOGAN_PARTS.lead}{" "}
-              <span className="text-jackals-red-light">{CLUB_SLOGAN_PARTS.accent}</span>{" "}
-              {CLUB_SLOGAN_PARTS.tail}
+              <EditableText
+                contentKey="brand.slogan.lead"
+                fallback={CLUB_SLOGAN_PARTS.lead}
+                label="Slogan (lead)"
+              />{" "}
+              <span className="text-jackals-red-light">
+                <EditableText
+                  contentKey="brand.slogan.accent"
+                  fallback={CLUB_SLOGAN_PARTS.accent}
+                  label="Slogan (accent)"
+                />
+              </span>{" "}
+              <EditableText
+                contentKey="brand.slogan.tail"
+                fallback={CLUB_SLOGAN_PARTS.tail}
+                label="Slogan (tail)"
+              />
             </p>
           </AnimateIn>
         </div>
@@ -89,22 +130,30 @@ export function AboutShowcase() {
         <StaggerIn className="grid gap-6 lg:grid-cols-2" stagger={100}>
           <AboutFeatureCard title="Who we are">
             <p>
-              Jackals VC is a community volleyball club built around open sessions,
-              competitive training, and a welcoming team spirit. Whether you are
-              picking up a ball for the first time or chasing league titles, there
-              is a place for you here.
+              <EditableText
+                contentKey="about.who-we-are"
+                fallback="Jackals VC is a community volleyball club built around open sessions, competitive training, and a welcoming team spirit. Whether you are picking up a ball for the first time or chasing league titles, there is a place for you here."
+                label="Who we are"
+                multiline
+              />
             </p>
           </AboutFeatureCard>
 
           <AboutFeatureCard title="What we offer">
             <ul className="space-y-3">
-              {OFFERINGS.map((item) => (
+              {OFFERINGS.map((item, index) => (
                 <li key={item} className="flex items-start gap-2.5">
                   <span
                     aria-hidden
                     className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-jackals-red-light"
                   />
-                  <span>{item}</span>
+                  <span>
+                    <EditableText
+                      contentKey={`about.offerings.${index}`}
+                      fallback={item}
+                      label={`Offering ${index + 1}`}
+                    />
+                  </span>
                 </li>
               ))}
             </ul>
@@ -116,8 +165,13 @@ export function AboutShowcase() {
             Our values
           </h2>
           <StaggerIn className="grid gap-4 sm:grid-cols-2" stagger={90}>
-            {VALUES.map((value) => (
-              <ValueCard key={value.title} {...value} />
+            {VALUES.map((value, index) => (
+              <ValueCard
+                key={value.title}
+                {...value}
+                titleKey={`about.values.${index}.title`}
+                descriptionKey={`about.values.${index}.description`}
+              />
             ))}
           </StaggerIn>
         </AnimateIn>
@@ -125,7 +179,14 @@ export function AboutShowcase() {
         <AnimateIn className="mt-16 sm:mt-20">
           <ShowcaseCtaBand
             title="Ready to see what we are about?"
-            description="Browse open events, meet our squads, or get in touch — we would love to hear from you."
+            description={
+              <EditableText
+                contentKey="about.cta.description"
+                fallback="Browse open events, meet our squads, or get in touch — we would love to hear from you."
+                label="About CTA description"
+                multiline
+              />
+            }
           >
             <Link href="/events" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">

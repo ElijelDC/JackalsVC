@@ -13,6 +13,8 @@ import { Card } from "@/components/ui/Card";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 import { getEventTypeLabel } from "@/lib/event-filters";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";
+import type { MembershipPaymentAccess } from "@/lib/membership-overdue";
+import type { AttendanceBlockReason } from "@/lib/membership";
 import {
   getDashboardResponseDisplay,
   itemNeedsUrgentResponse,
@@ -212,21 +214,16 @@ export function DashboardUpcomingClubEventsPanel({
   );
 }
 
-/** @deprecated Use DashboardUpcomingClubEventsPanel */
-export function MemberEventsPanel({
-  upcomingEvents,
-}: {
-  upcomingEvents: DashboardEvent[];
-}) {
-  return <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingEvents} />;
-}
-
 export function DashboardUpcomingTrainingCard({
   teamName,
   sessions,
+  attendanceBlocked = false,
+  attendanceBlockReason = null,
 }: {
   teamName: string | null;
   sessions: DashboardUpcomingItem[];
+  attendanceBlocked?: boolean;
+  attendanceBlockReason?: AttendanceBlockReason | null;
 }) {
   const needsResponse = sessions.filter((session) =>
     itemNeedsUrgentResponse(session.userStatus, new Date(session.startDate)),
@@ -253,6 +250,15 @@ export function DashboardUpcomingTrainingCard({
       </div>
 
       <Card className="flex flex-1 flex-col overflow-hidden p-0">
+        {attendanceBlocked && attendanceBlockReason === "overdue" && (
+          <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            Training responses are paused until your overdue membership payment is cleared.
+            {" "}
+            <Link href="/membership" className="font-medium text-white underline-offset-2 hover:underline">
+              View payment schedule
+            </Link>
+          </div>
+        )}
         <div className="divide-y divide-white/10">
           {!teamName ? (
             <p className="px-4 py-6 text-center text-sm text-zinc-500">
@@ -276,34 +282,16 @@ export function DashboardUpcomingTrainingCard({
   );
 }
 
-/** @deprecated Use DashboardUpcomingTrainingCard */
-export function DashboardTrainingSignupsCard({
-  teamName,
-  signups,
-}: {
-  teamName: string | null;
-  signups: DashboardEvent[];
-}) {
-  return (
-    <DashboardUpcomingTrainingCard
-      teamName={teamName}
-      sessions={signups.map((event) => ({
-        id: event.id,
-        title: event.title,
-        startDate: event.startDate,
-        location: event.location,
-        userStatus: "ATTENDING",
-      }))}
-    />
-  );
-}
-
 export function DashboardUpcomingMatchesCard({
   teamName,
   matches,
+  attendanceBlocked = false,
+  attendanceBlockReason = null,
 }: {
   teamName: string | null;
   matches: DashboardUpcomingItem[];
+  attendanceBlocked?: boolean;
+  attendanceBlockReason?: AttendanceBlockReason | null;
 }) {
   const needsResponse = matches.filter((match) =>
     itemNeedsUrgentResponse(match.userStatus, new Date(match.startDate)),
@@ -330,6 +318,15 @@ export function DashboardUpcomingMatchesCard({
       </div>
 
       <Card className="flex flex-1 flex-col overflow-hidden p-0">
+        {attendanceBlocked && attendanceBlockReason === "overdue" && (
+          <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            Match responses are paused until your overdue membership payment is cleared.
+            {" "}
+            <Link href="/membership" className="font-medium text-white underline-offset-2 hover:underline">
+              View payment schedule
+            </Link>
+          </div>
+        )}
         <div className="divide-y divide-white/10">
           {!teamName ? (
             <p className="px-4 py-6 text-center text-sm text-zinc-500">
@@ -365,6 +362,7 @@ type MembershipRecord = {
   id: string;
   status: string;
   paymentSchedule: PaymentSchedule;
+  paymentOverdueOverride: boolean;
   startDate: string;
   endDate: string;
   plan: { name: string; price: number };
@@ -373,11 +371,13 @@ type MembershipRecord = {
 type MemberPaymentsPanelProps = {
   memberships: MembershipRecord[];
   payments: PaymentRecord[];
+  paymentAccess: MembershipPaymentAccess | null;
 };
 
 export function MemberPaymentsPanel({
   memberships,
   payments,
+  paymentAccess,
 }: MemberPaymentsPanelProps) {
   const currentMembership = memberships.find((m) => new Date(m.endDate) > new Date());
   const activeMembership =
@@ -414,12 +414,21 @@ export function MemberPaymentsPanel({
             {currentMembership ? (
               <>
                 <p className="font-medium text-white">
-                  {activeMembership ? (
+                  {paymentAccess?.isOverdue ? (
+                    <span className="text-red-400">Overdue</span>
+                  ) : paymentAccess?.isPastDue ? (
+                    <span className="text-amber-400">Payment due</span>
+                  ) : activeMembership ? (
                     <span className="text-green-400">Active</span>
                   ) : (
                     <span className="text-amber-400">Awaiting first payment</span>
                   )}{" "}
                   — {currentMembership.plan.name}
+                  {paymentAccess?.hasOverride && (
+                    <Badge className="ml-2 border-blue-500/30 bg-blue-500/10 text-blue-300">
+                      Admin override
+                    </Badge>
+                  )}
                 </p>
                 <p className="mt-1 text-xs text-zinc-500">
                   {formatPaymentScheduleLabel(currentMembership.paymentSchedule)} ·{" "}
@@ -460,6 +469,20 @@ export function MemberPaymentsPanel({
                     )}
                   </p>
                 )}
+                {paymentAccess?.isOverdue && (
+                  <p className="mt-2 text-sm text-red-300/90">
+                    Training and match sign-ups are paused until this payment is received.
+                  </p>
+                )}
+                {paymentAccess?.isPastDue &&
+                  !paymentAccess.isOverdue &&
+                  paymentAccess.graceDaysRemaining !== null && (
+                    <p className="mt-2 text-sm text-amber-300/90">
+                      Payment is past due. Pay within {paymentAccess.graceDaysRemaining} day
+                      {paymentAccess.graceDaysRemaining === 1 ? "" : "s"} to keep training and
+                      match access.
+                    </p>
+                  )}
               </>
             ) : (
               <p className="text-sm text-zinc-400">

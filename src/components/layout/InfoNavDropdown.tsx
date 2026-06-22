@@ -10,34 +10,38 @@ import {
   visibleMoreNavItems,
 } from "@/lib/navigation";
 
-export function InfoNavDropdown({
+function InfoNavDropdownMobile({
   pathname,
   onNavigate,
-  variant = "desktop",
   isLoggedIn = false,
+  isAdmin = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
-  variant?: "desktop" | "mobile";
   isLoggedIn?: boolean;
+  isAdmin?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const mobileMemberMenu = isLoggedIn && !isAdmin;
+  const moreNavOptions = mobileMemberMenu
+    ? ({ mobileMemberMenu: true } as const)
+    : undefined;
   const [mobileExpanded, setMobileExpanded] = useState(() =>
-    isInfoNavActive(pathname),
+    isInfoNavActive(pathname, isLoggedIn, isAdmin, moreNavOptions),
   );
-  const containerRef = useRef<HTMLDivElement>(null);
   const mobilePanelRef = useRef<HTMLDivElement>(null);
-  const isActive = isInfoNavActive(pathname);
-  const moreItems = visibleMoreNavItems(isLoggedIn);
+  const isActive = isInfoNavActive(
+    pathname,
+    isLoggedIn,
+    isAdmin,
+    moreNavOptions,
+  );
+  const moreItems = visibleMoreNavItems(isLoggedIn, isAdmin, moreNavOptions);
+  const hasActiveChild = moreItems.some((item) =>
+    isNavItemActive(pathname, item.href),
+  );
 
   useEffect(() => {
-    if (isActive) {
-      setMobileExpanded(true);
-    }
-  }, [isActive]);
-
-  useEffect(() => {
-    if (variant !== "mobile" || !mobileExpanded) {
+    if (!mobileExpanded) {
       return;
     }
 
@@ -45,7 +49,82 @@ export function InfoNavDropdown({
       behavior: "smooth",
       block: "nearest",
     });
-  }, [mobileExpanded, variant]);
+  }, [mobileExpanded]);
+
+  return (
+    <div className="border-t border-white/10 pt-1">
+      <button
+        type="button"
+        aria-expanded={mobileExpanded}
+        onClick={() => setMobileExpanded((current) => !current)}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-sm px-3 py-3 text-sm font-medium",
+          isActive
+            ? mobileExpanded
+              ? "text-jackals-red-light"
+              : "bg-jackals-red/10 text-jackals-red-light"
+            : "text-zinc-400",
+        )}
+      >
+        <span className="flex items-center gap-2">
+          <MoreHorizontal className="h-4 w-4 shrink-0" />
+          More
+        </span>
+        <ChevronDown
+          className={cn(
+            "h-4 w-4 shrink-0 transition-transform",
+            mobileExpanded && "rotate-180",
+          )}
+        />
+      </button>
+
+      {mobileExpanded && (
+        <div
+          ref={mobilePanelRef}
+          className={cn(
+            "mb-1 grid grid-cols-2 gap-1.5 px-1",
+            hasActiveChild && "mt-1.5",
+          )}
+        >
+          {moreItems.map(({ href, label, icon: Icon }) => (
+            <Link
+              key={href}
+              href={href}
+              onClick={onNavigate}
+              className={cn(
+                "motion-nav-link flex min-h-10 items-center gap-2 rounded-sm px-2.5 py-2 text-xs font-medium leading-tight sm:text-sm",
+                isNavItemActive(pathname, href)
+                  ? "bg-jackals-red/10 text-jackals-red-light ring-1 ring-inset ring-jackals-red/20"
+                  : "text-zinc-400 active:bg-white/5",
+              )}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              <span className="min-w-0">{label}</span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function InfoNavDropdown({
+  pathname,
+  onNavigate,
+  variant = "desktop",
+  isLoggedIn = false,
+  isAdmin = false,
+}: {
+  pathname: string;
+  onNavigate?: () => void;
+  variant?: "desktop" | "mobile";
+  isLoggedIn?: boolean;
+  isAdmin?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const isActive = isInfoNavActive(pathname, isLoggedIn, isAdmin);
+  const moreItems = visibleMoreNavItems(isLoggedIn, isAdmin);
 
   useEffect(() => {
     if (variant !== "desktop") {
@@ -67,54 +146,13 @@ export function InfoNavDropdown({
 
   if (variant === "mobile") {
     return (
-      <div className="border-t border-white/10 pt-1">
-        <button
-          type="button"
-          aria-expanded={mobileExpanded}
-          onClick={() => setMobileExpanded((current) => !current)}
-          className={cn(
-            "flex w-full items-center justify-between gap-2 px-3 py-3 text-sm font-medium",
-            isActive
-              ? "bg-jackals-red/15 text-jackals-red-light"
-              : "text-zinc-400",
-          )}
-        >
-          <span className="flex items-center gap-2">
-            <MoreHorizontal className="h-4 w-4 shrink-0" />
-            More
-          </span>
-          <ChevronDown
-            className={cn(
-              "h-4 w-4 shrink-0 transition-transform",
-              mobileExpanded && "rotate-180",
-            )}
-          />
-        </button>
-
-        {mobileExpanded && (
-          <div
-            ref={mobilePanelRef}
-            className="mb-1 grid grid-cols-2 gap-1 px-1"
-          >
-            {moreItems.map(({ href, label, icon: Icon }) => (
-              <Link
-                key={href}
-                href={href}
-                onClick={onNavigate}
-                className={cn(
-                  "motion-nav-link flex min-h-10 items-center gap-2 rounded-sm px-2.5 py-2 text-xs font-medium leading-tight sm:text-sm",
-                  isNavItemActive(pathname, href)
-                    ? "bg-jackals-red/15 text-jackals-red-light"
-                    : "text-zinc-400 active:bg-white/5",
-                )}
-              >
-                <Icon className="h-4 w-4 shrink-0" />
-                <span className="min-w-0">{label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </div>
+      <InfoNavDropdownMobile
+        key={pathname}
+        pathname={pathname}
+        onNavigate={onNavigate}
+        isLoggedIn={isLoggedIn}
+        isAdmin={isAdmin}
+      />
     );
   }
 

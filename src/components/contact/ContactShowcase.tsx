@@ -6,6 +6,7 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Button } from "@/components/ui/Button";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { CONTACT_EMAIL } from "@/lib/contact";
+import { EditableText } from "@/components/site-edit/EditableText";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 
 function ContactLink({
@@ -44,7 +45,14 @@ export function ContactShowcase() {
       <ShowcaseHero
         title="Contact"
         highlight="Us"
-        description="Questions about training, membership, or events? Reach out — we would love to hear from you."
+        description={
+          <EditableText
+            contentKey="contact.hero.description"
+            fallback="Questions about training, membership, or events? Reach out — we would love to hear from you."
+            label="Contact hero description"
+            multiline
+          />
+        }
       />
 
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { AdminListItem } from "@/components/admin/AdminForm";
@@ -20,7 +21,7 @@ export function RemindersManager({
   initialReminders: Reminder[];
 }) {
   const router = useRouter();
-  const [reminders, setReminders] = useState(initialReminders);
+  const [reminders, setReminders] = useSyncedListState(initialReminders);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,7 +30,7 @@ export function RemindersManager({
       "/api/admin/reminders",
     );
     if (result.ok) setReminders(result.data.reminders);
-  }, []);
+  }, [setReminders]);
 
   const handleDelete = async (id: string) => {
     if (!confirm("Remove this event reminder?")) return;
@@ -46,10 +47,6 @@ export function RemindersManager({
     await loadReminders();
     router.refresh();
   };
-
-  useEffect(() => {
-    setReminders(initialReminders);
-  }, [initialReminders]);
 
   return (
     <AdminSection

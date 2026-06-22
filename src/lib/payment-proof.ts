@@ -1,5 +1,6 @@
 import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
+import { PUBLIC_PATHS } from "@/lib/public-paths";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
@@ -42,17 +43,21 @@ export async function savePaymentProofFile(
 ): Promise<string> {
   const extension = extensionForMime(file.type);
   const filename = `${paymentId}-${Date.now()}.${extension}`;
-  const directory = path.join(process.cwd(), "public", "uploads", "payment-proofs");
+  const directory = path.join(
+    process.cwd(),
+    "public",
+    PUBLIC_PATHS.uploads.paymentProofs.slice(1),
+  );
   await mkdir(directory, { recursive: true });
 
   const buffer = Buffer.from(await file.arrayBuffer());
   await writeFile(path.join(directory, filename), buffer);
 
-  return `/uploads/payment-proofs/${filename}`;
+  return `${PUBLIC_PATHS.uploads.paymentProofs}/${filename}`;
 }
 
 export async function deletePaymentProofFile(proofUrl: string): Promise<void> {
-  if (!proofUrl.startsWith("/uploads/payment-proofs/")) return;
+  if (!proofUrl.startsWith(`${PUBLIC_PATHS.uploads.paymentProofs}/`)) return;
 
   const filePath = path.join(process.cwd(), "public", proofUrl);
   try {

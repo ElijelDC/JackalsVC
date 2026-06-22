@@ -1,53 +1,166 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, beginAdminEdit } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
 import {
   AdminSearchBar,
   matchesAdminSearch,
 } from "@/components/admin/AdminSearchBar";
-import { UserSearchSelect } from "@/components/admin/UserSearchSelect";
-import { Input, Label, Select } from "@/components/ui/Input";
-import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
-import { formatPrice } from "@/lib/utils";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Input, Label, Select, Textarea } from "@/components/ui/Input";
+import { Checkbox } from "@/components/ui/InputFields";
+import { apiDelete, apiGet, apiPut } from "@/lib/client-api";
+import { formatMembershipSubscriptionLabel } from "@/lib/membership-config";
+import {
+  assessMembershipPaymentAccess,
+  isInstallmentSchedule,
+  PAYMENT_OVERDUE_GRACE_DAYS,
+} from "@/lib/membership-overdue";
+import { cn, formatPrice } from "@/lib/utils";
 
 type Plan = { id: string; name: string; price: number };
 type UserOption = { id: string; name: string; email: string };
 
+type MembershipPayment = {
+  status: string;
+  dueDate: string | null;
+  amount: number;
+  installmentNumber: number | null;
+};
+
 type Membership = {
   id: string;
   status: string;
+  paymentSchedule: string;
+  paymentOverdueOverride: boolean;
+  paymentOverdueOverrideNote: string | null;
   startDate: string;
   endDate: string;
   user: UserOption;
   plan: Plan;
+  payments: MembershipPayment[];
 };
+
+function getMembershipPaymentAccess(membership: Membership) {
+  return assessMembershipPaymentAccess({
+    membershipStatus: membership.status,
+    paymentSchedule: membership.paymentSchedule,
+    paymentOverdueOverride: membership.paymentOverdueOverride,
+    payments: membership.payments ?? [],
+  });
+}
+
+type StatusBadge = {
+  label: string;
+  className: string;
+};
+
+function getMembershipStatusBadges(membership: Membership): StatusBadge[] {
+  const badges: StatusBadge[] = [];
+
+  if (membership.status === "ACTIVE") {
+    badges.push({
+      label: "Active",
+      className: "border-green-500/30 bg-green-500/10 text-green-400",
+    });
+  } else if (membership.status === "EXPIRED") {
+    badges.push({
+      label: "Expired",
+      className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+    });
+  } else if (membership.status === "CANCELLED") {
+    badges.push({
+      label: "Cancelled",
+      className: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
+    });
+  }
+
+  if (
+    membership.status === "ACTIVE" &&
+    isInstallmentSchedule(membership.paymentSchedule)
+  ) {
+    const access = getMembershipPaymentAccess(membership);
+
+    if (membership.paymentOverdueOverride) {
+      badges.push({
+        label: "Override active",
+        className: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+      });
+    } else if (access.isOverdue) {
+      badges.push({
+        label: "Payment overdue",
+        className: "border-red-500/30 bg-red-500/10 text-red-300",
+      });
+    } else if (access.isPastDue) {
+      badges.push({
+        label: `Past due · ${access.graceDaysRemaining ?? 0}d grace`,
+        className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+      });
+    }
+  }
+
+  return badges;
+}
+
+function getMembershipAccentClass(membership: Membership) {
+  if (membership.status === "EXPIRED") {
+    return "border-l-amber-500/80";
+  }
+
+  if (membership.status === "CANCELLED") {
+    return "border-l-zinc-600";
+  }
+
+  if (
+    membership.status === "ACTIVE" &&
+    isInstallmentSchedule(membership.paymentSchedule)
+  ) {
+    const access = getMembershipPaymentAccess(membership);
+
+    if (
+      !membership.paymentOverdueOverride &&
+      (access.isOverdue || access.isPastDue)
+    ) {
+      return access.isOverdue
+        ? "border-l-red-500/80"
+        : "border-l-amber-500/80";
+    }
+  }
+
+  if (membership.status === "ACTIVE") {
+    return "border-l-green-500/70";
+  }
+
+  return "border-l-white/10";
+}
 
 const STATUSES = ["ACTIVE", "EXPIRED", "CANCELLED"] as const;
 
-const emptyForm = {
-  userId: "",
+const emptyEditForm = {
   planId: "",
   status: "ACTIVE" as (typeof STATUSES)[number],
   endDate: "",
+  paymentOverdueOverride: false,
+  paymentOverdueOverrideNote: "",
 };
 
 export function MembersManager({
   initialMemberships,
-  users,
   plans,
 }: {
   initialMemberships: Membership[];
-  users: UserOption[];
   plans: Plan[];
 }) {
   const router = useRouter();
-  const [memberships, setMemberships] = useState(initialMemberships);
+  const [memberships, setMemberships] = useSyncedListState(initialMemberships);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState(emptyEditForm);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -56,20 +169,48 @@ export function MembersManager({
 
   const filteredMemberships = useMemo(
     () =>
-      memberships.filter((membership) =>
-        matchesAdminSearch(
+      memberships.filter((membership) => {
+        const subscriptionLabel = formatMembershipSubscriptionLabel(
+          membership.plan.name,
+          membership.paymentSchedule,
+        );
+
+        return matchesAdminSearch(
           search,
           membership.user.name,
           membership.user.email,
           membership.plan.name,
+          subscriptionLabel,
           membership.status,
-        ),
-      ),
+        );
+      }),
     [memberships, search],
   );
 
+  const editingMembership = editingId
+    ? memberships.find((membership) => membership.id === editingId)
+    : null;
+
+  const editingPaymentAccess = editingMembership
+    ? assessMembershipPaymentAccess({
+        membershipStatus: editingMembership.status,
+        paymentSchedule: editingMembership.paymentSchedule,
+        paymentOverdueOverride: form.paymentOverdueOverride,
+        payments: editingMembership.payments ?? [],
+      })
+    : null;
+
+  const underlyingPaymentAccess = editingMembership
+    ? assessMembershipPaymentAccess({
+        membershipStatus: editingMembership.status,
+        paymentSchedule: editingMembership.paymentSchedule,
+        paymentOverdueOverride: false,
+        payments: editingMembership.payments ?? [],
+      })
+    : null;
+
   const resetForm = () => {
-    setForm(emptyForm);
+    setForm(emptyEditForm);
     setEditingId(null);
     setError(null);
   };
@@ -79,45 +220,47 @@ export function MembersManager({
       "/api/admin/memberships",
     );
     if (result.ok) setMemberships(result.data.memberships);
-  }, []);
+  }, [setMemberships]);
 
   const startEdit = (membership: Membership) => {
-    setEditingId(membership.id);
-    setForm({
-      userId: membership.user.id,
-      planId: membership.plan.id,
-      status: membership.status as (typeof STATUSES)[number],
-      endDate: format(new Date(membership.endDate), "yyyy-MM-dd"),
+    beginAdminEdit(() => {
+      setEditingId(membership.id);
+      setForm({
+        planId: membership.plan.id,
+        status: membership.status as (typeof STATUSES)[number],
+        endDate: format(new Date(membership.endDate), "yyyy-MM-dd"),
+        paymentOverdueOverride: membership.paymentOverdueOverride,
+        paymentOverdueOverrideNote: membership.paymentOverdueOverrideNote ?? "",
+      });
+      setError(null);
+      setMessage(null);
     });
-    setError(null);
-    setMessage(null);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingId) return;
+
     setLoading(true);
     setError(null);
     setMessage(null);
 
-    const result = editingId
-      ? await apiPut(`/api/admin/memberships/${editingId}`, {
-          status: form.status,
-          endDate: new Date(form.endDate).toISOString(),
-          planId: form.planId,
-        })
-      : await apiPost("/api/admin/memberships", {
-          userId: form.userId,
-          planId: form.planId,
-          status: form.status,
-        });
+    const result = await apiPut(`/api/admin/memberships/${editingId}`, {
+      status: form.status,
+      endDate: new Date(form.endDate).toISOString(),
+      planId: form.planId,
+      paymentOverdueOverride: form.paymentOverdueOverride,
+      paymentOverdueOverrideNote: form.paymentOverdueOverrideNote.trim() || null,
+    });
 
     setLoading(false);
+
     if (!result.ok) {
       setError(result.error);
       return;
     }
 
-    setMessage(editingId ? "Membership updated." : "Membership granted.");
+    setMessage("Membership updated.");
     resetForm();
     await loadMemberships();
     router.refresh();
@@ -140,101 +283,214 @@ export function MembersManager({
     router.refresh();
   };
 
-  useEffect(() => {
-    setMemberships(initialMemberships);
-  }, [initialMemberships]);
-
   return (
     <AdminSection
       title="Member subscriptions"
-      description="View and manage active memberships. Grant access manually or fix expiry dates and statuses."
+      description="View active memberships and update expiry dates, statuses, or overdue overrides."
     >
-      <AdminFormCard
-        title={editingId ? "Edit membership" : "Grant membership"}
-        error={error}
-        message={message}
-        onSubmit={handleSubmit}
-        onCancel={editingId ? resetForm : undefined}
-        submitLabel={editingId ? "Save changes" : "Grant membership"}
-        loading={loading}
-      >
-        <div className="grid gap-4 sm:grid-cols-2">
-          {!editingId && (
-            <>
-              <div className="sm:col-span-2">
-                <UserSearchSelect
-                  users={users}
-                  value={form.userId}
-                  onChange={(userId) => setForm({ ...form, userId })}
-                />
+      {editingId && editingMembership && (
+        <AdminFormCard
+          title="Edit membership"
+          error={error}
+          message={message}
+          onSubmit={handleSubmit}
+          onCancel={resetForm}
+          submitLabel={loading ? "Saving..." : "Save changes"}
+          loading={loading}
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Label>Member</Label>
+              <p className="mt-1 text-sm font-medium text-white">
+                {editingMembership.user.name} · {editingMembership.user.email}
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Subscription</Label>
+              <p className="mt-1 text-sm font-medium text-white">
+                {formatMembershipSubscriptionLabel(
+                  editingMembership.plan.name,
+                  editingMembership.paymentSchedule,
+                )}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500">
+                Payment schedule is set at checkout and cannot be changed here.
+              </p>
+            </div>
+            <div>
+              <Label htmlFor="member-plan-edit">Plan</Label>
+              <Select
+                id="member-plan-edit"
+                value={form.planId}
+                onChange={(event) =>
+                  setForm({ ...form, planId: event.target.value })
+                }
+                required
+              >
+                {plans.map((plan) => (
+                  <option key={plan.id} value={plan.id}>
+                    {plan.name}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="member-end">Expiry date</Label>
+              <Input
+                id="member-end"
+                type="date"
+                value={form.endDate}
+                onChange={(event) =>
+                  setForm({ ...form, endDate: event.target.value })
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="member-status">Membership status</Label>
+              <Select
+                id="member-status"
+                value={form.status}
+                onChange={(event) =>
+                  setForm({
+                    ...form,
+                    status: event.target.value as (typeof STATUSES)[number],
+                  })
+                }
+                required
+              >
+                {STATUSES.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </Select>
+              <p className="mt-1 text-xs text-zinc-500">
+                Membership lifecycle only. Payment overdue is tracked separately below for
+                monthly and instalment plans.
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <Label>Payment status</Label>
+              {!isInstallmentSchedule(editingMembership.paymentSchedule) ? (
+                <p className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-400">
+                  Not applicable — this member is on a{" "}
+                  <span className="text-white">Full payment</span> plan. Instalment overdue
+                  tracking only applies to Monthly and Instalment subscriptions.
+                </p>
+              ) : form.paymentOverdueOverride ? (
+                <div className="mt-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
+                  <p className="text-sm font-medium text-blue-300">
+                    Overridden by admin
+                  </p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    Training and match access is allowed despite overdue instalment rules.
+                    {underlyingPaymentAccess?.isOverdue &&
+                      underlyingPaymentAccess.overduePayment && (
+                        <>
+                          {" "}
+                          Instalment{" "}
+                          {underlyingPaymentAccess.overduePayment.installmentNumber ?? "—"} ·{" "}
+                          {formatPrice(underlyingPaymentAccess.overduePayment.amount)} was due{" "}
+                          {format(
+                            underlyingPaymentAccess.overduePayment.dueDate,
+                            "d MMM yyyy",
+                          )}{" "}
+                          ({underlyingPaymentAccess.daysPastDue} days ago).
+                        </>
+                      )}
+                    {underlyingPaymentAccess?.isPastDue &&
+                      !underlyingPaymentAccess.isOverdue && (
+                        <>
+                          {" "}
+                          An instalment is in the {PAYMENT_OVERDUE_GRACE_DAYS}-day grace period.
+                        </>
+                      )}
+                  </p>
+                </div>
+              ) : editingPaymentAccess?.isOverdue ? (
+                <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+                  <p className="text-sm font-medium text-red-300">Payment overdue</p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {editingPaymentAccess.overduePayment && (
+                      <>
+                        Instalment {editingPaymentAccess.overduePayment.installmentNumber ?? "—"}{" "}
+                        · {formatPrice(editingPaymentAccess.overduePayment.amount)} was due{" "}
+                        {format(
+                          editingPaymentAccess.overduePayment.dueDate,
+                          "d MMM yyyy",
+                        )}{" "}
+                        ({editingPaymentAccess.daysPastDue} days ago). Training and match access
+                        is blocked after the {PAYMENT_OVERDUE_GRACE_DAYS}-day grace period.
+                      </>
+                    )}
+                  </p>
+                </div>
+              ) : editingPaymentAccess?.isPastDue ? (
+                <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+                  <p className="text-sm font-medium text-amber-300">Past due (in grace period)</p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    {editingPaymentAccess.graceDaysRemaining ?? 0} day
+                    {(editingPaymentAccess.graceDaysRemaining ?? 0) === 1 ? "" : "s"} left before
+                    access is blocked.
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-2 rounded-lg border border-green-500/20 bg-green-500/5 p-4">
+                  <p className="text-sm font-medium text-green-300">Payments up to date</p>
+                  <p className="mt-1 text-sm text-zinc-400">
+                    No overdue instalments for this subscription.
+                  </p>
+                </div>
+              )}
+            </div>
+            {isInstallmentSchedule(editingMembership.paymentSchedule) && (
+              <div className="space-y-4 sm:col-span-2">
+                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-4">
+                  <Checkbox
+                    checked={form.paymentOverdueOverride}
+                    onChange={(event) =>
+                      setForm({
+                        ...form,
+                        paymentOverdueOverride: event.target.checked,
+                      })
+                    }
+                    className="mt-0.5"
+                  />
+                  <span>
+                    <span className="block text-sm font-medium text-white">
+                      Overdue payment override
+                    </span>
+                    <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
+                      Allow training and match access even when an instalment is more than
+                      2 weeks overdue. Use when the member has contacted admins with a valid
+                      reason.
+                    </span>
+                  </span>
+                </label>
+                {form.paymentOverdueOverride && (
+                  <div>
+                    <Label htmlFor="member-override-note">Admin note (optional)</Label>
+                    <Textarea
+                      id="member-override-note"
+                      value={form.paymentOverdueOverrideNote}
+                      onChange={(event) =>
+                        setForm({
+                          ...form,
+                          paymentOverdueOverrideNote: event.target.value,
+                        })
+                      }
+                      rows={3}
+                      placeholder="e.g. Agreed extension until payday — discussed with treasurer"
+                      className="mt-1"
+                    />
+                  </div>
+                )}
               </div>
-              <div>
-                <Label htmlFor="member-plan">Plan</Label>
-                <Select
-                  id="member-plan"
-                  value={form.planId}
-                  onChange={(e) => setForm({ ...form, planId: e.target.value })}
-                  required
-                >
-                  <option value="">Select plan…</option>
-                  {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name} ({formatPrice(plan.price)})
-                    </option>
-                  ))}
-                </Select>
-              </div>
-            </>
-          )}
-          {editingId && (
-            <>
-              <div>
-                <Label htmlFor="member-plan-edit">Plan</Label>
-                <Select
-                  id="member-plan-edit"
-                  value={form.planId}
-                  onChange={(e) => setForm({ ...form, planId: e.target.value })}
-                >
-                  {plans.map((plan) => (
-                    <option key={plan.id} value={plan.id}>
-                      {plan.name}
-                    </option>
-                  ))}
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="member-end">Expiry date</Label>
-                <Input
-                  id="member-end"
-                  type="date"
-                  value={form.endDate}
-                  onChange={(e) => setForm({ ...form, endDate: e.target.value })}
-                  required
-                />
-              </div>
-            </>
-          )}
-          <div>
-            <Label htmlFor="member-status">Status</Label>
-            <Select
-              id="member-status"
-              value={form.status}
-              onChange={(e) =>
-                setForm({
-                  ...form,
-                  status: e.target.value as (typeof STATUSES)[number],
-                })
-              }
-            >
-              {STATUSES.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </Select>
+            )}
           </div>
-        </div>
-      </AdminFormCard>
+        </AdminFormCard>
+      )}
 
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -246,7 +502,7 @@ export function MembersManager({
             <AdminSearchBar
               value={search}
               onChange={setSearch}
-              placeholder="Search name, email, plan…"
+              placeholder="Search name, email, subscription…"
             />
           </div>
         </div>
@@ -257,16 +513,70 @@ export function MembersManager({
               : "No memberships yet."}
           </p>
         ) : (
-          filteredMemberships.map((membership) => (
-          <AdminListItem
-            key={membership.id}
-            title={`${membership.user.name} — ${membership.plan.name}`}
-            subtitle={`${membership.user.email} · ${membership.status} · Expires ${format(new Date(membership.endDate), "d MMM yyyy")}`}
-            onEdit={() => startEdit(membership)}
-            onDelete={() => handleDelete(membership.id)}
-            deleting={deletingId === membership.id}
-          />
-          ))
+          filteredMemberships.map((membership) => {
+            const subscriptionLabel = formatMembershipSubscriptionLabel(
+              membership.plan.name,
+              membership.paymentSchedule,
+            );
+            const statusBadges = getMembershipStatusBadges(membership);
+            const accentClass = getMembershipAccentClass(membership);
+
+            return (
+              <Card
+                key={membership.id}
+                className={cn(
+                  "flex flex-col gap-4 border-l-4 py-4 sm:flex-row sm:items-center sm:justify-between",
+                  accentClass,
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium text-white">
+                      {membership.user.name}
+                    </p>
+                    <span className="text-sm text-zinc-500">·</span>
+                    <p className="text-sm text-zinc-300">{subscriptionLabel}</p>
+                  </div>
+                  <p className="mt-1 truncate text-sm text-zinc-400">
+                    {membership.user.email}
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                    {statusBadges.map((badge) => (
+                      <Badge
+                        key={badge.label}
+                        className={cn("border px-2 py-0.5", badge.className)}
+                      >
+                        {badge.label}
+                      </Badge>
+                    ))}
+                    <span className="text-xs text-zinc-500">
+                      Expires {format(new Date(membership.endDate), "d MMM yyyy")}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => startEdit(membership)}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    disabled={deletingId === membership.id}
+                    onClick={() => handleDelete(membership.id)}
+                    className="text-red-400 hover:text-red-300"
+                  >
+                    {deletingId === membership.id ? "..." : "Delete"}
+                  </Button>
+                </div>
+              </Card>
+            );
+          })
         )}
       </div>
     </AdminSection>

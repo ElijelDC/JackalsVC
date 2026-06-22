@@ -32,7 +32,6 @@ import {
 import {
   formatTrainingMonthParam,
   getAdjacentTrainingMonths,
-  TRAINING_TEAMS,
   type TrainingTeam,
 } from "@/lib/training-teams-config";
 import { cn } from "@/lib/utils";
@@ -237,7 +236,7 @@ export function TeamTrainingMonthView({
         {/* Month navigator */}
         <Card className="mb-6 p-4">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-col items-center gap-3 sm:items-start">
+            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start sm:gap-3">
               <div className="flex items-center gap-1">
                 <Button
                   variant="ghost"
@@ -273,10 +272,11 @@ export function TeamTrainingMonthView({
                 <button
                   type="button"
                   onClick={() => navigateMonth(startOfMonth(new Date()))}
-                  className="group inline-flex items-center gap-2 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-4 py-2 text-sm font-medium text-jackals-red-light transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white"
+                  aria-label="Return to current month"
+                  className="group inline-flex shrink-0 items-center gap-1 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-2 py-1 text-[11px] font-medium text-jackals-red-light transition-all hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white"
                 >
-                  <RotateCcw className="h-3.5 w-3.5 transition-transform duration-300 group-hover:-rotate-45" />
-                  Return To Current Month
+                  <RotateCcw className="h-3 w-3 transition-transform group-hover:-rotate-45" />
+                  Current month
                 </button>
               )}
             </div>
@@ -476,7 +476,7 @@ export function TeamTrainingMonthView({
   );
 }
 
-export function NoTrainingTeamAssigned() {
+export function NoTrainingTeamAssigned({ squads }: { squads: TrainingTeam[] }) {
   return (
     <PageContainer>
       <PageHeader
@@ -498,7 +498,7 @@ export function NoTrainingTeamAssigned() {
           </div>
 
           <div className="divide-y divide-white/10">
-            {TRAINING_TEAMS.map((team) => (
+            {squads.map((team) => (
               <div
                 key={team.key}
                 className="flex items-center justify-between gap-4 px-6 py-4"

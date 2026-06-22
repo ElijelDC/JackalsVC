@@ -1,15 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, beginAdminEdit, ADMIN_SECONDARY_FORM_ID } from "@/components/admin/AdminForm";
 import { GalleryBulkUpload } from "@/components/admin/GalleryBulkUpload";
+import { GalleryCoverField } from "@/components/admin/GalleryCoverField";
+import { GalleryPhotoGrid } from "@/components/admin/GalleryPhotoGrid";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/Button";
 import { Checkbox, Input, Label, Select } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
+import { GALLERY_PLACEHOLDER_COVER } from "@/lib/gallery-config";
 import { apiDelete, apiGet, apiPost, apiPostForm, apiPut } from "@/lib/client-api";
 
 type GalleryPhoto = {
@@ -41,6 +44,23 @@ const emptyPhotoForm = {
 };
 
 export function GalleryAlbumEditor({
+  initialAlbum,
+}: {
+  initialAlbum: GalleryAlbum;
+}) {
+  return (
+    <GalleryAlbumEditorInner
+      key={albumSyncKey(initialAlbum)}
+      initialAlbum={initialAlbum}
+    />
+  );
+}
+
+function albumSyncKey(album: GalleryAlbum) {
+  return `${album.id}:${album.title}:${album.photos.length}:${album.photos.map((photo) => photo.id).join(",")}`;
+}
+
+function GalleryAlbumEditorInner({
   initialAlbum,
 }: {
   initialAlbum: GalleryAlbum;
@@ -77,15 +97,17 @@ export function GalleryAlbumEditor({
   };
 
   const startEditPhoto = (photo: GalleryPhoto) => {
-    setEditingPhotoId(photo.id);
-    setPhotoForm({
-      title: photo.title ?? "",
-      caption: photo.caption ?? "",
-      imageUrl: photo.imageUrl,
-      sortOrder: photo.sortOrder,
-    });
-    setError(null);
-    setMessage(null);
+    beginAdminEdit(() => {
+      setEditingPhotoId(photo.id);
+      setPhotoForm({
+        title: photo.title ?? "",
+        caption: photo.caption ?? "",
+        imageUrl: photo.imageUrl,
+        sortOrder: photo.sortOrder,
+      });
+      setError(null);
+      setMessage(null);
+    }, ADMIN_SECONDARY_FORM_ID);
   };
 
   const handleAlbumSubmit = async (event: React.FormEvent) => {
@@ -97,7 +119,7 @@ export function GalleryAlbumEditor({
     const payload = {
       title: albumForm.title,
       description: albumForm.description || undefined,
-      coverImageUrl: albumForm.coverImageUrl,
+      coverImageUrl: albumForm.coverImageUrl.trim() || GALLERY_PLACEHOLDER_COVER,
       category: albumForm.category,
       featured: albumForm.featured,
       sortOrder: albumForm.sortOrder,
@@ -149,11 +171,7 @@ export function GalleryAlbumEditor({
     router.refresh();
   };
 
-  const handleCoverUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = "";
-    if (!file) return;
-
+  const uploadCover = async (file: File) => {
     setCoverUploading(true);
     setError(null);
     setMessage(null);
@@ -170,8 +188,7 @@ export function GalleryAlbumEditor({
     setCoverUploading(false);
 
     if (!result.ok) {
-      setError(result.error);
-      return;
+      throw new Error(result.error);
     }
 
     setAlbumForm((current) => ({
@@ -201,18 +218,6 @@ export function GalleryAlbumEditor({
     router.refresh();
   };
 
-  useEffect(() => {
-    setAlbum(initialAlbum);
-    setAlbumForm({
-      title: initialAlbum.title,
-      description: initialAlbum.description ?? "",
-      coverImageUrl: initialAlbum.coverImageUrl,
-      category: initialAlbum.category as (typeof GALLERY_CATEGORIES)[number],
-      featured: initialAlbum.featured,
-      sortOrder: initialAlbum.sortOrder,
-    });
-  }, [initialAlbum]);
-
   return (
     <AdminSection
       title={album.title}
@@ -227,6 +232,8 @@ export function GalleryAlbumEditor({
       </Link>
 
       <AdminFormCard
+        collapsible
+        openTriggerLabel="Edit album details"
         title="Album details"
         error={error}
         message={message}
@@ -281,40 +288,14 @@ export function GalleryAlbumEditor({
             />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="album-cover">Cover image URL</Label>
-            <Input
-              id="album-cover"
-              value={albumForm.coverImageUrl}
-              onChange={(event) =>
-                setAlbumForm({ ...albumForm, coverImageUrl: event.target.value })
+            <GalleryCoverField
+              coverImageUrl={albumForm.coverImageUrl}
+              onCoverChange={(url) =>
+                setAlbumForm({ ...albumForm, coverImageUrl: url })
               }
-              required
+              onUpload={uploadCover}
+              uploading={coverUploading}
             />
-            <div className="mt-3 flex flex-wrap items-center gap-3">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={coverUploading}
-                onClick={() =>
-                  document.getElementById("album-cover-upload")?.click()
-                }
-              >
-                {coverUploading ? "Uploading..." : "Upload cover image"}
-              </Button>
-              <input
-                id="album-cover-upload"
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                onChange={handleCoverUpload}
-              />
-              {albumForm.coverImageUrl && (
-                <span className="truncate text-xs text-zinc-500">
-                  {albumForm.coverImageUrl}
-                </span>
-              )}
-            </div>
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="album-description">Description</Label>
@@ -348,7 +329,10 @@ export function GalleryAlbumEditor({
       />
 
       <AdminFormCard
-        title={editingPhotoId ? "Edit photo" : "Add photo"}
+        collapsible
+        formId={ADMIN_SECONDARY_FORM_ID}
+        openTriggerLabel="Advanced: add photo by URL"
+        title={editingPhotoId ? "Edit photo details" : "Advanced: add photo by URL"}
         error={editingPhotoId ? error : null}
         message={editingPhotoId ? message : null}
         onSubmit={handlePhotoSubmit}
@@ -390,7 +374,7 @@ export function GalleryAlbumEditor({
               onChange={(event) =>
                 setPhotoForm({ ...photoForm, imageUrl: event.target.value })
               }
-              placeholder="/gallery/photo.jpg"
+              placeholder="/uploads/gallery/photo.jpg"
               required
             />
           </div>
@@ -420,20 +404,13 @@ export function GalleryAlbumEditor({
         <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
           Photos in album ({album.photos.length})
         </h3>
-        {album.photos.length === 0 ? (
-          <p className="text-sm text-zinc-500">No photos added yet.</p>
-        ) : (
-          album.photos.map((photo) => (
-            <AdminListItem
-              key={photo.id}
-              title={photo.title ?? photo.caption ?? "Untitled photo"}
-              subtitle={photo.imageUrl}
-              onEdit={() => startEditPhoto(photo)}
-              onDelete={() => handleDeletePhoto(photo.id)}
-              deleting={deletingPhotoId === photo.id}
-            />
-          ))
-        )}
+        <GalleryPhotoGrid
+          photos={album.photos}
+          editingPhotoId={editingPhotoId}
+          deletingPhotoId={deletingPhotoId}
+          onEdit={startEditPhoto}
+          onDelete={handleDeletePhoto}
+        />
       </div>
     </AdminSection>
   );

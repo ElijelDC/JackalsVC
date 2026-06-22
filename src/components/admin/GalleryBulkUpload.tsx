@@ -1,7 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { ImagePlus, Upload } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
+import { ImagePlus, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
@@ -18,6 +19,13 @@ type UploadResponse = {
   errors?: string[];
 };
 
+type PreviewFile = {
+  id: string;
+  file: File;
+  previewUrl: string;
+  tooLarge: boolean;
+};
+
 export function GalleryBulkUpload({
   albumId,
   onUploaded,
@@ -26,23 +34,37 @@ export function GalleryBulkUpload({
   onUploaded: () => void | Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<PreviewFile[]>([]);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    return () => {
+      for (const entry of files) {
+        URL.revokeObjectURL(entry.previewUrl);
+      }
+    };
+  }, [files]);
+
   const addFiles = (incoming: FileList | File[]) => {
-    const next = [...incoming].filter((file) => file.type.startsWith("image/"));
-    if (next.length === 0) {
+    const images = [...incoming].filter((file) => file.type.startsWith("image/"));
+    if (images.length === 0) {
       setError("Only image files can be uploaded.");
       return;
     }
+
     setFiles((current) => {
       const merged = [...current];
-      for (const file of next) {
+      for (const file of images) {
         if (merged.length >= GALLERY_MAX_BULK_FILES) break;
-        merged.push(file);
+        merged.push({
+          id: `${file.name}-${file.lastModified}-${file.size}`,
+          file,
+          previewUrl: URL.createObjectURL(file),
+          tooLarge: file.size > GALLERY_MAX_UPLOAD_BYTES,
+        });
       }
       return merged;
     });
@@ -50,9 +72,30 @@ export function GalleryBulkUpload({
     setMessage(null);
   };
 
+  const removeFile = (id: string) => {
+    setFiles((current) => {
+      const target = current.find((entry) => entry.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return current.filter((entry) => entry.id !== id);
+    });
+  };
+
+  const clearFiles = () => {
+    for (const entry of files) {
+      URL.revokeObjectURL(entry.previewUrl);
+    }
+    setFiles([]);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
   const handleUpload = async () => {
-    if (files.length === 0) {
-      setError("Choose one or more images first.");
+    const validFiles = files.filter((entry) => !entry.tooLarge);
+    if (validFiles.length === 0) {
+      setError(
+        files.some((entry) => entry.tooLarge)
+          ? "Remove oversized files before uploading."
+          : "Choose one or more images first.",
+      );
       return;
     }
 
@@ -61,8 +104,8 @@ export function GalleryBulkUpload({
     setMessage(null);
 
     const formData = new FormData();
-    for (const file of files) {
-      formData.append("files", file);
+    for (const entry of validFiles) {
+      formData.append("files", entry.file);
     }
 
     const result = await apiPostForm<UploadResponse>(
@@ -86,26 +129,23 @@ export function GalleryBulkUpload({
     setMessage(
       `${result.data.uploaded} photo${result.data.uploaded === 1 ? "" : "s"} uploaded.${warnings}`,
     );
-    setFiles([]);
-    if (inputRef.current) {
-      inputRef.current.value = "";
-    }
+    clearFiles();
     await onUploaded();
   };
 
   const totalSizeMb = (
-    files.reduce((sum, file) => sum + file.size, 0) /
-    (1024 * 1024)
+    files.reduce((sum, entry) => sum + entry.file.size, 0) / (1024 * 1024)
   ).toFixed(1);
+  const hasOversized = files.some((entry) => entry.tooLarge);
 
   return (
     <Card className="mb-8">
       <h3 className="font-display mb-2 text-lg font-semibold text-white">
-        Bulk upload photos
+        Upload photos
       </h3>
       <p className="mb-4 text-sm text-zinc-400">
-        Upload multiple images at once into this album. JPEG, PNG, WebP, or GIF
-        up to 5 MB each (max {GALLERY_MAX_BULK_FILES} files per batch).
+        Drag images here or browse your device. Up to {GALLERY_MAX_BULK_FILES} files
+        per batch, 5 MB each.
       </p>
 
       <SuccessBanner message={message} />
@@ -135,7 +175,7 @@ export function GalleryBulkUpload({
       >
         <ImagePlus className="mx-auto h-10 w-10 text-jackals-red-light/70" />
         <p className="mt-4 text-sm text-zinc-300">
-          Drag and drop images here, or choose files from your device.
+          Drop your match, training, or event photos here
         </p>
         <input
           ref={inputRef}
@@ -144,9 +184,7 @@ export function GalleryBulkUpload({
           multiple
           className="hidden"
           onChange={(event) => {
-            if (event.target.files) {
-              addFiles(event.target.files);
-            }
+            if (event.target.files) addFiles(event.target.files);
           }}
         />
         <Button
@@ -155,43 +193,60 @@ export function GalleryBulkUpload({
           className="mt-4"
           onClick={() => inputRef.current?.click()}
         >
-          Choose images
+          Browse images
         </Button>
       </div>
 
       {files.length > 0 && (
-        <div className="mt-4 space-y-3">
-          <p className="text-sm text-zinc-400">
-            {files.length} file{files.length === 1 ? "" : "s"} selected ·{" "}
-            {totalSizeMb} MB total
-          </p>
-          <ul className="max-h-40 space-y-1 overflow-y-auto rounded-sm border border-white/10 bg-jackals-inset/50 p-3 text-sm text-zinc-300">
-            {files.map((file) => (
-              <li key={`${file.name}-${file.lastModified}`} className="truncate">
-                {file.name}
-                {file.size > GALLERY_MAX_UPLOAD_BYTES && (
-                  <span className="ml-2 text-red-400">(too large)</span>
-                )}
-              </li>
-            ))}
-          </ul>
-          <div className="flex flex-wrap gap-3">
-            <Button type="button" disabled={loading} onClick={handleUpload}>
-              <Upload className="h-4 w-4" />
-              {loading ? "Uploading..." : "Upload to album"}
-            </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={loading}
-              onClick={() => {
-                setFiles([]);
-                if (inputRef.current) inputRef.current.value = "";
-              }}
-            >
-              Clear selection
+        <div className="mt-5 space-y-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-sm text-zinc-400">
+              {files.length} selected · {totalSizeMb} MB total
+              {hasOversized && (
+                <span className="ml-2 text-red-400">Some files exceed 5 MB</span>
+              )}
+            </p>
+            <Button type="button" variant="ghost" size="sm" disabled={loading} onClick={clearFiles}>
+              Clear all
             </Button>
           </div>
+
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {files.map((entry) => (
+              <div
+                key={entry.id}
+                className={cn(
+                  "relative overflow-hidden rounded-sm border",
+                  entry.tooLarge ? "border-red-500/50" : "border-white/10",
+                )}
+              >
+                <div className="relative aspect-square">
+                  <Image
+                    src={entry.previewUrl}
+                    alt={entry.file.name}
+                    fill
+                    sizes="120px"
+                    className="object-cover"
+                    unoptimized
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white transition-colors hover:bg-black"
+                    onClick={() => removeFile(entry.id)}
+                    aria-label={`Remove ${entry.file.name}`}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+                <p className="truncate px-2 py-1.5 text-xs text-zinc-400">{entry.file.name}</p>
+              </div>
+            ))}
+          </div>
+
+          <Button type="button" disabled={loading || hasOversized} onClick={handleUpload}>
+            <Upload className="h-4 w-4" />
+            {loading ? "Uploading..." : `Upload ${files.length} photo${files.length === 1 ? "" : "s"}`}
+          </Button>
         </div>
       )}
 

@@ -1,21 +1,26 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
-import {
-  defaultEventMonthFilter,
-  EventFiltersToolbar,
-} from "@/components/events/EventFiltersToolbar";
+import { EventFiltersToolbar } from "@/components/events/EventFiltersToolbar";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import {
   EventSourceFilter,
   filterEvents,
+  getEventMonthFilterOptions,
   getEventTypeLabel,
 } from "@/lib/event-filters";
 import { SESSION_CATEGORIES, SESSION_MANAGER_CONFIG } from "@/lib/training-utils";
+import type { TrainingTeam } from "@/lib/training-teams-config";
+import {
+  MANUAL_EVENT_TYPES,
+  normalizeManualEventType,
+  type ManualEventType,
+} from "@/lib/events-config";
 import {
   isOpenReclubEvent,
   savesClinicPaymentFields,
@@ -45,9 +50,10 @@ type EventItem = {
   seriesPaymentUrl?: string | null;
   sessionDescription?: string | null;
   sessionCategory?: string | null;
+  trainingTeamKey?: string | null;
 };
 
-const EVENT_TYPES = ["TOURNAMENT", "SOCIAL", "MEETING"] as const;
+const EVENT_TYPES = MANUAL_EVENT_TYPES;
 
 function toDatetimeLocal(value: string | null) {
   if (!value) return "";
@@ -59,7 +65,7 @@ const emptyForm = {
   description: "",
   startDate: "",
   endDate: "",
-  type: "TOURNAMENT" as (typeof EVENT_TYPES)[number],
+  type: "TOURNAMENT" as ManualEventType,
   location: "",
   coach: "",
   attendanceUrl: "",
@@ -69,9 +75,15 @@ const emptyForm = {
   clubIban: "IE29 AIBK 9311 5212 3456 78",
 };
 
-export function EventsManager({ initialEvents }: { initialEvents: EventItem[] }) {
+export function EventsManager({
+  initialEvents,
+  trainingSquads,
+}: {
+  initialEvents: EventItem[];
+  trainingSquads: TrainingTeam[];
+}) {
   const router = useRouter();
-  const [events, setEvents] = useState(initialEvents);
+  const [events, setEvents] = useSyncedListState(initialEvents);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTrainingOccurrence, setEditingTrainingOccurrence] =
     useState(false);
@@ -83,7 +95,18 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
   const [sourceFilter, setSourceFilter] = useState<EventSourceFilter>("all");
-  const [monthFilter, setMonthFilter] = useState(defaultEventMonthFilter);
+  const [monthFilter, setMonthFilter] = useState("");
+  const [teamFilter, setTeamFilter] = useState("");
+
+  const squadNameByKey = useMemo(
+    () => new Map(trainingSquads.map((squad) => [squad.key, squad.name])),
+    [trainingSquads],
+  );
+
+  const monthOptions = useMemo(
+    () => getEventMonthFilterOptions(events),
+    [events],
+  );
 
   const filteredEvents = useMemo(
     () =>
@@ -92,23 +115,25 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
         type: typeFilter,
         source: sourceFilter,
         month: monthFilter,
+        trainingTeamKey: teamFilter,
       }),
-    [events, search, typeFilter, sourceFilter, monthFilter],
+    [events, search, typeFilter, sourceFilter, monthFilter, teamFilter],
   );
 
   const clearFilters = () => {
     setSearch("");
     setTypeFilter("");
     setSourceFilter("all");
-    setMonthFilter(defaultEventMonthFilter());
+    setMonthFilter("");
+    setTeamFilter("");
   };
 
   const filtersActive =
     Boolean(search.trim()) ||
     Boolean(typeFilter) ||
     sourceFilter !== "all" ||
-    monthFilter !== defaultEventMonthFilter() ||
-    monthFilter === "";
+    Boolean(monthFilter) ||
+    Boolean(teamFilter);
 
   const resetForm = () => {
     setForm(emptyForm);
@@ -131,36 +156,38 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
         })),
       );
     }
-  }, []);
+  }, [setEvents]);
 
   const startEdit = (event: EventItem) => {
-    setEditingId(event.id);
-    setEditingTrainingOccurrence(Boolean(event.trainingSessionId));
-    setForm({
-      title: event.title,
-      description: event.sessionDescription ?? "",
-      startDate: toDatetimeLocal(event.startDate),
-      endDate: toDatetimeLocal(event.endDate),
-      type: event.type as (typeof EVENT_TYPES)[number],
-      location: event.location ?? "",
-      coach: event.coach ?? "",
-      attendanceUrl: event.hasOccurrenceOverride
-        ? (event.attendanceUrl ?? "")
-        : (event.seriesAttendanceUrl ?? event.attendanceUrl ?? ""),
-      paymentUrl: event.hasOccurrenceOverride
-        ? (event.paymentUrl ?? "")
-        : (event.seriesPaymentUrl ?? event.paymentUrl ?? ""),
-      sessionFee:
-        event.sessionFee != null
-          ? String(event.sessionFee)
-          : event.type === "TOURNAMENT"
-            ? "40"
-            : "15",
-      reclubUsername: event.reclubUsername ?? "JackalsVC",
-      clubIban: event.clubIban ?? "IE29 AIBK 9311 5212 3456 78",
+    beginAdminEdit(() => {
+      setEditingId(event.id);
+      setEditingTrainingOccurrence(Boolean(event.trainingSessionId));
+      setForm({
+        title: event.title,
+        description: event.sessionDescription ?? "",
+        startDate: toDatetimeLocal(event.startDate),
+        endDate: toDatetimeLocal(event.endDate),
+        type: normalizeManualEventType(event),
+        location: event.location ?? "",
+        coach: event.coach ?? "",
+        attendanceUrl: event.hasOccurrenceOverride
+          ? (event.attendanceUrl ?? "")
+          : (event.seriesAttendanceUrl ?? event.attendanceUrl ?? ""),
+        paymentUrl: event.hasOccurrenceOverride
+          ? (event.paymentUrl ?? "")
+          : (event.seriesPaymentUrl ?? event.paymentUrl ?? ""),
+        sessionFee:
+          event.sessionFee != null
+            ? String(event.sessionFee)
+            : event.type === "TOURNAMENT"
+              ? "40"
+              : "15",
+        reclubUsername: event.reclubUsername ?? "JackalsVC",
+        clubIban: event.clubIban ?? "IE29 AIBK 9311 5212 3456 78",
+      });
+      setError(null);
+      setMessage(null);
     });
-    setError(null);
-    setMessage(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -246,16 +273,14 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
     router.refresh();
   };
 
-  useEffect(() => {
-    setEvents(initialEvents);
-  }, [initialEvents]);
-
   return (
     <AdminSection
       title="Calendar events"
       description="Calendar events including auto-synced training sessions. Edit a single training date here, or change the full recurring schedule under Weekly training."
     >
       <AdminFormCard
+        collapsible
+        openTriggerLabel="Add new event"
         title={
           editingTrainingOccurrence
             ? "Edit this training occurrence"
@@ -311,7 +336,7 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
                 onChange={(e) =>
                   setForm({
                     ...form,
-                    type: e.target.value as (typeof EVENT_TYPES)[number],
+                    type: e.target.value as ManualEventType,
                   })
                 }
               >
@@ -520,8 +545,13 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
           onSourceChange={setSourceFilter}
           month={monthFilter}
           onMonthChange={setMonthFilter}
+          monthOptions={monthOptions}
+          trainingTeamKey={teamFilter}
+          onTrainingTeamKeyChange={setTeamFilter}
+          trainingSquads={trainingSquads}
           showSource
           showMonth
+          showTeam
           onClear={filtersActive ? clearFilters : undefined}
           searchPlaceholder="Search title, location, description…"
         />
@@ -537,7 +567,7 @@ export function EventsManager({ initialEvents }: { initialEvents: EventItem[] })
             <AdminListItem
               key={event.id}
               title={event.title}
-              subtitle={`${format(new Date(event.startDate), "d MMM yyyy HH:mm")} · ${getEventTypeLabel(event.type)}${event.location ? ` · ${event.location}` : ""}`}
+              subtitle={`${format(new Date(event.startDate), "d MMM yyyy HH:mm")} · ${getEventTypeLabel(event.type)}${event.trainingTeamKey ? ` · ${squadNameByKey.get(event.trainingTeamKey) ?? event.trainingTeamKey}` : ""}${event.location ? ` · ${event.location}` : ""}`}
               note={
                 event.trainingSessionId
                   ? `${event.type === "FUN" ? "Fun session" : "Recurring training"}${event.occurrenceCustomized ? " · this date customized" : ""}`

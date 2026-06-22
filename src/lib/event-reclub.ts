@@ -1,4 +1,4 @@
-export const OPEN_RECLUB_EVENT_TYPES = ["TOURNAMENT", "SOCIAL"] as const;
+export const OPEN_RECLUB_EVENT_TYPES = ["TOURNAMENT", "SKILLS_CLINIC"] as const;
 
 export type OpenReclubEventType = (typeof OPEN_RECLUB_EVENT_TYPES)[number];
 
@@ -11,7 +11,7 @@ export function savesEventAttendanceUrl(type: string) {
 }
 
 export function savesClinicPaymentFields(type: string) {
-  return type === "SOCIAL";
+  return type === "SKILLS_CLINIC";
 }
 
 export function savesTournamentPaymentFields(type: string) {
@@ -24,7 +24,7 @@ export function savesEventPaymentFields(type: string) {
 }
 
 export function usesPaidJoinFlow(type: string) {
-  return type === "FUN" || type === "SOCIAL";
+  return type === "FUN" || type === "SKILLS_CLINIC";
 }
 
 export function usesTournamentJoinFlow(

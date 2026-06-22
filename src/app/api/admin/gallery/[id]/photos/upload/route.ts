@@ -5,6 +5,7 @@ import {
   photoTitleFromFilename,
   saveGalleryImageFile,
 } from "@/lib/gallery-upload";
+import { isGalleryPlaceholderCover } from "@/lib/gallery-config";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
@@ -68,6 +69,13 @@ export async function POST(
 
   if (photos.length === 0) {
     return jsonError(errors[0] ?? "Upload failed.", 400);
+  }
+
+  if (isGalleryPlaceholderCover(album.coverImageUrl)) {
+    await prisma.galleryAlbum.update({
+      where: { id: albumId },
+      data: { coverImageUrl: photos[0]!.imageUrl },
+    });
   }
 
   return NextResponse.json({

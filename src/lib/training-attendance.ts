@@ -11,7 +11,7 @@ import {
 } from "@/lib/training-attendance-config";
 import { enrichEventRecords, serializeEnrichedEvent } from "@/lib/event-enrichment";
 import { prisma } from "@/lib/prisma";
-import { getTrainingTeamByKey } from "@/lib/training-teams-config";
+import { getTrainingTeamByKey } from "@/lib/training-squads";
 import { getTeamTrainingSession, getUserTrainingTeamKey } from "@/lib/training-teams";
 
 export type { TrainingRosterMember, TrainingSessionDetailData };
@@ -108,7 +108,7 @@ export async function getUpcomingTeamTrainingEvents(
     userId,
     events.map((event) => event.id),
   );
-  const team = getTrainingTeamByKey(trainingTeamKey);
+  const team = await getTrainingTeamByKey(trainingTeamKey);
 
   return events.map((event) => ({
     id: event.id,
@@ -146,7 +146,7 @@ export async function getTrainingSessionDetail(
     notFound();
   }
 
-  const team = getTrainingTeamByKey(event.trainingSession.trainingTeamKey);
+  const team = await getTrainingTeamByKey(event.trainingSession.trainingTeamKey);
   if (!team) notFound();
 
   const [enriched] = await enrichEventRecords([event]);

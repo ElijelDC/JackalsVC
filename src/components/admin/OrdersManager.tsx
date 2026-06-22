@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Label, Select } from "@/components/ui/Input";
 import { apiDelete, apiGet, apiPut } from "@/lib/client-api";
@@ -30,7 +31,7 @@ const STATUSES = ["PENDING", "PAID", "SHIPPED", "CANCELLED"] as const;
 
 export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const router = useRouter();
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useSyncedListState(initialOrders);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [status, setStatus] = useState<(typeof STATUSES)[number]>("PENDING");
   const [loading, setLoading] = useState(false);
@@ -48,13 +49,15 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
   const loadOrders = useCallback(async () => {
     const result = await apiGet<{ orders: Order[] }>("/api/admin/orders");
     if (result.ok) setOrders(result.data.orders);
-  }, []);
+  }, [setOrders]);
 
   const startEdit = (order: Order) => {
-    setEditingId(order.id);
-    setStatus(order.status as (typeof STATUSES)[number]);
-    setError(null);
-    setMessage(null);
+    beginAdminEdit(() => {
+      setEditingId(order.id);
+      setStatus(order.status as (typeof STATUSES)[number]);
+      setError(null);
+      setMessage(null);
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -95,10 +98,6 @@ export function OrdersManager({ initialOrders }: { initialOrders: Order[] }) {
     await loadOrders();
     router.refresh();
   };
-
-  useEffect(() => {
-    setOrders(initialOrders);
-  }, [initialOrders]);
 
   return (
     <AdminSection

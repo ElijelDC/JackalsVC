@@ -4,7 +4,17 @@ import bcrypt from "bcryptjs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { syncAllTrainingSessionEvents } from "../src/lib/training-events";
-import { CLUB_MEMBERSHIP_PLAN_NAME } from "../src/lib/membership-config";
+import { syncClubTeamFromRoster } from "../src/lib/club-team-roster-sync";
+import {
+  MEMBERSHIP_PLAN_ADULT_NAME,
+  MEMBERSHIP_PLAN_DURATION_MONTHS,
+  MEMBERSHIP_PLAN_STUDENT_NAME,
+  MEMBERSHIP_FEATURES,
+  buildInstallments,
+  createMembershipPricing,
+  formatPaymentScheduleLabel,
+} from "../src/lib/membership-config";
+import { buildPaymentReference } from "../src/lib/payments";
 
 const dbUrl =
   process.env.DATABASE_URL ?? `file:${path.join(process.cwd(), "dev.db")}`;
@@ -23,6 +33,30 @@ function formatDemoDate(date: Date) {
 
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 12);
+
+  const defaultSquads = [
+    { key: "DIV2_MENS", name: "Division 2 Mens", dayOfWeek: 4, sortOrder: 0 },
+    { key: "DIV3_WOMENS", name: "Division 3 Womens", dayOfWeek: 1, sortOrder: 1 },
+    { key: "DIV4_MENS", name: "Division 4 Mens", dayOfWeek: 3, sortOrder: 2 },
+  ] as const;
+
+  for (const squad of defaultSquads) {
+    await prisma.trainingSquad.upsert({
+      where: { key: squad.key },
+      update: {
+        name: squad.name,
+        dayOfWeek: squad.dayOfWeek,
+        sortOrder: squad.sortOrder,
+      },
+      create: {
+        key: squad.key,
+        name: squad.name,
+        dayOfWeek: squad.dayOfWeek,
+        sortOrder: squad.sortOrder,
+        active: true,
+      },
+    });
+  }
 
   const demoUsers = [
     {
@@ -101,20 +135,20 @@ async function main() {
   }
 
   const rosterEntries = [
-    { vlyNumber: "VLY123", name: "Viktoriia", email: null, trainingTeamKey: "DIV3_WOMENS" },
-    { vlyNumber: "VLY122", name: "Elijel", email: null, trainingTeamKey: "DIV2_MENS" },
-    { vlyNumber: "VLY10001", name: "Demo Member", email: "member@jackalsvc.com", trainingTeamKey: "DIV4_MENS" },
-    { vlyNumber: "VLY10002", name: "Sarah Jones", email: "sarah.jones@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
-    { vlyNumber: "VLY10003", name: "Mike Chen", email: "mike.chen@jackalsvc.com", trainingTeamKey: "DIV2_MENS" },
-    { vlyNumber: "VLY10004", name: "Emma Williams", email: "emma.williams@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
-    { vlyNumber: "VLY10005", name: "James Patel", email: "james.patel@jackalsvc.com", trainingTeamKey: "DIV2_MENS" },
-    { vlyNumber: "VLY10006", name: "Olivia Brown", email: "olivia.brown@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
-    { vlyNumber: "VLY10007", name: "Liam Davis", email: "liam.davis@jackalsvc.com", trainingTeamKey: "DIV4_MENS" },
-    { vlyNumber: "VLY10008", name: "Sophie Taylor", email: "sophie.taylor@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
-    { vlyNumber: "VLY10009", name: "Alex Morgan", email: "alex.morgan@jackalsvc.com", trainingTeamKey: "DIV2_MENS" },
-    { vlyNumber: "VLY10010", name: "Priya Sharma", email: "priya.sharma@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS" },
-    { vlyNumber: "VLY10011", name: "Noah Thompson", email: "noah.thompson@jackalsvc.com", trainingTeamKey: "DIV4_MENS" },
-    { vlyNumber: "VLY10999", name: "New Member Test", email: null, trainingTeamKey: null },
+    { vlyNumber: "VLY123", name: "Viktoriia", email: null, trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY122", name: "Elijel", email: null, trainingTeamKey: "DIV2_MENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10001", name: "Demo Member", email: "member@jackalsvc.com", trainingTeamKey: "DIV4_MENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10002", name: "Sarah Jones", email: "sarah.jones@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "COACH" },
+    { vlyNumber: "VLY10003", name: "Mike Chen", email: "mike.chen@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10004", name: "Emma Williams", email: "emma.williams@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "COACH" },
+    { vlyNumber: "VLY10005", name: "James Patel", email: "james.patel@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "COACH" },
+    { vlyNumber: "VLY10006", name: "Olivia Brown", email: "olivia.brown@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10007", name: "Liam Davis", email: "liam.davis@jackalsvc.com", trainingTeamKey: "DIV4_MENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10008", name: "Sophie Taylor", email: "sophie.taylor@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10009", name: "Alex Morgan", email: "alex.morgan@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10010", name: "Priya Sharma", email: "priya.sharma@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10011", name: "Noah Thompson", email: "noah.thompson@jackalsvc.com", trainingTeamKey: "DIV4_MENS", rosterRole: "PLAYER" },
+    { vlyNumber: "VLY10999", name: "New Member Test", email: null, trainingTeamKey: null, rosterRole: "PLAYER" },
   ] as const;
 
   await prisma.clubMember.deleteMany();
@@ -129,15 +163,12 @@ async function main() {
         vlyNumber: entry.vlyNumber,
         name: entry.name,
         active: true,
+        rosterRole: entry.rosterRole,
         trainingTeamKey: entry.trainingTeamKey,
         userId: linkedUser?.id ?? null,
       },
     });
   }
-
-  const admin = await prisma.user.findUniqueOrThrow({
-    where: { email: "admin@jackalsvc.com" },
-  });
 
   await prisma.registrationCode.deleteMany();
   await prisma.registrationCode.createMany({
@@ -323,7 +354,7 @@ async function main() {
         title: "Committee Meeting",
         description: "Monthly club committee — members welcome to observe.",
         startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 7, 19, 0),
-        type: "MEETING",
+        type: "SOCIAL",
         location: "Online (Zoom)",
       },
       {
@@ -367,7 +398,7 @@ async function main() {
           "Skills clinic focused on serving and passing — open to all members.",
         startDate: atTime(busySaturday, 13, 0),
         endDate: atTime(busySaturday, 15, 0),
-        type: "SOCIAL",
+        type: "SKILLS_CLINIC",
         location: "Sports Hall B",
         attendanceUrl: "https://forms.gle/example-clinic",
         paymentUrl: "https://forms.gle/example-clinic-payment",
@@ -392,7 +423,7 @@ async function main() {
         description: "Hands-on setting drills with Coach Sarah.",
         startDate: atTime(busyFriday, 18, 0),
         endDate: atTime(busyFriday, 19, 30),
-        type: "SOCIAL",
+        type: "SKILLS_CLINIC",
         location: "Sports Hall A",
         attendanceUrl: "https://forms.gle/example-setter-workshop",
         paymentUrl: "https://forms.gle/example-setter-workshop-payment",
@@ -419,20 +450,31 @@ async function main() {
 
   await prisma.membership.deleteMany();
   await prisma.membershipPlan.deleteMany();
-  const seasonPlan = await prisma.membershipPlan.create({
+
+  const planFeatures = JSON.stringify(MEMBERSHIP_FEATURES);
+  const seasonDescription = "Full 2026/27 Irish National League membership.";
+
+  const adultPlan = await prisma.membershipPlan.create({
     data: {
-      name: CLUB_MEMBERSHIP_PLAN_NAME,
-      description: "Full 2026/27 Irish National League membership.",
-      price: 420,
-      durationMonths: 7,
-      features: JSON.stringify([
-        "Training Sessions",
-        "Full Club Kit",
-        "League Matchdays",
-        "Merchandise Discounts",
-      ]),
+      name: MEMBERSHIP_PLAN_ADULT_NAME,
+      description: seasonDescription,
+      price: 450,
+      durationMonths: MEMBERSHIP_PLAN_DURATION_MONTHS,
+      features: planFeatures,
     },
   });
+
+  await prisma.membershipPlan.create({
+    data: {
+      name: MEMBERSHIP_PLAN_STUDENT_NAME,
+      description: `${seasonDescription} For students and under-18s.`,
+      price: 385,
+      durationMonths: MEMBERSHIP_PLAN_DURATION_MONTHS,
+      features: planFeatures,
+    },
+  });
+
+  const seasonPlan = adultPlan;
 
   const memberUsers = await prisma.user.findMany({
     where: {
@@ -502,6 +544,61 @@ async function main() {
       },
     ],
   });
+
+  const overdueDemoEmail = "mike.chen@jackalsvc.com";
+  const overdueDemoUser = userByEmail[overdueDemoEmail];
+  const overdueMembership = await prisma.membership.findFirst({
+    where: { userId: overdueDemoUser.id, endDate: { gt: new Date() } },
+    include: { plan: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (overdueMembership) {
+    const membershipStart = new Date();
+    membershipStart.setDate(membershipStart.getDate() - 45);
+    const pricing = createMembershipPricing(
+      overdueMembership.plan.price,
+      overdueMembership.plan.durationMonths,
+    );
+    const scheduleLabel = formatPaymentScheduleLabel("INSTALLMENTS");
+    const installments = buildInstallments(
+      "INSTALLMENTS",
+      pricing,
+      membershipStart,
+    );
+    const overdueDueDate = new Date();
+    overdueDueDate.setDate(overdueDueDate.getDate() - 30);
+    installments[0]!.dueDate = overdueDueDate;
+
+    await prisma.membership.update({
+      where: { id: overdueMembership.id },
+      data: {
+        startDate: membershipStart,
+        paymentOverdueOverride: false,
+        paymentOverdueOverrideNote: null,
+      },
+    });
+
+    await prisma.payment.deleteMany({ where: { membershipId: overdueMembership.id } });
+    await prisma.payment.createMany({
+      data: installments.map((installment) => ({
+        userId: overdueDemoUser.id,
+        membershipId: overdueMembership.id,
+        amount: installment.amount,
+        description: `${overdueMembership.plan.name} · ${scheduleLabel} · ${installment.description}`,
+        status: "PENDING",
+        method: "BANK_TRANSFER",
+        installmentNumber: installment.installmentNumber,
+        dueDate: installment.dueDate,
+        paymentReference: buildPaymentReference(
+          overdueDemoUser.name,
+          installment.dueDate,
+          installment.installmentNumber,
+          installments.length,
+        ),
+      })),
+    });
+  }
 
   await prisma.galleryPhoto.deleteMany();
   await prisma.galleryAlbum.deleteMany();
@@ -633,7 +730,7 @@ async function main() {
         season: "2024/25",
         description:
           "Secured 1st place in Volleyball Ireland's National League, being unbeaten in pool stages and playing 5-set thrillers in both quarter and semi finals against formidable opponents, finishing it off with a dominant win in the Grand Finals.",
-        imageUrl: "/achievements/d3m-champions.jpg",
+        imageUrl: "/uploads/achievements/d3m-champions.jpg",
         type: "LEAGUE",
         sortOrder: 0,
       },
@@ -642,7 +739,7 @@ async function main() {
         season: "2025",
         description:
           "Secured 1st place in IVI 2-day Preseason Tournament, after countless of tough battles against the other teams in day 1 the Jackal's Mens team managed to clinch play-offs, come day 2 they then manage to get past close battles in QF, SF and in the grand final edging out their opponents in a set for set battle, they came out on top!",
-        imageUrl: "/achievements/ivi-preseason-champions.jpg",
+        imageUrl: "/uploads/achievements/ivi-preseason-champions.jpg",
         type: "TOURNAMENT",
         sortOrder: 1,
       },
@@ -651,7 +748,7 @@ async function main() {
         season: "2025",
         description:
           "Secured 1st place in IVI Men's Tournament, after fighting tough for a playoff's spot in their pool, they managed to clinch victory after a tough semi final's battle and closely edging out Pancada in the Men's Finals",
-        imageUrl: "/achievements/ivi-tournament-champions.jpg",
+        imageUrl: "/uploads/achievements/ivi-tournament-champions.jpg",
         type: "TOURNAMENT",
         sortOrder: 2,
       },
@@ -668,64 +765,12 @@ async function main() {
     data: {
       name: "Men's 1st Team",
       level: "Regional league",
+      trainingTeamKey: "DIV2_MENS",
       description:
         "Our top competitive squad, training twice weekly and competing in the regional league throughout the season.",
       details:
         "Training: Tuesdays & Thursdays, 7:30–9:30pm at the main hall.\n\nWe compete in Division 3 of the regional league and enter selected weekend tournaments. Selection is based on attendance, attitude, and match performance.",
       sortOrder: 0,
-      members: {
-        create: [
-          {
-            name: "Alex Morgan",
-            role: "COACH",
-            position: "Head Coach",
-            photoUrl: teamAvatar("Alex Morgan"),
-            sortOrder: 0,
-          },
-          {
-            name: "James Patel",
-            role: "COACH",
-            position: "Assistant Coach",
-            photoUrl: teamAvatar("James Patel"),
-            sortOrder: 1,
-          },
-          {
-            name: "Mike Chen",
-            role: "PLAYER",
-            position: "Outside Hitter",
-            photoUrl: teamAvatar("Mike Chen"),
-            sortOrder: 0,
-          },
-          {
-            name: "Liam Davis",
-            role: "PLAYER",
-            position: "Setter",
-            photoUrl: teamAvatar("Liam Davis"),
-            sortOrder: 1,
-          },
-          {
-            name: "Tom Hughes",
-            role: "PLAYER",
-            position: "Opposite",
-            photoUrl: teamAvatar("Tom Hughes"),
-            sortOrder: 2,
-          },
-          {
-            name: "Sophie Taylor",
-            role: "PLAYER",
-            position: "Middle Blocker",
-            photoUrl: teamAvatar("Sophie Taylor"),
-            sortOrder: 3,
-          },
-          {
-            name: "Priya Sharma",
-            role: "PLAYER",
-            position: "Libero",
-            photoUrl: teamAvatar("Priya Sharma"),
-            sortOrder: 4,
-          },
-        ],
-      },
     },
   });
 
@@ -733,57 +778,12 @@ async function main() {
     data: {
       name: "Women's 1st Team",
       level: "Regional league",
+      trainingTeamKey: "DIV3_WOMENS",
       description:
         "A competitive women's side focused on league play, tournament weekends, and pushing for promotion.",
       details:
         "Training: Mondays & Wednesdays, 7:00–9:00pm.\n\nWe play in the regional women's league and target promotion this season. New players are welcome at open trials in September.",
       sortOrder: 1,
-      members: {
-        create: [
-          {
-            name: "Sarah Jones",
-            role: "COACH",
-            position: "Head Coach",
-            photoUrl: teamAvatar("Sarah Jones"),
-            sortOrder: 0,
-          },
-          {
-            name: "Emma Williams",
-            role: "COACH",
-            position: "Assistant Coach",
-            photoUrl: teamAvatar("Emma Williams"),
-            sortOrder: 1,
-          },
-          {
-            name: "Olivia Brown",
-            role: "PLAYER",
-            position: "Outside Hitter",
-            photoUrl: teamAvatar("Olivia Brown"),
-            sortOrder: 0,
-          },
-          {
-            name: "Chloe Reid",
-            role: "PLAYER",
-            position: "Setter",
-            photoUrl: teamAvatar("Chloe Reid"),
-            sortOrder: 1,
-          },
-          {
-            name: "Hannah Clarke",
-            role: "PLAYER",
-            position: "Middle Blocker",
-            photoUrl: teamAvatar("Hannah Clarke"),
-            sortOrder: 2,
-          },
-          {
-            name: "Grace Miller",
-            role: "PLAYER",
-            position: "Libero",
-            photoUrl: teamAvatar("Grace Miller"),
-            sortOrder: 3,
-          },
-        ],
-      },
     },
   });
 
@@ -791,50 +791,12 @@ async function main() {
     data: {
       name: "Development Squad",
       level: "All levels welcome",
+      trainingTeamKey: "DIV4_MENS",
       description:
         "For players building confidence and skills — ideal if you are new to the club or working toward league selection.",
       details:
         "Sessions run every Friday, 6:30–8:00pm.\n\nFocused on fundamentals, game understanding, and match play in a supportive environment. No league commitment required.",
       sortOrder: 2,
-      members: {
-        create: [
-          {
-            name: "James Patel",
-            role: "COACH",
-            position: "Lead Coach",
-            photoUrl: teamAvatar("James Patel"),
-            sortOrder: 0,
-          },
-          {
-            name: "Noah Brooks",
-            role: "PLAYER",
-            position: "Outside Hitter",
-            photoUrl: teamAvatar("Noah Brooks"),
-            sortOrder: 0,
-          },
-          {
-            name: "Ella Wright",
-            role: "PLAYER",
-            position: "Setter",
-            photoUrl: teamAvatar("Ella Wright"),
-            sortOrder: 1,
-          },
-          {
-            name: "Ryan Cooper",
-            role: "PLAYER",
-            position: "Middle Blocker",
-            photoUrl: teamAvatar("Ryan Cooper"),
-            sortOrder: 2,
-          },
-          {
-            name: "Mia Foster",
-            role: "PLAYER",
-            position: "Libero",
-            photoUrl: teamAvatar("Mia Foster"),
-            sortOrder: 3,
-          },
-        ],
-      },
     },
   });
 
@@ -874,6 +836,15 @@ async function main() {
       },
     },
   });
+
+  const linkedClubTeams = await prisma.clubTeam.findMany({
+    where: { trainingTeamKey: { not: null } },
+    select: { id: true },
+  });
+
+  for (const team of linkedClubTeams) {
+    await syncClubTeamFromRoster(team.id);
+  }
 
   await prisma.product.deleteMany();
   await prisma.product.createMany({
@@ -939,6 +910,7 @@ async function main() {
   console.log("Seed complete.");
   console.log(`Admin: admin@jackalsvc.com / password123`);
   console.log(`Member: member@jackalsvc.com / password123 (no membership — test checkout)`);
+  console.log(`Overdue demo: mike.chen@jackalsvc.com / password123 (3 payments, 1st due 30 days ago)`);
   console.log(`Register VLY: VLY123 (Viktoriia) · VLY122 (Elijel) — not yet linked`);
   console.log(`Test register VLY: VLY10999 (New Member Test — not yet linked to an account)`);
 }

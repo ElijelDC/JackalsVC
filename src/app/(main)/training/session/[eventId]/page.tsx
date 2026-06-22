@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { auth } from "@/auth";
 import { TrainingSessionDetailView } from "@/components/training/TrainingSessionDetailView";
-import { hasAttendanceAccess } from "@/lib/membership";
+import { getAttendanceAccessInfo } from "@/lib/membership";
 import { getTrainingSessionDetail } from "@/lib/training-attendance";
 import { formatTrainingMonthParam } from "@/lib/training-teams-config";
 
@@ -36,13 +36,14 @@ export default async function TrainingSessionPage({
 
   const { eventId } = await params;
   const detail = await getTrainingSessionDetail(eventId, session.user.id);
-  const canAccessAttendance = await hasAttendanceAccess(session.user);
+  const attendanceAccess = await getAttendanceAccessInfo(session.user);
   const monthParam = formatTrainingMonthParam(new Date(detail.event.startDate));
 
   return (
     <TrainingSessionDetailView
       detail={detail}
-      canAccessAttendance={canAccessAttendance}
+      canAccessAttendance={attendanceAccess.canAccess}
+      attendanceBlockReason={attendanceAccess.blockReason}
       monthParam={monthParam}
     />
   );

@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
 } from "react";
 
 export type CartItem = {
@@ -36,24 +37,27 @@ function itemKey(productId: string, size?: string) {
   return `${productId}:${size ?? "default"}`;
 }
 
+function readStoredCart(): CartItem[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    return stored ? JSON.parse(stored) : [];
+  } catch {
+    return [];
+  }
+}
+
 export function CartProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>([]);
-  const [hydrated, setHydrated] = useState(false);
+  const [items, setItems] = useState<CartItem[]>(readStoredCart);
+  const hydrated = useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false,
+  );
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) setItems(JSON.parse(stored));
-    } catch {
-      /* ignore */
-    }
-    setHydrated(true);
-  }, []);
-
-  useEffect(() => {
-    if (hydrated) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-    }
+    if (!hydrated) return;
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, hydrated]);
 
   const addItem = useCallback(

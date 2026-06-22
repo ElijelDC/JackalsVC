@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { auth } from "@/auth";
 import { MatchDetailView } from "@/components/matches/MatchDetailView";
-import { hasAttendanceAccess } from "@/lib/membership";
+import { getAttendanceAccessInfo } from "@/lib/membership";
 import { getMatchDetail } from "@/lib/match-attendance";
 import { formatTrainingMonthParam } from "@/lib/training-teams-config";
 
@@ -36,13 +36,14 @@ export default async function MatchDetailPage({
 
   const { id } = await params;
   const detail = await getMatchDetail(id, session.user.id);
-  const canAccessAttendance = await hasAttendanceAccess(session.user);
+  const attendanceAccess = await getAttendanceAccessInfo(session.user);
   const monthParam = formatTrainingMonthParam(new Date(detail.match.matchStart));
 
   return (
     <MatchDetailView
       detail={detail}
-      canAccessAttendance={canAccessAttendance}
+      canAccessAttendance={attendanceAccess.canAccess}
+      attendanceBlockReason={attendanceAccess.blockReason}
       monthParam={monthParam}
     />
   );

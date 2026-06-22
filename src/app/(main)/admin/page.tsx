@@ -9,6 +9,7 @@ import {
   Bell,
   Calendar,
   Camera,
+  ClipboardList,
   CreditCard,
   Dumbbell,
   PartyPopper,
@@ -31,18 +32,25 @@ const SECTIONS = [
     countKey: "users" as const,
   },
   {
+    href: "/admin/roster",
+    title: "Registered Members",
+    description: "VLY numbers, names, and squads",
+    icon: ClipboardList,
+    countKey: "roster" as const,
+  },
+  {
+    href: "/admin/subscriptions",
+    title: "Subscriptions",
+    description: "Grant and manage memberships",
+    icon: UserCheck,
+    countKey: "members" as const,
+  },
+  {
     href: "/admin/membership",
     title: "Membership plans",
     description: "Pricing and features",
     icon: CreditCard,
     countKey: "plans" as const,
-  },
-  {
-    href: "/admin/members",
-    title: "Member subscriptions",
-    description: "Active memberships",
-    icon: UserCheck,
-    countKey: "members" as const,
   },
   {
     href: "/admin/training",
@@ -121,6 +129,7 @@ export default async function AdminPage() {
     users,
     plans,
     members,
+    roster,
     training,
     matches,
     funSessions,
@@ -135,6 +144,7 @@ export default async function AdminPage() {
     prisma.user.count(),
     prisma.membershipPlan.count(),
     prisma.membership.count(),
+    prisma.clubMember.count(),
     prisma.trainingSession.count({
       where: { category: "WEEKLY" },
     }),
@@ -155,6 +165,7 @@ export default async function AdminPage() {
     users,
     plans,
     members,
+    roster,
     training,
     matches,
     funSessions,
@@ -180,13 +191,17 @@ export default async function AdminPage() {
               section.href !== "/admin/orders"),
         ).map(({ href, title, description, icon: Icon, countKey }) => (
           <Link key={href} href={href}>
-            <Card className="h-full transition-colors hover:border-jackals-red/40">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center bg-jackals-red/15 text-jackals-red-light">
-                <Icon className="h-5 w-5" />
+            <Card className="h-full p-4 transition-colors hover:border-jackals-red/40 sm:p-6">
+              <div className="mb-2 flex h-8 w-8 items-center justify-center bg-jackals-red/15 text-jackals-red-light sm:mb-3 sm:h-10 sm:w-10">
+                <Icon className="h-4 w-4 sm:h-5 sm:w-5" />
               </div>
-              <CardTitle>{title}</CardTitle>
-              <CardDescription className="mt-2">{description}</CardDescription>
-              <p className="mt-4 text-sm font-medium text-jackals-red-light">
+              <CardTitle className="line-clamp-2 text-sm leading-snug sm:text-lg">
+                {title}
+              </CardTitle>
+              <CardDescription className="mt-1 line-clamp-2 text-xs sm:mt-2 sm:text-sm">
+                {description}
+              </CardDescription>
+              <p className="mt-2 text-xs font-medium text-jackals-red-light sm:mt-4 sm:text-sm">
                 {counts[countKey]} record{counts[countKey] !== 1 ? "s" : ""} →
               </p>
             </Card>

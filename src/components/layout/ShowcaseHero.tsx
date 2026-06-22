@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ReactNode } from "react";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 import { cn } from "@/lib/utils";
@@ -20,7 +21,7 @@ export function ShowcaseHero({
 }: {
   title: string;
   highlight: string;
-  description: string;
+  description: ReactNode;
   stats?: ShowcaseStat[];
   action?: React.ReactNode;
   className?: string;

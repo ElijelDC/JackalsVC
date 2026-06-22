@@ -3,9 +3,7 @@ import { ArrowLeft, CalendarDays, ChevronRight, Clock, MapPin, User } from "luci
 import type { EventListItem } from "@/lib/event-filters";
 import { getBrowseEventTypeLabel } from "@/lib/events-config";
 import { getEventDisplayStyle, formatEventDateTime } from "@/lib/event-display";
-import { getEventTypeLabel } from "@/lib/event-filters";
 import { isOpenReclubEvent, usesPaidJoinFlow, usesTournamentJoinFlow } from "@/lib/event-reclub";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";

@@ -15,6 +15,9 @@
 
 # next.js
 /.next/
+
+# pdf generation temp
+.tmp/
 /out/
 
 # production
@@ -48,3 +51,7 @@ next-env.d.ts
 
 /public/uploads/payment-proofs/*
 !/public/uploads/payment-proofs/.gitkeep
+/public/uploads/gallery/*
+!/public/uploads/gallery/.gitkeep
+/public/uploads/achievements/*
+!/public/uploads/achievements/.gitkeep

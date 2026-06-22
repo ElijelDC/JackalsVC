@@ -69,7 +69,10 @@ export function GalleryGrid({ albums }: { albums: GalleryAlbumItem[] }) {
           </div>
         </AnimateIn>
       ) : (
-        <StaggerIn className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" stagger={80}>
+        <StaggerIn
+          className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3"
+          stagger={80}
+        >
           {filtered.map((album) => (
             <GalleryAlbumCard key={album.id} album={album} />
           ))}

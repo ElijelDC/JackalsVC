@@ -1,5 +1,5 @@
 import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
-import { hasAttendanceAccess } from "@/lib/membership";
+import { getAttendanceAccessInfo } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import {
   canRespondToTrainingSession,
@@ -25,7 +25,16 @@ async function validateTrainingEventAccess(userId: string, eventId: string) {
   if (event.type !== "TRAINING") {
     return { error: jsonError("Attendance is only available for training sessions", 400) };
   }
-  if (!(await hasAttendanceAccess({ id: userId }))) {
+  const attendanceAccess = await getAttendanceAccessInfo({ id: userId });
+  if (!attendanceAccess.canAccess) {
+    if (attendanceAccess.blockReason === "overdue") {
+      return {
+        error: jsonError(
+          "Your membership payment is overdue. Pay outstanding instalments to respond to training.",
+          403,
+        ),
+      };
+    }
     return { error: jsonError("Active membership is required", 403) };
   }
   if (

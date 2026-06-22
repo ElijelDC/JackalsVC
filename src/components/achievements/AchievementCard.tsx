@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Award } from "lucide-react";
 import { resolveAchievementType } from "@/lib/achievements";
+import { normalizeAchievementUrl } from "@/lib/public-paths";
 import { cn } from "@/lib/utils";
 
 export type AchievementItem = {
@@ -26,6 +27,9 @@ export function AchievementCard({
   index: number;
 }) {
   const imageFirst = index % 2 === 0;
+  const imageUrl = achievement.imageUrl
+    ? normalizeAchievementUrl(achievement.imageUrl)
+    : null;
 
   return (
     <article className="motion-hover-lift group relative overflow-hidden border border-white/10 bg-jackals-surface/90 shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition-all duration-300 hover:border-jackals-red/40 hover:shadow-[0_24px_70px_rgba(232,34,42,0.15)]">
@@ -41,13 +45,13 @@ export function AchievementCard({
       <div
         className={cn(
           "relative grid gap-0 lg:grid-cols-2 lg:items-stretch",
-          !imageFirst && achievement.imageUrl && "lg:[&>*:first-child]:order-2",
+          !imageFirst && imageUrl && "lg:[&>*:first-child]:order-2",
         )}
       >
-        {achievement.imageUrl && (
+        {imageUrl && (
           <div className="relative min-h-[16rem] overflow-hidden bg-black sm:min-h-[20rem] lg:min-h-full">
             <Image
-              src={achievement.imageUrl}
+              src={imageUrl}
               alt={achievement.title}
               fill
               className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
@@ -65,7 +69,7 @@ export function AchievementCard({
         )}
 
         <div className="relative flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-          {!achievement.imageUrl && (
+          {!imageUrl && (
             <div className="mb-4 inline-flex w-fit items-center gap-2 border border-jackals-red/30 bg-jackals-red/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
               <Award className="h-4 w-4" />
               {getTypeLabel(achievement)}

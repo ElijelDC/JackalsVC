@@ -34,22 +34,84 @@ export function isSkillsClinicEvent(event: {
   return /clinic|workshop/i.test(`${event.title} ${event.description ?? ""}`);
 }
 
+export const MANUAL_EVENT_TYPES = [
+  "TOURNAMENT",
+  "SKILLS_CLINIC",
+  "SOCIAL",
+] as const;
+
+export type ManualEventType = (typeof MANUAL_EVENT_TYPES)[number];
+
+export const MANUAL_EVENT_TYPE_LABELS: Record<ManualEventType, string> = {
+  TOURNAMENT: "Tournament",
+  SKILLS_CLINIC: "Skills Clinics",
+  SOCIAL: "Social Activities",
+};
+
+export function getManualEventTypeLabel(type: string) {
+  return (
+    MANUAL_EVENT_TYPE_LABELS[type as ManualEventType] ??
+    type.replaceAll("_", " ").toLowerCase()
+  );
+}
+
+export function normalizeManualEventType(event: {
+  type: string;
+  title: string;
+  description?: string | null;
+}): ManualEventType {
+  if (event.type === "MEETING") {
+    return "SOCIAL";
+  }
+
+  if (
+    event.type === "SOCIAL" &&
+    isSkillsClinicEvent({
+      title: event.title,
+      description: event.description ?? null,
+    })
+  ) {
+    return "SKILLS_CLINIC";
+  }
+
+  if (MANUAL_EVENT_TYPES.includes(event.type as ManualEventType)) {
+    return event.type as ManualEventType;
+  }
+
+  return "TOURNAMENT";
+}
+
 export function splitSocialCalendarEvents(events: EventsCalendarEvent[]) {
-  const skillsClinics = events.filter(isSkillsClinicEvent);
-  const socials = events.filter((event) => !isSkillsClinicEvent(event));
+  const skillsClinics = events.filter(
+    (event) =>
+      event.type === "SKILLS_CLINIC" ||
+      (event.type === "SOCIAL" && isSkillsClinicEvent(event)),
+  );
+  const socials = events.filter(
+    (event) => event.type === "SOCIAL" && !isSkillsClinicEvent(event),
+  );
   return { skillsClinics, socials };
 }
 
 export function getSocialCalendarEventLabel(event: {
+  type?: string;
   title: string;
   description?: string | null;
 }) {
+  if (event.type === "SKILLS_CLINIC") {
+    return MANUAL_EVENT_TYPE_LABELS.SKILLS_CLINIC;
+  }
+
+  if (event.type === "SOCIAL") {
+    return MANUAL_EVENT_TYPE_LABELS.SOCIAL;
+  }
+
   return isSkillsClinicEvent({
     title: event.title,
     description: event.description ?? null,
   })
-    ? "Skills clinic"
-    : "Social activity";
+    ? MANUAL_EVENT_TYPE_LABELS.SKILLS_CLINIC
+    : MANUAL_EVENT_TYPE_LABELS.SOCIAL;
 }
 
 export function getBrowseEventTypeLabel(event: {
@@ -57,15 +119,14 @@ export function getBrowseEventTypeLabel(event: {
   title: string;
   description?: string | null;
 }) {
-  if (event.type === "SOCIAL") {
+  if (event.type === "SKILLS_CLINIC" || event.type === "SOCIAL") {
     return getSocialCalendarEventLabel(event);
   }
 
   const labels: Record<string, string> = {
-    TOURNAMENT: "Tournament",
+    TOURNAMENT: MANUAL_EVENT_TYPE_LABELS.TOURNAMENT,
     FUN: "Fun session",
     TRAINING: "Training",
-    MEETING: "Meeting",
   };
 
   return labels[event.type] ?? event.type;

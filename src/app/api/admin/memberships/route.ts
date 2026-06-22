@@ -11,11 +11,30 @@ export async function GET() {
     include: {
       user: { select: { id: true, name: true, email: true } },
       plan: { select: { id: true, name: true, price: true } },
+      payments: {
+        select: {
+          status: true,
+          dueDate: true,
+          amount: true,
+          installmentNumber: true,
+        },
+        orderBy: { dueDate: "asc" },
+      },
     },
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ memberships });
+  return NextResponse.json({
+    memberships: memberships.map((membership) => ({
+      ...membership,
+      startDate: membership.startDate.toISOString(),
+      endDate: membership.endDate.toISOString(),
+      payments: membership.payments.map((payment) => ({
+        ...payment,
+        dueDate: payment.dueDate?.toISOString() ?? null,
+      })),
+    })),
+  });
 }
 
 export async function POST(request: Request) {

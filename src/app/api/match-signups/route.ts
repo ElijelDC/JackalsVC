@@ -1,5 +1,5 @@
 import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
-import { hasAttendanceAccess } from "@/lib/membership";
+import { getAttendanceAccessInfo } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import {
   canRespondToTrainingSession,
@@ -13,7 +13,16 @@ async function validateMatchAccess(userId: string, matchId: string) {
   const match = await prisma.teamMatch.findUnique({ where: { id: matchId } });
 
   if (!match) return { error: jsonError("Match not found", 404) };
-  if (!(await hasAttendanceAccess({ id: userId }))) {
+  const attendanceAccess = await getAttendanceAccessInfo({ id: userId });
+  if (!attendanceAccess.canAccess) {
+    if (attendanceAccess.blockReason === "overdue") {
+      return {
+        error: jsonError(
+          "Your membership payment is overdue. Pay outstanding instalments to respond to matches.",
+          403,
+        ),
+      };
+    }
     return { error: jsonError("Active membership is required", 403) };
   }
   if (!(await userCanSignUpForTrainingEvent(userId, match.trainingTeamKey))) {

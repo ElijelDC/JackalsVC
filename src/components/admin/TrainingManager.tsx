@@ -1,10 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
+import { SquadTeamFilter } from "@/components/admin/SquadTeamFilter";
+import {
+  AdminSearchBar,
+  matchesAdminSearch,
+} from "@/components/admin/AdminSearchBar";
+import { Button } from "@/components/ui/Button";
 import { Checkbox, Input, Label, Select } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import {
@@ -14,7 +21,7 @@ import {
   SESSION_CATEGORIES,
   type SessionManagerConfig,
 } from "@/lib/training-utils";
-import { TRAINING_TEAMS } from "@/lib/training-teams-config";
+import type { TrainingTeam } from "@/lib/training-teams-config";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import { DAYS_OF_WEEK } from "@/lib/utils";
 
@@ -115,12 +122,18 @@ function toFormState(session: TrainingSession) {
 export function TrainingManager({
   initialSessions,
   config,
+  trainingSquads = [],
 }: {
   initialSessions: TrainingSession[];
   config: SessionManagerConfig;
+  trainingSquads?: TrainingTeam[];
 }) {
   const router = useRouter();
-  const [sessions, setSessions] = useState(initialSessions);
+  const normalizedInitialSessions = useMemo(
+    () => initialSessions.map(normalizeSession),
+    [initialSessions],
+  );
+  const [sessions, setSessions] = useSyncedListState(normalizedInitialSessions);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(createEmptyForm);
   const [loading, setLoading] = useState(false);
@@ -128,6 +141,33 @@ export function TrainingManager({
   const [error, setError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [teamFilter, setTeamFilter] = useState("");
+  const [search, setSearch] = useState("");
+
+  const showTeamFilter = config.category === SESSION_CATEGORIES.WEEKLY;
+
+  const squadNameByKey = useMemo(
+    () => new Map(trainingSquads.map((squad) => [squad.key, squad.name])),
+    [trainingSquads],
+  );
+
+  const filteredSessions = useMemo(() => {
+    return sessions.filter((session) => {
+      if (showTeamFilter && teamFilter && session.trainingTeamKey !== teamFilter) {
+        return false;
+      }
+
+      return matchesAdminSearch(
+        search,
+        session.title,
+        session.location,
+        session.level,
+        session.coach ?? "",
+        session.description ?? "",
+        squadNameByKey.get(session.trainingTeamKey ?? "") ?? "",
+      );
+    });
+  }, [sessions, showTeamFilter, teamFilter, search, squadNameByKey]);
 
   const resetForm = () => {
     setForm(createEmptyForm());
@@ -140,13 +180,15 @@ export function TrainingManager({
       config.apiBasePath,
     );
     if (result.ok) setSessions(result.data.sessions.map(normalizeSession));
-  }, [config.apiBasePath]);
+  }, [config.apiBasePath, setSessions]);
 
   const startEdit = (session: TrainingSession) => {
-    setEditingId(session.id);
-    setForm(toFormState(session));
-    setError(null);
-    setMessage(null);
+    beginAdminEdit(() => {
+      setEditingId(session.id);
+      setForm(toFormState(session));
+      setError(null);
+      setMessage(null);
+    });
   };
 
   const buildPayload = () => {
@@ -239,16 +281,14 @@ export function TrainingManager({
     router.refresh();
   };
 
-  useEffect(() => {
-    setSessions(initialSessions.map(normalizeSession));
-  }, [initialSessions]);
-
   return (
     <AdminSection
       title={config.sectionTitle}
       description={config.sectionDescription}
     >
       <AdminFormCard
+        collapsible
+        openTriggerLabel="Add new session"
         title={editingId ? "Edit session" : "Add new session"}
         error={error}
         message={message}
@@ -277,7 +317,7 @@ export function TrainingManager({
                 id="trainingTeamKey"
                 value={form.trainingTeamKey}
                 onChange={(e) => {
-                  const team = TRAINING_TEAMS.find(
+                  const team = trainingSquads.find(
                     (entry) => entry.key === e.target.value,
                   );
                   setForm((prev) => ({
@@ -292,9 +332,9 @@ export function TrainingManager({
                 }}
               >
                 <option value="">Select squad</option>
-                {TRAINING_TEAMS.map((team) => (
+                {trainingSquads.map((team) => (
                   <option key={team.key} value={team.key}>
-                    {team.name} ({team.dayLabel})
+                    {team.name}
                   </option>
                 ))}
               </Select>
@@ -543,17 +583,60 @@ export function TrainingManager({
             {listError}
           </p>
         )}
-        <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
-          Current sessions ({sessions.length})
-        </h3>
-        {sessions.length === 0 ? (
-          <p className="text-sm text-zinc-400">{config.emptyListMessage}</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
+            Current sessions ({filteredSessions.length}
+            {search.trim() || teamFilter
+              ? ` of ${sessions.length}`
+              : ""})
+          </h3>
+          <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:items-end">
+            <div className="w-full sm:max-w-xs">
+              <AdminSearchBar
+                id="training-search"
+                showLabel
+                value={search}
+                onChange={setSearch}
+                placeholder="Title, location, coach…"
+              />
+            </div>
+            {showTeamFilter && (
+              <SquadTeamFilter
+                id="training-team-filter"
+                value={teamFilter}
+                onChange={setTeamFilter}
+                squads={trainingSquads}
+                className="w-full sm:max-w-xs"
+              />
+            )}
+          </div>
+        </div>
+        {teamFilter && (
+          <div className="flex justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => setTeamFilter("")}
+            >
+              Clear team filter
+            </Button>
+          </div>
+        )}
+        {filteredSessions.length === 0 ? (
+          <p className="text-sm text-zinc-400">
+            {search.trim()
+              ? "No sessions match your search."
+              : teamFilter
+                ? "No training sessions for this team."
+                : config.emptyListMessage}
+          </p>
         ) : (
-          sessions.map((session) => (
+          filteredSessions.map((session) => (
             <AdminListItem
               key={session.id}
               title={session.title}
-              subtitle={`${formatRecurrenceLabel(
+              subtitle={`${session.trainingTeamKey ? `${squadNameByKey.get(session.trainingTeamKey) ?? session.trainingTeamKey} · ` : ""}${formatRecurrenceLabel(
                 {
                   recurring: session.recurring,
                   dayOfWeek: session.dayOfWeek,
