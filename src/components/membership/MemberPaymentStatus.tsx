@@ -2,6 +2,7 @@
 
 import { format } from "date-fns";
 import { CheckCircle2, Clock3, CreditCard } from "lucide-react";
+import { PaymentDeferralRequest } from "@/components/membership/PaymentDeferralRequest";
 import { PaymentProofUpload } from "@/components/payments/PaymentProofUpload";
 import { IbanTransferDetails } from "@/components/payments/IbanTransferDetails";
 import { Badge } from "@/components/ui/Badge";
@@ -32,6 +33,10 @@ type MembershipInfo = {
   endDate: string;
   scheduleLabel: string;
   paymentOverdueOverride?: boolean;
+  paymentOverdueOverrideUntil?: string | null;
+  paymentDeferralExcuse?: string | null;
+  paymentDeferralDueDate?: string | null;
+  paymentDeferralRequestedAt?: string | null;
 };
 
 type ClubBank = {
@@ -86,7 +91,13 @@ export function MemberPaymentStatus({
   clubBank: ClubBank;
   paymentAccess?: MembershipPaymentAccess | null;
 }) {
-  const nextPayment = payments.find((payment) => payment.status === "PENDING");
+  const nextPayment = payments
+    .filter((payment) => payment.status === "PENDING")
+    .sort((a, b) => {
+      const aDue = a.dueDate ? new Date(a.dueDate).getTime() : Number.POSITIVE_INFINITY;
+      const bDue = b.dueDate ? new Date(b.dueDate).getTime() : Number.POSITIVE_INFINITY;
+      return aDue - bDue;
+    })[0];
   const paidCount = payments.filter((payment) => payment.status === "COMPLETED").length;
   const isActive = membership.status === "ACTIVE";
   const overdueInstallmentNumber = paymentAccess?.overduePayment?.installmentNumber ?? null;
@@ -112,6 +123,12 @@ export function MemberPaymentStatus({
               {paymentAccess?.hasOverride && (
                 <Badge className="ml-2 border-blue-500/30 bg-blue-500/10 text-blue-300">
                   Admin override
+                  {paymentAccess.overrideUntil && (
+                    <>
+                      {" "}
+                      until {format(paymentAccess.overrideUntil, "d MMM yyyy")}
+                    </>
+                  )}
                 </Badge>
               )}
             </p>
@@ -139,6 +156,15 @@ export function MemberPaymentStatus({
           </div>
         </div>
       </Card>
+
+      {(paymentAccess?.isPastDue || paymentAccess?.isOverdue) &&
+        !paymentAccess.hasOverride && (
+          <PaymentDeferralRequest
+            existingExcuse={membership.paymentDeferralExcuse ?? null}
+            existingDueDate={membership.paymentDeferralDueDate ?? null}
+            existingRequestedAt={membership.paymentDeferralRequestedAt ?? null}
+          />
+        )}
 
       {nextPayment ? (
         <Card className="border-jackals-red/30 py-5">

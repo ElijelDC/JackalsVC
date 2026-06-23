@@ -13,6 +13,8 @@ import {
 } from "@/lib/membership-config";
 import { getClubBankDetails } from "@/lib/payments";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
+import { getCoachProfile } from "@/lib/coach-auth";
+import { isCoachMembershipStatus } from "@/lib/membership-status";
 import { prisma } from "@/lib/prisma";
 import { parseJsonArray } from "@/lib/utils";
 
@@ -42,6 +44,14 @@ export default async function MembershipPage() {
   ]);
 
   if (membership) {
+    if (isCoachMembershipStatus(membership.status)) {
+      const coach = await getCoachProfile(session.user.id);
+      if (coach?.isPaidCoach) {
+        redirect("/payments");
+      }
+      redirect("/dashboard");
+    }
+
     const payments = await prisma.payment.findMany({
       where: { membershipId: membership.id },
       orderBy: [{ dueDate: "asc" }, { installmentNumber: "asc" }, { createdAt: "asc" }],
@@ -51,6 +61,7 @@ export default async function MembershipPage() {
       membershipStatus: membership.status,
       paymentSchedule: membership.paymentSchedule,
       paymentOverdueOverride: membership.paymentOverdueOverride,
+      paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil,
       payments,
     });
 
@@ -73,6 +84,13 @@ export default async function MembershipPage() {
               membership.paymentSchedule as PaymentSchedule,
             ),
             paymentOverdueOverride: membership.paymentOverdueOverride,
+            paymentOverdueOverrideUntil:
+              membership.paymentOverdueOverrideUntil?.toISOString() ?? null,
+            paymentDeferralExcuse: membership.paymentDeferralExcuse,
+            paymentDeferralDueDate:
+              membership.paymentDeferralDueDate?.toISOString() ?? null,
+            paymentDeferralRequestedAt:
+              membership.paymentDeferralRequestedAt?.toISOString() ?? null,
           }}
           paymentAccess={paymentAccess}
           payments={payments.map((payment) => ({

@@ -58,6 +58,7 @@ export default async function MatchesPage({
         location: match.location,
         warmUpTime: match.warmUpTime.toISOString(),
         matchStart: match.matchStart.toISOString(),
+        cancelled: match.cancelled,
       }))}
       attendanceByMatchId={Object.fromEntries(attendanceMap)}
     />

@@ -54,15 +54,33 @@ export async function PUT(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const { response } = await requireAdmin();
   if (response) return response;
 
   const { id } = await params;
+  const { searchParams } = new URL(request.url);
+  const action = searchParams.get("action");
 
   try {
+    if (action === "cancel") {
+      await prisma.teamMatch.update({
+        where: { id },
+        data: { cancelled: true },
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    if (action === "restore") {
+      await prisma.teamMatch.update({
+        where: { id },
+        data: { cancelled: false },
+      });
+      return NextResponse.json({ success: true });
+    }
+
     await prisma.teamMatch.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch {

@@ -9,7 +9,15 @@ import { useEffect, useRef, useState } from "react";
 import { MemberAvatar } from "@/components/member/MemberAvatar";
 import { cn } from "@/lib/utils";
 
-export function UserMenu({ session }: { session: Session }) {
+export function UserMenu({
+  session,
+  variant = "desktop",
+  onNavigate,
+}: {
+  session: Session;
+  variant?: "desktop" | "mobile";
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -20,6 +28,10 @@ export function UserMenu({ session }: { session: Session }) {
   const profileImageUrl = session.user.profileImageUrl;
 
   useEffect(() => {
+    if (variant !== "desktop") {
+      return;
+    }
+
     function handleClickOutside(event: MouseEvent) {
       if (
         containerRef.current &&
@@ -31,7 +43,40 @@ export function UserMenu({ session }: { session: Session }) {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [variant]);
+
+  if (variant === "mobile") {
+    return (
+      <>
+        <Link
+          href="/profile"
+          onClick={onNavigate}
+          className={cn(
+            "flex min-h-11 items-center gap-2 px-3 py-3 text-sm font-medium",
+            pathname.startsWith("/profile")
+              ? "bg-jackals-red/10 text-jackals-red-light"
+              : "text-zinc-400 active:bg-white/5",
+          )}
+        >
+          <MemberAvatar
+            name={session.user.name ?? displayName}
+            imageUrl={profileImageUrl}
+            size="sm"
+            className="border-0"
+          />
+          Profile
+        </Link>
+        <button
+          type="button"
+          onClick={() => signOut({ callbackUrl: "/" })}
+          className="flex min-h-11 w-full items-center gap-2 px-3 py-3 text-left text-sm font-medium text-zinc-500 active:bg-white/5"
+        >
+          <LogOut className="h-4 w-4 shrink-0" />
+          Sign out
+        </button>
+      </>
+    );
+  }
 
   return (
     <div ref={containerRef} className="relative">

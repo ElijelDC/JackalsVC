@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { ClubRosterManager } from "@/components/admin/ClubRosterManager";
+import { isCoachPaymentType } from "@/lib/coach-payment-type";
 import { getTrainingSquads } from "@/lib/training-squads";
 
 export const metadata = { title: "Admin · Registered Members" };
@@ -35,7 +36,14 @@ export default async function AdminRosterPage() {
 
   return (
     <ClubRosterManager
-      initialClubMembers={clubMembers}
+      initialClubMembers={clubMembers.map((member) => ({
+        ...member,
+        coachPaymentType: isCoachPaymentType(member.coachPaymentType)
+          ? member.coachPaymentType
+          : member.rosterRole === "COACH"
+            ? "PAID"
+            : null,
+      }))}
       trainingTeams={trainingTeams}
       subscriptionByUserId={subscriptionByUserId}
     />

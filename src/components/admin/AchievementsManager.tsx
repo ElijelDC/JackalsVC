@@ -10,8 +10,7 @@ import {
   AdminSearchBar,
   matchesAdminSearch,
 } from "@/components/admin/AdminSearchBar";
-import { Input, Label } from "@/components/ui/Input";
-import { Select, Textarea } from "@/components/ui/InputFields";
+import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 
 type AchievementItem = {

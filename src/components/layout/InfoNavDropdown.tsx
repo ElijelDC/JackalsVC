@@ -10,21 +10,41 @@ import {
   visibleMoreNavItems,
 } from "@/lib/navigation";
 
+function coachMoreNavOptions(
+  isCoach: boolean,
+  isPaidCoach: boolean,
+  mobileMemberMenu = false,
+) {
+  if (!isCoach) {
+    return mobileMemberMenu ? ({ mobileMemberMenu: true } as const) : undefined;
+  }
+
+  return mobileMemberMenu
+    ? ({ mobileMemberMenu: true, isCoach: true, isPaidCoach } as const)
+    : ({ isCoach: true, isPaidCoach } as const);
+}
+
 function InfoNavDropdownMobile({
   pathname,
   onNavigate,
   isLoggedIn = false,
   isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
   isLoggedIn?: boolean;
   isAdmin?: boolean;
+  isCoach?: boolean;
+  isPaidCoach?: boolean;
 }) {
   const mobileMemberMenu = isLoggedIn && !isAdmin;
-  const moreNavOptions = mobileMemberMenu
-    ? ({ mobileMemberMenu: true } as const)
-    : undefined;
+  const moreNavOptions = coachMoreNavOptions(
+    isCoach,
+    isPaidCoach,
+    mobileMemberMenu,
+  );
   const [mobileExpanded, setMobileExpanded] = useState(() =>
     isInfoNavActive(pathname, isLoggedIn, isAdmin, moreNavOptions),
   );
@@ -114,17 +134,27 @@ export function InfoNavDropdown({
   variant = "desktop",
   isLoggedIn = false,
   isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
   variant?: "desktop" | "mobile";
   isLoggedIn?: boolean;
   isAdmin?: boolean;
+  isCoach?: boolean;
+  isPaidCoach?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isActive = isInfoNavActive(pathname, isLoggedIn, isAdmin);
-  const moreItems = visibleMoreNavItems(isLoggedIn, isAdmin);
+  const moreNavOptions = coachMoreNavOptions(isCoach, isPaidCoach);
+  const isActive = isInfoNavActive(
+    pathname,
+    isLoggedIn,
+    isAdmin,
+    moreNavOptions,
+  );
+  const moreItems = visibleMoreNavItems(isLoggedIn, isAdmin, moreNavOptions);
 
   useEffect(() => {
     if (variant !== "desktop") {
@@ -152,6 +182,8 @@ export function InfoNavDropdown({
         onNavigate={onNavigate}
         isLoggedIn={isLoggedIn}
         isAdmin={isAdmin}
+        isCoach={isCoach}
+        isPaidCoach={isPaidCoach}
       />
     );
   }

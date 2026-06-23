@@ -11,12 +11,21 @@ export function MemberMobileQuickNav({
   pathname,
   isLoggedIn,
   isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
 }: {
   pathname: string;
   isLoggedIn: boolean;
   isAdmin?: boolean;
+  isCoach?: boolean;
+  isPaidCoach?: boolean;
 }) {
-  const items = visibleMemberMobileQuickNavItems(isLoggedIn, isAdmin);
+  const items = visibleMemberMobileQuickNavItems(
+    isLoggedIn,
+    isAdmin,
+    isCoach,
+    isPaidCoach,
+  );
 
   if (items.length === 0) {
     return null;
@@ -45,7 +54,13 @@ export function MemberMobileQuickNav({
           >
             <Icon className="h-4 w-4 shrink-0" aria-hidden />
             <span className="max-w-full truncate">
-              {href === "/training" ? "Training" : label}
+              {href === "/training"
+                ? "Training"
+                : href === "/payments"
+                  ? "Payments"
+                  : href === "/events"
+                    ? "Events"
+                    : label}
             </span>
           </Link>
         );

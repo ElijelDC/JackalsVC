@@ -50,6 +50,8 @@ export async function POST(request: Request) {
       name: data.name.trim(),
       trainingTeamKey: data.trainingTeamKey,
       rosterRole: data.rosterRole,
+      coachPaymentType:
+        data.rosterRole === "COACH" ? (data.coachPaymentType ?? "PAID") : null,
       active: data.active ?? true,
     },
   });

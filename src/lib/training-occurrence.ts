@@ -102,6 +102,47 @@ export async function getOccurrenceOverridesMap(sessionId: string) {
   );
 }
 
+export async function resetTrainingOccurrence(
+  trainingSessionId: string,
+  occurrenceDate: Date,
+) {
+  await prisma.trainingOccurrenceException.deleteMany({
+    where: {
+      trainingSessionId,
+      occurrenceDate: startOfOccurrenceDay(occurrenceDate),
+    },
+  });
+}
+
+function parseTime(time: string) {
+  const [hours, minutes] = time.split(":").map(Number);
+  return { hours, minutes };
+}
+
+export function applyTimeToOccurrenceDay(occurrenceDate: Date, time: string) {
+  const { hours, minutes } = parseTime(time);
+  const result = startOfOccurrenceDay(occurrenceDate);
+  result.setHours(hours, minutes, 0, 0);
+  return result;
+}
+
+export async function isTrainingOccurrenceCancelled(
+  trainingSessionId: string,
+  occurrenceDate: Date,
+) {
+  const override = await prisma.trainingOccurrenceException.findUnique({
+    where: {
+      trainingSessionId_occurrenceDate: {
+        trainingSessionId,
+        occurrenceDate: startOfOccurrenceDay(occurrenceDate),
+      },
+    },
+    select: { cancelled: true },
+  });
+
+  return override?.cancelled ?? false;
+}
+
 export async function resolveOccurrenceAttendanceUrl(
   trainingSessionId: string,
   occurrenceDate: Date,

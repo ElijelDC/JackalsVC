@@ -4,8 +4,11 @@ import { notFound } from "next/navigation";
 import {
   normalizeSignupStatus,
   type TrainingAttendanceStatus,
+  type TrainingRosterGroups,
   type TrainingRosterMember,
 } from "@/lib/training-attendance-config";
+import type { CoachReminderStatus } from "@/lib/coach-unanswered-config";
+import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
@@ -21,6 +24,7 @@ export type MatchDetailData = {
     matchStart: string;
     notes: string | null;
     title: string;
+    cancelled: boolean;
   };
   team: {
     key: string;
@@ -28,11 +32,10 @@ export type MatchDetailData = {
     dayLabel: string;
   };
   userStatus: TrainingAttendanceStatus;
-  roster: {
-    attending: TrainingRosterMember[];
-    notAttending: TrainingRosterMember[];
-    unanswered: TrainingRosterMember[];
-  };
+  isCoachUser: boolean;
+  coachReminder: CoachReminderStatus | null;
+  roster: TrainingRosterGroups;
+  coaches: TrainingRosterGroups;
   counts: {
     attending: number;
     notAttending: number;
@@ -98,18 +101,43 @@ export async function getMatchDetail(
     ]),
   );
 
-  const rosterMembers: TrainingRosterMember[] = teammates
+  function groupByStatus(members: TrainingRosterMember[]) {
+    return {
+      attending: members.filter((m) => m.status === "ATTENDING"),
+      notAttending: members.filter((m) => m.status === "NOT_ATTENDING"),
+      unanswered: members.filter((m) => m.status === "UNANSWERED"),
+    };
+  }
+
+  const linkedMembers = teammates
     .filter((member) => member.user)
     .map((member) => ({
-      userId: member.userId!,
-      name: member.user!.name,
-      status: signupMap.get(member.userId!) ?? "UNANSWERED",
-      isCurrentUser: member.userId === userId,
+      rosterRole: member.rosterRole,
+      member: {
+        userId: member.userId!,
+        name: member.user!.name,
+        status: signupMap.get(member.userId!) ?? "UNANSWERED",
+        isCurrentUser: member.userId === userId,
+      } satisfies TrainingRosterMember,
     }));
 
-  const attending = rosterMembers.filter((m) => m.status === "ATTENDING");
-  const notAttending = rosterMembers.filter((m) => m.status === "NOT_ATTENDING");
-  const unanswered = rosterMembers.filter((m) => m.status === "UNANSWERED");
+  const playerMembers = linkedMembers
+    .filter((entry) => entry.rosterRole !== "COACH")
+    .map((entry) => entry.member);
+
+  const coachMembers = linkedMembers
+    .filter((entry) => entry.rosterRole === "COACH")
+    .map((entry) => entry.member);
+
+  const roster = groupByStatus(playerMembers);
+  const coaches = groupByStatus(coachMembers);
+  const isCoachUser =
+    teammates.find((member) => member.userId === userId)?.rosterRole === "COACH";
+
+  const coachReminder =
+    isCoachUser && roster.unanswered.length > 0
+      ? await getCoachReminderStatus(userId, "match", matchId)
+      : null;
 
   return {
     match: {
@@ -121,15 +149,19 @@ export async function getMatchDetail(
       matchStart: match.matchStart.toISOString(),
       notes: match.notes,
       title: formatMatchTitle(match.opponentName, match.venue),
+      cancelled: match.cancelled,
     },
     team,
     userStatus: signupMap.get(userId) ?? "UNANSWERED",
-    roster: { attending, notAttending, unanswered },
+    isCoachUser,
+    coachReminder,
+    roster,
+    coaches,
     counts: {
-      attending: attending.length,
-      notAttending: notAttending.length,
-      unanswered: unanswered.length,
-      total: rosterMembers.length,
+      attending: roster.attending.length,
+      notAttending: roster.notAttending.length,
+      unanswered: roster.unanswered.length,
+      total: playerMembers.length,
     },
   };
 }

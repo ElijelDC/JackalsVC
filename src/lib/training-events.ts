@@ -100,8 +100,10 @@ function applyOverride(
   defaultStart: Date,
   defaultEnd: Date,
   override: TrainingOccurrenceException,
-): EventOccurrence | null {
-  if (override.cancelled) return null;
+): EventOccurrence {
+  if (override.cancelled) {
+    return buildEventPayload(session, occurrenceDate, defaultStart, defaultEnd);
+  }
 
   return {
     title: override.title ?? session.title,
@@ -137,14 +139,15 @@ export function buildTrainingOccurrences(
     const override = overrides.get(occurrenceDateKey(occurrenceDate));
 
     if (override) {
-      const event = applyOverride(
-        session,
-        occurrenceDate,
-        defaultStart,
-        defaultEnd,
-        override,
-      );
-      return event ? [event] : [];
+      return [
+        applyOverride(
+          session,
+          occurrenceDate,
+          defaultStart,
+          defaultEnd,
+          override,
+        ),
+      ];
     }
 
     return [buildEventPayload(session, occurrenceDate, defaultStart, defaultEnd)];
@@ -166,14 +169,15 @@ export function buildTrainingOccurrences(
     const override = overrides.get(occurrenceDateKey(occurrenceDate));
 
     if (override) {
-      const event = applyOverride(
-        session,
-        occurrenceDate,
-        defaultStart,
-        defaultEnd,
-        override,
+      occurrences.push(
+        applyOverride(
+          session,
+          occurrenceDate,
+          defaultStart,
+          defaultEnd,
+          override,
+        ),
       );
-      if (event) occurrences.push(event);
     } else {
       occurrences.push(
         buildEventPayload(session, occurrenceDate, defaultStart, defaultEnd),
@@ -193,7 +197,13 @@ export async function getNextUpcomingOccurrence(session: TrainingSession) {
 
   return (
     occurrences
-      .filter((occurrence) => occurrence.endDate >= now)
+      .filter((occurrence) => {
+        const override = overrides.get(
+          occurrenceDateKey(occurrence.trainingOccurrenceDate),
+        );
+        if (override?.cancelled) return false;
+        return occurrence.endDate >= now;
+      })
       .sort((a, b) => a.startDate.getTime() - b.startDate.getTime())[0] ?? null
   );
 }

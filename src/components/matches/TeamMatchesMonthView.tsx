@@ -2,23 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format, isPast, isSameMonth, startOfMonth } from "date-fns";
+import { format, isPast } from "date-fns";
 import {
-  ChevronLeft,
-  ChevronRight,
   ChevronRight as RowChevron,
   Clock,
   Lock,
-  RotateCcw,
   Trophy,
   Users,
 } from "lucide-react";
+import { MonthNavigator } from "@/components/calendar/MonthNavigator";
 import {
   TrainingAttendanceStatusBadge,
 } from "@/components/training/TrainingAttendancePicker";
 import { TrainingResponsesLockedBadge } from "@/components/training/TrainingResponsesLocked";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
@@ -35,7 +34,6 @@ import {
 } from "@/lib/training-attendance-config";
 import {
   formatTrainingMonthParam,
-  getAdjacentTrainingMonths,
   type TrainingTeam,
 } from "@/lib/training-teams-config";
 import { cn } from "@/lib/utils";
@@ -47,6 +45,7 @@ export type TeamMatchListItem = {
   location: string;
   warmUpTime: string;
   matchStart: string;
+  cancelled?: boolean;
 };
 
 function MonthProgressBar({
@@ -161,9 +160,7 @@ export function TeamMatchesMonthView({
   attendanceByMatchId: Record<string, TrainingAttendanceStatus>;
 }) {
   const router = useRouter();
-  const { previous, next } = getAdjacentTrainingMonths(month);
   const monthLabel = format(month, "MMMM yyyy");
-  const isCurrentMonth = isSameMonth(month, new Date());
   const now = new Date();
 
   const upcomingMatches = matches.filter(
@@ -173,9 +170,11 @@ export function TeamMatchesMonthView({
     isPast(new Date(match.matchStart)),
   );
   const attendingUpcoming = upcomingMatches.filter(
-    (match) => attendanceByMatchId[match.id] === "ATTENDING",
+    (match) =>
+      !match.cancelled && attendanceByMatchId[match.id] === "ATTENDING",
   ).length;
   const unansweredUpcoming = upcomingMatches.filter((match) => {
+    if (match.cancelled) return false;
     const status = attendanceByMatchId[match.id] ?? "UNANSWERED";
     return (
       status === "UNANSWERED" &&
@@ -183,6 +182,7 @@ export function TeamMatchesMonthView({
     );
   }).length;
   const hasUpcomingNotYetOpen = upcomingMatches.some((match) => {
+    if (match.cancelled) return false;
     const status = attendanceByMatchId[match.id] ?? "UNANSWERED";
     return (
       status === "UNANSWERED" &&
@@ -190,6 +190,7 @@ export function TeamMatchesMonthView({
     );
   });
   const needsResponseCount = upcomingMatches.filter((match) =>
+    !match.cancelled &&
     sessionNeedsPlayerResponse(
       attendanceByMatchId[match.id] ?? "UNANSWERED",
       new Date(match.matchStart),
@@ -198,16 +199,20 @@ export function TeamMatchesMonthView({
   ).length;
 
   const sortedUpcomingMatches = [...upcomingMatches].sort((a, b) => {
-    const aNeedsResponse = sessionNeedsPlayerResponse(
-      attendanceByMatchId[a.id] ?? "UNANSWERED",
-      new Date(a.matchStart),
-      now,
-    );
-    const bNeedsResponse = sessionNeedsPlayerResponse(
-      attendanceByMatchId[b.id] ?? "UNANSWERED",
-      new Date(b.matchStart),
-      now,
-    );
+    const aNeedsResponse =
+      !a.cancelled &&
+      sessionNeedsPlayerResponse(
+        attendanceByMatchId[a.id] ?? "UNANSWERED",
+        new Date(a.matchStart),
+        now,
+      );
+    const bNeedsResponse =
+      !b.cancelled &&
+      sessionNeedsPlayerResponse(
+        attendanceByMatchId[b.id] ?? "UNANSWERED",
+        new Date(b.matchStart),
+        now,
+      );
     if (aNeedsResponse !== bNeedsResponse) return aNeedsResponse ? -1 : 1;
     return new Date(a.matchStart).getTime() - new Date(b.matchStart).getTime();
   });
@@ -249,74 +254,38 @@ export function TeamMatchesMonthView({
         </div>
 
         <Card className="mb-6 p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start sm:gap-3">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateMonth(previous)}
-                  aria-label="Previous month"
-                  className="h-9 w-9 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="min-w-[10rem] px-2 text-center sm:text-left">
-                  <p className="font-display text-base font-semibold text-white">
-                    {monthLabel}
-                  </p>
-                  {isCurrentMonth && (
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-jackals-red-light">
-                      Current month
-                    </p>
+          <MonthNavigator
+            month={month}
+            onMonthChange={navigateMonth}
+            trailing={
+              upcomingMatches.length > 0 ? (
+                <p className="text-center text-sm text-zinc-500 sm:text-right">
+                  {needsResponseCount > 0 ? (
+                    <>
+                      <span className="font-medium text-white">
+                        {needsResponseCount}
+                      </span>{" "}
+                      match{needsResponseCount === 1 ? "" : "es"}{" "}
+                      {needsResponseCount === 1 ? "needs" : "need"} your response
+                      this week
+                    </>
+                  ) : unansweredUpcoming > 0 ? (
+                    <>
+                      <span className="font-medium text-white">
+                        {unansweredUpcoming}
+                      </span>{" "}
+                      match{unansweredUpcoming === 1 ? "" : "es"} you haven&apos;t
+                      responded to yet
+                    </>
+                  ) : hasUpcomingNotYetOpen ? (
+                    <>Responses open 2 weeks before each match</>
+                  ) : (
+                    <span className="text-green-400">You&apos;re all caught up</span>
                   )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateMonth(next)}
-                  aria-label="Next month"
-                  className="h-9 w-9 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {!isCurrentMonth && (
-                <button
-                  type="button"
-                  onClick={() => navigateMonth(startOfMonth(new Date()))}
-                  aria-label="Return to current month"
-                  className="group inline-flex shrink-0 items-center gap-1 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-2 py-1 text-[11px] font-medium text-jackals-red-light transition-all hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white"
-                >
-                  <RotateCcw className="h-3 w-3 transition-transform group-hover:-rotate-45" />
-                  Current month
-                </button>
-              )}
-            </div>
-
-            {upcomingMatches.length > 0 && (
-              <p className="text-center text-sm text-zinc-500 sm:text-right">
-                {needsResponseCount > 0 ? (
-                  <>
-                    <span className="font-medium text-white">{needsResponseCount}</span>{" "}
-                    match{needsResponseCount === 1 ? "" : "es"}{" "}
-                    {needsResponseCount === 1 ? "needs" : "need"} your response this week
-                  </>
-                ) : unansweredUpcoming > 0 ? (
-                  <>
-                    <span className="font-medium text-white">{unansweredUpcoming}</span>{" "}
-                    match{unansweredUpcoming === 1 ? "" : "es"} you haven&apos;t responded to
-                    yet
-                  </>
-                ) : hasUpcomingNotYetOpen ? (
-                  <>Responses open 2 weeks before each match</>
-                ) : (
-                  <span className="text-green-400">You&apos;re all caught up</span>
-                )}
-              </p>
-            )}
-          </div>
+                </p>
+              ) : undefined
+            }
+          />
         </Card>
 
         {matches.length === 0 ? (
@@ -348,20 +317,28 @@ export function TeamMatchesMonthView({
               {sortedUpcomingMatches.map((match) => {
                 const matchDate = new Date(match.matchStart);
                 const userStatus = attendanceByMatchId[match.id] ?? "UNANSWERED";
-                const canRespond = canRespondToTrainingSession(matchDate, now);
-                const needsResponse = sessionNeedsPlayerResponse(
-                  userStatus,
-                  matchDate,
-                  now,
-                );
-                const isLocked = userStatus === "UNANSWERED" && !canRespond;
+                const isCancelled = match.cancelled === true;
+                const canRespond =
+                  !isCancelled && canRespondToTrainingSession(matchDate, now);
+                const needsResponse =
+                  !isCancelled &&
+                  sessionNeedsPlayerResponse(userStatus, matchDate, now);
+                const isLocked =
+                  !isCancelled && userStatus === "UNANSWERED" && !canRespond;
                 const opensOn = getTrainingResponseOpensOn(matchDate);
                 const href = `/matches/${match.id}`;
                 const rowClassName = cn(
                   "flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
-                  !isLocked && "transition-colors hover:bg-white/[0.03]",
-                  userStatus === "ATTENDING" && "bg-green-500/[0.06]",
-                  userStatus === "NOT_ATTENDING" &&
+                  isCancelled &&
+                    "cursor-not-allowed border-l-2 border-l-zinc-600/50 bg-zinc-500/[0.04] opacity-60",
+                  !isCancelled &&
+                    !isLocked &&
+                    "transition-colors hover:bg-white/[0.03]",
+                  !isCancelled &&
+                    userStatus === "ATTENDING" &&
+                    "bg-green-500/[0.06]",
+                  !isCancelled &&
+                    userStatus === "NOT_ATTENDING" &&
                     "border-l-2 border-l-rose-400/70 bg-rose-500/[0.1]",
                   needsResponse &&
                     "border-l-2 border-l-amber-400/70 bg-amber-500/[0.08] ring-1 ring-inset ring-amber-400/10",
@@ -374,30 +351,42 @@ export function TeamMatchesMonthView({
                       <MatchDateBlock
                         date={matchDate}
                         needsResponse={needsResponse}
-                        locked={isLocked}
+                        locked={isLocked || isCancelled}
                       />
                       <div className="min-w-0">
                         <p
                           className={cn(
                             "font-medium",
-                            isLocked ? "text-zinc-400" : "text-white",
+                            isCancelled || isLocked
+                              ? "text-zinc-400 line-through decoration-zinc-600"
+                              : "text-white",
                           )}
                         >
                           {formatMatchTitle(match.opponentName, match.venue)}
                         </p>
-                        <p className="mt-0.5 truncate text-sm text-zinc-500">
-                          {match.location} · Kick-off {format(matchDate, "HH:mm")}
-                        </p>
+                        {!isCancelled && (
+                          <p className="mt-0.5 truncate text-sm text-zinc-500">
+                            {match.location} · Kick-off {format(matchDate, "HH:mm")}
+                          </p>
+                        )}
                         <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <VenueBadge venue={match.venue} />
-                          {needsResponse ? (
-                            <NeedsResponseBadge />
-                          ) : userStatus !== "UNANSWERED" ? (
-                            <TrainingAttendanceStatusBadge status={userStatus} />
-                          ) : isLocked ? (
-                            <TrainingResponsesLockedBadge opensOn={opensOn} />
+                          {isCancelled ? (
+                            <Badge className="border-zinc-500/30 bg-zinc-500/10 text-zinc-400">
+                              Cancelled
+                            </Badge>
                           ) : (
-                            <TrainingAttendanceStatusBadge status={userStatus} />
+                            <>
+                              <VenueBadge venue={match.venue} />
+                              {needsResponse ? (
+                                <NeedsResponseBadge />
+                              ) : userStatus !== "UNANSWERED" ? (
+                                <TrainingAttendanceStatusBadge status={userStatus} />
+                              ) : isLocked ? (
+                                <TrainingResponsesLockedBadge opensOn={opensOn} />
+                              ) : (
+                                <TrainingAttendanceStatusBadge status={userStatus} />
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
@@ -406,12 +395,18 @@ export function TeamMatchesMonthView({
                     <div
                       className={cn(
                         "flex shrink-0 items-center gap-2 text-sm sm:pl-4",
+                        isCancelled && "text-zinc-600",
                         needsResponse && "font-semibold text-amber-200",
                         isLocked && "text-zinc-500",
-                        !needsResponse && !isLocked && "font-medium text-jackals-red-light",
+                        !needsResponse &&
+                          !isLocked &&
+                          !isCancelled &&
+                          "font-medium text-jackals-red-light",
                       )}
                     >
-                      {needsResponse ? (
+                      {isCancelled ? (
+                        "Match cancelled"
+                      ) : needsResponse ? (
                         <>
                           Respond now
                           <RowChevron className="h-4 w-4" />
@@ -431,7 +426,7 @@ export function TeamMatchesMonthView({
                   </>
                 );
 
-                return isLocked ? (
+                return isLocked || isCancelled ? (
                   <div
                     key={match.id}
                     className={rowClassName}
@@ -457,31 +452,67 @@ export function TeamMatchesMonthView({
               {pastMatches.map((match) => {
                 const matchDate = new Date(match.matchStart);
                 const userStatus = attendanceByMatchId[match.id] ?? "UNANSWERED";
+                const isCancelled = match.cancelled === true;
 
-                return (
-                  <Link
-                    key={match.id}
-                    href={`/matches/${match.id}`}
-                    className="flex items-center gap-4 px-5 py-3 opacity-60 transition-opacity hover:opacity-80"
-                  >
-                    <MatchDateBlock date={matchDate} />
+                const row = (
+                  <>
+                    <MatchDateBlock date={matchDate} locked={isCancelled} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm text-zinc-400">
+                      <p
+                        className={cn(
+                          "text-sm",
+                          isCancelled
+                            ? "text-zinc-500 line-through decoration-zinc-600"
+                            : "text-zinc-400",
+                        )}
+                      >
                         {format(matchDate, "EEEE d MMMM")}
                       </p>
                       <p className="mt-0.5 text-xs text-zinc-500">
                         {formatMatchTitle(match.opponentName, match.venue)}
                       </p>
-                      {userStatus !== "UNANSWERED" && (
+                      {isCancelled ? (
                         <div className="mt-1">
-                          <TrainingAttendanceStatusBadge status={userStatus} />
+                          <Badge className="border-zinc-500/30 bg-zinc-500/10 text-zinc-400">
+                            Cancelled
+                          </Badge>
                         </div>
+                      ) : (
+                        userStatus !== "UNANSWERED" && (
+                          <div className="mt-1">
+                            <TrainingAttendanceStatusBadge status={userStatus} />
+                          </div>
+                        )
                       )}
                     </div>
                     <span className="flex shrink-0 items-center gap-1 text-xs text-zinc-600">
-                      <Clock className="h-3 w-3" />
-                      Past
+                      {isCancelled ? (
+                        "Cancelled"
+                      ) : (
+                        <>
+                          <Clock className="h-3 w-3" />
+                          Past
+                        </>
+                      )}
                     </span>
+                  </>
+                );
+
+                return isCancelled ? (
+                  <div
+                    key={match.id}
+                    className="flex items-center gap-4 px-5 py-3 opacity-60"
+                    aria-disabled="true"
+                  >
+                    {row}
+                  </div>
+                ) : (
+                  <Link
+                    key={match.id}
+                    href={`/matches/${match.id}`}
+                    className="flex items-center gap-4 px-5 py-3 opacity-60 transition-opacity hover:opacity-80"
+                  >
+                    {row}
                   </Link>
                 );
               })}

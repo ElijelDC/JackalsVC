@@ -14,12 +14,18 @@ import { Card } from "@/components/ui/Card";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client-api";
 import {
-  formatMembershipSubscriptionLabel,
-} from "@/lib/membership-config";
+  formatMembershipSubscriptionOrCoachLabel,
+} from "@/lib/membership-status";
 import {
   getTrainingTeamFromList,
   type TrainingTeam,
 } from "@/lib/training-teams-config";
+import {
+  COACH_PAYMENT_TYPE_LABELS,
+  COACH_PAYMENT_TYPES,
+  type CoachPaymentType,
+} from "@/lib/coach-payment-type";
+import { cn } from "@/lib/utils";
 
 type ClubMember = {
   id: string;
@@ -27,6 +33,7 @@ type ClubMember = {
   name: string;
   active: boolean;
   rosterRole: string;
+  coachPaymentType: CoachPaymentType | null;
   trainingTeamKey: string | null;
   profileImageUrl: string | null;
   userId: string | null;
@@ -44,6 +51,7 @@ const emptyForm = {
   name: "",
   trainingTeamKey: "",
   rosterRole: "PLAYER",
+  coachPaymentType: "PAID" as CoachPaymentType,
 };
 
 export function ClubRosterManager({
@@ -191,6 +199,29 @@ export function ClubRosterManager({
     await loadClubMembers();
   };
 
+  const assignCoachPaymentType = async (
+    member: ClubMember,
+    coachPaymentType: CoachPaymentType,
+  ) => {
+    setLoading(true);
+    setError(null);
+
+    const result = await apiPatch(
+      `/api/admin/club-members/${member.id}`,
+      { coachPaymentType },
+      "Failed to update coach payment type",
+    );
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    await loadClubMembers();
+  };
+
   const removeMember = async (member: ClubMember) => {
     if (member.userId) return;
 
@@ -294,6 +325,28 @@ export function ClubRosterManager({
               <option value="COACH">Coach</option>
             </Select>
           </div>
+          {form.rosterRole === "COACH" && (
+            <div className="sm:col-span-2">
+              <Label htmlFor="roster-coach-type">Coach type</Label>
+              <Select
+                id="roster-coach-type"
+                value={form.coachPaymentType}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    coachPaymentType: event.target.value as CoachPaymentType,
+                  }))
+                }
+                required
+              >
+                {COACH_PAYMENT_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {COACH_PAYMENT_TYPE_LABELS[type]}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          )}
         </div>
       </AdminFormCard>
 
@@ -366,9 +419,10 @@ export function ClubRosterManager({
               ? subscriptionByUserId[member.userId]
               : undefined;
             const subscriptionLabel = subscription
-              ? formatMembershipSubscriptionLabel(
+              ? formatMembershipSubscriptionOrCoachLabel(
                   subscription.planName,
                   subscription.paymentSchedule,
+                  subscription.status,
                 )
               : null;
 
@@ -405,6 +459,17 @@ export function ClubRosterManager({
                           >
                             {member.rosterRole === "COACH" ? "Coach" : "Player"}
                           </Badge>
+                          {member.rosterRole === "COACH" && member.coachPaymentType && (
+                            <Badge
+                              className={
+                                member.coachPaymentType === "PAID"
+                                  ? "border border-green-500/30 bg-green-500/10 text-green-300"
+                                  : "border border-zinc-500/30 bg-zinc-500/10 text-zinc-300"
+                              }
+                            >
+                              {COACH_PAYMENT_TYPE_LABELS[member.coachPaymentType]}
+                            </Badge>
+                          )}
                         </div>
                         <p className="mt-0.5 truncate text-sm text-zinc-400">
                           {member.user ? (
@@ -416,7 +481,14 @@ export function ClubRosterManager({
                           )}
                         </p>
                         {subscriptionLabel && (
-                          <p className="mt-1 text-xs font-medium text-jackals-red-light">
+                          <p
+                            className={cn(
+                              "mt-1 text-xs font-medium",
+                              subscription?.status === "COACH"
+                                ? "text-blue-300"
+                                : "text-jackals-red-light",
+                            )}
+                          >
                             {subscriptionLabel}
                             {subscription?.status === "PENDING_PAYMENT"
                               ? " · awaiting payment"
@@ -458,7 +530,12 @@ export function ClubRosterManager({
                       </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 sm:max-w-md">
+                    <div
+                      className={cn(
+                        "grid gap-3 sm:max-w-md",
+                        member.rosterRole === "COACH" ? "sm:grid-cols-3" : "sm:grid-cols-2",
+                      )}
+                    >
                       <div className="flex flex-col gap-1.5">
                         <Label
                           htmlFor={`role-${member.id}`}
@@ -481,6 +558,33 @@ export function ClubRosterManager({
                           <option value="COACH">Coach</option>
                         </Select>
                       </div>
+                      {member.rosterRole === "COACH" && (
+                        <div className="flex flex-col gap-1.5">
+                          <Label
+                            htmlFor={`coach-type-${member.id}`}
+                            className="mb-0 text-xs font-normal text-zinc-500"
+                          >
+                            Coach type
+                          </Label>
+                          <Select
+                            id={`coach-type-${member.id}`}
+                            value={member.coachPaymentType ?? "PAID"}
+                            disabled={loading}
+                            onChange={(event) =>
+                              assignCoachPaymentType(
+                                member,
+                                event.target.value as CoachPaymentType,
+                              )
+                            }
+                          >
+                            {COACH_PAYMENT_TYPES.map((type) => (
+                              <option key={type} value={type}>
+                                {COACH_PAYMENT_TYPE_LABELS[type]}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+                      )}
                       <div className="flex flex-col gap-1.5">
                         <Label
                           htmlFor={`team-${member.id}`}

@@ -60,6 +60,18 @@ export function slugifyTrainingSquadKey(name: string) {
   return slug || "SQUAD";
 }
 
+export async function syncTrainingSquadDayFromSession(session: {
+  trainingTeamKey: string | null;
+  dayOfWeek: number;
+}) {
+  if (!session.trainingTeamKey) return;
+
+  await prisma.trainingSquad.updateMany({
+    where: { key: session.trainingTeamKey },
+    data: { dayOfWeek: session.dayOfWeek },
+  });
+}
+
 export async function getTrainingSquadUsageCounts(key: string) {
   const [members, sessions, matches] = await Promise.all([
     prisma.clubMember.count({ where: { trainingTeamKey: key } }),

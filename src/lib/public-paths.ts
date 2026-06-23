@@ -10,6 +10,8 @@ export const PUBLIC_PATHS = {
     gallery: "/uploads/gallery",
     achievements: "/uploads/achievements",
     profileImages: "/uploads/profile-images",
+    vlyMembershipPhotos: "/uploads/vly-membership-photos",
+    coachInvoices: "/uploads/coach-invoices",
   },
   downloads: {
     sponsorPresentation: "/downloads/jackals-vc-sponsor-presentation.pdf",

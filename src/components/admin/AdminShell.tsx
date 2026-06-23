@@ -24,6 +24,7 @@ import {
   UserCheck,
   Users,
   Volleyball,
+  Wallet,
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -56,6 +57,7 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     links: [
       { href: "/admin/membership", label: "Plans", icon: CreditCard },
       { href: "/admin/payments", label: "Payments", icon: Banknote },
+      { href: "/admin/coach-payments", label: "Coach payments", icon: Wallet },
     ],
   },
   {

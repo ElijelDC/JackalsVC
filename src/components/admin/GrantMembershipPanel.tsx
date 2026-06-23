@@ -7,12 +7,16 @@ import { AdminSection } from "@/components/admin/AdminShell";
 import { UserSearchSelect } from "@/components/admin/UserSearchSelect";
 import { Label, Select } from "@/components/ui/Input";
 import { apiPost } from "@/lib/client-api";
+import {
+  ADMIN_MEMBERSHIP_STATUSES,
+  formatMembershipStatusLabel,
+} from "@/lib/membership-status";
 import { formatPrice } from "@/lib/utils";
 
 type Plan = { id: string; name: string; price: number };
 type UserOption = { id: string; name: string; email: string };
 
-const STATUSES = ["ACTIVE", "EXPIRED", "CANCELLED"] as const;
+const STATUSES = ADMIN_MEMBERSHIP_STATUSES;
 
 const emptyGrantForm = {
   userId: "",
@@ -116,7 +120,7 @@ export function GrantMembershipPanel({
             >
               {STATUSES.map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {formatMembershipStatusLabel(status)}
                 </option>
               ))}
             </Select>

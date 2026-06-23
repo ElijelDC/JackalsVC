@@ -6,16 +6,19 @@ import {
   ArrowLeft,
   CalendarDays,
   ChevronRight,
+  Clock,
   MapPin,
-  User,
-  Users,
 } from "lucide-react";
 import { TrainingAttendancePicker } from "@/components/training/TrainingAttendancePicker";
+import { CoachResponsesSection } from "@/components/training/CoachResponsesSection";
+import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { PageContainer } from "@/components/layout/PageShell";
+import { formatEventDateTime } from "@/lib/event-display";
 import type { TrainingSessionDetailData } from "@/lib/training-attendance-config";
 import {
   canRespondToTrainingSession,
@@ -25,6 +28,7 @@ import {
 } from "@/lib/training-attendance-config";
 
 import type { AttendanceBlockReason } from "@/lib/membership";
+import { cn } from "@/lib/utils";
 
 export function TrainingSessionDetailView({
   detail,
@@ -38,8 +42,14 @@ export function TrainingSessionDetailView({
   monthParam: string;
 }) {
   const eventDate = new Date(detail.event.startDate);
+  const cancelled = detail.event.cancelled;
+  const { timeLabel } = formatEventDateTime(
+    detail.event.startDate,
+    detail.event.endDate,
+  );
   const past = eventDate < new Date();
-  const canRespond = canRespondToTrainingSession(eventDate);
+  const canRespond =
+    !cancelled && canRespondToTrainingSession(eventDate);
   const responseOpensOn = getTrainingResponseOpensOn(eventDate);
 
   return (
@@ -63,18 +73,37 @@ export function TrainingSessionDetailView({
             </div>
           </div>
           <div className="px-6 py-6">
-            <h1 className="font-display text-2xl font-semibold text-white">
-              {format(eventDate, "EEEE d MMMM")}
-            </h1>
-            <p className="mt-2 text-sm text-zinc-400">{detail.event.title}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <h1
+                className={cn(
+                  "font-display text-2xl font-semibold",
+                  cancelled
+                    ? "text-zinc-400 line-through decoration-zinc-600"
+                    : "text-white",
+                )}
+              >
+                {format(eventDate, "EEEE d MMMM")}
+              </h1>
+              {cancelled && (
+                <Badge className="border-zinc-500/30 bg-zinc-500/10 text-zinc-400">
+                  Cancelled
+                </Badge>
+              )}
+            </div>
+            {!cancelled && (
+              <p className="mt-2 text-sm text-zinc-400">{detail.event.title}</p>
+            )}
+            {cancelled && (
+              <p className="mt-2 text-sm text-zinc-500">
+                This session has been cancelled by your coach.
+              </p>
+            )}
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
-              {detail.event.coach && (
-                <div className="flex items-center gap-2 text-sm text-zinc-300">
-                  <User className="h-4 w-4 shrink-0 text-jackals-red-light" />
-                  Coach {detail.event.coach}
-                </div>
-              )}
+              <div className="flex items-center gap-2 text-sm text-zinc-300">
+                <Clock className="h-4 w-4 shrink-0 text-jackals-red-light" />
+                {timeLabel}
+              </div>
               {detail.event.location && (
                 <div className="flex items-center gap-2 text-sm text-zinc-300">
                   <MapPin className="h-4 w-4 shrink-0 text-jackals-red-light" />
@@ -82,6 +111,8 @@ export function TrainingSessionDetailView({
                 </div>
               )}
             </div>
+
+            <CoachResponsesSection coaches={detail.coaches} />
 
             {detail.event.description && (
               <p className="mt-4 text-sm leading-relaxed text-zinc-500">
@@ -97,7 +128,9 @@ export function TrainingSessionDetailView({
           <Card>
             <CardTitle className="text-base">Your response</CardTitle>
             <CardDescription className="mt-2">
-              {past
+              {cancelled
+                ? "This session was cancelled. Attendance responses are closed."
+                : past
                 ? "This session has already started."
                 : !canAccessAttendance
                   ? attendanceBlockReason === "overdue"
@@ -105,10 +138,12 @@ export function TrainingSessionDetailView({
                     : "Active membership is required to respond."
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the session — from ${format(responseOpensOn, "d MMMM")}.`
-                    : "Let coaches and teammates know if you're coming."}
+                    : detail.isCoachUser
+                      ? "Let your players know if you can't attend training."
+                      : "Let coaches and teammates know if you're coming."}
             </CardDescription>
 
-            {!past && canAccessAttendance && (
+            {!past && !cancelled && canAccessAttendance && (
               <div className="mt-6 space-y-4">
                 {!canRespond && (
                   <TrainingResponsesLockedNotice opensOn={responseOpensOn} />
@@ -119,11 +154,12 @@ export function TrainingSessionDetailView({
                   initialStatus={detail.userStatus}
                   layout="stack"
                   showLockedNotice={false}
+                  coachMode={detail.isCoachUser}
                 />
               </div>
             )}
 
-            {!past && !canAccessAttendance && (
+            {!past && !cancelled && !canAccessAttendance && (
               <Link
                 href="/membership"
                 className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-jackals-red-light hover:text-jackals-red"
@@ -169,17 +205,23 @@ export function TrainingSessionDetailView({
 
         <AnimateIn delay={150} className="lg:col-span-3">
           <Card className="overflow-hidden p-0">
-            <div className="border-b border-white/10 px-5 py-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-jackals-red-light" />
-                <p className="font-display text-sm font-semibold uppercase tracking-wide text-white">
-                  Squad responses
-                </p>
-              </div>
-              <p className="mt-1 text-xs text-zinc-600">
-                Only players on {detail.team.name} can see this list.
-              </p>
-            </div>
+            <SquadResponsesPanelHeader
+              kind="training"
+              targetId={detail.event.id}
+              initialStatus={
+                detail.coachReminder ?? {
+                  canSend: true,
+                  lastSentAt: null,
+                  nextAvailableAt: null,
+                }
+              }
+              unansweredCount={detail.roster.unanswered.length}
+              showReminder={
+                detail.isCoachUser &&
+                Boolean(detail.coachReminder) &&
+                detail.roster.unanswered.length > 0
+              }
+            />
 
             <div className="space-y-6 p-5">
               <SquadRosterGroup

@@ -10,10 +10,12 @@ export function SquadRosterGroup({
   title,
   members,
   tone,
+  headerAction,
 }: {
   title: string;
   members: TrainingRosterMember[];
   tone: "green" | "rose" | "amber";
+  headerAction?: React.ReactNode;
 }) {
   const toneStyles = {
     green: {
@@ -34,14 +36,17 @@ export function SquadRosterGroup({
 
   return (
     <div>
-      <p
-        className={cn(
-          "mb-3 text-xs font-semibold uppercase tracking-wider",
-          styles.label,
-        )}
-      >
-        {title} ({members.length})
-      </p>
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <p
+          className={cn(
+            "text-xs font-semibold uppercase tracking-wider",
+            styles.label,
+          )}
+        >
+          {title} ({members.length})
+        </p>
+        {headerAction}
+      </div>
       {members.length === 0 ? (
         <p className="text-sm text-zinc-600">No one yet</p>
       ) : (

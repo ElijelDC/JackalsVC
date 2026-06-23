@@ -1,11 +1,10 @@
 import { startOfDay } from "date-fns";
 
-export function adminPendingPaymentWhere(now = new Date()) {
+export function adminPendingPaymentWhere() {
   return {
     status: "PENDING" as const,
     proofSubmittedAt: { not: null },
     proofScreenshotUrl: { not: null },
-    OR: [{ dueDate: null }, { dueDate: { lte: now } }],
   };
 }
 

@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 export type EnrichedEvent = Event & {
   trainingOccurrenceDate: Date | null;
   occurrenceCustomized: boolean;
+  occurrenceCancelled: boolean;
   hasOccurrenceOverride: boolean;
   coach: string | null;
   attendanceUrl: string | null;
@@ -42,6 +43,7 @@ function enrichSingleEvent(
   return {
     ...event,
     occurrenceCustomized: override ? isOccurrenceCustomized(override) : false,
+    occurrenceCancelled: override?.cancelled ?? false,
     hasOccurrenceOverride: Boolean(override),
     coach: override?.coach ?? session?.coach ?? null,
     attendanceUrl: override
@@ -96,6 +98,7 @@ export function serializeEnrichedEvent(event: EnrichedEvent) {
     trainingSessionId: event.trainingSessionId,
     trainingOccurrenceDate: event.trainingOccurrenceDate?.toISOString() ?? null,
     occurrenceCustomized: event.occurrenceCustomized,
+    occurrenceCancelled: event.occurrenceCancelled,
     hasOccurrenceOverride: event.hasOccurrenceOverride,
     coach: event.coach,
     attendanceUrl: event.attendanceUrl,

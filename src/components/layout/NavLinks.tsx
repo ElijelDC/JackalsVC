@@ -6,7 +6,7 @@ import {
   visiblePrimaryNavItems,
   visibleMemberMobileMenuNavItems,
   isNavItemActive,
-  MEMBER_MOBILE_QUICK_NAV_HREFS,
+  getMobileQuickNavHrefs,
 } from "@/lib/navigation";
 import { InfoNavDropdown } from "@/components/layout/InfoNavDropdown";
 
@@ -16,22 +16,28 @@ export function NavLinks({
   variant = "desktop",
   isLoggedIn = false,
   isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
   variant?: "desktop" | "mobile";
   isLoggedIn?: boolean;
   isAdmin?: boolean;
+  isCoach?: boolean;
+  isPaidCoach?: boolean;
 }) {
-  const quickNavHrefs = new Set<string>(MEMBER_MOBILE_QUICK_NAV_HREFS);
+  const quickNavHrefs = new Set<string>(
+    getMobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach),
+  );
   const displayItems =
     variant === "mobile" && isLoggedIn && !isAdmin
-      ? visibleMemberMobileMenuNavItems(isLoggedIn, isAdmin)
+      ? visibleMemberMobileMenuNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach)
       : variant === "mobile" && isLoggedIn
-        ? visiblePrimaryNavItems(isLoggedIn, isAdmin).filter(
+        ? visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).filter(
             (item) => !quickNavHrefs.has(item.href),
           )
-        : visiblePrimaryNavItems(isLoggedIn, isAdmin);
+        : visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach);
 
   return (
     <>
@@ -62,6 +68,8 @@ export function NavLinks({
         variant={variant}
         isLoggedIn={isLoggedIn}
         isAdmin={isAdmin}
+        isCoach={isCoach}
+        isPaidCoach={isPaidCoach}
       />
     </>
   );

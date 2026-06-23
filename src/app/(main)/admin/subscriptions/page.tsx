@@ -36,6 +36,12 @@ export default async function AdminSubscriptionsPage() {
     ...membership,
     startDate: membership.startDate.toISOString(),
     endDate: membership.endDate.toISOString(),
+    paymentOverdueOverrideUntil:
+      membership.paymentOverdueOverrideUntil?.toISOString() ?? null,
+    paymentDeferralDueDate:
+      membership.paymentDeferralDueDate?.toISOString() ?? null,
+    paymentDeferralRequestedAt:
+      membership.paymentDeferralRequestedAt?.toISOString() ?? null,
     payments: membership.payments.map((payment) => ({
       status: payment.status,
       dueDate: payment.dueDate?.toISOString() ?? null,
