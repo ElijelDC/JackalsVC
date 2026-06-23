@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { ZodSchema } from "zod";
 import { auth } from "@/auth";
+import { prisma } from "@/lib/prisma";
 
 export function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -21,6 +22,27 @@ export async function requireAdmin() {
     return { session: null, response: jsonError("Forbidden", 403) };
   }
   return { session, response: null };
+}
+
+export async function requireClubMember() {
+  const { session, response } = await requireSession();
+  if (response) {
+    return { session: null, clubMember: null, response };
+  }
+
+  const clubMember = await prisma.clubMember.findUnique({
+    where: { userId: session!.user.id },
+  });
+
+  if (!clubMember?.active) {
+    return {
+      session: null,
+      clubMember: null,
+      response: jsonError("No active roster entry linked to your account.", 403),
+    };
+  }
+
+  return { session, clubMember, response: null };
 }
 
 export async function parseJsonBody<T>(

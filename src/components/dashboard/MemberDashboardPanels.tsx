@@ -165,7 +165,7 @@ export function DashboardUpcomingClubEventsPanel({
           <h2 className="font-display text-xl font-semibold text-white">
             Upcoming club events
           </h2>
-          <p className="mt-1 text-xs text-zinc-500">Tournaments and socials · next 4 weeks</p>
+          <p className="mt-1 text-xs text-zinc-500">Tournaments and socials · within the next 4 weeks</p>
         </div>
         <Link
           href="/events"
@@ -179,7 +179,7 @@ export function DashboardUpcomingClubEventsPanel({
         <div className="divide-y divide-white/10">
           {clubEvents.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-zinc-500">
-              No club events in the next 4 weeks.
+              No club events within the next 4 weeks.
             </p>
           ) : (
             <StaggerIn className="divide-y divide-white/10" stagger={60}>
@@ -243,7 +243,7 @@ export function DashboardUpcomingTrainingCard({
                 ? "No training team assigned"
                 : needsResponse > 0
                   ? `${needsResponse} session${needsResponse === 1 ? "" : "s"} need your response this week`
-                  : `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"} · next 2 weeks`}
+                  : `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"} · within the next 2 weeks`}
             </p>
           </div>
         </div>
@@ -267,7 +267,7 @@ export function DashboardUpcomingTrainingCard({
           ) : (
             <UpcomingList
               items={sessions}
-              emptyMessage="No training sessions in the next 2 weeks."
+              emptyMessage="No training sessions within the next 2 weeks."
               buildHref={(item) => `/training/session/${item.id}`}
               buildMeta={(item, date, statusLabel) =>
                 `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""} · ${statusLabel}`
@@ -311,7 +311,7 @@ export function DashboardUpcomingMatchesCard({
                 ? "No team assigned"
                 : needsResponse > 0
                   ? `${needsResponse} match${needsResponse === 1 ? "" : "es"} need your response this week`
-                  : `${matches.length} match${matches.length === 1 ? "" : "es"} · next 2 weeks`}
+                  : `${matches.length} match${matches.length === 1 ? "" : "es"} · within the next 2 weeks`}
             </p>
           </div>
         </div>
@@ -335,7 +335,7 @@ export function DashboardUpcomingMatchesCard({
           ) : (
             <UpcomingList
               items={matches}
-              emptyMessage="No matches in the next 2 weeks."
+              emptyMessage="No matches within the next 2 weeks."
               buildHref={(item) => `/matches/${item.id}`}
               buildMeta={(item, date, statusLabel) =>
                 `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""} · ${statusLabel}`

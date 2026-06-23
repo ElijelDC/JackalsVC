@@ -13,9 +13,19 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  let session = null;
+  let siteContent = {};
+
+  try {
+    [session, siteContent] = await Promise.all([
+      auth(),
+      getSiteContentMap(),
+    ]);
+  } catch (error) {
+    console.error("Failed to load app layout session/content:", error);
+  }
+
   const isAdmin = session?.user?.role === "ADMIN";
-  const siteContent = await getSiteContentMap();
 
   return (
     <SessionProvider session={session}>

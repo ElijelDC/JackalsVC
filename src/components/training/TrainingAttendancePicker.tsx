@@ -38,6 +38,7 @@ export function TrainingAttendancePicker({
   layout = "row",
   showLockedNotice = true,
   itemLabel = "session",
+  coachMode = false,
   className,
 }: {
   eventId?: string;
@@ -48,6 +49,7 @@ export function TrainingAttendancePicker({
   layout?: "row" | "stack";
   showLockedNotice?: boolean;
   itemLabel?: string;
+  coachMode?: boolean;
   className?: string;
 }) {
   const targetId = matchId ?? eventId;
@@ -63,6 +65,7 @@ export function TrainingAttendancePicker({
       layout={layout}
       showLockedNotice={showLockedNotice}
       itemLabel={itemLabel}
+      coachMode={coachMode}
       className={className}
     />
   );
@@ -77,6 +80,7 @@ function TrainingAttendancePickerInner({
   layout = "row",
   showLockedNotice = true,
   itemLabel = "session",
+  coachMode = false,
   className,
 }: {
   eventId?: string;
@@ -87,6 +91,7 @@ function TrainingAttendancePickerInner({
   layout?: "row" | "stack";
   showLockedNotice?: boolean;
   itemLabel?: string;
+  coachMode?: boolean;
   className?: string;
 }) {
   const router = useRouter();
@@ -152,6 +157,12 @@ function TrainingAttendancePickerInner({
   };
 
   const pickerDisabled = disabled || !canRespond;
+  const responseOptions = coachMode
+    ? (["NOT_ATTENDING"] as const)
+    : RESPONSE_OPTIONS;
+  const showClear = coachMode
+    ? status === "NOT_ATTENDING"
+    : status !== "UNANSWERED";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -168,7 +179,7 @@ function TrainingAttendancePickerInner({
         role="group"
         aria-label="Your attendance response"
       >
-        {RESPONSE_OPTIONS.map((option) => {
+        {responseOptions.map((option) => {
           const isActive = status === option;
           const isLoading = loading === option;
 
@@ -194,13 +205,14 @@ function TrainingAttendancePickerInner({
         })}
       </div>
       {status === "UNANSWERED" ? (
-        canRespond && (
+        canRespond &&
+        !coachMode && (
           <p className="text-xs text-zinc-500">
             Choose Attend or Can&apos;t attend — teammates will see you as
             unanswered until you respond.
           </p>
         )
-      ) : (
+      ) : showClear ? (
         <Button
           type="button"
           variant="outline"
@@ -223,7 +235,7 @@ function TrainingAttendancePickerInner({
           />
           {clearing ? "Clearing..." : "Clear response (back to unanswered)"}
         </Button>
-      )}
+      ) : null}
     </div>
   );
 }

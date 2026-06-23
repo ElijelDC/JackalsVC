@@ -16,11 +16,20 @@ import { Card } from "@/components/ui/Card";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import { Checkbox } from "@/components/ui/InputFields";
 import { apiDelete, apiGet, apiPut } from "@/lib/client-api";
-import { formatMembershipSubscriptionLabel } from "@/lib/membership-config";
+import {
+  ADMIN_MEMBERSHIP_STATUSES,
+  formatMembershipStatusLabel,
+  formatMembershipSubscriptionOrCoachLabel,
+  isCoachMembershipStatus,
+  membershipStatusBadgeClass,
+} from "@/lib/membership-status";
 import {
   assessMembershipPaymentAccess,
   isInstallmentSchedule,
+  isPaymentOverdueOverrideActive,
+  matchesMembershipSubscriptionFilter,
   PAYMENT_OVERDUE_GRACE_DAYS,
+  type MembershipSubscriptionFilter,
 } from "@/lib/membership-overdue";
 import { cn, formatPrice } from "@/lib/utils";
 
@@ -40,6 +49,10 @@ type Membership = {
   paymentSchedule: string;
   paymentOverdueOverride: boolean;
   paymentOverdueOverrideNote: string | null;
+  paymentOverdueOverrideUntil: string | null;
+  paymentDeferralExcuse: string | null;
+  paymentDeferralDueDate: string | null;
+  paymentDeferralRequestedAt: string | null;
   startDate: string;
   endDate: string;
   user: UserOption;
@@ -47,12 +60,33 @@ type Membership = {
   payments: MembershipPayment[];
 };
 
+const SUBSCRIPTION_FILTERS: {
+  key: MembershipSubscriptionFilter;
+  label: string;
+}[] = [
+  { key: "all", label: "All" },
+  { key: "active", label: "Active" },
+  { key: "coach", label: "Coach" },
+  { key: "expired", label: "Expired" },
+  { key: "overridden", label: "Overridden" },
+  { key: "overdue", label: "Overdue" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
 function getMembershipPaymentAccess(membership: Membership) {
   return assessMembershipPaymentAccess({
     membershipStatus: membership.status,
     paymentSchedule: membership.paymentSchedule,
     paymentOverdueOverride: membership.paymentOverdueOverride,
+    paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil,
     payments: membership.payments ?? [],
+  });
+}
+
+function isOverrideActive(membership: Membership) {
+  return isPaymentOverdueOverrideActive({
+    paymentOverdueOverride: membership.paymentOverdueOverride,
+    paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil,
   });
 }
 
@@ -64,20 +98,33 @@ type StatusBadge = {
 function getMembershipStatusBadges(membership: Membership): StatusBadge[] {
   const badges: StatusBadge[] = [];
 
+  if (isCoachMembershipStatus(membership.status)) {
+    badges.push({
+      label: "Coach",
+      className: membershipStatusBadgeClass("COACH"),
+    });
+    return badges;
+  }
+
   if (membership.status === "ACTIVE") {
     badges.push({
       label: "Active",
-      className: "border-green-500/30 bg-green-500/10 text-green-400",
+      className: membershipStatusBadgeClass("ACTIVE"),
     });
   } else if (membership.status === "EXPIRED") {
     badges.push({
       label: "Expired",
-      className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+      className: membershipStatusBadgeClass("EXPIRED"),
     });
   } else if (membership.status === "CANCELLED") {
     badges.push({
       label: "Cancelled",
-      className: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
+      className: membershipStatusBadgeClass("CANCELLED"),
+    });
+  } else if (membership.status === "PENDING_PAYMENT") {
+    badges.push({
+      label: "Awaiting payment",
+      className: membershipStatusBadgeClass("PENDING_PAYMENT"),
     });
   }
 
@@ -87,10 +134,17 @@ function getMembershipStatusBadges(membership: Membership): StatusBadge[] {
   ) {
     const access = getMembershipPaymentAccess(membership);
 
-    if (membership.paymentOverdueOverride) {
+    if (isOverrideActive(membership)) {
       badges.push({
-        label: "Override active",
+        label: membership.paymentOverdueOverrideUntil
+          ? `Override until ${format(new Date(membership.paymentOverdueOverrideUntil), "d MMM")}`
+          : "Override active",
         className: "border-blue-500/30 bg-blue-500/10 text-blue-300",
+      });
+    } else if (membership.paymentOverdueOverride) {
+      badges.push({
+        label: "Override expired",
+        className: "border-zinc-500/30 bg-zinc-500/10 text-zinc-400",
       });
     } else if (access.isOverdue) {
       badges.push({
@@ -103,12 +157,27 @@ function getMembershipStatusBadges(membership: Membership): StatusBadge[] {
         className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
       });
     }
+
+    if (
+      membership.paymentDeferralDueDate &&
+      membership.paymentDeferralExcuse &&
+      !isOverrideActive(membership)
+    ) {
+      badges.push({
+        label: `Pay-by requested ${format(new Date(membership.paymentDeferralDueDate), "d MMM")}`,
+        className: "border-amber-500/30 bg-amber-500/10 text-amber-300",
+      });
+    }
   }
 
   return badges;
 }
 
 function getMembershipAccentClass(membership: Membership) {
+  if (membership.status === "COACH") {
+    return "border-l-blue-500/70";
+  }
+
   if (membership.status === "EXPIRED") {
     return "border-l-amber-500/80";
   }
@@ -124,7 +193,7 @@ function getMembershipAccentClass(membership: Membership) {
     const access = getMembershipPaymentAccess(membership);
 
     if (
-      !membership.paymentOverdueOverride &&
+      !isOverrideActive(membership) &&
       (access.isOverdue || access.isPastDue)
     ) {
       return access.isOverdue
@@ -140,7 +209,7 @@ function getMembershipAccentClass(membership: Membership) {
   return "border-l-white/10";
 }
 
-const STATUSES = ["ACTIVE", "EXPIRED", "CANCELLED"] as const;
+const STATUSES = ADMIN_MEMBERSHIP_STATUSES;
 
 const emptyEditForm = {
   planId: "",
@@ -148,6 +217,7 @@ const emptyEditForm = {
   endDate: "",
   paymentOverdueOverride: false,
   paymentOverdueOverrideNote: "",
+  paymentOverdueOverrideUntil: "",
 };
 
 export function MembersManager({
@@ -166,26 +236,38 @@ export function MembersManager({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] =
+    useState<MembershipSubscriptionFilter>("all");
 
   const filteredMemberships = useMemo(
     () =>
       memberships.filter((membership) => {
-        const subscriptionLabel = formatMembershipSubscriptionLabel(
+        const subscriptionLabel = formatMembershipSubscriptionOrCoachLabel(
           membership.plan.name,
           membership.paymentSchedule,
+          membership.status,
         );
 
-        return matchesAdminSearch(
+        const matchesSearch = matchesAdminSearch(
           search,
           membership.user.name,
           membership.user.email,
           membership.plan.name,
           subscriptionLabel,
           membership.status,
+          membership.paymentDeferralExcuse ?? "",
+        );
+
+        return (
+          matchesSearch &&
+          matchesMembershipSubscriptionFilter(membership, statusFilter)
         );
       }),
-    [memberships, search],
+    [memberships, search, statusFilter],
   );
+
+  const hasActiveFilters =
+    Boolean(search.trim()) || statusFilter !== "all";
 
   const editingMembership = editingId
     ? memberships.find((membership) => membership.id === editingId)
@@ -196,6 +278,7 @@ export function MembersManager({
         membershipStatus: editingMembership.status,
         paymentSchedule: editingMembership.paymentSchedule,
         paymentOverdueOverride: form.paymentOverdueOverride,
+        paymentOverdueOverrideUntil: form.paymentOverdueOverrideUntil || null,
         payments: editingMembership.payments ?? [],
       })
     : null;
@@ -205,6 +288,7 @@ export function MembersManager({
         membershipStatus: editingMembership.status,
         paymentSchedule: editingMembership.paymentSchedule,
         paymentOverdueOverride: false,
+        paymentOverdueOverrideUntil: null,
         payments: editingMembership.payments ?? [],
       })
     : null;
@@ -229,8 +313,13 @@ export function MembersManager({
         planId: membership.plan.id,
         status: membership.status as (typeof STATUSES)[number],
         endDate: format(new Date(membership.endDate), "yyyy-MM-dd"),
-        paymentOverdueOverride: membership.paymentOverdueOverride,
+        paymentOverdueOverride: isOverrideActive(membership),
         paymentOverdueOverrideNote: membership.paymentOverdueOverrideNote ?? "",
+        paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil
+          ? format(new Date(membership.paymentOverdueOverrideUntil), "yyyy-MM-dd")
+          : membership.paymentDeferralDueDate
+            ? format(new Date(membership.paymentDeferralDueDate), "yyyy-MM-dd")
+            : "",
       });
       setError(null);
       setMessage(null);
@@ -251,6 +340,11 @@ export function MembersManager({
       planId: form.planId,
       paymentOverdueOverride: form.paymentOverdueOverride,
       paymentOverdueOverrideNote: form.paymentOverdueOverrideNote.trim() || null,
+      paymentOverdueOverrideUntil: form.paymentOverdueOverride
+        ? form.paymentOverdueOverrideUntil
+          ? new Date(form.paymentOverdueOverrideUntil).toISOString()
+          : null
+        : null,
     });
 
     setLoading(false);
@@ -308,9 +402,10 @@ export function MembersManager({
             <div className="sm:col-span-2">
               <Label>Subscription</Label>
               <p className="mt-1 text-sm font-medium text-white">
-                {formatMembershipSubscriptionLabel(
+                {formatMembershipSubscriptionOrCoachLabel(
                   editingMembership.plan.name,
                   editingMembership.paymentSchedule,
+                  editingMembership.status,
                 )}
               </p>
               <p className="mt-1 text-xs text-zinc-500">
@@ -361,7 +456,7 @@ export function MembersManager({
               >
                 {STATUSES.map((status) => (
                   <option key={status} value={status}>
-                    {status}
+                    {formatMembershipStatusLabel(status)}
                   </option>
                 ))}
               </Select>
@@ -385,6 +480,13 @@ export function MembersManager({
                   </p>
                   <p className="mt-1 text-sm text-zinc-400">
                     Training and match access is allowed despite overdue instalment rules.
+                    {form.paymentOverdueOverrideUntil && (
+                      <>
+                        {" "}
+                        Override runs until{" "}
+                        {format(new Date(form.paymentOverdueOverrideUntil), "d MMM yyyy")}.
+                      </>
+                    )}
                     {underlyingPaymentAccess?.isOverdue &&
                       underlyingPaymentAccess.overduePayment && (
                         <>
@@ -446,6 +548,36 @@ export function MembersManager({
             </div>
             {isInstallmentSchedule(editingMembership.paymentSchedule) && (
               <div className="space-y-4 sm:col-span-2">
+                {editingMembership.paymentDeferralExcuse &&
+                  editingMembership.paymentDeferralDueDate && (
+                    <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-4">
+                      <p className="text-sm font-medium text-amber-200">
+                        Member extension request
+                      </p>
+                      <p className="mt-1 text-sm text-zinc-300">
+                        Pay-by date requested:{" "}
+                        <span className="font-medium text-white">
+                          {format(
+                            new Date(editingMembership.paymentDeferralDueDate),
+                            "d MMM yyyy",
+                          )}
+                        </span>
+                        {editingMembership.paymentDeferralRequestedAt && (
+                          <span className="text-zinc-500">
+                            {" "}
+                            · sent{" "}
+                            {format(
+                              new Date(editingMembership.paymentDeferralRequestedAt),
+                              "d MMM yyyy",
+                            )}
+                          </span>
+                        )}
+                      </p>
+                      <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-400">
+                        {editingMembership.paymentDeferralExcuse}
+                      </p>
+                    </div>
+                  )}
                 <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-4">
                   <Checkbox
                     checked={form.paymentOverdueOverride}
@@ -453,6 +585,15 @@ export function MembersManager({
                       setForm({
                         ...form,
                         paymentOverdueOverride: event.target.checked,
+                        paymentOverdueOverrideUntil: event.target.checked
+                          ? form.paymentOverdueOverrideUntil ||
+                            (editingMembership.paymentDeferralDueDate
+                              ? format(
+                                  new Date(editingMembership.paymentDeferralDueDate),
+                                  "yyyy-MM-dd",
+                                )
+                              : "")
+                          : "",
                       })
                     }
                     className="mt-0.5"
@@ -462,29 +603,50 @@ export function MembersManager({
                       Overdue payment override
                     </span>
                     <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
-                      Allow training and match access even when an instalment is more than
-                      2 weeks overdue. Use when the member has contacted admins with a valid
-                      reason.
+                      Allow training and match access until the date below, even when an
+                      instalment is overdue.
                     </span>
                   </span>
                 </label>
                 {form.paymentOverdueOverride && (
-                  <div>
-                    <Label htmlFor="member-override-note">Admin note (optional)</Label>
-                    <Textarea
-                      id="member-override-note"
-                      value={form.paymentOverdueOverrideNote}
-                      onChange={(event) =>
-                        setForm({
-                          ...form,
-                          paymentOverdueOverrideNote: event.target.value,
-                        })
-                      }
-                      rows={3}
-                      placeholder="e.g. Agreed extension until payday — discussed with treasurer"
-                      className="mt-1"
-                    />
-                  </div>
+                  <>
+                    <div>
+                      <Label htmlFor="member-override-until">Override until</Label>
+                      <Input
+                        id="member-override-until"
+                        type="date"
+                        value={form.paymentOverdueOverrideUntil}
+                        onChange={(event) =>
+                          setForm({
+                            ...form,
+                            paymentOverdueOverrideUntil: event.target.value,
+                          })
+                        }
+                        required
+                        className="mt-1"
+                      />
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Access returns to normal after this date if payment is still
+                        outstanding.
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="member-override-note">Admin note (optional)</Label>
+                      <Textarea
+                        id="member-override-note"
+                        value={form.paymentOverdueOverrideNote}
+                        onChange={(event) =>
+                          setForm({
+                            ...form,
+                            paymentOverdueOverrideNote: event.target.value,
+                          })
+                        }
+                        rows={3}
+                        placeholder="e.g. Agreed extension until payday — discussed with treasurer"
+                        className="mt-1"
+                      />
+                    </div>
+                  </>
                 )}
               </div>
             )}
@@ -493,30 +655,62 @@ export function MembersManager({
       )}
 
       <div className="space-y-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
-            All subscriptions ({filteredMemberships.length}
-            {search.trim() ? ` of ${memberships.length}` : ""})
-          </h3>
-          <div className="w-full sm:max-w-xs">
-            <AdminSearchBar
-              value={search}
-              onChange={setSearch}
-              placeholder="Search name, email, subscription…"
-            />
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
+              All subscriptions ({filteredMemberships.length}
+              {hasActiveFilters ? ` of ${memberships.length}` : ""})
+            </h3>
+            <div className="w-full sm:max-w-xs">
+              <AdminSearchBar
+                value={search}
+                onChange={setSearch}
+                placeholder="Search name, email, subscription…"
+              />
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {SUBSCRIPTION_FILTERS.map((filter) => (
+              <button
+                key={filter.key}
+                type="button"
+                onClick={() => setStatusFilter(filter.key)}
+                className={cn(
+                  "rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                  statusFilter === filter.key
+                    ? "border-jackals-red/40 bg-jackals-red/15 text-jackals-red-light"
+                    : "border-white/10 bg-white/[0.03] text-zinc-400 hover:border-white/20 hover:text-white",
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+                className="rounded-full px-3 py-1.5 text-xs font-medium text-zinc-500 transition-colors hover:text-white"
+              >
+                Clear filters
+              </button>
+            )}
           </div>
         </div>
         {filteredMemberships.length === 0 ? (
           <p className="text-sm text-zinc-400">
-            {search.trim()
-              ? "No memberships match your search."
+            {hasActiveFilters
+              ? "No memberships match your filters."
               : "No memberships yet."}
           </p>
         ) : (
           filteredMemberships.map((membership) => {
-            const subscriptionLabel = formatMembershipSubscriptionLabel(
+            const subscriptionLabel = formatMembershipSubscriptionOrCoachLabel(
               membership.plan.name,
               membership.paymentSchedule,
+              membership.status,
             );
             const statusBadges = getMembershipStatusBadges(membership);
             const accentClass = getMembershipAccentClass(membership);

@@ -1,22 +1,10 @@
 import { cn } from "@/lib/utils";
 import {
   InputHTMLAttributes,
-  SelectHTMLAttributes,
   TextareaHTMLAttributes,
   forwardRef,
 } from "react";
 import { fieldClassName } from "@/components/ui/field-styles";
-
-export const Select = forwardRef<
-  HTMLSelectElement,
-  SelectHTMLAttributes<HTMLSelectElement>
->(({ className, children, ...props }, ref) => (
-  <select ref={ref} className={cn(fieldClassName, className)} {...props}>
-    {children}
-  </select>
-));
-
-Select.displayName = "Select";
 
 export const Textarea = forwardRef<
   HTMLTextAreaElement,

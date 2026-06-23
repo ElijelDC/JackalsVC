@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { syncTrainingSessionEvents } from "@/lib/training-events";
+import { syncTrainingSquadDayFromSession } from "@/lib/training-squads";
 import {
   type SessionCategory,
   toTrainingSessionData,
@@ -63,6 +64,7 @@ export async function updateTrainingSession(
     where: { id },
     data: toTrainingSessionData(data),
   });
+  await syncTrainingSquadDayFromSession(session);
   await syncTrainingSessionEvents(session);
   return NextResponse.json({ session });
 }

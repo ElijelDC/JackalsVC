@@ -28,4 +28,5 @@ export const Label = ({
   </label>
 );
 
-export { Select, Textarea, Checkbox } from "@/components/ui/InputFields";
+export { Select } from "@/components/ui/Select";
+export { Textarea, Checkbox } from "@/components/ui/InputFields";

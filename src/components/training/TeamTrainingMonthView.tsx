@@ -2,23 +2,22 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format, isPast, isSameMonth, startOfMonth } from "date-fns";
+import { format, isPast } from "date-fns";
 import {
   CalendarDays,
-  ChevronLeft,
-  ChevronRight,
   ChevronRight as RowChevron,
   Clock,
   Lock,
-  RotateCcw,
   Users,
 } from "lucide-react";
+import { MonthNavigator } from "@/components/calendar/MonthNavigator";
 import {
   TrainingAttendanceStatusBadge,
 } from "@/components/training/TrainingAttendancePicker";
 import { TrainingResponsesLockedBadge } from "@/components/training/TrainingResponsesLocked";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
@@ -31,15 +30,22 @@ import {
 } from "@/lib/training-attendance-config";
 import {
   formatTrainingMonthParam,
-  getAdjacentTrainingMonths,
   type TrainingTeam,
 } from "@/lib/training-teams-config";
+import { formatEventDateTime } from "@/lib/event-display";
 import { cn } from "@/lib/utils";
 
 type TrainingEvent = {
   id: string;
   title: string;
   startDate: string;
+  endDate: string | null;
+  cancelled?: boolean;
+};
+
+type SessionTimes = {
+  startTime: string;
+  endTime: string;
 };
 
 function MonthProgressBar({
@@ -133,17 +139,17 @@ export function TeamTrainingMonthView({
   team,
   month,
   events,
+  sessionTimes,
   attendanceByEventId,
 }: {
   team: TrainingTeam;
   month: Date;
   events: TrainingEvent[];
+  sessionTimes?: SessionTimes | null;
   attendanceByEventId: Record<string, TrainingAttendanceStatus>;
 }) {
   const router = useRouter();
-  const { previous, next } = getAdjacentTrainingMonths(month);
   const monthLabel = format(month, "MMMM yyyy");
-  const isCurrentMonth = isSameMonth(month, new Date());
   const now = new Date();
 
   const upcomingEvents = events.filter((event) => !isPast(new Date(event.startDate)));
@@ -214,9 +220,17 @@ export function TeamTrainingMonthView({
                 <h2 className="font-display text-2xl font-semibold text-white">
                   {team.name}
                 </h2>
-                <p className="mt-2 flex items-center gap-2 text-sm text-zinc-400">
-                  <CalendarDays className="h-4 w-4 shrink-0 text-jackals-red-light" />
-                  Every {team.dayLabel}
+                <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-400">
+                  <span className="inline-flex items-center gap-2">
+                    <CalendarDays className="h-4 w-4 shrink-0 text-jackals-red-light" />
+                    Every {team.dayLabel}
+                  </span>
+                  {sessionTimes && (
+                    <span className="inline-flex items-center gap-2">
+                      <Clock className="h-4 w-4 shrink-0 text-jackals-red-light" />
+                      {sessionTimes.startTime} – {sessionTimes.endTime}
+                    </span>
+                  )}
                 </p>
               </div>
               <span className="rounded-full border border-jackals-red/30 bg-jackals-red/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-jackals-red-light">
@@ -235,74 +249,38 @@ export function TeamTrainingMonthView({
 
         {/* Month navigator */}
         <Card className="mb-6 p-4">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start sm:gap-3">
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateMonth(previous)}
-                  aria-label="Previous month"
-                  className="h-9 w-9 p-0"
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <div className="min-w-[10rem] px-2 text-center sm:text-left">
-                  <p className="font-display text-base font-semibold text-white">
-                    {monthLabel}
-                  </p>
-                  {isCurrentMonth && (
-                    <p className="text-[11px] font-medium uppercase tracking-wider text-jackals-red-light">
-                      Current month
-                    </p>
+          <MonthNavigator
+            month={month}
+            onMonthChange={navigateMonth}
+            trailing={
+              upcomingEvents.length > 0 ? (
+                <p className="text-center text-sm text-zinc-500 sm:text-right">
+                  {needsResponseCount > 0 ? (
+                    <>
+                      <span className="font-medium text-white">
+                        {needsResponseCount}
+                      </span>{" "}
+                      session{needsResponseCount === 1 ? "" : "s"}{" "}
+                      {needsResponseCount === 1 ? "needs" : "need"} your response
+                      this week
+                    </>
+                  ) : unansweredUpcoming > 0 ? (
+                    <>
+                      <span className="font-medium text-white">
+                        {unansweredUpcoming}
+                      </span>{" "}
+                      session{unansweredUpcoming === 1 ? "" : "s"} you haven&apos;t
+                      responded to yet
+                    </>
+                  ) : hasUpcomingNotYetOpen ? (
+                    <>Responses open 2 weeks before each session</>
+                  ) : (
+                    <span className="text-green-400">You&apos;re all caught up</span>
                   )}
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigateMonth(next)}
-                  aria-label="Next month"
-                  className="h-9 w-9 p-0"
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-
-              {!isCurrentMonth && (
-                <button
-                  type="button"
-                  onClick={() => navigateMonth(startOfMonth(new Date()))}
-                  aria-label="Return to current month"
-                  className="group inline-flex shrink-0 items-center gap-1 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-2 py-1 text-[11px] font-medium text-jackals-red-light transition-all hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white"
-                >
-                  <RotateCcw className="h-3 w-3 transition-transform group-hover:-rotate-45" />
-                  Current month
-                </button>
-              )}
-            </div>
-
-            {upcomingEvents.length > 0 && (
-              <p className="text-center text-sm text-zinc-500 sm:text-right">
-                {needsResponseCount > 0 ? (
-                  <>
-                    <span className="font-medium text-white">{needsResponseCount}</span>{" "}
-                    session{needsResponseCount === 1 ? "" : "s"}{" "}
-                    {needsResponseCount === 1 ? "needs" : "need"} your response this week
-                  </>
-                ) : unansweredUpcoming > 0 ? (
-                  <>
-                    <span className="font-medium text-white">{unansweredUpcoming}</span>{" "}
-                    session{unansweredUpcoming === 1 ? "" : "s"} you haven&apos;t
-                    responded to yet
-                  </>
-                ) : hasUpcomingNotYetOpen ? (
-                  <>Responses open 2 weeks before each session</>
-                ) : (
-                  <span className="text-green-400">You&apos;re all caught up</span>
-                )}
-              </p>
-            )}
-          </div>
+                </p>
+              ) : undefined
+            }
+          />
         </Card>
 
         {events.length === 0 ? (
@@ -334,21 +312,33 @@ export function TeamTrainingMonthView({
             <StaggerIn className="divide-y divide-white/10" stagger={50}>
               {sortedUpcomingEvents.map((event) => {
                 const eventDate = new Date(event.startDate);
-                const userStatus = attendanceByEventId[event.id] ?? "UNANSWERED";
-                const canRespond = canRespondToTrainingSession(eventDate, now);
-                const needsResponse = sessionNeedsPlayerResponse(
-                  userStatus,
-                  eventDate,
-                  now,
+                const { timeLabel } = formatEventDateTime(
+                  event.startDate,
+                  event.endDate,
                 );
-                const isLocked = userStatus === "UNANSWERED" && !canRespond;
+                const userStatus = attendanceByEventId[event.id] ?? "UNANSWERED";
+                const isCancelled = event.cancelled === true;
+                const canRespond =
+                  !isCancelled && canRespondToTrainingSession(eventDate, now);
+                const needsResponse =
+                  !isCancelled &&
+                  sessionNeedsPlayerResponse(userStatus, eventDate, now);
+                const isLocked =
+                  !isCancelled && userStatus === "UNANSWERED" && !canRespond;
                 const opensOn = getTrainingResponseOpensOn(eventDate);
                 const href = `/training/session/${event.id}`;
                 const rowClassName = cn(
                   "flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
-                  !isLocked && "transition-colors hover:bg-white/[0.03]",
-                  userStatus === "ATTENDING" && "bg-green-500/[0.06]",
-                  userStatus === "NOT_ATTENDING" &&
+                  isCancelled &&
+                    "cursor-not-allowed border-l-2 border-l-zinc-600/50 bg-zinc-500/[0.04] opacity-60",
+                  !isCancelled &&
+                    !isLocked &&
+                    "transition-colors hover:bg-white/[0.03]",
+                  !isCancelled &&
+                    userStatus === "ATTENDING" &&
+                    "bg-green-500/[0.06]",
+                  !isCancelled &&
+                    userStatus === "NOT_ATTENDING" &&
                     "border-l-2 border-l-rose-400/70 bg-rose-500/[0.1]",
                   needsResponse &&
                     "border-l-2 border-l-amber-400/70 bg-amber-500/[0.08] ring-1 ring-inset ring-amber-400/10",
@@ -361,22 +351,39 @@ export function TeamTrainingMonthView({
                       <SessionDateBlock
                         date={eventDate}
                         needsResponse={needsResponse}
-                        locked={isLocked}
+                        locked={isLocked || isCancelled}
                       />
                       <div className="min-w-0">
                         <p
                           className={cn(
                             "font-medium",
-                            isLocked ? "text-zinc-400" : "text-white",
+                            isCancelled || isLocked
+                              ? "text-zinc-400 line-through decoration-zinc-600"
+                              : "text-white",
                           )}
                         >
                           {format(eventDate, "EEEE")}
                         </p>
-                        <p className="mt-0.5 truncate text-sm text-zinc-500">
-                          {event.title}
+                        <p
+                          className={cn(
+                            "mt-0.5 flex items-center gap-1.5 text-sm",
+                            isCancelled ? "text-zinc-600" : "text-zinc-500",
+                          )}
+                        >
+                          <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                          {timeLabel}
                         </p>
+                        {!isCancelled && (
+                          <p className="mt-0.5 truncate text-sm text-zinc-600">
+                            {event.title}
+                          </p>
+                        )}
                         <div className="mt-2">
-                          {needsResponse ? (
+                          {isCancelled ? (
+                            <Badge className="border-zinc-500/30 bg-zinc-500/10 text-zinc-400">
+                              Cancelled
+                            </Badge>
+                          ) : needsResponse ? (
                             <NeedsResponseBadge />
                           ) : userStatus !== "UNANSWERED" ? (
                             <TrainingAttendanceStatusBadge status={userStatus} />
@@ -392,12 +399,18 @@ export function TeamTrainingMonthView({
                     <div
                       className={cn(
                         "flex shrink-0 items-center gap-2 text-sm sm:pl-4",
+                        isCancelled && "text-zinc-600",
                         needsResponse && "font-semibold text-amber-200",
                         isLocked && "text-zinc-500",
-                        !needsResponse && !isLocked && "font-medium text-jackals-red-light",
+                        !needsResponse &&
+                          !isLocked &&
+                          !isCancelled &&
+                          "font-medium text-jackals-red-light",
                       )}
                     >
-                      {needsResponse ? (
+                      {isCancelled ? (
+                        "Session cancelled"
+                      ) : needsResponse ? (
                         <>
                           Respond now
                           <RowChevron className="h-4 w-4" />
@@ -417,7 +430,7 @@ export function TeamTrainingMonthView({
                   </>
                 );
 
-                return isLocked ? (
+                return isLocked || isCancelled ? (
                   <div
                     key={event.id}
                     className={rowClassName}
@@ -442,29 +455,67 @@ export function TeamTrainingMonthView({
 
               {pastEvents.map((event) => {
                 const eventDate = new Date(event.startDate);
+                const { timeLabel } = formatEventDateTime(
+                  event.startDate,
+                  event.endDate,
+                );
                 const userStatus = attendanceByEventId[event.id] ?? "UNANSWERED";
+                const isCancelled = event.cancelled === true;
 
-                return (
+                const row = (
+                  <>
+                    <SessionDateBlock date={eventDate} locked={isCancelled} />
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className={cn(
+                          "text-sm",
+                          isCancelled
+                            ? "text-zinc-500 line-through decoration-zinc-600"
+                            : "text-zinc-400",
+                        )}
+                      >
+                        {format(eventDate, "EEEE d MMMM")}
+                      </p>
+                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
+                        <Clock className="h-3 w-3 shrink-0" aria-hidden />
+                        {timeLabel}
+                      </p>
+                      {isCancelled ? (
+                        <div className="mt-1">
+                          <Badge className="border-zinc-500/30 bg-zinc-500/10 text-zinc-500">
+                            Cancelled
+                          </Badge>
+                        </div>
+                      ) : (
+                        userStatus !== "UNANSWERED" && (
+                          <div className="mt-1">
+                            <TrainingAttendanceStatusBadge status={userStatus} />
+                          </div>
+                        )
+                      )}
+                    </div>
+                    <span className="flex shrink-0 items-center gap-1 text-xs text-zinc-600">
+                      <Clock className="h-3 w-3" />
+                      {isCancelled ? "Cancelled" : "Past"}
+                    </span>
+                  </>
+                );
+
+                return isCancelled ? (
+                  <div
+                    key={event.id}
+                    className="flex items-center gap-4 px-5 py-3 opacity-60"
+                    aria-disabled="true"
+                  >
+                    {row}
+                  </div>
+                ) : (
                   <Link
                     key={event.id}
                     href={`/training/session/${event.id}`}
                     className="flex items-center gap-4 px-5 py-3 opacity-60 transition-opacity hover:opacity-80"
                   >
-                    <SessionDateBlock date={eventDate} />
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm text-zinc-400">
-                        {format(eventDate, "EEEE d MMMM")}
-                      </p>
-                      {userStatus !== "UNANSWERED" && (
-                        <div className="mt-1">
-                          <TrainingAttendanceStatusBadge status={userStatus} />
-                        </div>
-                      )}
-                    </div>
-                    <span className="flex shrink-0 items-center gap-1 text-xs text-zinc-600">
-                      <Clock className="h-3 w-3" />
-                      Past
-                    </span>
+                    {row}
                   </Link>
                 );
               })}

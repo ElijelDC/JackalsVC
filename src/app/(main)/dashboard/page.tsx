@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { CoachDashboard } from "@/components/dashboard/CoachDashboard";
 import {
   DashboardUpcomingClubEventsPanel,
   DashboardUpcomingMatchesCard,
@@ -8,6 +9,12 @@ import {
 } from "@/components/dashboard/MemberDashboardPanels";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
+import { getCoachProfile } from "@/lib/coach-auth";
+import { getCoachUnansweredItemsWithReminders } from "@/lib/coach-unanswered";
+import {
+  getCoachSalaryPayments,
+} from "@/lib/coach-payments";
+import { COACH_SESSION_RATE_EUR, isCurrentPaymentMonth, maskCoachPaymentForCoachView } from "@/lib/coach-payments-config";
 import {
   enrichEventRecords,
   serializeEnrichedEvent,
@@ -32,6 +39,97 @@ const DASHBOARD_WEEKS = 4;
 export default async function DashboardPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard");
+
+  const coach = await getCoachProfile(session.user.id);
+
+  if (coach) {
+    const now = new Date();
+    const eventsThrough = new Date(now);
+    eventsThrough.setDate(eventsThrough.getDate() + DASHBOARD_WEEKS * 7);
+
+    const [
+      pendingResponses,
+      matchEventsRaw,
+      upcomingTraining,
+      upcomingMatches,
+    ] = await Promise.all([
+      getCoachUnansweredItemsWithReminders(
+        coach.trainingTeamKey,
+        coach.userId,
+      ),
+      prisma.event.findMany({
+        where: {
+          startDate: { gte: now, lte: eventsThrough },
+          type: { in: ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"] },
+        },
+        orderBy: { startDate: "asc" },
+      }),
+      getUpcomingTeamTrainingEvents(
+        session.user.id,
+        coach.trainingTeamKey,
+        now,
+        TRAINING_RESPONSE_OPENS_DAYS,
+      ),
+      getUpcomingTeamMatches(
+        session.user.id,
+        coach.trainingTeamKey,
+        now,
+        TRAINING_RESPONSE_OPENS_DAYS,
+      ),
+    ]);
+
+    const payments = coach.isPaidCoach
+      ? await getCoachSalaryPayments(
+          coach.clubMemberId,
+          coach.trainingTeamKey,
+          coach.userId,
+          { monthsBack: 3, monthsAhead: 1 },
+        )
+      : [];
+
+    const enrichedMatches = await enrichEventRecords(matchEventsRaw);
+    const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
+    const firstName = session.user.name?.split(" ")[0] ?? "Coach";
+    const currentPayment =
+      payments.find((payment) =>
+        isCurrentPaymentMonth(payment.year, payment.month, now),
+      ) ?? null;
+
+    return (
+      <PageContainer>
+        <PageHeader
+          title={`Welcome, ${firstName}`}
+          description={
+            coach.isPaidCoach
+              ? `${coach.teamName} · Your squad schedule and club payments`
+              : `${coach.teamName} · Your squad schedule and club events`
+          }
+        />
+        <CoachDashboard
+          teamName={coach.teamName}
+          ratePerSession={COACH_SESSION_RATE_EUR}
+          showPayments={coach.isPaidCoach}
+          currentPayment={
+            currentPayment ? maskCoachPaymentForCoachView(currentPayment) : null
+          }
+          pendingResponses={pendingResponses}
+          upcomingTraining={upcomingTraining}
+          upcomingMatches={upcomingMatches}
+          upcomingClubEvents={upcomingClubEvents.map((e) => ({
+            id: e.id,
+            title: e.title,
+            description: e.description,
+            startDate: e.startDate,
+            endDate: e.endDate,
+            type: e.type,
+            location: e.location,
+            coach: e.coach,
+            trainingSessionId: e.trainingSessionId,
+          }))}
+        />
+      </PageContainer>
+    );
+  }
 
   const now = new Date();
   const eventsThrough = new Date(now);
@@ -85,6 +183,7 @@ export default async function DashboardPage() {
         membershipStatus: currentMembership.status,
         paymentSchedule: currentMembership.paymentSchedule,
         paymentOverdueOverride: currentMembership.paymentOverdueOverride,
+        paymentOverdueOverrideUntil: currentMembership.paymentOverdueOverrideUntil,
         payments,
       })
     : null;

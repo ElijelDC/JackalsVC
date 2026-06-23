@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { COACH_PAYMENT_TYPES } from "@/lib/coach-payment-type";
 
 export const validateVlySchema = z.object({
   vlyNumber: z.string().min(3, "VLY number is required"),
@@ -248,18 +249,47 @@ export const userUpdateSchema = z.object({
   role: z.enum(["MEMBER", "ADMIN"]),
 });
 
+export const profilePlayerNumberSchema = z.object({
+  playerNumber: z
+    .number()
+    .int("Player number must be a whole number.")
+    .min(1, "Player number must be between 1 and 99.")
+    .max(99, "Player number must be between 1 and 99.")
+    .nullable(),
+});
+
 export const membershipCreateSchema = z.object({
   userId: z.string().min(1, "User is required"),
   planId: z.string().min(1, "Plan is required"),
-  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"]).optional(),
+  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED", "COACH"]).optional(),
 });
 
-export const membershipUpdateSchema = z.object({
-  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED"]),
-  endDate: z.string().min(1, "End date is required"),
-  planId: z.string().optional(),
-  paymentOverdueOverride: z.boolean().optional(),
-  paymentOverdueOverrideNote: z.string().max(500).nullable().optional(),
+export const membershipUpdateSchema = z
+  .object({
+    status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED", "COACH"]),
+    endDate: z.string().min(1, "End date is required"),
+    planId: z.string().optional(),
+    paymentOverdueOverride: z.boolean().optional(),
+    paymentOverdueOverrideNote: z.string().max(500).nullable().optional(),
+    paymentOverdueOverrideUntil: z.string().nullable().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.paymentOverdueOverride && !data.paymentOverdueOverrideUntil) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Choose when the override should end",
+        path: ["paymentOverdueOverrideUntil"],
+      });
+    }
+  });
+
+export const paymentDeferralRequestSchema = z.object({
+  excuse: z
+    .string()
+    .trim()
+    .min(10, "Please explain why you need more time (at least 10 characters)")
+    .max(1000),
+  dueDate: z.string().min(1, "Choose when you expect to pay"),
 });
 
 export const clubMemberCreateSchema = z.object({
@@ -267,6 +297,7 @@ export const clubMemberCreateSchema = z.object({
   name: z.string().min(2, "Full name is required"),
   trainingTeamKey: z.string().min(1, "Team is required"),
   rosterRole: z.enum(["PLAYER", "COACH"]).default("PLAYER"),
+  coachPaymentType: z.enum(COACH_PAYMENT_TYPES).optional(),
   active: z.boolean().optional(),
 });
 
@@ -274,6 +305,7 @@ export const clubMemberUpdateSchema = z.object({
   name: z.string().min(2).optional(),
   active: z.boolean().optional(),
   rosterRole: z.enum(["PLAYER", "COACH"]).optional(),
+  coachPaymentType: z.enum(COACH_PAYMENT_TYPES).nullable().optional(),
   trainingTeamKey: z.string().nullable().optional(),
 });
 
@@ -382,3 +414,56 @@ export const teamMatchSchema = z
       path: ["matchStart"],
     },
   );
+
+export const coachTrainingUpdateSchema = z.object({
+  dayOfWeek: z.coerce.number().int().min(0).max(6),
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
+  location: z.string().min(1, "Location is required"),
+});
+
+export const coachTrainingOccurrenceSchema = z.object({
+  startTime: z.string().min(1, "Start time is required"),
+  endTime: z.string().min(1, "End time is required"),
+  location: z.string().min(1, "Location is required"),
+});
+
+export const adminTrainingScheduleUpdateSchema = coachTrainingUpdateSchema.extend({
+  teamKey: z.string().min(1, "Team is required"),
+});
+
+export const coachClinicSchema = z.object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().optional(),
+  location: z.string().optional(),
+  attendanceUrl: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().url("Must be a valid URL").optional(),
+  ),
+  paymentUrl: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().url("Must be a valid URL").optional(),
+  ),
+  sessionFee: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.coerce
+      .number()
+      .positive("Session fee must be greater than zero")
+      .optional(),
+  ),
+  reclubUsername: z.preprocess(
+    (val) => (val === "" || val == null ? undefined : val),
+    z.string().min(1).optional(),
+  ),
+});
+
+export const coachSalaryPaymentUpdateSchema = z.object({
+  sessionCount: z.coerce.number().int().min(0, "Session count cannot be negative"),
+  status: z.enum(["PENDING", "PAID"]).optional(),
+  notes: z
+    .string()
+    .optional()
+    .transform((val) => (val?.trim() ? val.trim() : undefined)),
+});

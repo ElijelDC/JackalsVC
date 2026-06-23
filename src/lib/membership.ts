@@ -43,6 +43,7 @@ export async function getMembershipPaymentAccess(
     membershipStatus: membership.status,
     paymentSchedule: membership.paymentSchedule,
     paymentOverdueOverride: membership.paymentOverdueOverride,
+    paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil,
     payments: membership.payments,
   });
 
@@ -58,6 +59,14 @@ export async function getAttendanceAccessInfo(user: {
   access: MembershipPaymentAccess | null;
 }> {
   if (user.role === "ADMIN") {
+    return { canAccess: true, blockReason: null, access: null };
+  }
+
+  const clubMember = await prisma.clubMember.findUnique({
+    where: { userId: user.id },
+    select: { rosterRole: true },
+  });
+  if (clubMember?.rosterRole === "COACH") {
     return { canAccess: true, blockReason: null, access: null };
   }
 

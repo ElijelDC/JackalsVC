@@ -1,3 +1,5 @@
+import type { CoachReminderStatus } from "@/lib/coach-unanswered-config";
+
 export const TRAINING_ATTENDANCE_STATUSES = [
   "ATTENDING",
   "NOT_ATTENDING",
@@ -165,6 +167,12 @@ export type TrainingRosterMember = {
   isCurrentUser: boolean;
 };
 
+export type TrainingRosterGroups = {
+  attending: TrainingRosterMember[];
+  notAttending: TrainingRosterMember[];
+  unanswered: TrainingRosterMember[];
+};
+
 export type TrainingSessionDetailData = {
   event: {
     id: string;
@@ -173,7 +181,7 @@ export type TrainingSessionDetailData = {
     startDate: string;
     endDate: string | null;
     location: string | null;
-    coach: string | null;
+    cancelled: boolean;
   };
   team: {
     key: string;
@@ -181,11 +189,10 @@ export type TrainingSessionDetailData = {
     dayLabel: string;
   };
   userStatus: TrainingAttendanceStatus;
-  roster: {
-    attending: TrainingRosterMember[];
-    notAttending: TrainingRosterMember[];
-    unanswered: TrainingRosterMember[];
-  };
+  isCoachUser: boolean;
+  coachReminder: CoachReminderStatus | null;
+  roster: TrainingRosterGroups;
+  coaches: TrainingRosterGroups;
   counts: {
     attending: number;
     notAttending: number;

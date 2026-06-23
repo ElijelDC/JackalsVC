@@ -24,6 +24,7 @@ model User {
   eventSignups       EventSignup[]
   matchSignups       MatchSignup[]
   clubMember         ClubMember?
+  coachResponseReminders CoachResponseReminder[]
 }
 
 model ClubMember {
@@ -32,13 +33,37 @@ model ClubMember {
   name            String
   active          Boolean          @default(true)
   rosterRole      String           @default("PLAYER")
+  coachPaymentType String?
   trainingTeamKey String?
-  profileImageUrl String?
-  userId          String?          @unique
+  profileImageUrl        String?
+  vlyMembershipPhotoUrl  String?
+  playerNumber           Int?
+  userId                 String?          @unique
   user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
   clubTeamMember  ClubTeamMember?
+  coachPayments   CoachSalaryPayment[]
+}
+
+model CoachSalaryPayment {
+  id                   String     @id @default(cuid())
+  clubMemberId         String
+  clubMember           ClubMember @relation(fields: [clubMemberId], references: [id], onDelete: Cascade)
+  year                 Int
+  month                Int
+  sessionCount         Int
+  ratePerSession       Float      @default(25)
+  amount               Float
+  status               String     @default("PENDING")
+  invoiceScreenshotUrl String?
+  paidAt               DateTime?
+  notes                String?
+  createdAt            DateTime   @default(now())
+  updatedAt            DateTime   @updatedAt
+
+  @@unique([clubMemberId, year, month])
+  @@index([year, month])
 }
 
 model EmailVerification {
@@ -175,6 +200,7 @@ model TeamMatch {
   warmUpTime      DateTime
   matchStart      DateTime
   notes           String?
+  cancelled       Boolean       @default(false)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   signups         MatchSignup[]
@@ -192,6 +218,17 @@ model MatchSignup {
   createdAt DateTime  @default(now())
 
   @@unique([userId, matchId])
+}
+
+model CoachResponseReminder {
+  id          String   @id @default(cuid())
+  coachUserId String
+  coach       User     @relation(fields: [coachUserId], references: [id], onDelete: Cascade)
+  targetKind  String
+  targetId    String
+  lastSentAt  DateTime @default(now())
+
+  @@unique([coachUserId, targetKind, targetId])
 }
 
 model MembershipPlan {
@@ -213,6 +250,10 @@ model Membership {
   status                    String         @default("ACTIVE")
   paymentOverdueOverride      Boolean        @default(false)
   paymentOverdueOverrideNote  String?
+  paymentOverdueOverrideUntil DateTime?
+  paymentDeferralExcuse       String?
+  paymentDeferralDueDate      DateTime?
+  paymentDeferralRequestedAt  DateTime?
   startDate                 DateTime       @default(now())
   endDate                   DateTime
   user                      User           @relation(fields: [userId], references: [id], onDelete: Cascade)

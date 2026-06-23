@@ -7,13 +7,17 @@ import {
   CalendarDays,
   ChevronRight,
   Clock,
+  Download,
   MapPin,
   Trophy,
   Users,
 } from "lucide-react";
 import { AnimateIn } from "@/components/motion/AnimateIn";
+import { Badge } from "@/components/ui/Badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer } from "@/components/layout/PageShell";
+import { CoachResponsesSection } from "@/components/training/CoachResponsesSection";
+import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
 import { TrainingAttendancePicker } from "@/components/training/TrainingAttendancePicker";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
@@ -47,7 +51,9 @@ export function MatchDetailView({
   const warmUpDate = new Date(match.warmUpTime);
   const isHome = match.venue === "HOME";
   const past = matchDate < new Date();
-  const canRespond = canRespondToTrainingSession(matchDate);
+  const cancelled = match.cancelled;
+  const canRespond =
+    !cancelled && canRespondToTrainingSession(matchDate);
   const responseOpensOn = getTrainingResponseOpensOn(matchDate);
 
   return (
@@ -81,12 +87,31 @@ export function MatchDetailView({
             >
               {formatMatchVenueLabel(match.venue)}
             </span>
-            <h1 className="font-display mt-4 text-2xl font-semibold text-white">
+            <h1
+              className={cn(
+                "font-display mt-4 text-2xl font-semibold",
+                cancelled
+                  ? "text-zinc-400 line-through decoration-zinc-600"
+                  : "text-white",
+              )}
+            >
               {formatMatchTitle(match.opponentName, match.venue)}
             </h1>
+            {cancelled && (
+              <Badge className="mt-3 border-zinc-500/30 bg-zinc-500/10 text-zinc-400">
+                Cancelled
+              </Badge>
+            )}
             <p className="mt-2 text-sm text-zinc-400">
               {format(matchDate, "EEEE d MMMM yyyy")}
             </p>
+            {cancelled && (
+              <p className="mt-2 text-sm text-zinc-500">
+                This match has been cancelled by your coach.
+              </p>
+            )}
+
+            <CoachResponsesSection coaches={detail.coaches} />
           </div>
         </div>
       </AnimateIn>
@@ -163,7 +188,9 @@ export function MatchDetailView({
           <Card>
             <CardTitle className="text-base">Your response</CardTitle>
             <CardDescription className="mt-2">
-              {past
+              {cancelled
+                ? "This match was cancelled. Attendance responses are closed."
+                : past
                 ? "This match has already started."
                 : !canAccessAttendance
                   ? attendanceBlockReason === "overdue"
@@ -171,10 +198,12 @@ export function MatchDetailView({
                     : "Active membership is required to respond."
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the match — from ${format(responseOpensOn, "d MMMM")}.`
-                    : "Let coaches and teammates know if you're playing."}
+                    : detail.isCoachUser
+                      ? "Let your players know if you can't attend the match."
+                      : "Let coaches and teammates know if you're playing."}
             </CardDescription>
 
-            {!past && canAccessAttendance && (
+            {!past && !cancelled && canAccessAttendance && (
               <div className="mt-6 space-y-4">
                 {!canRespond && (
                   <TrainingResponsesLockedNotice
@@ -189,11 +218,12 @@ export function MatchDetailView({
                   layout="stack"
                   showLockedNotice={false}
                   itemLabel="match"
+                  coachMode={detail.isCoachUser}
                 />
               </div>
             )}
 
-            {!past && !canAccessAttendance && (
+            {!past && !cancelled && !canAccessAttendance && (
               <Link
                 href="/membership"
                 className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-jackals-red-light hover:text-jackals-red"
@@ -208,6 +238,21 @@ export function MatchDetailView({
 
           <Card className="mt-4">
             <CardTitle className="text-base">Squad summary</CardTitle>
+            {detail.isCoachUser && !cancelled && (
+              <div className="mt-4">
+                <Link
+                  href={`/matches/${match.id}/matchday-sheet`}
+                  className="inline-flex items-center gap-2 rounded-lg border border-jackals-red/30 bg-jackals-red/10 px-4 py-2.5 text-sm font-medium text-jackals-red-light transition-colors hover:bg-jackals-red/15"
+                >
+                  <Download className="h-4 w-4" />
+                  Matchday VLY sheet
+                </Link>
+                <p className="mt-2 text-xs text-zinc-500">
+                  Download attending players&apos; VLY photos and player numbers
+                  for referees.
+                </p>
+              </div>
+            )}
             <div className="mt-4 grid grid-cols-3 gap-3 text-center">
               <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-3">
                 <p className="text-2xl font-bold text-green-400">
@@ -239,17 +284,23 @@ export function MatchDetailView({
 
         <AnimateIn delay={150} className="lg:col-span-3">
           <Card className="overflow-hidden p-0">
-            <div className="border-b border-white/10 px-5 py-4">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-jackals-red-light" />
-                <p className="font-display text-sm font-semibold uppercase tracking-wide text-white">
-                  Squad responses
-                </p>
-              </div>
-              <p className="mt-1 text-xs text-zinc-600">
-                Only players on {team.name} can see this list.
-              </p>
-            </div>
+            <SquadResponsesPanelHeader
+              kind="match"
+              targetId={match.id}
+              initialStatus={
+                detail.coachReminder ?? {
+                  canSend: true,
+                  lastSentAt: null,
+                  nextAvailableAt: null,
+                }
+              }
+              unansweredCount={detail.roster.unanswered.length}
+              showReminder={
+                detail.isCoachUser &&
+                Boolean(detail.coachReminder) &&
+                detail.roster.unanswered.length > 0
+              }
+            />
 
             <div className="space-y-6 p-5">
               <SquadRosterGroup

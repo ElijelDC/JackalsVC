@@ -5,16 +5,24 @@ import { LayoutDashboard } from "lucide-react";
 import { isNavItemActive } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 
+function isDashboardActive(pathname: string, isCoach: boolean) {
+  if (isNavItemActive(pathname, "/dashboard")) return true;
+  if (isCoach && pathname.startsWith("/coach")) return true;
+  return false;
+}
+
 export function DashboardNavLink({
   pathname,
   onNavigate,
   variant = "desktop",
+  isCoach = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
   variant?: "desktop" | "mobile";
+  isCoach?: boolean;
 }) {
-  const active = isNavItemActive(pathname, "/dashboard");
+  const active = isDashboardActive(pathname, isCoach);
 
   if (variant === "mobile") {
     return (

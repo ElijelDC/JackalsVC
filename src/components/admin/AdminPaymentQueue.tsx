@@ -41,10 +41,6 @@ const SORT_OPTIONS = [
 
 type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 
-function isPaymentOverdue(payment: AdminPendingPayment, now = new Date()) {
-  return getPendingPaymentDueState(payment.dueDate, now) === "overdue";
-}
-
 function sortPayments(payments: AdminPendingPayment[], sortBy: SortOption) {
   const sorted = [...payments];
 
@@ -111,8 +107,8 @@ export function AdminPaymentQueue({ payments }: { payments: AdminPendingPayment[
         <div>
           <h2 className="text-lg font-semibold text-white">Pending payments</h2>
           <p className="mt-1 text-sm text-zinc-400">
-            Members who have uploaded an IBAN transfer screenshot for a payment that is due
-            now or overdue. Future instalments appear here once their due date arrives.
+            Members who have uploaded an IBAN transfer screenshot. Future instalments appear
+            here too if a member pays early — check the due date before approving.
           </p>
         </div>
         <span className="shrink-0 rounded-full border border-white/10 px-3 py-1 text-sm text-zinc-300">
@@ -171,14 +167,16 @@ export function AdminPaymentQueue({ payments }: { payments: AdminPendingPayment[
       {payments.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-500">
           No payments awaiting approval. Members appear here after they upload a transfer
-          screenshot for a due or overdue instalment.
+          screenshot.
         </p>
       ) : filteredPayments.length === 0 ? (
         <p className="mt-6 text-sm text-zinc-500">No payments match your search.</p>
       ) : (
         <div className="mt-6 space-y-4">
           {filteredPayments.map((payment) => {
-            const overdue = isPaymentOverdue(payment);
+            const dueState = getPendingPaymentDueState(payment.dueDate);
+            const overdue = dueState === "overdue";
+            const upcoming = dueState === "upcoming" && payment.dueDate;
 
             return (
               <article
@@ -211,9 +209,21 @@ export function AdminPaymentQueue({ payments }: { payments: AdminPendingPayment[
                       {payment.dueDate && (
                         <p>
                           <span className="text-zinc-500">Due:</span>{" "}
-                          <span className={overdue ? "text-red-400" : "text-white"}>
+                          <span
+                            className={
+                              overdue
+                                ? "text-red-400"
+                                : upcoming
+                                  ? "text-sky-300"
+                                  : "text-white"
+                            }
+                          >
                             {new Date(payment.dueDate).toLocaleDateString("en-GB")}
-                            {overdue ? " · overdue" : " · due now"}
+                            {overdue
+                              ? " · overdue"
+                              : upcoming
+                                ? " · not yet due"
+                                : " · due now"}
                           </span>
                         </p>
                       )}

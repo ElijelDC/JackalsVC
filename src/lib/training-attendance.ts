@@ -9,6 +9,7 @@ import {
   type TrainingRosterMember,
   type TrainingSessionDetailData,
 } from "@/lib/training-attendance-config";
+import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { enrichEventRecords, serializeEnrichedEvent } from "@/lib/event-enrichment";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
@@ -101,16 +102,21 @@ export async function getUpcomingTeamTrainingEvents(
       startDate: { gte: fromDate, lte: through },
     },
     orderBy: { startDate: "asc" },
-    take: limit,
+    take: limit * 2,
   });
+
+  const enriched = await enrichEventRecords(events);
+  const activeEvents = enriched
+    .filter((event) => !event.occurrenceCancelled)
+    .slice(0, limit);
 
   const statuses = await getUserEventAttendanceStatuses(
     userId,
-    events.map((event) => event.id),
+    activeEvents.map((event) => event.id),
   );
   const team = await getTrainingTeamByKey(trainingTeamKey);
 
-  return events.map((event) => ({
+  return activeEvents.map((event) => ({
     id: event.id,
     title: team ? `${team.name} training` : event.title,
     startDate: event.startDate.toISOString(),
@@ -175,20 +181,45 @@ export async function getTrainingSessionDetail(
     ]),
   );
 
-  const rosterMembers: TrainingRosterMember[] = teammates
+  function groupByStatus(members: TrainingRosterMember[]) {
+    return {
+      attending: members.filter((m) => m.status === "ATTENDING"),
+      notAttending: members.filter((m) => m.status === "NOT_ATTENDING"),
+      unanswered: members.filter((m) => m.status === "UNANSWERED"),
+    };
+  }
+
+  const linkedMembers = teammates
     .filter((member) => member.user)
     .map((member) => ({
-      userId: member.userId!,
-      name: member.user!.name,
-      status: signupMap.get(member.userId!) ?? "UNANSWERED",
-      isCurrentUser: member.userId === userId,
+      rosterRole: member.rosterRole,
+      member: {
+        userId: member.userId!,
+        name: member.user!.name,
+        status: signupMap.get(member.userId!) ?? "UNANSWERED",
+        isCurrentUser: member.userId === userId,
+      } satisfies TrainingRosterMember,
     }));
 
-  const attending = rosterMembers.filter((m) => m.status === "ATTENDING");
-  const notAttending = rosterMembers.filter((m) => m.status === "NOT_ATTENDING");
-  const unanswered = rosterMembers.filter((m) => m.status === "UNANSWERED");
+  const playerMembers = linkedMembers
+    .filter((entry) => entry.rosterRole !== "COACH")
+    .map((entry) => entry.member);
+
+  const coachMembers = linkedMembers
+    .filter((entry) => entry.rosterRole === "COACH")
+    .map((entry) => entry.member);
+
+  const roster = groupByStatus(playerMembers);
+  const coaches = groupByStatus(coachMembers);
 
   const userStatus = signupMap.get(userId) ?? "UNANSWERED";
+  const isCoachUser =
+    teammates.find((member) => member.userId === userId)?.rosterRole === "COACH";
+
+  const coachReminder =
+    isCoachUser && roster.unanswered.length > 0
+      ? await getCoachReminderStatus(userId, "training", eventId)
+      : null;
 
   return {
     event: {
@@ -198,16 +229,19 @@ export async function getTrainingSessionDetail(
       startDate: serialized.startDate,
       endDate: serialized.endDate,
       location: serialized.location,
-      coach: serialized.coach,
+      cancelled: enriched.occurrenceCancelled,
     },
     team,
     userStatus,
-    roster: { attending, notAttending, unanswered },
+    isCoachUser,
+    coachReminder,
+    roster,
+    coaches,
     counts: {
-      attending: attending.length,
-      notAttending: notAttending.length,
-      unanswered: unanswered.length,
-      total: rosterMembers.length,
+      attending: roster.attending.length,
+      notAttending: roster.notAttending.length,
+      unanswered: roster.unanswered.length,
+      total: playerMembers.length,
     },
   };
 }

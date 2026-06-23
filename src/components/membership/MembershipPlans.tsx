@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { Check, Circle, Lock } from "lucide-react";
+import { Check, Lock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { AlertBanner } from "@/components/ui/FormMessage";
@@ -322,12 +322,6 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
     setMessage(null);
   };
 
-  const handleBackToSchedule = () => {
-    setCheckoutStep(scheduleStep);
-    setConfirmedLock(false);
-    setMessage(null);
-  };
-
   const handleBackToPlan = () => {
     setCheckoutStep(1);
     setSelectedSchedule(null);
@@ -447,23 +441,14 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
       {selectedPlan && selectedSchedule && checkoutStep === reviewStep && pricing && (
         <AnimateIn immediate>
         <section className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="font-display text-xl font-semibold text-white">
-                {reviewStep}. Review & confirm
-              </h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                {selectedPlan.name} · {formatPaymentScheduleLabel(selectedSchedule)} — pay by SEPA
-                bank transfer to our SumUp Business Account.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={handleBackToSchedule}
-              className="text-sm text-jackals-red-light transition-colors hover:text-jackals-red"
-            >
-              Change payment schedule
-            </button>
+          <div>
+            <h2 className="font-display text-xl font-semibold text-white">
+              {reviewStep}. Review & confirm
+            </h2>
+            <p className="mt-1 text-sm text-zinc-400">
+              {selectedPlan.name} · {formatPaymentScheduleLabel(selectedSchedule)} — pay by SEPA
+              bank transfer to our SumUp Business Account.
+            </p>
           </div>
 
           <Card className="overflow-hidden p-0">
@@ -522,11 +507,6 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
                 ? "Setting up..."
                 : `Confirm ${formatPaymentScheduleLabel(selectedSchedule).toLowerCase()} schedule`}
             </Button>
-
-            <p className="mt-3 flex items-center justify-center gap-1.5 text-center text-xs text-zinc-500">
-              <Circle className="h-3 w-3 fill-zinc-600 text-zinc-600" />
-              One schedule per member
-            </p>
           </Card>
         </section>
         </AnimateIn>

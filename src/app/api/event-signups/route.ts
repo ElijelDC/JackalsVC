@@ -2,6 +2,10 @@ import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
 import { getAttendanceAccessInfo } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import {
+  isTrainingOccurrenceCancelled,
+  resolveOccurrenceDate,
+} from "@/lib/training-occurrence";
+import {
   canRespondToTrainingSession,
   TRAINING_RESPONSE_OPENS_DAYS,
 } from "@/lib/training-attendance-config";
@@ -47,6 +51,15 @@ async function validateTrainingEventAccess(userId: string, eventId: string) {
   }
   if (event.startDate < new Date()) {
     return { error: jsonError("This event has already started", 400) };
+  }
+  if (event.trainingSessionId) {
+    const cancelled = await isTrainingOccurrenceCancelled(
+      event.trainingSessionId,
+      resolveOccurrenceDate(event),
+    );
+    if (cancelled) {
+      return { error: jsonError("This training session has been cancelled", 400) };
+    }
   }
 
   return { event };

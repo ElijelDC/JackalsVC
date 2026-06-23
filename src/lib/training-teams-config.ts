@@ -33,6 +33,20 @@ export function formatTrainingMonthParam(month: Date) {
   return format(month, "yyyy-MM");
 }
 
+export const ALL_MONTHS_PARAM = "all";
+
+export function isAllMonthsParam(value: string | undefined) {
+  return value === ALL_MONTHS_PARAM;
+}
+
+export function parseScheduleMonthParam(value: string | undefined) {
+  if (isAllMonthsParam(value)) {
+    return { mode: "all" as const, month: startOfMonth(new Date()) };
+  }
+
+  return { mode: "month" as const, month: parseTrainingMonthParam(value) };
+}
+
 export function getAdjacentTrainingMonths(month: Date) {
   return {
     previous: subMonths(month, 1),

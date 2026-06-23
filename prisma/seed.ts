@@ -85,6 +85,11 @@ async function main() {
       role: "MEMBER",
     },
     {
+      name: "Coach Demo",
+      email: "coach@jackalsvc.com",
+      role: "MEMBER",
+    },
+    {
       name: "James Patel",
       email: "james.patel@jackalsvc.com",
       role: "MEMBER",
@@ -138,10 +143,11 @@ async function main() {
     { vlyNumber: "VLY123", name: "Viktoriia", email: null, trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
     { vlyNumber: "VLY122", name: "Elijel", email: null, trainingTeamKey: "DIV2_MENS", rosterRole: "PLAYER" },
     { vlyNumber: "VLY10001", name: "Demo Member", email: "member@jackalsvc.com", trainingTeamKey: "DIV4_MENS", rosterRole: "PLAYER" },
-    { vlyNumber: "VLY10002", name: "Sarah Jones", email: "sarah.jones@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "COACH" },
+    { vlyNumber: "VLY10002", name: "Sarah Jones", email: "sarah.jones@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "COACH", coachPaymentType: "VOLUNTEER" },
     { vlyNumber: "VLY10003", name: "Mike Chen", email: "mike.chen@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "PLAYER" },
     { vlyNumber: "VLY10004", name: "Emma Williams", email: "emma.williams@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "COACH" },
     { vlyNumber: "VLY10005", name: "James Patel", email: "james.patel@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "COACH" },
+    { vlyNumber: "VLY10012", name: "Coach Demo", email: "coach@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "COACH" },
     { vlyNumber: "VLY10006", name: "Olivia Brown", email: "olivia.brown@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
     { vlyNumber: "VLY10007", name: "Liam Davis", email: "liam.davis@jackalsvc.com", trainingTeamKey: "DIV4_MENS", rosterRole: "PLAYER" },
     { vlyNumber: "VLY10008", name: "Sophie Taylor", email: "sophie.taylor@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
@@ -164,6 +170,12 @@ async function main() {
         name: entry.name,
         active: true,
         rosterRole: entry.rosterRole,
+        coachPaymentType:
+          entry.rosterRole === "COACH"
+            ? ("coachPaymentType" in entry
+                ? entry.coachPaymentType
+                : "PAID")
+            : null,
         trainingTeamKey: entry.trainingTeamKey,
         userId: linkedUser?.id ?? null,
       },
@@ -210,7 +222,7 @@ async function main() {
         endTime: "21:00",
         location: "Sports Hall B",
         level: "Division 2 Mens",
-        coach: "Coach James",
+        coach: "Coach Demo",
         description: "Weekly squad training for Division 2 Mens.",
         recurringFrom: seasonStart,
         recurringTo: seasonEnd,
@@ -485,6 +497,7 @@ async function main() {
           "mike.chen@jackalsvc.com",
           "emma.williams@jackalsvc.com",
           "james.patel@jackalsvc.com",
+          "coach@jackalsvc.com",
           "olivia.brown@jackalsvc.com",
         ],
       },
@@ -527,6 +540,13 @@ async function main() {
         paymentSchedule: "FULL",
         status: "EXPIRED",
         endDate: subtractMonths(1),
+      },
+      {
+        userId: userByEmail["coach@jackalsvc.com"].id,
+        planId: seasonPlan.id,
+        paymentSchedule: "FULL",
+        status: "COACH",
+        endDate: addMonths(7),
       },
       {
         userId: userByEmail["james.patel@jackalsvc.com"].id,
@@ -576,6 +596,15 @@ async function main() {
         startDate: membershipStart,
         paymentOverdueOverride: false,
         paymentOverdueOverrideNote: null,
+        paymentOverdueOverrideUntil: null,
+        paymentDeferralExcuse:
+          "Payday is next Friday — will transfer as soon as salary lands.",
+        paymentDeferralDueDate: (() => {
+          const due = new Date();
+          due.setDate(due.getDate() + 7);
+          return due;
+        })(),
+        paymentDeferralRequestedAt: new Date(),
       },
     });
 
@@ -908,6 +937,7 @@ async function main() {
   });
 
   console.log("Seed complete.");
+  console.log(`Coach: coach@jackalsvc.com / password123 (Division 2 Mens coach panel)`);
   console.log(`Admin: admin@jackalsvc.com / password123`);
   console.log(`Member: member@jackalsvc.com / password123 (no membership — test checkout)`);
   console.log(`Overdue demo: mike.chen@jackalsvc.com / password123 (3 payments, 1st due 30 days ago)`);

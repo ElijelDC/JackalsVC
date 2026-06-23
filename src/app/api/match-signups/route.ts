@@ -33,6 +33,9 @@ async function validateMatchAccess(userId: string, matchId: string) {
   if (match.matchStart < new Date()) {
     return { error: jsonError("This match has already started", 400) };
   }
+  if (match.cancelled) {
+    return { error: jsonError("This match has been cancelled", 400) };
+  }
 
   return { match };
 }

@@ -30,6 +30,16 @@ export async function PUT(
         ...(data.paymentOverdueOverrideNote !== undefined
           ? { paymentOverdueOverrideNote: data.paymentOverdueOverrideNote }
           : {}),
+        ...(data.paymentOverdueOverrideUntil !== undefined
+          ? {
+              paymentOverdueOverrideUntil: data.paymentOverdueOverrideUntil
+                ? new Date(data.paymentOverdueOverrideUntil)
+                : null,
+            }
+          : {}),
+        ...(data.paymentOverdueOverride === false
+          ? { paymentOverdueOverrideUntil: null }
+          : {}),
       },
       include: {
         user: { select: { id: true, name: true, email: true } },

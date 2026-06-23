@@ -29,12 +29,24 @@ export async function PATCH(request: Request, context: RouteContext) {
   const existing = await prisma.clubMember.findUnique({ where: { id } });
   if (!existing) return jsonError("Roster entry not found", 404);
 
+  const nextRosterRole = data.rosterRole ?? existing.rosterRole;
+  const nextCoachPaymentType =
+    data.coachPaymentType !== undefined
+      ? data.coachPaymentType
+      : nextRosterRole === "COACH"
+        ? (existing.coachPaymentType ?? "PAID")
+        : null;
+
   const clubMember = await prisma.clubMember.update({
     where: { id },
     data: {
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(data.active !== undefined ? { active: data.active } : {}),
       ...(data.rosterRole !== undefined ? { rosterRole: data.rosterRole } : {}),
+      ...(data.coachPaymentType !== undefined ||
+      data.rosterRole !== undefined
+        ? { coachPaymentType: nextCoachPaymentType }
+        : {}),
       ...(data.trainingTeamKey !== undefined
         ? { trainingTeamKey: data.trainingTeamKey }
         : {}),

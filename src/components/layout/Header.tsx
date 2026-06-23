@@ -2,9 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
-import { Lock, LogOut, Menu, X } from "lucide-react";
+import { Lock, Menu, X } from "lucide-react";
 import { useState, useSyncExternalStore } from "react";
 import { DashboardNavLink } from "@/components/layout/DashboardNavLink";
 import { AdminNavLink } from "@/components/layout/AdminNavLink";
@@ -31,11 +30,12 @@ function AuthActions({
 
   if (session?.user) {
     const isAdmin = session.user.role === "ADMIN";
+    const isCoach = Boolean(session.user.isCoach);
 
     if (variant === "desktop") {
       return (
         <div className="flex items-center gap-3">
-          <DashboardNavLink pathname={pathname} />
+          <DashboardNavLink pathname={pathname} isCoach={isCoach} />
           {isAdmin && <AdminNavLink pathname={pathname} />}
           <div className="h-6 w-px bg-white/10" aria-hidden />
           <UserMenu session={session} />
@@ -43,17 +43,7 @@ function AuthActions({
       );
     }
 
-    return (
-      <>
-        <button
-          onClick={() => signOut({ callbackUrl: "/" })}
-          className="flex min-h-11 items-center gap-2 px-3 py-3 text-sm font-medium text-zinc-500 active:bg-white/5"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </button>
-      </>
-    );
+    return <UserMenu session={session} variant="mobile" onNavigate={onNavigate} />;
   }
 
   if (variant === "desktop") {
@@ -88,6 +78,8 @@ function AuthActions({
 export function Header({ session }: { session: Session | null }) {
   const pathname = usePathname();
   const isAdmin = session?.user?.role === "ADMIN";
+  const isCoach = Boolean(session?.user?.isCoach);
+  const isPaidCoach = Boolean(session?.user?.isPaidCoach);
   const isLoggedIn = Boolean(session?.user);
   const [mobileOpenPath, setMobileOpenPath] = useState<string | null>(null);
   const mobileOpen = mobileOpenPath === pathname;
@@ -111,13 +103,15 @@ export function Header({ session }: { session: Session | null }) {
           size="nav"
           showText
           className="min-w-[52px] shrink-0"
-          active={isLoggedIn && !isAdmin && pathname === "/"}
+          active={isLoggedIn && !isAdmin && !isCoach && pathname === "/"}
         />
 
         <MemberMobileQuickNav
           pathname={pathname}
           isLoggedIn={isLoggedIn}
           isAdmin={isAdmin}
+          isCoach={isCoach}
+          isPaidCoach={isPaidCoach}
         />
 
         <nav className="hidden items-center gap-0.5 lg:flex">
@@ -126,6 +120,8 @@ export function Header({ session }: { session: Session | null }) {
             variant="desktop"
             isLoggedIn={isLoggedIn}
             isAdmin={isAdmin}
+            isCoach={isCoach}
+            isPaidCoach={isPaidCoach}
           />
         </nav>
 
@@ -160,6 +156,7 @@ export function Header({ session }: { session: Session | null }) {
                   pathname={pathname}
                   onNavigate={closeMobile}
                   variant="mobile"
+                  isCoach={isCoach}
                 />
                 {isAdmin && (
                   <AdminNavLink
@@ -178,6 +175,8 @@ export function Header({ session }: { session: Session | null }) {
                   variant="mobile"
                   isLoggedIn={isLoggedIn}
                   isAdmin={isAdmin}
+                  isCoach={isCoach}
+                  isPaidCoach={isPaidCoach}
                 />
               </div>
             </div>

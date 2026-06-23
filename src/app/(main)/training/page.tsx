@@ -5,6 +5,7 @@ import {
   TeamTrainingMonthView,
 } from "@/components/training/TeamTrainingMonthView";
 import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
+import { enrichEventRecords } from "@/lib/event-enrichment";
 import {
   getMonthlyTeamTrainingEvents,
   getTrainingTeamByKey,
@@ -12,6 +13,7 @@ import {
   getUserTrainingTeamKey,
   parseTrainingMonthParam,
 } from "@/lib/training-teams";
+import { dayLabelFromDayOfWeek } from "@/lib/training-squads";
 
 export const metadata = {
   title: "Training sign-ups",
@@ -42,20 +44,40 @@ export default async function TrainingPage({
     return <NoTrainingTeamAssigned squads={squads} />;
   }
 
-  const { events } = await getMonthlyTeamTrainingEvents(trainingTeamKey, month);
+  const { events, session: trainingSession } = await getMonthlyTeamTrainingEvents(
+    trainingTeamKey,
+    month,
+  );
   const attendanceMap = await getUserEventAttendanceStatuses(
     session.user.id,
     events.map((event) => event.id),
   );
+  const enrichedEvents = await enrichEventRecords(events);
+
+  const displayTeam =
+    team && trainingSession
+      ? {
+          ...team,
+          dayOfWeek: trainingSession.dayOfWeek,
+          dayLabel: dayLabelFromDayOfWeek(trainingSession.dayOfWeek),
+        }
+      : team;
 
   return (
     <TeamTrainingMonthView
-      team={team}
+      team={displayTeam!}
       month={month}
-      events={events.map((event) => ({
+      sessionTimes={
+        trainingSession
+          ? { startTime: trainingSession.startTime, endTime: trainingSession.endTime }
+          : null
+      }
+      events={enrichedEvents.map((event) => ({
         id: event.id,
         title: event.title,
         startDate: event.startDate.toISOString(),
+        endDate: event.endDate?.toISOString() ?? null,
+        cancelled: event.occurrenceCancelled,
       }))}
       attendanceByEventId={Object.fromEntries(attendanceMap)}
     />

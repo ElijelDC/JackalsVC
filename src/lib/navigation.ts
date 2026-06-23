@@ -13,6 +13,7 @@ import {
   Trophy,
   Users,
   Volleyball,
+  Wallet,
 } from "lucide-react";
 import { SHOP_ENABLED } from "@/lib/features";
 
@@ -22,8 +23,10 @@ export type NavItem = {
   icon: LucideIcon;
   description?: string;
   requiresAuth?: boolean;
-  /** Shown in More menu for guests only (e.g. sponsors page). */
-  guestOnly?: boolean;
+  /** Shown for roster coaches only (not admins). */
+  coachOnly?: boolean;
+  /** Shown for paid roster coaches only. */
+  paidCoachOnly?: boolean;
 };
 
 export const NAV_ITEMS: NavItem[] = [
@@ -58,6 +61,15 @@ export const NAV_ITEMS: NavItem[] = [
     description:
       "Flexible plans to suit your schedule. Join the Jackals family today.",
     requiresAuth: true,
+  },
+  {
+    href: "/payments",
+    label: "Payments",
+    icon: Wallet,
+    description: "Monthly club salary and payment confirmations.",
+    requiresAuth: true,
+    coachOnly: true,
+    paidCoachOnly: true,
   },
   {
     href: "/dashboard",
@@ -98,6 +110,31 @@ export const MEMBER_MOBILE_QUICK_NAV_HREFS = [
 
 const MEMBER_MOBILE_MENU_EXTRA_HREFS = ["/gallery", "/teams"] as const;
 
+const COACH_PAID_PRIMARY_NAV_HREFS = [
+  "/events",
+  "/training",
+  "/matches",
+  "/payments",
+] as const;
+
+const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
+  "/events",
+  "/training",
+  "/matches",
+] as const;
+
+const COACH_PAID_MOBILE_QUICK_NAV_HREFS = [
+  "/training",
+  "/matches",
+  "/payments",
+] as const;
+
+const COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS = [
+  "/training",
+  "/matches",
+  "/events",
+] as const;
+
 const ADMIN_PRIMARY_NAV_HREFS = [
   "/",
   "/events",
@@ -113,10 +150,35 @@ const GUEST_PRIMARY_NAV_HREFS = [
   "/teams",
 ] as const;
 
-function primaryNavHrefs(isLoggedIn: boolean, isAdmin = false) {
+function primaryNavHrefs(
+  isLoggedIn: boolean,
+  isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
+) {
   if (isAdmin) return ADMIN_PRIMARY_NAV_HREFS;
+  if (isLoggedIn && isCoach) {
+    return isPaidCoach
+      ? COACH_PAID_PRIMARY_NAV_HREFS
+      : COACH_VOLUNTEER_PRIMARY_NAV_HREFS;
+  }
   if (isLoggedIn) return MEMBER_PRIMARY_NAV_HREFS;
   return GUEST_PRIMARY_NAV_HREFS;
+}
+
+function mobileQuickNavHrefs(
+  isLoggedIn: boolean,
+  isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
+) {
+  if (!isLoggedIn || isAdmin) return [];
+  if (isCoach) {
+    return isPaidCoach
+      ? COACH_PAID_MOBILE_QUICK_NAV_HREFS
+      : COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS;
+  }
+  return MEMBER_MOBILE_QUICK_NAV_HREFS;
 }
 
 export const INFO_NAV_ITEMS: NavItem[] = [
@@ -150,15 +212,21 @@ export const INFO_NAV_ITEMS: NavItem[] = [
     icon: Handshake,
     description:
       "Partner with Jackals VC — visibility, partnership opportunities, and club presentation download.",
-    guestOnly: true,
   },
 ];
 
-function allNavItems(isLoggedIn: boolean, isAdmin = false) {
-  const items = visibleNavItems(isLoggedIn, isAdmin);
+function allNavItems(
+  isLoggedIn: boolean,
+  isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
+) {
+  const items = visibleNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach);
   if (isLoggedIn || isAdmin) return items;
 
-  const primaryHrefs = new Set<string>(primaryNavHrefs(false, isAdmin));
+  const primaryHrefs = new Set<string>(
+    primaryNavHrefs(false, isAdmin, isCoach, isPaidCoach),
+  );
   const extraInfoItems = INFO_NAV_ITEMS.filter(
     (item) =>
       primaryHrefs.has(item.href) &&
@@ -179,24 +247,41 @@ export function isInfoNavActive(
   pathname: string,
   isLoggedIn = false,
   isAdmin = false,
-  options?: { mobileMemberMenu?: boolean },
+  options?: { mobileMemberMenu?: boolean; isCoach?: boolean; isPaidCoach?: boolean },
 ) {
   return visibleMoreNavItems(isLoggedIn, isAdmin, options).some((item) =>
     isNavItemActive(pathname, item.href),
   );
 }
 
-export function visibleNavItems(isLoggedIn: boolean, isAdmin = false) {
+export function visibleNavItems(
+  isLoggedIn: boolean,
+  isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
+) {
   return NAV_ITEMS.filter(
     (item) =>
+      (!item.coachOnly || (isLoggedIn && isCoach && !isAdmin)) &&
+      (!item.paidCoachOnly || (isLoggedIn && isCoach && isPaidCoach && !isAdmin)) &&
       (!item.requiresAuth || isLoggedIn || isAdmin) &&
       (SHOP_ENABLED || item.href !== "/shop"),
   );
 }
 
-export function visiblePrimaryNavItems(isLoggedIn: boolean, isAdmin = false) {
-  const hrefs = primaryNavHrefs(isLoggedIn, isAdmin);
-  const byHref = new Map(allNavItems(isLoggedIn, isAdmin).map((item) => [item.href, item]));
+export function visiblePrimaryNavItems(
+  isLoggedIn: boolean,
+  isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
+) {
+  const hrefs = primaryNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach);
+  const byHref = new Map(
+    allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).map((item) => [
+      item.href,
+      item,
+    ]),
+  );
   return hrefs
     .map((href) => byHref.get(href))
     .filter((item): item is NavItem => Boolean(item));
@@ -205,29 +290,43 @@ export function visiblePrimaryNavItems(isLoggedIn: boolean, isAdmin = false) {
 export function visibleMemberMobileQuickNavItems(
   isLoggedIn: boolean,
   isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
 ) {
-  if (!isLoggedIn) return [];
+  const hrefs = mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach);
+  if (hrefs.length === 0) return [];
 
-  const byHref = new Map(allNavItems(isLoggedIn, isAdmin).map((item) => [item.href, item]));
-  return MEMBER_MOBILE_QUICK_NAV_HREFS.map((href) => byHref.get(href)).filter(
-    (item): item is NavItem => Boolean(item),
+  const byHref = new Map(
+    allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).map((item) => [
+      item.href,
+      item,
+    ]),
   );
+  return hrefs
+    .map((href) => byHref.get(href))
+    .filter((item): item is NavItem => Boolean(item));
 }
 
 export function visibleMemberMobileMenuNavItems(
   isLoggedIn: boolean,
   isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
 ) {
-  const quickNavHrefs = new Set<string>(MEMBER_MOBILE_QUICK_NAV_HREFS);
-  const primary = visiblePrimaryNavItems(isLoggedIn, isAdmin).filter(
-    (item) => !quickNavHrefs.has(item.href) && item.href !== "/",
+  const quickNavHrefs = new Set<string>(
+    mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach),
   );
+  const primary = visiblePrimaryNavItems(
+    isLoggedIn,
+    isAdmin,
+    isCoach,
+    isPaidCoach,
+  ).filter((item) => !quickNavHrefs.has(item.href) && item.href !== "/");
 
   const byHref = new Map(
-    [...allNavItems(isLoggedIn, isAdmin), ...INFO_NAV_ITEMS].map((item) => [
-      item.href,
-      item,
-    ]),
+    [...allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach), ...INFO_NAV_ITEMS].map(
+      (item) => [item.href, item],
+    ),
   );
   const extras = MEMBER_MOBILE_MENU_EXTRA_HREFS.map((href) =>
     byHref.get(href),
@@ -239,20 +338,31 @@ export function visibleMemberMobileMenuNavItems(
 export function visibleMoreNavItems(
   isLoggedIn: boolean,
   isAdmin = false,
-  options?: { mobileMemberMenu?: boolean },
+  options?: { mobileMemberMenu?: boolean; isCoach?: boolean; isPaidCoach?: boolean },
 ) {
+  const isCoach = options?.isCoach ?? false;
+  const isPaidCoach = options?.isPaidCoach ?? false;
   const primaryHrefs = new Set(
-    visiblePrimaryNavItems(isLoggedIn, isAdmin).map((item) => item.href),
+    visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).map(
+      (item) => item.href,
+    ),
   );
-  const secondaryNav = visibleNavItems(isLoggedIn, isAdmin).filter(
-    (item) => !primaryHrefs.has(item.href) && item.href !== "/dashboard",
-  );
+  const secondaryNav = visibleNavItems(
+    isLoggedIn,
+    isAdmin,
+    isCoach,
+    isPaidCoach,
+  ).filter((item) => !primaryHrefs.has(item.href) && item.href !== "/dashboard");
   const infoNav = INFO_NAV_ITEMS.filter(
-    (item) =>
-      !primaryHrefs.has(item.href) &&
-      (isAdmin || !item.guestOnly || !isLoggedIn),
+    (item) => !primaryHrefs.has(item.href),
   );
   let items = [...secondaryNav, ...infoNav];
+
+  if (isCoach && !isAdmin) {
+    items = items.filter(
+      (item) => item.href !== "/" && item.href !== "/membership",
+    );
+  }
 
   if (options?.mobileMemberMenu && isLoggedIn && !isAdmin) {
     const promotedHrefs = new Set<string>(MEMBER_MOBILE_MENU_EXTRA_HREFS);
@@ -260,6 +370,15 @@ export function visibleMoreNavItems(
   }
 
   return items;
+}
+
+export function getMobileQuickNavHrefs(
+  isLoggedIn: boolean,
+  isAdmin = false,
+  isCoach = false,
+  isPaidCoach = false,
+): string[] {
+  return [...mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach)];
 }
 
 const GUEST_HOME_FEATURE_HREFS = [

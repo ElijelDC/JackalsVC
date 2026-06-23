@@ -30,7 +30,7 @@ export default async function AdminPaymentsPage() {
   return (
     <AdminSection
       title="Payments"
-      description="Import bank CSV files and approve member transfer screenshots once instalments are due."
+      description="Import bank CSV files and approve member transfer screenshots."
     >
       <div className="space-y-8">
         <AdminCsvImport />

@@ -66,6 +66,13 @@ export async function getMonthlyTeamMatches(
   });
 }
 
+export async function getAllTeamMatches(trainingTeamKey: string) {
+  return prisma.teamMatch.findMany({
+    where: { trainingTeamKey },
+    orderBy: { matchStart: "asc" },
+  });
+}
+
 export async function getTeamMatchDetail(matchId: string, userId: string) {
   const { getMatchDetail } = await import("@/lib/match-attendance");
   return getMatchDetail(matchId, userId);
@@ -83,6 +90,7 @@ export async function getUpcomingTeamMatches(
   const matches = await prisma.teamMatch.findMany({
     where: {
       trainingTeamKey,
+      cancelled: false,
       matchStart: { gte: fromDate, lte: through },
     },
     orderBy: { matchStart: "asc" },
