@@ -167,6 +167,7 @@ export function AdminListItem({
   actionLabel,
   formAction,
   onEdit,
+  onDuplicate,
   onDelete,
   deleting,
 }: {
@@ -179,6 +180,7 @@ export function AdminListItem({
   actionLabel?: string;
   formAction?: { label: string; onClick: () => void };
   onEdit?: () => void;
+  onDuplicate?: () => void;
   onDelete: () => void;
   deleting?: boolean;
 }) {
@@ -227,6 +229,16 @@ export function AdminListItem({
             onClick={() => onEdit()}
           >
             Edit
+          </Button>
+        )}
+        {onDuplicate && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onDuplicate()}
+          >
+            Duplicate
           </Button>
         )}
         <Button

@@ -158,13 +158,6 @@ export function Header({ session }: { session: Session | null }) {
                   variant="mobile"
                   isCoach={isCoach}
                 />
-                {isAdmin && (
-                  <AdminNavLink
-                    pathname={pathname}
-                    onNavigate={closeMobile}
-                    variant="mobile"
-                  />
-                )}
               </div>
             )}
             <div className="flex-1 overflow-y-auto overscroll-y-contain px-4 py-3">

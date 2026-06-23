@@ -9,6 +9,7 @@ import {
   Home,
   LayoutDashboard,
   Mail,
+  Settings,
   ShoppingBag,
   Trophy,
   Users,
@@ -135,11 +136,44 @@ const COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS = [
   "/events",
 ] as const;
 
-const ADMIN_PRIMARY_NAV_HREFS = [
-  "/",
-  "/events",
+const ADMIN_MOBILE_QUICK_NAV_HREFS = [
   "/training",
   "/matches",
+  "/admin",
+] as const;
+
+export const ADMIN_MOBILE_QUICK_NAV_ITEMS: NavItem[] = [
+  {
+    href: "/training",
+    label: "Training",
+    icon: Dumbbell,
+    description:
+      "Sign up for your squad's weekly training sessions throughout the month.",
+  },
+  {
+    href: "/matches",
+    label: "Matches",
+    icon: Trophy,
+    description:
+      "Your squad's league and friendly matches — warm-up and kick-off times.",
+  },
+  {
+    href: "/admin",
+    label: "Admin",
+    icon: Settings,
+    description: "Club admin dashboard and settings.",
+  },
+];
+
+const ADMIN_MOBILE_MENU_HIDE_HREFS = new Set(["/training", "/matches"]);
+
+const ADMIN_MORE_HIDE_HREFS = new Set(["/", "/training", "/matches"]);
+
+export { ADMIN_MOBILE_MENU_HIDE_HREFS, ADMIN_MORE_HIDE_HREFS };
+
+const ADMIN_PRIMARY_NAV_HREFS = [
+  "/events",
+  "/gallery",
 ] as const;
 
 const GUEST_PRIMARY_NAV_HREFS = [
@@ -172,7 +206,8 @@ function mobileQuickNavHrefs(
   isCoach = false,
   isPaidCoach = false,
 ) {
-  if (!isLoggedIn || isAdmin) return [];
+  if (!isLoggedIn) return [];
+  if (isAdmin) return ADMIN_MOBILE_QUICK_NAV_HREFS;
   if (isCoach) {
     return isPaidCoach
       ? COACH_PAID_MOBILE_QUICK_NAV_HREFS
@@ -293,6 +328,8 @@ export function visibleMemberMobileQuickNavItems(
   isCoach = false,
   isPaidCoach = false,
 ) {
+  if (isAdmin) return ADMIN_MOBILE_QUICK_NAV_ITEMS;
+
   const hrefs = mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach);
   if (hrefs.length === 0) return [];
 
@@ -305,6 +342,13 @@ export function visibleMemberMobileQuickNavItems(
   return hrefs
     .map((href) => byHref.get(href))
     .filter((item): item is NavItem => Boolean(item));
+}
+
+export function isAdminQuickNavActive(pathname: string, href: string) {
+  if (href === "/admin") {
+    return pathname === "/admin";
+  }
+  return pathname === href || pathname.startsWith(`${href}/`);
 }
 
 export function visibleMemberMobileMenuNavItems(
@@ -367,6 +411,10 @@ export function visibleMoreNavItems(
   if (options?.mobileMemberMenu && isLoggedIn && !isAdmin) {
     const promotedHrefs = new Set<string>(MEMBER_MOBILE_MENU_EXTRA_HREFS);
     items = items.filter((item) => !promotedHrefs.has(item.href));
+  }
+
+  if (isAdmin) {
+    items = items.filter((item) => !ADMIN_MORE_HIDE_HREFS.has(item.href));
   }
 
   return items;

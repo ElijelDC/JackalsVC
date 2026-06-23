@@ -170,7 +170,7 @@ export const SESSION_MANAGER_CONFIG = {
     deleteConfirm:
       "Delete this training session and its calendar entries?",
     addLabel: "Add session",
-    seriesName: "Weekly training",
+    bulkImportType: "weekly-training" as const,
   },
   FUN: {
     category: SESSION_CATEGORIES.FUN,
@@ -184,7 +184,7 @@ export const SESSION_MANAGER_CONFIG = {
     emptyListMessage: "No fun sessions yet.",
     deleteConfirm: "Delete this fun session and its calendar entries?",
     addLabel: "Add session",
-    seriesName: "Fun sessions",
+    bulkImportType: "fun-sessions" as const,
   },
 } as const;
 

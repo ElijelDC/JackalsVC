@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  isAdminQuickNavActive,
   isNavItemActive,
   visibleMemberMobileQuickNavItems,
 } from "@/lib/navigation";
@@ -33,11 +34,14 @@ export function MemberMobileQuickNav({
 
   return (
     <nav
-      aria-label="Member quick links"
+      aria-label={isAdmin ? "Admin quick links" : "Member quick links"}
       className="flex min-w-0 flex-1 items-center justify-end gap-0.5 lg:hidden"
     >
       {items.map(({ href, label, icon: Icon }) => {
-        const active = isNavItemActive(pathname, href);
+        const active =
+          isAdmin && href === "/admin"
+            ? isAdminQuickNavActive(pathname, href)
+            : isNavItemActive(pathname, href);
 
         return (
           <Link
@@ -53,15 +57,7 @@ export function MemberMobileQuickNav({
             )}
           >
             <Icon className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="max-w-full truncate">
-              {href === "/training"
-                ? "Training"
-                : href === "/payments"
-                  ? "Payments"
-                  : href === "/events"
-                    ? "Events"
-                    : label}
-            </span>
+            <span className="max-w-full truncate">{label}</span>
           </Link>
         );
       })}
