@@ -29,7 +29,7 @@ export function AddToCalendarActions({
   icsUrl?: string;
   /** Relative path or absolute URL to the event/session page */
   eventPageUrl?: string;
-  /** Server-provided origin, e.g. https://jackalsvc.com — avoids client-only window access */
+  /** Server-provided origin, e.g. https://jackalsvolleyball.com — avoids client-only window access */
   siteOrigin?: string;
   compact?: boolean;
 }) {

@@ -84,20 +84,6 @@ export function LoginForm() {
           {loading ? "Signing in..." : "Sign in"}
         </Button>
       </form>
-
-      <div className="mt-6 rounded border border-white/10 bg-white/5 p-4 text-sm text-zinc-400">
-        <p className="font-medium text-zinc-300">Demo accounts</p>
-        <p className="mt-2">
-          Member:{" "}
-          <span className="text-zinc-300">member@jackalsvc.com</span> /{" "}
-          <span className="text-zinc-300">password123</span>
-        </p>
-        <p className="mt-1">
-          Admin:{" "}
-          <span className="text-zinc-300">admin@jackalsvc.com</span> /{" "}
-          <span className="text-zinc-300">password123</span>
-        </p>
-      </div>
     </AuthShell>
   );
 }

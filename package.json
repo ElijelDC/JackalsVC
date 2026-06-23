@@ -8,14 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
-    "db:seed": "tsx prisma/seed.ts",
-    "db:ensure-coach": "tsx scripts/ensure-coach-demo.ts",
-    "db:studio": "prisma studio",
-    "db:reset": "prisma migrate reset --force",
+    "db:deploy": "prisma migrate deploy",
     "generate:sponsor-pdf": "tsx scripts/generate-sponsor-presentation.ts"
-  },
-  "prisma": {
-    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",

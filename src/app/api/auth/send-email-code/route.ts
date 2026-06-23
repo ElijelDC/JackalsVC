@@ -38,28 +38,30 @@ export async function POST(request: Request) {
 
   try {
     const { code, expiresAt } = await createEmailVerification({ email, vlyNumber });
-    const { delivered } = await sendVerificationEmail({
+    await sendVerificationEmail({
       email,
       code,
       memberName: clubMember.name,
     });
 
     return NextResponse.json({
-      message: delivered
-        ? "Verification code sent — check your email (and spam folder)."
-        : "Email is not configured — use the development code shown below.",
+      message: "Verification code sent — check your email (and spam folder).",
       expiresAt: expiresAt.toISOString(),
-      delivered,
-      ...(process.env.NODE_ENV === "development" && !delivered ? { devCode: code } : {}),
+      delivered: true,
     });
   } catch (error) {
     if (error instanceof Error && error.message.includes("wait a minute")) {
       return jsonError(error.message, 429);
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.error("Send verification email failed:", error);
+    if (error instanceof Error && error.message.includes("not configured")) {
+      return jsonError(
+        "Email delivery is not configured. Please contact the club.",
+        503,
+      );
     }
+
+    console.error("Send verification email failed:", error);
 
     return jsonError("Could not send verification email. Please try again.", 500);
   }

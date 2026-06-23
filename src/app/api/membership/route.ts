@@ -89,17 +89,11 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Membership creation failed:", error);
 
-    if (error instanceof Error) {
-      if (error.message.includes("Unique constraint")) {
-        return jsonError(
-          "Your payment schedule is already set. View your payment status to pay by bank transfer.",
-          409,
-        );
-      }
-
-      if (process.env.NODE_ENV === "development") {
-        return jsonError(`Failed to create membership: ${error.message}`, 500);
-      }
+    if (error instanceof Error && error.message.includes("Unique constraint")) {
+      return jsonError(
+        "Your payment schedule is already set. View your payment status to pay by bank transfer.",
+        409,
+      );
     }
 
     return jsonError("Failed to create membership", 500);

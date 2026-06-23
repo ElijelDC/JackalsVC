@@ -415,11 +415,11 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
           ${statGrid()}
           <div class="digital-bar">
             <strong>Digital presence</strong>
-            <span>@jackalsvolleyball · jackalsvc.com</span>
+            <span>@jackalsvolleyball · jackalsvolleyball.com</span>
           </div>
         </div>
       </div>
-      <footer class="page-footer"><span>jackalsvc.com</span><span>2 / 5</span></footer>
+      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>2 / 5</span></footer>
     </div>
   </section>
 
@@ -439,7 +439,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
           <div class="opp-grid">${opportunities}</div>
         </div>
       </div>
-      <footer class="page-footer"><span>jackalsvc.com</span><span>3 / 5</span></footer>
+      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>3 / 5</span></footer>
     </div>
   </section>
 
@@ -460,7 +460,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
           ${bullets(PRESENTATION_SUPPORT_POINTS)}
         </div>
       </div>
-      <footer class="page-footer"><span>jackalsvc.com</span><span>4 / 5</span></footer>
+      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>4 / 5</span></footer>
     </div>
   </section>
 
@@ -486,7 +486,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
         </div>
         <p class="display" style="text-align:center;font-size:9pt;color:#ff4d54;margin-top:auto;padding-top:6mm">${esc(PRESENTATION_CLOSING.slogan)}</p>
       </div>
-      <footer class="page-footer"><span>jackalsvc.com</span><span>5 / 5</span></footer>
+      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>5 / 5</span></footer>
     </div>
   </section>
 </body>

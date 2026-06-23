@@ -1,3 +1,5 @@
+import { CALENDAR_UID_DOMAIN } from "@/lib/site-config";
+
 export type CalendarExportEvent = {
   id: string;
   title: string;
@@ -58,7 +60,7 @@ export function buildIcsContent(
     options?.eventPageUrl && `More info: ${options.eventPageUrl}`,
   ].filter(Boolean);
   const description = descriptionParts.join("\n\n");
-  const uid = options?.uid ?? `${event.id}@jackalsvc.com`;
+  const uid = options?.uid ?? `${event.id}@${CALENDAR_UID_DOMAIN}`;
 
   return [
     "BEGIN:VCALENDAR",

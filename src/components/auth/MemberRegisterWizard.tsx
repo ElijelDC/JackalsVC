@@ -70,7 +70,6 @@ export function MemberRegisterWizard({
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [codeMessage, setCodeMessage] = useState<string | null>(null);
-  const [devCode, setDevCode] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -109,7 +108,6 @@ export function MemberRegisterWizard({
     setLoading(true);
     setError(null);
     setCodeMessage(null);
-    setDevCode(null);
 
     const result = await apiPost(
       "/api/auth/send-email-code",
@@ -126,14 +124,11 @@ export function MemberRegisterWizard({
 
     const payload = result.data as {
       message?: string;
-      devCode?: string;
-      delivered?: boolean;
     };
 
     setCodeMessage(
       payload.message ?? "Verification code sent — check your email (and spam folder).",
     );
-    setDevCode(payload.devCode ?? null);
     setEmailCode("");
     setStep("verify");
   };
@@ -335,17 +330,6 @@ export function MemberRegisterWizard({
             />
             {codeMessage && (
               <p className="mt-1 text-xs text-zinc-500">{codeMessage}</p>
-            )}
-            {devCode && (
-              <div className="mt-3 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
-                <p className="font-medium text-amber-200">Development mode</p>
-                <p className="mt-1 text-zinc-300">
-                  Email is not configured yet. Use this code to continue:
-                </p>
-                <p className="mt-2 font-mono text-2xl font-bold tracking-[0.35em] text-white">
-                  {devCode}
-                </p>
-              </div>
             )}
           </div>
 

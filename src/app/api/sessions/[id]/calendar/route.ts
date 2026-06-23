@@ -5,6 +5,7 @@ import {
   getSessionCalendarExport,
 } from "@/lib/session-calendar";
 import { getPublicSession } from "@/lib/session-detail";
+import { CALENDAR_UID_DOMAIN } from "@/lib/site-config";
 import { absoluteSiteUrl, siteUrlFromRequest } from "@/lib/site-url";
 import { SESSION_CATEGORIES, type SessionCategory } from "@/lib/training-utils";
 
@@ -56,7 +57,7 @@ export async function GET(
     },
     {
       eventPageUrl: sessionPageUrl,
-      uid: `${trainingSession.id}-${calendarExport.occurrenceDate}@jackalsvc.com`,
+      uid: `${trainingSession.id}-${calendarExport.occurrenceDate}@${CALENDAR_UID_DOMAIN}`,
     },
   );
 
