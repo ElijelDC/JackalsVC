@@ -7,6 +7,7 @@ import {
   visibleMemberMobileMenuNavItems,
   isNavItemActive,
   getMobileQuickNavHrefs,
+  ADMIN_MOBILE_MENU_HIDE_HREFS,
 } from "@/lib/navigation";
 import { InfoNavDropdown } from "@/components/layout/InfoNavDropdown";
 
@@ -35,7 +36,9 @@ export function NavLinks({
       ? visibleMemberMobileMenuNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach)
       : variant === "mobile" && isLoggedIn
         ? visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).filter(
-            (item) => !quickNavHrefs.has(item.href),
+            (item) =>
+              !quickNavHrefs.has(item.href) &&
+              !(isAdmin && ADMIN_MOBILE_MENU_HIDE_HREFS.has(item.href)),
           )
         : visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach);
 

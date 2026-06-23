@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { AdminSection } from "@/components/admin/AdminShell";
+import { AdminBulkCsvImport } from "@/components/admin/AdminBulkCsvImport";
 import { CoachMatchesManager } from "@/components/coach/CoachMatchesManager";
 import type { TeamMatchItem } from "@/components/coach/match-form-utils";
 import { Label, Select } from "@/components/ui/Input";
@@ -59,6 +60,10 @@ export function AdminMatchesEditor({
         <p className="mt-2 text-sm text-zinc-500">
           Choose which squad&apos;s match schedule to manage.
         </p>
+      </div>
+
+      <div className="mb-8">
+        <AdminBulkCsvImport type="matches" />
       </div>
 
       {selectedTeam && selectedTeamKey ? (

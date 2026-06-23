@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { AdminFormCard } from "@/components/admin/AdminForm";
+import { AdminBulkCsvImport } from "@/components/admin/AdminBulkCsvImport";
 import { AdminSection } from "@/components/admin/AdminShell";
 import {
   AdminSearchBar,
@@ -349,6 +350,10 @@ export function ClubRosterManager({
           )}
         </div>
       </AdminFormCard>
+
+      <div className="mb-8 mt-6">
+        <AdminBulkCsvImport type="roster" />
+      </div>
 
       <div className="mt-6">
         <div className="space-y-4">

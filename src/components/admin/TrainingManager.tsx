@@ -5,6 +5,7 @@ import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
+import { AdminBulkCsvImport } from "@/components/admin/AdminBulkCsvImport";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { SquadTeamFilter } from "@/components/admin/SquadTeamFilter";
 import {
@@ -135,6 +136,7 @@ export function TrainingManager({
   );
   const [sessions, setSessions] = useSyncedListState(normalizedInitialSessions);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const [form, setForm] = useState(createEmptyForm);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -172,6 +174,7 @@ export function TrainingManager({
   const resetForm = () => {
     setForm(createEmptyForm());
     setEditingId(null);
+    setIsDuplicating(false);
     setError(null);
   };
 
@@ -185,7 +188,25 @@ export function TrainingManager({
   const startEdit = (session: TrainingSession) => {
     beginAdminEdit(() => {
       setEditingId(session.id);
+      setIsDuplicating(false);
       setForm(toFormState(session));
+      setError(null);
+      setMessage(null);
+    });
+  };
+
+  const startDuplicate = (session: TrainingSession) => {
+    beginAdminEdit(() => {
+      setEditingId(null);
+      setIsDuplicating(true);
+      const duplicateForm = toFormState(session);
+      if (!session.recurring) {
+        duplicateForm.sessionDate = "";
+      }
+      duplicateForm.title = duplicateForm.title.endsWith(" (copy)")
+        ? duplicateForm.title
+        : `${duplicateForm.title} (copy)`;
+      setForm(duplicateForm);
       setError(null);
       setMessage(null);
     });
@@ -289,11 +310,17 @@ export function TrainingManager({
       <AdminFormCard
         collapsible
         openTriggerLabel="Add new session"
-        title={editingId ? "Edit session" : "Add new session"}
+        title={
+          editingId
+            ? "Edit session"
+            : isDuplicating
+              ? "Duplicate session"
+              : "Add new session"
+        }
         error={error}
         message={message}
         onSubmit={handleSubmit}
-        onCancel={editingId ? resetForm : undefined}
+        onCancel={editingId || isDuplicating ? resetForm : undefined}
         submitLabel={editingId ? "Save changes" : config.addLabel}
         loading={loading}
       >
@@ -577,6 +604,10 @@ export function TrainingManager({
         </div>
       </AdminFormCard>
 
+      <div className="mb-8">
+        <AdminBulkCsvImport type={config.bulkImportType} />
+      </div>
+
       <div className="space-y-3">
         {listError && (
           <p className="rounded border border-jackals-red/30 bg-jackals-red/10 px-4 py-3 text-sm text-jackals-red-light">
@@ -654,6 +685,7 @@ export function TrainingManager({
                 { includeDateRange: true },
               )} · ${session.startTime}–${session.endTime} · ${session.location} · ${session.level}`}
               onEdit={() => startEdit(session)}
+              onDuplicate={() => startDuplicate(session)}
               onDelete={() => handleDelete(session.id)}
               deleting={deletingId === session.id}
             />

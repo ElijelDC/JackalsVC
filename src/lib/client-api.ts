@@ -148,6 +148,51 @@ export type CsvImportResult = {
   fileName?: string;
 };
 
+export type BulkImportType =
+  | "roster"
+  | "weekly-training"
+  | "fun-sessions"
+  | "matches"
+  | "events";
+
+export type BulkImportResult = {
+  fileName: string | null;
+  scanned: number;
+  created: number;
+  skipped: number;
+  failed: number;
+  errors: { row: number; message: string }[];
+};
+
+export function getBulkImportTemplateUrl(type: BulkImportType): string {
+  return `/api/admin/bulk-import/${type}`;
+}
+
+export async function apiBulkImportCsv(
+  type: BulkImportType,
+  file: File,
+  fallbackError = "Failed to import CSV",
+): Promise<ApiResult<BulkImportResult>> {
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(`/api/admin/bulk-import/${type}`, {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      return { ok: false, error: data.error ?? fallbackError };
+    }
+
+    return { ok: true, data: data as BulkImportResult };
+  } catch {
+    return { ok: false, error: fallbackError };
+  }
+}
+
 export async function apiUploadPaymentProof(
   paymentId: string,
   file: File,

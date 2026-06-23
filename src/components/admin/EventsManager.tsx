@@ -5,6 +5,7 @@ import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
+import { AdminBulkCsvImport } from "@/components/admin/AdminBulkCsvImport";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { EventFiltersToolbar } from "@/components/events/EventFiltersToolbar";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
@@ -525,6 +526,13 @@ export function EventsManager({
           </div>
         </div>
       </AdminFormCard>
+
+      <div className="mb-8">
+        <AdminBulkCsvImport
+          type="events"
+          description="Download current tournaments, clinics, and socials, add new rows at the top, then upload. Duplicates are skipped automatically. For training or fun sessions, use Weekly training or Fun sessions instead."
+        />
+      </div>
 
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

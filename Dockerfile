@@ -1,5 +1,5 @@
 # Jackals VC — Fly.io production image (Next.js + SQLite + better-sqlite3)
-FROM node:20-bookworm-slim AS base
+FROM node:22-bookworm-slim AS base
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends python3 make g++ openssl ca-certificates \
@@ -9,13 +9,17 @@ WORKDIR /app
 
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install --no-audit --no-fund
 
 FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npx prisma generate && npm run build
+# Migrations before build so static page generation can query SQLite.
+ENV DATABASE_URL="file:/tmp/build.db"
+RUN npx prisma generate \
+  && npx prisma db push \
+  && npm run build
 
 FROM base AS runner
 ENV NODE_ENV=production

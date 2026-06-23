@@ -1,7 +1,7 @@
 # Fly.io app config — see DEPLOY.md for first-time setup.
 # Rename `app` if jackals-vc is already taken in your Fly org.
 
-app = "jackals-vc"
+app = "jackalsvc"
 primary_region = "fra"
 
 [build]
