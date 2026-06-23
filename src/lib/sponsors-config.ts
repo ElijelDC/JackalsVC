@@ -69,7 +69,7 @@ export const SPONSOR_VISIBILITY_CHANNELS: {
   {
     icon: Globe,
     title: "Website",
-    description: "Dedicated sponsors section on jackalsvc.com with logo and link to your business.",
+    description: "Dedicated sponsors section on jackalsvolleyball.com with logo and link to your business.",
   },
   {
     icon: Trophy,

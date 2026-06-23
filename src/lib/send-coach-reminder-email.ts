@@ -14,12 +14,6 @@ export async function sendTrainingResponseReminderEmail(input: {
   const respondLabel = kind === "match" ? "Respond to match" : "Respond to training";
 
   if (!isEmailConfigured()) {
-    if (process.env.NODE_ENV === "development") {
-      console.info(
-        `[coach reminder] ${input.playerName} <${input.email}> — ${input.sessionLabel} → ${input.sessionUrl}`,
-      );
-      return { delivered: false };
-    }
     throw new Error("Email delivery is not configured");
   }
 

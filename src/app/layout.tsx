@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PUBLIC_PATHS } from "@/lib/public-paths";
+import { getSiteMetadataBase } from "@/lib/site-config";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Oswald } from "next/font/google";
 import { CartProvider } from "@/components/shop/CartProvider";
@@ -22,6 +23,7 @@ const oswald = Oswald({
 });
 
 export const metadata: Metadata = {
+  metadataBase: getSiteMetadataBase(),
   title: {
     default: "Jackals VC | Volleyball Club",
     template: "%s | Jackals VC",

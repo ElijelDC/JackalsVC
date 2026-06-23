@@ -13,10 +13,6 @@ export async function sendContactEmail(data: ContactFormData) {
   const transporter = getTransporter();
 
   if (!transporter) {
-    if (process.env.NODE_ENV === "development") {
-      console.info("[contact form]", { to: CONTACT_EMAIL, ...data });
-      return;
-    }
     throw new Error("Email delivery is not configured");
   }
 

@@ -6,12 +6,6 @@ export async function sendVerificationEmail(input: {
   memberName: string;
 }): Promise<{ delivered: boolean }> {
   if (!isEmailConfigured()) {
-    if (process.env.NODE_ENV === "development") {
-      console.info(
-        `[email verification] Code for ${input.email} (${input.memberName}): ${input.code}`,
-      );
-      return { delivered: false };
-    }
     throw new Error("Email delivery is not configured");
   }
 
