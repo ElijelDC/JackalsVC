@@ -39,3 +39,6 @@ export const REGISTRATION_DECLINED_MESSAGE =
 
 export const REGISTRATION_NOT_APPROVED_MESSAGE =
   "Your membership photo is still awaiting admin approval.";
+
+export const VLY_ALREADY_REGISTERED_MESSAGE =
+  "This VLY number is already registered. Please sign in instead.";

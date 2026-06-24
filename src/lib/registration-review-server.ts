@@ -1,6 +1,7 @@
 import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import {
+  VLY_ALREADY_REGISTERED_MESSAGE,
   registrationIsApproved,
   REGISTRATION_NOT_APPROVED_MESSAGE,
 } from "@/lib/registration-review";
@@ -26,10 +27,7 @@ export async function requireApprovedRegistration(vlyNumber: string) {
   if (clubMember.userId) {
     return {
       clubMember: null,
-      response: jsonError(
-        "This VLY number already has a member account — sign in instead",
-        409,
-      ),
+      response: jsonError(VLY_ALREADY_REGISTERED_MESSAGE, 409),
     };
   }
 

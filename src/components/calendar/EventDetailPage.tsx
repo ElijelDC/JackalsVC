@@ -140,10 +140,10 @@ export function EventDetailPage({
               >
                 <div>
                   <p className="font-medium text-white">
-                    View full recurring schedule
+                    View schedule details
                   </p>
                   <p className="mt-1 text-sm text-zinc-400">
-                    See all upcoming dates for this session
+                    See the session details and upcoming dates
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 shrink-0 text-jackals-red-light transition-transform group-hover:translate-x-0.5" />

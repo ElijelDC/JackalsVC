@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody } from "@/lib/api";
 import { createRegistrationToken } from "@/lib/registration-token";
-import { VLY_NOT_FOUND_MESSAGE } from "@/lib/registration-review";
+import {
+  VLY_ALREADY_REGISTERED_MESSAGE,
+  VLY_NOT_FOUND_MESSAGE,
+} from "@/lib/registration-review";
 import { isValidVlyNumberFormat, normalizeVlyNumber } from "@/lib/vly-number";
 import { validateVlySchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
@@ -34,7 +37,7 @@ export async function POST(request: Request) {
   }
 
   if (clubMember.userId) {
-    return jsonError("This VLY number already has a member account — sign in instead", 409);
+    return jsonError(VLY_ALREADY_REGISTERED_MESSAGE, 409);
   }
 
   const registrationToken = createRegistrationToken(vlyNumber);

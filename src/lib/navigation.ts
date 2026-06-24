@@ -104,6 +104,7 @@ const MEMBER_PRIMARY_NAV_HREFS = [
 ] as const;
 
 export const MEMBER_MOBILE_QUICK_NAV_HREFS = [
+  "/",
   "/training",
   "/matches",
   "/membership",
@@ -125,24 +126,33 @@ const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
 ] as const;
 
 const COACH_PAID_MOBILE_QUICK_NAV_HREFS = [
+  "/",
   "/training",
   "/matches",
   "/payments",
 ] as const;
 
 const COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS = [
+  "/",
   "/training",
   "/matches",
   "/events",
 ] as const;
 
 const ADMIN_MOBILE_QUICK_NAV_HREFS = [
+  "/",
   "/training",
   "/matches",
   "/admin",
 ] as const;
 
 export const ADMIN_MOBILE_QUICK_NAV_ITEMS: NavItem[] = [
+  {
+    href: "/",
+    label: "Home",
+    icon: Home,
+    description: "Return to the club home page.",
+  },
   {
     href: "/training",
     label: "Training",

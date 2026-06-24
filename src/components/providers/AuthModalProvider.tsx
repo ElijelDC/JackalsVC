@@ -93,11 +93,10 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
     ) : (
       <>
         <p className="mt-3 font-display text-base font-bold uppercase leading-snug tracking-wide text-white">
-          Only for Registered{" "}
-          <span className="text-jackals-red-light">Jackal League</span> Members
+          Only for Registered Members
         </p>
         <p className="mt-2 text-sm text-zinc-400">
-          Verify your VLY number, upload your membership photo for admin approval, then confirm your email and create your password.
+          Verify your VLY number and upload your membership photo for approval.
         </p>
       </>
     );

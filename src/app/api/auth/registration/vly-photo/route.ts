@@ -3,10 +3,7 @@ import { jsonError } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import { verifyRegistrationToken } from "@/lib/registration-token";
 import { normalizeVlyNumber } from "@/lib/vly-number";
-import {
-  registrationIsApproved,
-  registrationIsPending,
-} from "@/lib/registration-review";
+import { registrationIsApproved } from "@/lib/registration-review";
 import {
   deleteVlyMembershipPhotoFile,
   saveVlyMembershipPhotoFile,
@@ -49,13 +46,6 @@ export async function POST(request: Request) {
 
   if (registrationIsApproved(clubMember.registrationReviewStatus)) {
     return jsonError("Your membership photo is already approved.", 400);
-  }
-
-  if (registrationIsPending(clubMember.registrationReviewStatus)) {
-    return jsonError(
-      "Your screenshot is already waiting for admin review.",
-      409,
-    );
   }
 
   try {

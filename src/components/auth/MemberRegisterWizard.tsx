@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, CheckCircle2, Clock3, Loader2, Upload } from "lucide-react";
@@ -28,11 +29,11 @@ type VlyValidationPayload = {
 function StepHint({ step }: { step: RegisterStep }) {
   const labels: Record<RegisterStep, string> = {
     vly: "Step 1 of 5 · VLY number",
-    photo: "Step 2 of 5 · VLY membership photo",
-    pending: "Step 2 of 5 · Awaiting admin approval",
-    email: "Step 3 of 5 · Email address",
+    photo: "Step 2 of 5 · Photo upload",
+    pending: "Step 2 of 5 · Awaiting approval",
+    email: "Step 3 of 5 · Email",
     verify: "Step 4 of 5 · Confirm email",
-    password: "Step 5 of 5 · Create password",
+    password: "Step 5 of 5 · Password",
   };
 
   return (
@@ -43,11 +44,9 @@ function StepHint({ step }: { step: RegisterStep }) {
 }
 
 function VerifiedBanner({
-  memberName,
   vlyNumber,
   email,
 }: {
-  memberName: string;
   vlyNumber: string;
   email?: string;
 }) {
@@ -59,7 +58,7 @@ function VerifiedBanner({
           {email ? "Email verified" : "VLY number verified"}
         </p>
         <p className="mt-1 text-zinc-300">
-          {memberName} · {vlyNumber}
+          {vlyNumber}
           {email ? ` · ${email}` : ""}
         </p>
       </div>
@@ -343,7 +342,16 @@ export function MemberRegisterWizard({
         </form>
 
         <p className="mt-4 text-center text-xs leading-relaxed text-zinc-500">
-          Your VLY number must match the club roster maintained by the committee.
+          Use the VLY number listed on VLY Go. Your profile can be found{" "}
+          <Link
+            href="https://volleyballireland.justgo.com/Workbench.mvc/Show/5?t=profile"
+            target="_blank"
+            rel="noreferrer"
+            className="text-jackals-red underline underline-offset-2 hover:text-jackals-red-light"
+          >
+            here
+          </Link>
+          .
         </p>
 
         <p className="mt-5 text-center text-sm text-zinc-400">
@@ -364,12 +372,11 @@ export function MemberRegisterWizard({
     return (
       <>
         <StepHint step="photo" />
-        <VerifiedBanner memberName={memberName} vlyNumber={vlyNumber} />
+        <VerifiedBanner vlyNumber={vlyNumber} />
 
         <form onSubmit={uploadPhoto} className="space-y-4">
           <p className="text-sm text-zinc-400">
-            Upload a clear screenshot or photo of your VLY membership card. An admin
-            will review it before you can continue.
+            Upload a clear screenshot or photo of your VLY membership card.
           </p>
 
           <button
@@ -446,7 +453,7 @@ export function MemberRegisterWizard({
     return (
       <>
         <StepHint step="pending" />
-        <VerifiedBanner memberName={memberName} vlyNumber={vlyNumber} />
+        <VerifiedBanner vlyNumber={vlyNumber} />
 
         {vlyPhotoUrl && (
           <RegistrationPendingPanel
@@ -454,8 +461,6 @@ export function MemberRegisterWizard({
             submittedAt={photoSubmittedAt}
           />
         )}
-
-        <FormError message={error} />
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <Button
@@ -472,11 +477,16 @@ export function MemberRegisterWizard({
           </Button>
           <Button
             type="button"
-            className="flex-1"
-            disabled={loading}
-            onClick={() => void validateVly()}
+            variant="outline"
+            className="gap-1.5"
+            onClick={() => {
+              setStep("photo");
+              setSelectedFile(null);
+              setPreviewUrl(null);
+              setError(null);
+            }}
           >
-            {loading ? "Checking..." : "Check approval status"}
+            Change screenshot
           </Button>
         </div>
       </>
@@ -487,7 +497,7 @@ export function MemberRegisterWizard({
     return (
       <>
         <StepHint step="email" />
-        <VerifiedBanner memberName={memberName} vlyNumber={vlyNumber} />
+        <VerifiedBanner vlyNumber={vlyNumber} />
 
         <form onSubmit={sendCode} className="space-y-4">
           <div>

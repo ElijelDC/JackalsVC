@@ -9,8 +9,12 @@ import { TeamCard, type TeamCardData } from "@/components/teams/TeamCard";
 import { countTeamMembers } from "@/lib/teams";
 
 export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
-  const totalMembers = teams.reduce(
-    (sum, team) => sum + countTeamMembers(team.members).total,
+  const totalCoachCount = teams.reduce(
+    (sum, team) => sum + countTeamMembers(team.members).coaches,
+    0,
+  );
+  const totalPlayerCount = teams.reduce(
+    (sum, team) => sum + countTeamMembers(team.members).players,
     0,
   );
 
@@ -28,12 +32,21 @@ export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
                   value: teams.length,
                   label: teams.length === 1 ? "team" : "teams",
                 },
-                ...(totalMembers > 0
+                ...(totalCoachCount > 0
                   ? [
                       {
                         icon: Users,
-                        value: totalMembers,
-                        label: `squad ${totalMembers === 1 ? "member" : "members"}`,
+                        value: totalCoachCount,
+                        label: totalCoachCount === 1 ? "coach" : "coaches",
+                      },
+                    ]
+                  : []),
+                ...(totalPlayerCount > 0
+                  ? [
+                      {
+                        icon: Users,
+                        value: totalPlayerCount,
+                        label: totalPlayerCount === 1 ? "player" : "players",
                       },
                     ]
                   : []),

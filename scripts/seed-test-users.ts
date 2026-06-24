@@ -47,7 +47,28 @@ const rosterEntries = [
   { vlyNumber: "VLY10009", name: "Alex Morgan", email: "alex.morgan@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "PLAYER" },
   { vlyNumber: "VLY10010", name: "Priya Sharma", email: "priya.sharma@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
   { vlyNumber: "VLY10011", name: "Noah Thompson", email: "noah.thompson@jackalsvc.com", trainingTeamKey: "DIV4_MENS", rosterRole: "PLAYER" },
-  { vlyNumber: "VLY10999", name: "New Member Test", email: null, trainingTeamKey: null, rosterRole: "PLAYER" },
+  {
+    vlyNumber: "VLY10999",
+    name: "New Member Test",
+    email: null,
+    trainingTeamKey: null,
+    rosterRole: "PLAYER",
+    registrationReviewStatus: null,
+    registrationPhotoSubmittedAt: null,
+    registrationReviewedAt: null,
+    registrationReviewedByUserId: null,
+  },
+  {
+    vlyNumber: "VLY10998",
+    name: "Unregistered Step 2 Test",
+    email: null,
+    trainingTeamKey: null,
+    rosterRole: "PLAYER",
+    registrationReviewStatus: null,
+    registrationPhotoSubmittedAt: null,
+    registrationReviewedAt: null,
+    registrationReviewedByUserId: null,
+  },
 ];
 
 const registrationCodes = [
@@ -92,6 +113,11 @@ async function main() {
             : null,
         trainingTeamKey: entry.trainingTeamKey,
         userId: linkedUser?.id ?? null,
+        vlyMembershipPhotoUrl: null,
+        registrationReviewStatus: entry.registrationReviewStatus ?? null,
+        registrationPhotoSubmittedAt: entry.registrationPhotoSubmittedAt ?? null,
+        registrationReviewedAt: entry.registrationReviewedAt ?? null,
+        registrationReviewedByUserId: entry.registrationReviewedByUserId ?? null,
       },
       create: {
         vlyNumber: entry.vlyNumber,
@@ -104,6 +130,11 @@ async function main() {
             : null,
         trainingTeamKey: entry.trainingTeamKey,
         userId: linkedUser?.id ?? null,
+        vlyMembershipPhotoUrl: null,
+        registrationReviewStatus: entry.registrationReviewStatus ?? null,
+        registrationPhotoSubmittedAt: entry.registrationPhotoSubmittedAt ?? null,
+        registrationReviewedAt: entry.registrationReviewedAt ?? null,
+        registrationReviewedByUserId: entry.registrationReviewedByUserId ?? null,
       },
     });
   }
