@@ -1,22 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Loader2, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label } from "@/components/ui/Input";
-import { apiPost } from "@/lib/client-api";
+import { GALLERY_ACCEPTED_IMAGE_TYPES } from "@/lib/gallery-upload-config";
+import { apiPost, apiPostForm } from "@/lib/client-api";
+import {
+  REGISTRATION_DECLINED_MESSAGE,
+} from "@/lib/registration-review";
 
-type RegisterStep = "vly" | "email" | "verify" | "password";
+type RegisterStep = "vly" | "photo" | "pending" | "email" | "verify" | "password";
+
+type VlyValidationPayload = {
+  vlyNumber: string;
+  name: string;
+  registrationToken: string;
+  vlyMembershipPhotoUrl: string | null;
+  registrationReviewStatus: string | null;
+  registrationPhotoSubmittedAt: string | null;
+};
 
 function StepHint({ step }: { step: RegisterStep }) {
   const labels: Record<RegisterStep, string> = {
-    vly: "Step 1 of 4 · VLY number",
-    email: "Step 2 of 4 · Email address",
-    verify: "Step 3 of 4 · Confirm email",
-    password: "Step 4 of 4 · Create password",
+    vly: "Step 1 of 5 · VLY number",
+    photo: "Step 2 of 5 · VLY membership photo",
+    pending: "Step 2 of 5 · Awaiting admin approval",
+    email: "Step 3 of 5 · Email address",
+    verify: "Step 4 of 5 · Confirm email",
+    password: "Step 5 of 5 · Create password",
   };
 
   return (
@@ -51,6 +67,50 @@ function VerifiedBanner({
   );
 }
 
+function RegistrationPendingPanel({
+  photoUrl,
+  submittedAt,
+}: {
+  photoUrl: string;
+  submittedAt: string | null;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-blue-500/35 bg-blue-500/10">
+      <div className="border-b border-blue-500/20 bg-blue-500/10 px-4 py-4">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20">
+            <Clock3 className="h-5 w-5 text-blue-300" />
+          </div>
+          <div>
+            <p className="font-semibold text-blue-100">Screenshot submitted</p>
+            <p className="mt-1 text-sm leading-relaxed text-blue-200/80">
+              Waiting for admin approval. You can close this and come back later
+              — enter your VLY number again to check your status.
+            </p>
+            {submittedAt && (
+              <p className="mt-2 flex items-center gap-1.5 text-xs text-blue-300/70">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Submitted {new Date(submittedAt).toLocaleString("en-GB")}
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="p-4">
+        <div className="relative mx-auto h-52 w-40 overflow-hidden rounded-lg border border-white/10 bg-black/30">
+          <Image
+            src={photoUrl}
+            alt="Submitted VLY membership photo"
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MemberRegisterWizard({
   callbackUrl,
   onSuccess,
@@ -61,10 +121,15 @@ export function MemberRegisterWizard({
   onSignIn: () => void;
 }) {
   const router = useRouter();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<RegisterStep>("vly");
   const [vlyNumber, setVlyNumber] = useState("");
   const [memberName, setMemberName] = useState("");
   const [registrationToken, setRegistrationToken] = useState("");
+  const [vlyPhotoUrl, setVlyPhotoUrl] = useState<string | null>(null);
+  const [photoSubmittedAt, setPhotoSubmittedAt] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [emailCode, setEmailCode] = useState("");
   const [password, setPassword] = useState("");
@@ -73,12 +138,36 @@ export function MemberRegisterWizard({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const validateVly = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const applyVlyPayload = (payload: VlyValidationPayload) => {
+    setVlyNumber(payload.vlyNumber);
+    setMemberName(payload.name);
+    setRegistrationToken(payload.registrationToken);
+    setVlyPhotoUrl(payload.vlyMembershipPhotoUrl);
+    setPhotoSubmittedAt(payload.registrationPhotoSubmittedAt);
+
+    if (payload.registrationReviewStatus === "APPROVED") {
+      setStep("email");
+      return;
+    }
+
+    if (payload.registrationReviewStatus === "PENDING" && payload.vlyMembershipPhotoUrl) {
+      setStep("pending");
+      return;
+    }
+
+    if (payload.registrationReviewStatus === "DECLINED") {
+      setError(REGISTRATION_DECLINED_MESSAGE);
+    }
+
+    setStep("photo");
+  };
+
+  const validateVly = async (event?: React.FormEvent) => {
+    event?.preventDefault();
     setLoading(true);
     setError(null);
 
-    const result = await apiPost(
+    const result = await apiPost<VlyValidationPayload>(
       "/api/auth/validate-vly",
       { vlyNumber },
       "Could not verify VLY number",
@@ -91,16 +180,43 @@ export function MemberRegisterWizard({
       return;
     }
 
-    const payload = result.data as {
-      vlyNumber: string;
-      name: string;
-      registrationToken: string;
-    };
+    applyVlyPayload(result.data);
+  };
 
-    setVlyNumber(payload.vlyNumber);
-    setMemberName(payload.name);
-    setRegistrationToken(payload.registrationToken);
-    setStep("email");
+  const uploadPhoto = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    if (!selectedFile) {
+      setError("Choose a screenshot of your VLY membership card first.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData();
+    formData.append("file", selectedFile);
+    formData.append("vlyNumber", vlyNumber);
+    formData.append("registrationToken", registrationToken);
+
+    const result = await apiPostForm<{
+      vlyMembershipPhotoUrl: string;
+      registrationPhotoSubmittedAt: string | null;
+    }>("/api/auth/registration/vly-photo", formData, "VLY photo upload failed.");
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setVlyPhotoUrl(result.data.vlyMembershipPhotoUrl);
+    setPhotoSubmittedAt(result.data.registrationPhotoSubmittedAt);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setStep("pending");
   };
 
   const sendCode = async (event: React.FormEvent) => {
@@ -122,10 +238,7 @@ export function MemberRegisterWizard({
       return;
     }
 
-    const payload = result.data as {
-      message?: string;
-    };
-
+    const payload = result.data as { message?: string };
     setCodeMessage(
       payload.message ?? "Verification code sent — check your email (and spam folder).",
     );
@@ -243,6 +356,129 @@ export function MemberRegisterWizard({
             Sign in
           </button>
         </p>
+      </>
+    );
+  }
+
+  if (step === "photo") {
+    return (
+      <>
+        <StepHint step="photo" />
+        <VerifiedBanner memberName={memberName} vlyNumber={vlyNumber} />
+
+        <form onSubmit={uploadPhoto} className="space-y-4">
+          <p className="text-sm text-zinc-400">
+            Upload a clear screenshot or photo of your VLY membership card. An admin
+            will review it before you can continue.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-black/20 px-4 py-8 text-center transition-colors hover:border-jackals-red/40 hover:bg-jackals-red/5"
+          >
+            <Upload className="mb-2 h-8 w-8 text-zinc-500" />
+            <span className="text-sm font-medium text-white">
+              {selectedFile ? selectedFile.name : "Choose VLY membership photo"}
+            </span>
+            <span className="mt-1 text-xs text-zinc-500">
+              JPEG, PNG, WebP, or GIF · max 5 MB
+            </span>
+          </button>
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept={GALLERY_ACCEPTED_IMAGE_TYPES}
+            className="hidden"
+            onChange={(event) => {
+              const file = event.target.files?.[0] ?? null;
+              setError(null);
+              setSelectedFile(file);
+              setPreviewUrl(file ? URL.createObjectURL(file) : null);
+            }}
+          />
+
+          {previewUrl && (
+            <div className="relative mx-auto h-52 w-40 overflow-hidden rounded-lg border border-white/10">
+              <Image
+                src={previewUrl}
+                alt="VLY membership preview"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          )}
+
+          <FormError message={error} />
+
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="gap-1.5"
+              onClick={() => {
+                setStep("vly");
+                setError(null);
+              }}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back
+            </Button>
+            <Button type="submit" className="flex-1" disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  Uploading
+                </>
+              ) : (
+                "Submit for review"
+              )}
+            </Button>
+          </div>
+        </form>
+      </>
+    );
+  }
+
+  if (step === "pending") {
+    return (
+      <>
+        <StepHint step="pending" />
+        <VerifiedBanner memberName={memberName} vlyNumber={vlyNumber} />
+
+        {vlyPhotoUrl && (
+          <RegistrationPendingPanel
+            photoUrl={vlyPhotoUrl}
+            submittedAt={photoSubmittedAt}
+          />
+        )}
+
+        <FormError message={error} />
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <Button
+            type="button"
+            variant="ghost"
+            className="gap-1.5"
+            onClick={() => {
+              setStep("vly");
+              setError(null);
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <Button
+            type="button"
+            className="flex-1"
+            disabled={loading}
+            onClick={() => void validateVly()}
+          >
+            {loading ? "Checking..." : "Check approval status"}
+          </Button>
+        </div>
       </>
     );
   }

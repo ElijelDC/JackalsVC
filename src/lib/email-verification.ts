@@ -119,3 +119,9 @@ export async function clearEmailVerifications(email: string) {
     where: { email: email.trim().toLowerCase() },
   });
 }
+
+export function profileEmailVerificationKey(userId: string) {
+  return `PROFILE:${userId}`;
+}
+
+export const PASSWORD_RESET_VERIFICATION_KEY = "PASSWORD_RESET";

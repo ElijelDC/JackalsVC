@@ -1,6 +1,8 @@
 import Link from "next/link";
+import { AdminActionQueue } from "@/components/admin/AdminActionQueue";
 import { AdminOverviewGrid } from "@/components/admin/AdminOverviewGrid";
 import { prisma } from "@/lib/prisma";
+import { getAdminActionQueue } from "@/lib/admin-action-queue";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { SHOP_ENABLED } from "@/lib/features";
@@ -125,6 +127,8 @@ const SECTIONS = [
 ];
 
 export default async function AdminPage() {
+  const actionQueue = await getAdminActionQueue();
+
   const [
     users,
     plans,
@@ -179,10 +183,16 @@ export default async function AdminPage() {
   };
 
   return (
-    <AdminSection
-      title="Overview"
-      description="Full database management — every table in one place. Changes go live immediately."
-    >
+    <>
+      <AdminActionQueue
+        entries={actionQueue.entries}
+        totalCount={actionQueue.totalCount}
+      />
+
+      <AdminSection
+        title="Overview"
+        description="Full database management — every table in one place. Changes go live immediately."
+      >
       <AdminOverviewGrid>
         {SECTIONS.filter(
           (section) =>
@@ -209,5 +219,6 @@ export default async function AdminPage() {
         ))}
       </AdminOverviewGrid>
     </AdminSection>
+    </>
   );
 }

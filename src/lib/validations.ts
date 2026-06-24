@@ -258,6 +258,57 @@ export const profilePlayerNumberSchema = z.object({
     .nullable(),
 });
 
+export const profileEmailSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Enter a valid email address."),
+});
+
+export const profileEmailSendCodeSchema = profileEmailSchema;
+
+export const profileEmailUpdateSchema = profileEmailSchema.extend({
+  emailCode: z
+    .string()
+    .regex(/^\d{6}$/, "Enter the 6-digit verification code."),
+});
+
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1, "Enter your current password."),
+    newPassword: z.string().min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string().min(8, "Confirm your new password."),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
+export const forgotPasswordSendCodeSchema = z.object({
+  email: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .email("Enter a valid email address."),
+});
+
+export const forgotPasswordResetSchema = z
+  .object({
+    email: z
+      .string()
+      .trim()
+      .toLowerCase()
+      .email("Enter a valid email address."),
+    code: z.string().regex(/^\d{6}$/, "Enter the 6-digit code from your email."),
+    newPassword: z.string().min(8, "Password must be at least 8 characters."),
+    confirmPassword: z.string().min(8, "Confirm your new password."),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "New passwords do not match.",
+    path: ["confirmPassword"],
+  });
+
 export const membershipCreateSchema = z.object({
   userId: z.string().min(1, "User is required"),
   planId: z.string().min(1, "Plan is required"),

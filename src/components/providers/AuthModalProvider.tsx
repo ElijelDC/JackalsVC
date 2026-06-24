@@ -97,7 +97,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
           <span className="text-jackals-red-light">Jackal League</span> Members
         </p>
         <p className="mt-2 text-sm text-zinc-400">
-          Verify your VLY number and email, then create your password.
+          Verify your VLY number, upload your membership photo for admin approval, then confirm your email and create your password.
         </p>
       </>
     );

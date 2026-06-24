@@ -191,7 +191,7 @@ export function PaymentProofUpload({
           <Button
             type="button"
             className="w-full"
-            disabled={loading || !selectedFile}
+            disabled={loading}
             onClick={submitProof}
           >
             {loading ? "Uploading..." : "Submit screenshot"}

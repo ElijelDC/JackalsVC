@@ -1,6 +1,7 @@
 import { jsonError, parseJsonBody } from "@/lib/api";
 import { createEmailVerification } from "@/lib/email-verification";
-import { sendVerificationEmail } from "@/lib/send-verification-email";
+import { requireApprovedRegistration } from "@/lib/registration-review-server";
+import { sendVerificationEmail, getVerificationEmailSendError } from "@/lib/send-verification-email";
 import { verifyRegistrationToken } from "@/lib/registration-token";
 import { normalizeVlyNumber } from "@/lib/vly-number";
 import { sendEmailCodeSchema } from "@/lib/validations";
@@ -19,16 +20,16 @@ export async function POST(request: Request) {
     return jsonError(tokenCheck.error ?? "Invalid registration session", 403);
   }
 
+  const approval = await requireApprovedRegistration(vlyNumber);
+  if (approval.response) return approval.response;
+
   const clubMember = await prisma.clubMember.findUnique({
     where: { vlyNumber },
+    select: { name: true },
   });
 
-  if (!clubMember || !clubMember.active) {
+  if (!clubMember) {
     return jsonError("This VLY number was not found on the club roster", 404);
-  }
-
-  if (clubMember.userId) {
-    return jsonError("This VLY number already has a member account", 409);
   }
 
   const existing = await prisma.user.findUnique({ where: { email } });
@@ -50,19 +51,10 @@ export async function POST(request: Request) {
       delivered: true,
     });
   } catch (error) {
-    if (error instanceof Error && error.message.includes("wait a minute")) {
-      return jsonError(error.message, 429);
+    const mapped = getVerificationEmailSendError(error);
+    if (mapped.status === 500) {
+      console.error("Send verification email failed:", error);
     }
-
-    if (error instanceof Error && error.message.includes("not configured")) {
-      return jsonError(
-        "Email delivery is not configured. Please contact the club.",
-        503,
-      );
-    }
-
-    console.error("Send verification email failed:", error);
-
-    return jsonError("Could not send verification email. Please try again.", 500);
+    return jsonError(mapped.message, mapped.status);
   }
 }

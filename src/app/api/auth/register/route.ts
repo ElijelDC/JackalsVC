@@ -8,6 +8,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { verifyRegistrationToken } from "@/lib/registration-token";
+import { requireApprovedRegistration } from "@/lib/registration-review-server";
 import { normalizeVlyNumber } from "@/lib/vly-number";
 import { registerSchema } from "@/lib/validations";
 
@@ -22,6 +23,9 @@ export async function POST(request: Request) {
   if (!tokenCheck.valid) {
     return jsonError(tokenCheck.error ?? "Invalid registration session", 403);
   }
+
+  const approval = await requireApprovedRegistration(vlyNumber);
+  if (approval.response) return approval.response;
 
   try {
     const existing = await prisma.user.findUnique({ where: { email } });

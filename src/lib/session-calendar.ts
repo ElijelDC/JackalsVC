@@ -1,4 +1,4 @@
-import { addWeeks } from "date-fns";
+import { addWeeks, startOfDay } from "date-fns";
 import { notFound } from "next/navigation";
 import { FUN_SESSION_CALENDAR_WEEKS } from "@/lib/event-filters";
 import { getNextUpcomingOccurrence, resolveUpcomingAttendanceUrl, resolveUpcomingPaymentUrl } from "@/lib/training-events";
@@ -113,10 +113,17 @@ export async function getVisibleFunSessions(
   );
 
   return sessions.filter((session) => {
-    if (session.recurring) return sessionsWithUpcoming.has(session.id);
+    if (sessionsWithUpcoming.has(session.id)) return true;
+
+    if (session.recurring) return false;
+
     if (!session.sessionDate) return false;
-    const date = new Date(session.sessionDate);
-    return date >= now && date <= through;
+
+    const sessionDay = startOfDay(new Date(session.sessionDate));
+    const today = startOfDay(now);
+    const horizon = startOfDay(through);
+
+    return sessionDay >= today && sessionDay <= horizon;
   });
 }
 

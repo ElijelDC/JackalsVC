@@ -1,9 +1,10 @@
+import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody } from "@/lib/api";
 import { createRegistrationToken } from "@/lib/registration-token";
+import { VLY_NOT_FOUND_MESSAGE } from "@/lib/registration-review";
 import { isValidVlyNumberFormat, normalizeVlyNumber } from "@/lib/vly-number";
 import { validateVlySchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
   const { data, response } = await parseJsonBody(request, validateVlySchema);
@@ -17,10 +18,19 @@ export async function POST(request: Request) {
 
   const clubMember = await prisma.clubMember.findUnique({
     where: { vlyNumber },
+    select: {
+      id: true,
+      name: true,
+      active: true,
+      userId: true,
+      vlyMembershipPhotoUrl: true,
+      registrationReviewStatus: true,
+      registrationPhotoSubmittedAt: true,
+    },
   });
 
   if (!clubMember || !clubMember.active) {
-    return jsonError("This VLY number was not found on the club roster", 404);
+    return jsonError(VLY_NOT_FOUND_MESSAGE, 404);
   }
 
   if (clubMember.userId) {
@@ -33,5 +43,9 @@ export async function POST(request: Request) {
     vlyNumber,
     name: clubMember.name,
     registrationToken,
+    vlyMembershipPhotoUrl: clubMember.vlyMembershipPhotoUrl,
+    registrationReviewStatus: clubMember.registrationReviewStatus,
+    registrationPhotoSubmittedAt:
+      clubMember.registrationPhotoSubmittedAt?.toISOString() ?? null,
   });
 }

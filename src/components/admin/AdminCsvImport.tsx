@@ -83,7 +83,7 @@ export function AdminCsvImport() {
           }}
         />
 
-        <Button type="button" className="w-full" disabled={loading || !file} onClick={submitImport}>
+        <Button type="button" className="w-full" disabled={loading} onClick={submitImport}>
           {loading ? "Importing..." : "Upload CSV & match payments"}
         </Button>
       </div>

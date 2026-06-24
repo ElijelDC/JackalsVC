@@ -135,7 +135,7 @@ export function AdminBulkCsvImport({
         <Button
           type="button"
           className="w-full"
-          disabled={loading || !file}
+          disabled={loading}
           onClick={submitImport}
         >
           {loading ? "Importing..." : "Upload CSV & import rows"}

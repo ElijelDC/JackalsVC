@@ -2,27 +2,8 @@ import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { isTrainingSquadKey } from "@/lib/training-squads";
 import { prisma } from "@/lib/prisma";
+import { toTeamMatchData } from "@/lib/team-match-mutations";
 import { teamMatchSchema } from "@/lib/validations";
-
-function toMatchData(data: {
-  trainingTeamKey: string;
-  opponentName: string;
-  venue: string;
-  location: string;
-  warmUpTime: string;
-  matchStart: string;
-  notes?: string;
-}) {
-  return {
-    trainingTeamKey: data.trainingTeamKey,
-    opponentName: data.opponentName.trim(),
-    venue: data.venue,
-    location: data.location.trim(),
-    warmUpTime: new Date(data.warmUpTime),
-    matchStart: new Date(data.matchStart),
-    notes: data.notes ?? null,
-  };
-}
 
 export async function GET() {
   const { response } = await requireAdmin();
@@ -50,7 +31,7 @@ export async function POST(request: Request) {
   }
 
   const match = await prisma.teamMatch.create({
-    data: toMatchData(data),
+    data: toTeamMatchData(data),
   });
 
   return NextResponse.json({ match }, { status: 201 });

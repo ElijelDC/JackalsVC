@@ -18,11 +18,6 @@ export function savesTournamentPaymentFields(type: string) {
   return type === "TOURNAMENT";
 }
 
-/** @deprecated Use savesClinicPaymentFields */
-export function savesEventPaymentFields(type: string) {
-  return savesClinicPaymentFields(type);
-}
-
 export function usesPaidJoinFlow(type: string) {
   return type === "FUN" || type === "SKILLS_CLINIC";
 }

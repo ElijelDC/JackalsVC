@@ -38,6 +38,10 @@ model ClubMember {
   profileImageUrl        String?
   vlyMembershipPhotoUrl  String?
   playerNumber           Int?
+  registrationReviewStatus       String?
+  registrationPhotoSubmittedAt   DateTime?
+  registrationReviewedAt         DateTime?
+  registrationReviewedByUserId   String?
   userId                 String?          @unique
   user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt       DateTime         @default(now())

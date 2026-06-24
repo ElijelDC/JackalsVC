@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label } from "@/components/ui/Input";
+import { MemberForgotPasswordForm } from "@/components/auth/MemberForgotPasswordForm";
 
 export function MemberSignInForm({
   callbackUrl,
@@ -17,10 +18,26 @@ export function MemberSignInForm({
   onRegister: () => void;
 }) {
   const router = useRouter();
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [resetNotice, setResetNotice] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  if (showForgotPassword) {
+    return (
+      <MemberForgotPasswordForm
+        initialEmail={email}
+        onBackToSignIn={() => setShowForgotPassword(false)}
+        onSuccess={(message) => {
+          setResetNotice(message);
+          setShowForgotPassword(false);
+          setError(null);
+        }}
+      />
+    );
+  }
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -60,7 +77,22 @@ export function MemberSignInForm({
           />
         </div>
         <div>
-          <Label htmlFor="member-signin-password">Password</Label>
+          <div className="mb-1.5 flex items-center justify-between gap-3">
+            <Label htmlFor="member-signin-password" className="mb-0">
+              Password
+            </Label>
+            <button
+              type="button"
+              onClick={() => {
+                setShowForgotPassword(true);
+                setError(null);
+                setResetNotice(null);
+              }}
+              className="text-xs font-medium text-jackals-red-light hover:text-jackals-red"
+            >
+              Forgot password?
+            </button>
+          </div>
           <Input
             id="member-signin-password"
             type="password"
@@ -72,6 +104,9 @@ export function MemberSignInForm({
         </div>
 
         <FormError message={error} />
+        {resetNotice && (
+          <p className="text-sm text-green-400">{resetNotice}</p>
+        )}
 
         <Button type="submit" className="w-full" disabled={loading}>
           {loading ? "Signing in..." : "Sign in"}

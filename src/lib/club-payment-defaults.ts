@@ -1,0 +1,2 @@
+export const DEFAULT_RECLUB_USERNAME = "JackalsVC";
+export const DEFAULT_CLUB_IBAN = "IE29 AIBK 9311 5212 3456 78";
