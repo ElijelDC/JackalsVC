@@ -9,6 +9,7 @@ import {
   matchesAdminSearch,
 } from "@/components/admin/AdminSearchBar";
 import { AdminMemberProfileImage } from "@/components/admin/AdminMemberProfileImage";
+import { AdminMemberVlyPhoto } from "@/components/admin/AdminMemberVlyPhoto";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -37,6 +38,7 @@ type ClubMember = {
   coachPaymentType: CoachPaymentType | null;
   trainingTeamKey: string | null;
   profileImageUrl: string | null;
+  vlyMembershipPhotoUrl: string | null;
   userId: string | null;
   user: { id: string; email: string } | null;
 };
@@ -71,10 +73,25 @@ export function ClubRosterManager({
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [teamFilter, setTeamFilter] = useState("all");
+  const [memberFilter, setMemberFilter] = useState("all");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [memberNumberDrafts, setMemberNumberDrafts] = useState<Record<string, string>>({});
+  const [savingMemberNumberId, setSavingMemberNumberId] = useState<string | null>(null);
+  const [savedMemberNumberById, setSavedMemberNumberById] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<"name_asc" | "name_desc">("name_asc");
 
   const filteredMembers = useMemo(() => {
     const filtered = clubMembers.filter((member) => {
+      if (memberFilter === "awaiting-registration-players") {
+        if (member.userId || member.rosterRole !== "PLAYER") {
+          return false;
+        }
+      }
+
+      if (roleFilter !== "all" && member.rosterRole !== roleFilter) {
+        return false;
+      }
+
       if (teamFilter !== "all") {
         if (teamFilter === "unassigned") {
           if (member.trainingTeamKey) return false;
@@ -99,10 +116,14 @@ export function ClubRosterManager({
       });
       return sortBy === "name_asc" ? comparison : -comparison;
     });
-  }, [clubMembers, search, teamFilter, sortBy]);
+  }, [clubMembers, search, teamFilter, memberFilter, roleFilter, sortBy]);
 
   const hasActiveFilters =
-    search.trim().length > 0 || teamFilter !== "all" || sortBy !== "name_asc";
+    search.trim().length > 0 ||
+    teamFilter !== "all" ||
+    memberFilter !== "all" ||
+    roleFilter !== "all" ||
+    sortBy !== "name_asc";
 
   const loadClubMembers = useCallback(async () => {
     const result = await apiGet<{ clubMembers: ClubMember[] }>(
@@ -174,6 +195,60 @@ export function ClubRosterManager({
       return;
     }
 
+    await loadClubMembers();
+  };
+
+  const saveMemberNumber = async (member: ClubMember) => {
+    const draft = memberNumberDrafts[member.id];
+    if (draft === undefined) return;
+
+    const normalized = draft.trim().toUpperCase().replace(/\s+/g, "");
+    if (!normalized || normalized === member.vlyNumber) {
+      setMemberNumberDrafts((current) => {
+        const next = { ...current };
+        delete next[member.id];
+        return next;
+      });
+      return;
+    }
+
+    setLoading(true);
+    setSavingMemberNumberId(member.id);
+    setError(null);
+    setMessage(null);
+
+    const result = await apiPatch(
+      `/api/admin/club-members/${member.id}`,
+      { vlyNumber: normalized },
+      "Failed to update member number",
+    );
+
+    setLoading(false);
+    setSavingMemberNumberId(null);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setMemberNumberDrafts((current) => {
+      const next = { ...current };
+      delete next[member.id];
+      return next;
+    });
+    setSavedMemberNumberById((current) => ({
+      ...current,
+      [member.id]: true,
+    }));
+    setTimeout(() => {
+      setSavedMemberNumberById((current) => {
+        if (!current[member.id]) return current;
+        const next = { ...current };
+        delete next[member.id];
+        return next;
+      });
+    }, 1600);
+    setMessage("Member number updated");
     await loadClubMembers();
   };
 
@@ -261,7 +336,9 @@ export function ClubRosterManager({
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="roster-vly">VLY number</Label>
+            <Label htmlFor="roster-vly">
+              {form.rosterRole === "COACH" ? "VLYC coach number" : "VLY number"}
+            </Label>
             <Input
               id="roster-vly"
               value={form.vlyNumber}
@@ -271,7 +348,7 @@ export function ClubRosterManager({
                   vlyNumber: event.target.value.toUpperCase(),
                 }))
               }
-              placeholder="VLY12345"
+              placeholder={form.rosterRole === "COACH" ? "VLYC12345" : "VLY12345"}
               required
             />
           </div>
@@ -363,7 +440,7 @@ export function ClubRosterManager({
             placeholder="Search VLY number, name, team, or email..."
           />
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <Label htmlFor="roster-team-filter">Team</Label>
               <Select
@@ -378,6 +455,31 @@ export function ClubRosterManager({
                     {team.name}
                   </option>
                 ))}
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="roster-member-filter">Member status</Label>
+              <Select
+                id="roster-member-filter"
+                value={memberFilter}
+                onChange={(event) => setMemberFilter(event.target.value)}
+              >
+                <option value="all">All members</option>
+                <option value="awaiting-registration-players">
+                  Awaiting Registration players
+                </option>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="roster-role-filter">Role</Label>
+              <Select
+                id="roster-role-filter"
+                value={roleFilter}
+                onChange={(event) => setRoleFilter(event.target.value)}
+              >
+                <option value="all">All roles</option>
+                <option value="PLAYER">Player</option>
+                <option value="COACH">Coach</option>
               </Select>
             </div>
             <div>
@@ -409,6 +511,8 @@ export function ClubRosterManager({
                 onClick={() => {
                   setSearch("");
                   setTeamFilter("all");
+                  setMemberFilter("all");
+                  setRoleFilter("all");
                   setSortBy("name_asc");
                 }}
               >
@@ -436,14 +540,24 @@ export function ClubRosterManager({
                 key={member.id}
                 className="overflow-hidden p-0 transition-colors hover:border-white/15"
               >
-                <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:gap-5">
-                  <AdminMemberProfileImage
-                    memberId={member.id}
-                    name={member.name}
-                    imageUrl={member.profileImageUrl}
-                    disabled={loading}
-                    onUpdated={loadClubMembers}
-                  />
+                <div className="flex flex-col gap-4 p-4 md:flex-row md:items-start md:gap-4">
+                  <div className="flex flex-wrap items-start gap-3 md:shrink-0 md:flex-nowrap">
+                    <AdminMemberProfileImage
+                      memberId={member.id}
+                      name={member.name}
+                      imageUrl={member.profileImageUrl}
+                      disabled={loading}
+                      onUpdated={loadClubMembers}
+                    />
+
+                    <AdminMemberVlyPhoto
+                      memberId={member.id}
+                      name={member.name}
+                      imageUrl={member.vlyMembershipPhotoUrl}
+                      disabled={loading}
+                      onUpdated={loadClubMembers}
+                    />
+                  </div>
 
                   <div className="min-w-0 flex-1 space-y-3">
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
@@ -458,8 +572,8 @@ export function ClubRosterManager({
                           <Badge
                             className={
                               member.rosterRole === "COACH"
-                                ? "border border-blue-500/30 bg-blue-500/10 text-blue-300"
-                                : "border border-zinc-500/30 bg-zinc-500/10 text-zinc-400"
+                                ? "border border-zinc-400/30 bg-zinc-500/10 text-zinc-200"
+                                : "border border-zinc-500/30 bg-zinc-500/10 text-zinc-300"
                             }
                           >
                             {member.rosterRole === "COACH" ? "Coach" : "Player"}
@@ -468,13 +582,22 @@ export function ClubRosterManager({
                             <Badge
                               className={
                                 member.coachPaymentType === "PAID"
-                                  ? "border border-green-500/30 bg-green-500/10 text-green-300"
+                                  ? "border border-zinc-400/30 bg-zinc-500/10 text-zinc-200"
                                   : "border border-zinc-500/30 bg-zinc-500/10 text-zinc-300"
                               }
                             >
                               {COACH_PAYMENT_TYPE_LABELS[member.coachPaymentType]}
                             </Badge>
                           )}
+                          <Badge
+                            className={
+                              member.active
+                                ? "border border-green-500/35 bg-green-500/15 text-green-300 font-semibold tracking-wide"
+                                : "border border-red-500/35 bg-red-500/15 text-red-300"
+                            }
+                          >
+                            {member.active ? "Active" : "Inactive"}
+                          </Badge>
                         </div>
                         <p className="mt-0.5 truncate text-sm text-zinc-400">
                           {member.user ? (
@@ -489,9 +612,7 @@ export function ClubRosterManager({
                           <p
                             className={cn(
                               "mt-1 text-xs font-medium",
-                              subscription?.status === "COACH"
-                                ? "text-blue-300"
-                                : "text-jackals-red-light",
+                              "text-zinc-300",
                             )}
                           >
                             {subscriptionLabel}
@@ -502,22 +623,18 @@ export function ClubRosterManager({
                         )}
                       </div>
 
-                      <div className="flex shrink-0 items-center gap-2">
-                        <Badge
-                          className={
-                            member.active
-                              ? "border border-green-500/25 bg-green-500/10 text-green-400"
-                              : "border border-zinc-500/25 bg-zinc-500/10 text-zinc-400"
-                          }
-                        >
-                          {member.active ? "Active" : "Inactive"}
-                        </Badge>
+                      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
                         <Button
                           size="sm"
-                          variant="ghost"
+                          variant="outline"
                           disabled={loading}
                           onClick={() => toggleActive(member)}
-                          className="text-zinc-400 hover:text-white"
+                          className={cn(
+                            "border font-medium",
+                            member.active
+                              ? "px-2 py-1 text-xs border-red-500/40 bg-red-500/15 text-red-300 hover:border-red-500 hover:bg-red-500/25 hover:text-red-200"
+                              : "border-green-500/40 bg-green-500/15 text-green-300 hover:border-green-500 hover:bg-green-500/25 hover:text-green-200",
+                          )}
                         >
                           {member.active ? "Deactivate" : "Activate"}
                         </Button>
@@ -527,7 +644,7 @@ export function ClubRosterManager({
                             variant="ghost"
                             disabled={loading}
                             onClick={() => removeMember(member)}
-                            className="text-red-400 hover:text-red-300"
+                            className="text-zinc-400 hover:text-zinc-200"
                           >
                             Remove
                           </Button>
@@ -537,10 +654,62 @@ export function ClubRosterManager({
 
                     <div
                       className={cn(
-                        "grid gap-3 sm:max-w-md",
-                        member.rosterRole === "COACH" ? "sm:grid-cols-3" : "sm:grid-cols-2",
+                        "grid gap-3 md:max-w-xl",
+                        member.rosterRole === "COACH" ? "md:grid-cols-4" : "md:grid-cols-3",
                       )}
                     >
+                      <div className="flex flex-col gap-1.5">
+                        <Label
+                          htmlFor={`number-${member.id}`}
+                          className="mb-0 text-xs font-normal text-zinc-500"
+                        >
+                          {member.rosterRole === "COACH" ? "VLYC coach number" : "VLY number"}
+                        </Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            id={`number-${member.id}`}
+                            value={memberNumberDrafts[member.id] ?? member.vlyNumber}
+                            disabled={loading}
+                            onChange={(event) =>
+                              {
+                                setMemberNumberDrafts((current) => ({
+                                  ...current,
+                                  [member.id]: event.target.value.toUpperCase(),
+                                }));
+                                setSavedMemberNumberById((current) => {
+                                  if (!current[member.id]) return current;
+                                  const next = { ...current };
+                                  delete next[member.id];
+                                  return next;
+                                });
+                              }
+                            }
+                            placeholder={
+                              member.rosterRole === "COACH" ? "VLYC12345" : "VLY12345"
+                            }
+                            className="py-2 text-sm"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            disabled={loading || savingMemberNumberId === member.id}
+                            onClick={() => saveMemberNumber(member)}
+                            className={cn(
+                              "shrink-0",
+                              savedMemberNumberById[member.id]
+                                ? "border border-green-500/40 bg-green-500/20 text-green-300 hover:border-green-500 hover:bg-green-500/25 hover:text-green-200"
+                                : "border border-zinc-400/35 bg-zinc-600/15 text-zinc-100 hover:border-zinc-300/45 hover:bg-zinc-600/25 hover:text-white",
+                            )}
+                          >
+                            {savingMemberNumberId === member.id
+                              ? "Saving..."
+                              : savedMemberNumberById[member.id]
+                                ? "Saved"
+                                : "Save"}
+                          </Button>
+                        </div>
+                      </div>
                       <div className="flex flex-col gap-1.5">
                         <Label
                           htmlFor={`role-${member.id}`}
@@ -623,7 +792,7 @@ export function ClubRosterManager({
 
           {filteredMembers.length === 0 && (
             <p className="py-8 text-center text-sm text-zinc-500">
-              {search.trim() || teamFilter !== "all"
+              {search.trim() || teamFilter !== "all" || memberFilter !== "all" || roleFilter !== "all"
                 ? "No roster entries match your filters."
                 : "No roster entries yet."}
             </p>

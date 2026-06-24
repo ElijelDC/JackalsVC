@@ -24,7 +24,7 @@ type CoachLink = {
 };
 
 const COACH_NAV_LINKS: CoachLink[] = [
-  { href: "/coach/training", label: "Training times", icon: Dumbbell },
+  { href: "/coach/training", label: "Training schedule", icon: Dumbbell },
   { href: "/coach/matches", label: "Matches", icon: Trophy },
   { href: "/coach/clinics", label: "Skills clinics", icon: GraduationCap },
 ];

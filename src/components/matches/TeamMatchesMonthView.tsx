@@ -9,6 +9,7 @@ import {
   Lock,
   Trophy,
   Users,
+  ChevronRight,
 } from "lucide-react";
 import { MonthNavigator } from "@/components/calendar/MonthNavigator";
 import {
@@ -24,6 +25,7 @@ import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import {
   formatMatchTitle,
   formatMatchVenueLabel,
+  formatMatchDateTime,
 } from "@/lib/match-config";
 import {
   canRespondToTrainingSession,
@@ -153,11 +155,13 @@ export function TeamMatchesMonthView({
   month,
   matches,
   attendanceByMatchId,
+  isCoach = false,
 }: {
   team: TrainingTeam;
   month: Date;
   matches: TeamMatchListItem[];
   attendanceByMatchId: Record<string, TrainingAttendanceStatus>;
+  isCoach?: boolean;
 }) {
   const router = useRouter();
   const monthLabel = format(month, "MMMM yyyy");
@@ -237,13 +241,26 @@ export function TeamMatchesMonthView({
             </div>
           </div>
           <div className="px-6 py-5">
-            <h2 className="font-display text-2xl font-semibold text-white">
-              {team.name}
-            </h2>
-            <p className="mt-2 text-sm text-zinc-400">
-              {upcomingMatches.length} upcoming match
-              {upcomingMatches.length !== 1 ? "es" : ""} this month
-            </p>
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex-1">
+                <h2 className="font-display text-2xl font-semibold text-white">
+                  {team.name}
+                </h2>
+                <p className="mt-2 text-sm text-zinc-400">
+                  {upcomingMatches.length} upcoming match
+                  {upcomingMatches.length !== 1 ? "es" : ""} this month
+                </p>
+              </div>
+              {isCoach && (
+                <Link
+                  href="/coach/matches"
+                  className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-jackals-red-light hover:text-jackals-red transition-colors"
+                >
+                  Edit matches
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </Link>
+              )}
+            </div>
             <div className="mt-5">
               <MonthProgressBar
                 attending={attendingUpcoming}
@@ -366,7 +383,7 @@ export function TeamMatchesMonthView({
                         </p>
                         {!isCancelled && (
                           <p className="mt-0.5 truncate text-sm text-zinc-500">
-                            {match.location} · Kick-off {format(matchDate, "HH:mm")}
+                            {match.location} · {formatMatchDateTime(match.warmUpTime, match.matchStart).timeLabel}
                           </p>
                         )}
                         <div className="mt-2 flex flex-wrap items-center gap-2">

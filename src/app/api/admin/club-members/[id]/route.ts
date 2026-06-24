@@ -3,6 +3,10 @@ import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { handleClubMemberSquadChange, syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
 import { isTrainingSquadKey } from "@/lib/training-squads";
 import { clubMemberUpdateSchema } from "@/lib/validations";
+import {
+  isValidClubMemberNumberForRole,
+  normalizeVlyNumber,
+} from "@/lib/vly-number";
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -30,6 +34,30 @@ export async function PATCH(request: Request, context: RouteContext) {
   if (!existing) return jsonError("Roster entry not found", 404);
 
   const nextRosterRole = data.rosterRole ?? existing.rosterRole;
+  const nextVlyNumber =
+    data.vlyNumber !== undefined
+      ? normalizeVlyNumber(data.vlyNumber)
+      : existing.vlyNumber;
+
+  if (!isValidClubMemberNumberForRole(nextVlyNumber, nextRosterRole)) {
+    return jsonError(
+      nextRosterRole === "COACH"
+        ? "Enter a valid VLYC coach number (e.g. VLYC12345)"
+        : "Enter a valid VLY number (e.g. VLY12345)",
+      400,
+    );
+  }
+
+  if (nextVlyNumber !== existing.vlyNumber) {
+    const duplicate = await prisma.clubMember.findUnique({
+      where: { vlyNumber: nextVlyNumber },
+      select: { id: true },
+    });
+    if (duplicate && duplicate.id !== id) {
+      return jsonError("This member number is already on the roster", 409);
+    }
+  }
+
   const nextCoachPaymentType =
     data.coachPaymentType !== undefined
       ? data.coachPaymentType
@@ -40,6 +68,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const clubMember = await prisma.clubMember.update({
     where: { id },
     data: {
+      ...(data.vlyNumber !== undefined ? { vlyNumber: nextVlyNumber } : {}),
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(data.active !== undefined ? { active: data.active } : {}),
       ...(data.rosterRole !== undefined ? { rosterRole: data.rosterRole } : {}),

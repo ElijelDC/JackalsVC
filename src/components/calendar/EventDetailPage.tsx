@@ -52,6 +52,11 @@ export function EventDetailPage({
   );
   const bodyDescription = event.sessionDescription ?? event.description;
   const isSessionEvent = Boolean(event.trainingSessionId);
+  
+  // Check if description is just a level (for FUN sessions)
+  const isJustLevel = isSessionEvent && bodyDescription && 
+    /^(BEGINNER|INTERMEDIATE|ADVANCED|PRO)($| \·)/i.test(bodyDescription);
+  const descriptionLabel = isJustLevel ? "Session Level" : "About this event";
   const isOpenReclub = isOpenReclubEvent(event.type);
   const isTrainingEvent = event.type === "TRAINING";
   const showAttendance = (isSessionEvent || isOpenReclub) && !isTrainingEvent;
@@ -124,7 +129,7 @@ export function EventDetailPage({
           {bodyDescription && (
             <div className="mt-6 border-t border-white/10 pt-6">
               <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
-                About this event
+                {descriptionLabel}
               </h2>
               <p className="mt-3 leading-relaxed text-zinc-300">
                 {bodyDescription}
@@ -140,10 +145,10 @@ export function EventDetailPage({
               >
                 <div>
                   <p className="font-medium text-white">
-                    View full recurring schedule
+                    View schedule details
                   </p>
                   <p className="mt-1 text-sm text-zinc-400">
-                    See all upcoming dates for this session
+                    See the session details and upcoming dates
                   </p>
                 </div>
                 <ChevronRight className="h-5 w-5 shrink-0 text-jackals-red-light transition-transform group-hover:translate-x-0.5" />

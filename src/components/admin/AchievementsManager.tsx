@@ -30,7 +30,7 @@ const emptyForm = {
   season: "",
   description: "",
   imageUrl: "",
-  sortOrder: 0,
+  position: 1,
   type: "TOURNAMENT" as (typeof ACHIEVEMENT_TYPES)[number],
 };
 
@@ -42,7 +42,10 @@ export function AchievementsManager({
   const router = useRouter();
   const [achievements, setAchievements] = useSyncedListState(initialAchievements);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({
+    ...emptyForm,
+    position: initialAchievements.length + 1,
+  });
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +67,10 @@ export function AchievementsManager({
   );
 
   const resetForm = () => {
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      position: achievements.length + 1,
+    });
     setEditingId(null);
     setError(null);
   };
@@ -84,7 +90,7 @@ export function AchievementsManager({
         season: achievement.season,
         description: achievement.description,
         imageUrl: achievement.imageUrl ?? "",
-        sortOrder: achievement.sortOrder,
+        position: achievement.sortOrder + 1,
         type: (achievement.type as (typeof ACHIEVEMENT_TYPES)[number]) ?? "TOURNAMENT",
       });
       setError(null);
@@ -103,7 +109,7 @@ export function AchievementsManager({
       season: form.season,
       description: form.description,
       imageUrl: form.imageUrl || undefined,
-      sortOrder: form.sortOrder,
+      sortOrder: Math.max(0, form.position - 1),
       type: form.type,
     };
 
@@ -185,21 +191,6 @@ export function AchievementsManager({
               ))}
             </Select>
           </div>
-          <div>
-            <Label htmlFor="achievement-sort">Sort order</Label>
-            <Input
-              id="achievement-sort"
-              type="number"
-              min={0}
-              value={form.sortOrder}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  sortOrder: Number(event.target.value) || 0,
-                })
-              }
-            />
-          </div>
           <div className="sm:col-span-2">
             <Label htmlFor="achievement-title">Title</Label>
             <Input
@@ -228,6 +219,21 @@ export function AchievementsManager({
                 setForm({ ...form, description: event.target.value })
               }
               required
+            />
+          </div>
+          <div className="sm:col-span-2 sm:max-w-xs">
+            <Label htmlFor="achievement-position">Position</Label>
+            <Input
+              id="achievement-position"
+              type="number"
+              min={1}
+              value={form.position}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  position: Math.max(1, Number(event.target.value) || 1),
+                })
+              }
             />
           </div>
         </div>

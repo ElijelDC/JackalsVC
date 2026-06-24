@@ -14,14 +14,14 @@ export default async function CoachPaymentsPage() {
     coach.clubMemberId,
     coach.trainingTeamKey,
     coach.userId,
-    { monthsBack: 12, monthsAhead: 3 },
+    { monthsBack: 12, monthsAhead: 10 },
   );
 
   return (
     <PageContainer>
       <PageHeader
         title="Payments"
-        description={`€${COACH_SESSION_RATE_EUR} per payable training for ${coach.teamName}. Can't attend sessions are deducted automatically.`}
+        description={`€${COACH_SESSION_RATE_EUR} per payable training for ${coach.teamName}. Payments are made on the last Friday of each month. Can't attend sessions are deducted automatically.`}
       />
       <CoachPaymentsOverview
         teamName={coach.teamName}

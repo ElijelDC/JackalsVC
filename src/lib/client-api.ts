@@ -117,13 +117,13 @@ export async function apiPatch<T>(
   }
 }
 
-export async function apiDelete(
+export async function apiDelete<T = { success: boolean }>(
   url: string,
   fallbackError = "Something went wrong. Please try again.",
-): Promise<ApiResult<{ success: boolean }>> {
+): Promise<ApiResult<T>> {
   try {
     const res = await fetch(url, { method: "DELETE" });
-    return parseResponse<{ success: boolean }>(res, fallbackError);
+    return parseResponse<T>(res, fallbackError);
   } catch {
     return { ok: false, error: fallbackError };
   }
@@ -173,24 +173,13 @@ export async function apiBulkImportCsv(
   file: File,
   fallbackError = "Failed to import CSV",
 ): Promise<ApiResult<BulkImportResult>> {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await fetch(`/api/admin/bulk-import/${type}`, {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      return { ok: false, error: data.error ?? fallbackError };
-    }
-
-    return { ok: true, data: data as BulkImportResult };
-  } catch {
-    return { ok: false, error: fallbackError };
-  }
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostForm<BulkImportResult>(
+    `/api/admin/bulk-import/${type}`,
+    formData,
+    fallbackError,
+  );
 }
 
 export async function apiUploadPaymentProof(
@@ -198,70 +187,37 @@ export async function apiUploadPaymentProof(
   file: File,
   fallbackError = "Failed to upload screenshot",
 ): Promise<ApiResult<PaymentProofResponse>> {
-  try {
-    const formData = new FormData();
-    formData.append("paymentId", paymentId);
-    formData.append("screenshot", file);
-
-    const res = await fetch("/api/payments/proof", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      return { ok: false, error: data.error ?? fallbackError };
-    }
-
-    return { ok: true, data: data as PaymentProofResponse };
-  } catch {
-    return { ok: false, error: fallbackError };
-  }
+  const formData = new FormData();
+  formData.append("paymentId", paymentId);
+  formData.append("screenshot", file);
+  return apiPostForm<PaymentProofResponse>(
+    "/api/payments/proof",
+    formData,
+    fallbackError,
+  );
 }
 
 export async function apiRemovePaymentProof(
   paymentId: string,
   fallbackError = "Failed to remove screenshot",
 ): Promise<ApiResult<PaymentProofResponse>> {
-  try {
-    const res = await fetch(
-      `/api/payments/proof?paymentId=${encodeURIComponent(paymentId)}`,
-      { method: "DELETE" },
-    );
-    const data = await res.json();
-
-    if (!res.ok) {
-      return { ok: false, error: data.error ?? fallbackError };
-    }
-
-    return { ok: true, data: data as PaymentProofResponse };
-  } catch {
-    return { ok: false, error: fallbackError };
-  }
+  return apiDelete<PaymentProofResponse>(
+    `/api/payments/proof?paymentId=${encodeURIComponent(paymentId)}`,
+    fallbackError,
+  );
 }
 
 export async function apiImportPaymentCsv(
   file: File,
   fallbackError = "Failed to import CSV",
 ): Promise<ApiResult<CsvImportResult>> {
-  try {
-    const formData = new FormData();
-    formData.append("file", file);
-
-    const res = await fetch("/api/admin/payments/import-csv", {
-      method: "POST",
-      body: formData,
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
-      return { ok: false, error: data.error ?? fallbackError };
-    }
-
-    return { ok: true, data: data as CsvImportResult };
-  } catch {
-    return { ok: false, error: fallbackError };
-  }
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostForm<CsvImportResult>(
+    "/api/admin/payments/import-csv",
+    formData,
+    fallbackError,
+  );
 }
 
 export async function apiApprovePayment(

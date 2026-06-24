@@ -1,10 +1,12 @@
 import { format } from "date-fns";
+import { formatMatchDateTime } from "@/lib/match-config";
 import {
   MATCH_VENUES,
   formatMatchTitle,
   formatMatchVenueLabel,
   type MatchVenue,
 } from "@/lib/match-config";
+import { toDatetimeLocal } from "@/lib/datetime-form";
 
 import type { TeamMatch } from "@/generated/prisma/client";
 
@@ -28,14 +30,6 @@ export type MatchFormState = {
   matchStart: string;
   notes: string;
 };
-
-export function toDatetimeLocal(value: string | null) {
-  if (!value) return "";
-  const date = new Date(value);
-  const offset = date.getTimezoneOffset();
-  const local = new Date(date.getTime() - offset * 60_000);
-  return local.toISOString().slice(0, 16);
-}
 
 export function serializeTeamMatch(match: TeamMatch): TeamMatchItem {
   return {
@@ -93,12 +87,13 @@ export function formatMatchRowTitle(match: TeamMatchItem) {
 }
 
 export function formatMatchRowMeta(match: TeamMatchItem) {
+  const { timeLabel } = formatMatchDateTime(match.warmUpTime, match.matchStart);
   return [
     formatMatchVenueLabel(match.venue),
     match.location,
-    `Warm-up ${format(new Date(match.warmUpTime), "d MMM yyyy HH:mm")}`,
-    `Kick-off ${format(new Date(match.matchStart), "HH:mm")}`,
+    `${format(new Date(match.matchStart), "d MMM yyyy")} · ${timeLabel}`,
   ].join(" · ");
 }
 
 export { MATCH_VENUES, formatMatchVenueLabel };
+export { toDatetimeLocal } from "@/lib/datetime-form";

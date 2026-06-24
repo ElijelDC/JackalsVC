@@ -25,6 +25,7 @@ export function PaymentProofUpload({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [isReplacing, setIsReplacing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,8 +68,27 @@ export function PaymentProofUpload({
     setMessage(result.data.message);
     setSelectedFile(null);
     setPreviewUrl(null);
+    setIsReplacing(false);
     if (inputRef.current) inputRef.current.value = "";
     router.refresh();
+  };
+
+  const startReplaceProof = () => {
+    setIsReplacing(true);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setError(null);
+    setMessage(null);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const cancelReplaceProof = () => {
+    setIsReplacing(false);
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    setError(null);
+    setMessage(null);
+    if (inputRef.current) inputRef.current.value = "";
   };
 
   const removeProof = async () => {
@@ -144,14 +164,86 @@ export function PaymentProofUpload({
               />
             </div>
 
-            <button
-              type="button"
-              onClick={removeProof}
-              disabled={removing}
-              className="mt-3 text-xs text-zinc-500 underline-offset-2 transition-colors hover:text-zinc-300 hover:underline disabled:opacity-50"
-            >
-              {removing ? "Removing..." : "Remove screenshot"}
-            </button>
+            {isReplacing ? (
+              <div className="mt-4 space-y-4">
+                <p className="text-sm text-zinc-400">
+                  Choose a new screenshot to replace the current one.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => inputRef.current?.click()}
+                  className="flex w-full cursor-pointer flex-col items-center justify-center rounded-lg border border-dashed border-white/20 bg-black/20 px-4 py-8 text-center transition-colors hover:border-jackals-red/40 hover:bg-jackals-red/5"
+                >
+                  <Upload className="mb-2 h-8 w-8 text-zinc-500" />
+                  <span className="text-sm font-medium text-white">
+                    {selectedFile ? selectedFile.name : "Choose replacement screenshot"}
+                  </span>
+                  <span className="mt-1 text-xs text-zinc-500">
+                    JPEG, PNG or WebP · max 5 MB
+                  </span>
+                </button>
+
+                {previewUrl && (
+                  <div className="relative h-48 w-full overflow-hidden rounded-md border border-white/10">
+                    <Image
+                      src={previewUrl}
+                      alt="Replacement screenshot preview"
+                      fill
+                      className="object-contain"
+                      unoptimized
+                    />
+                  </div>
+                )}
+
+                <input
+                  ref={inputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileChange}
+                />
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="flex-1 gap-1.5"
+                    onClick={cancelReplaceProof}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="button"
+                    className="flex-1"
+                    disabled={loading}
+                    onClick={submitProof}
+                  >
+                    {loading ? "Uploading..." : "Submit replacement"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 gap-1.5"
+                  onClick={startReplaceProof}
+                >
+                  Change screenshot
+                </Button>
+
+                <button
+                  type="button"
+                  onClick={removeProof}
+                  disabled={removing}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-2 text-sm font-semibold text-red-200 transition-colors hover:border-red-500/60 hover:bg-red-500/20 hover:text-red-100 disabled:opacity-50"
+                >
+                  {removing ? "Removing..." : "Remove screenshot"}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       ) : (
@@ -191,7 +283,7 @@ export function PaymentProofUpload({
           <Button
             type="button"
             className="w-full"
-            disabled={loading || !selectedFile}
+            disabled={loading}
             onClick={submitProof}
           >
             {loading ? "Uploading..." : "Submit screenshot"}

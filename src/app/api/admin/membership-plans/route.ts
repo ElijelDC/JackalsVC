@@ -11,7 +11,6 @@ function toPlanData(data: z.infer<typeof membershipPlanSchema>) {
     description: data.description,
     price: data.price,
     durationMonths: data.durationMonths,
-    features: data.features,
     active: data.active,
   };
 }

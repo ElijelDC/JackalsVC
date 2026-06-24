@@ -81,19 +81,34 @@ export function buildTrainingEventDescription(
     coach?: string | null;
     description?: string | null;
   },
+  categoryOrOverrides?: string | { coach?: string | null; description?: string | null },
   overrides?: {
     coach?: string | null;
     description?: string | null;
   },
 ) {
+  // Handle backwards compatibility: if second param is a string, it's the category
+  let category = "";
+  let actualOverrides = overrides;
+
+  if (typeof categoryOrOverrides === "string") {
+    category = categoryOrOverrides;
+  } else if (categoryOrOverrides) {
+    actualOverrides = categoryOrOverrides;
+  }
+
   const coach =
-    overrides?.coach !== undefined ? overrides.coach : session.coach;
+    actualOverrides?.coach !== undefined ? actualOverrides.coach : session.coach;
   const description =
-    overrides?.description !== undefined
-      ? overrides.description
+    actualOverrides?.description !== undefined
+      ? actualOverrides.description
       : session.description;
 
-  const parts = [session.level];
+  const parts = [];
+  // Only include level for FUN category sessions or SKILLS_CLINIC events
+  if (session.level && category === SESSION_CATEGORIES.FUN) {
+    parts.push(session.level);
+  }
   if (coach) parts.push(`Coach: ${coach}`);
   if (description) parts.push(description);
   return parts.join(" · ");

@@ -17,7 +17,11 @@ import {
   type SessionCategory,
   toTrainingSessionData,
 } from "@/lib/training-utils";
-import { isValidVlyNumberFormat, normalizeVlyNumber } from "@/lib/vly-number";
+import {
+  isValidClubMemberNumberForRole,
+  isValidVlyCoachNumberFormat,
+  normalizeVlyNumber,
+} from "@/lib/vly-number";
 import { DAYS_OF_WEEK } from "@/lib/utils";
 import {
   clubMemberCreateSchema,
@@ -297,8 +301,20 @@ async function importRosterRow(
   seenInFile: Set<string>,
 ): Promise<"created" | "skipped"> {
   const vlyNumber = normalizeVlyNumber(row.vly_number ?? "");
-  if (!isValidVlyNumberFormat(vlyNumber)) {
-    throw new Error("Invalid vly_number (e.g. VLY12345)");
+  const rawRosterRole = row.roster_role?.trim().toUpperCase();
+  const rosterRole =
+    rawRosterRole === "PLAYER" || rawRosterRole === "COACH"
+      ? rawRosterRole
+      : isValidVlyCoachNumberFormat(vlyNumber)
+        ? "COACH"
+        : "PLAYER";
+
+  if (!isValidClubMemberNumberForRole(vlyNumber, rosterRole)) {
+    throw new Error(
+      rosterRole === "COACH"
+        ? "Invalid vly_number for coach (e.g. VLYC12345)"
+        : "Invalid vly_number for player (e.g. VLY12345)",
+    );
   }
 
   const fingerprint = rosterFingerprint(vlyNumber);
@@ -311,9 +327,7 @@ async function importRosterRow(
     vlyNumber,
     name: row.name?.trim(),
     trainingTeamKey: row.training_team_key?.trim(),
-    rosterRole: (row.roster_role?.trim().toUpperCase() || "PLAYER") as
-      | "PLAYER"
-      | "COACH",
+    rosterRole,
     coachPaymentType: parseOptional(row.coach_payment_type)?.toUpperCase(),
     active: parseBool(row.active, true),
   });

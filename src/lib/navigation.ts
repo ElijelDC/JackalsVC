@@ -48,6 +48,14 @@ export const NAV_ITEMS: NavItem[] = [
     requiresAuth: true,
   },
   {
+    href: "/coach/training",
+    label: "Training times",
+    icon: Dumbbell,
+    description: "Update weekly training schedule for your squad.",
+    requiresAuth: true,
+    coachOnly: true,
+  },
+  {
     href: "/matches",
     label: "Matches",
     icon: Trophy,
@@ -112,6 +120,7 @@ export const MEMBER_MOBILE_QUICK_NAV_HREFS = [
 const MEMBER_MOBILE_MENU_EXTRA_HREFS = ["/gallery", "/teams"] as const;
 
 const COACH_PAID_PRIMARY_NAV_HREFS = [
+  "/",
   "/events",
   "/training",
   "/matches",
@@ -119,6 +128,7 @@ const COACH_PAID_PRIMARY_NAV_HREFS = [
 ] as const;
 
 const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
+  "/",
   "/events",
   "/training",
   "/matches",
@@ -169,10 +179,15 @@ const ADMIN_MOBILE_MENU_HIDE_HREFS = new Set(["/training", "/matches"]);
 
 const ADMIN_MORE_HIDE_HREFS = new Set(["/", "/training", "/matches"]);
 
-export { ADMIN_MOBILE_MENU_HIDE_HREFS, ADMIN_MORE_HIDE_HREFS };
+const COACH_MORE_HIDE_HREFS = new Set(["/coach/training"]);
+
+export { ADMIN_MOBILE_MENU_HIDE_HREFS, ADMIN_MORE_HIDE_HREFS, COACH_MORE_HIDE_HREFS };
 
 const ADMIN_PRIMARY_NAV_HREFS = [
+  "/",
   "/events",
+  "/training",
+  "/matches",
   "/gallery",
 ] as const;
 
@@ -365,7 +380,7 @@ export function visibleMemberMobileMenuNavItems(
     isAdmin,
     isCoach,
     isPaidCoach,
-  ).filter((item) => !quickNavHrefs.has(item.href) && item.href !== "/");
+  ).filter((item) => !quickNavHrefs.has(item.href));
 
   const byHref = new Map(
     [...allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach), ...INFO_NAV_ITEMS].map(
@@ -404,7 +419,7 @@ export function visibleMoreNavItems(
 
   if (isCoach && !isAdmin) {
     items = items.filter(
-      (item) => item.href !== "/" && item.href !== "/membership",
+      (item) => item.href !== "/" && item.href !== "/membership" && !COACH_MORE_HIDE_HREFS.has(item.href),
     );
   }
 

@@ -22,6 +22,7 @@ import {
   ShoppingBag,
   Trophy,
   UserCheck,
+  UserPlus,
   Users,
   Volleyball,
   Wallet,
@@ -47,6 +48,7 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     title: "Club members",
     links: [
       { href: "/admin/users", label: "Users", icon: Users },
+      { href: "/admin/registration-reviews", label: "Registration review", icon: UserPlus },
       { href: "/admin/squads", label: "Squads", icon: Flag },
       { href: "/admin/roster", label: "Registered Members", icon: ClipboardList },
       { href: "/admin/subscriptions", label: "Subscriptions", icon: UserCheck },
@@ -121,7 +123,12 @@ function AdminNavLink({
   exact,
   onNavigate,
   fullWidth = false,
-}: AdminLink & { onNavigate?: () => void; fullWidth?: boolean }) {
+  badgeCount = 0,
+}: AdminLink & {
+  onNavigate?: () => void;
+  fullWidth?: boolean;
+  badgeCount?: number;
+}) {
   const pathname = usePathname();
   const active = exact
     ? pathname === href
@@ -140,7 +147,15 @@ function AdminNavLink({
       )}
     >
       <Icon className="h-4 w-4 shrink-0" />
-      <span className="truncate">{label}</span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {badgeCount > 0 && (
+        <span
+          className="inline-flex min-h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-zinc-950"
+          aria-label={`${badgeCount} pending`}
+        >
+          {badgeCount > 99 ? "99+" : badgeCount}
+        </span>
+      )}
     </Link>
   );
 }
@@ -148,9 +163,11 @@ function AdminNavLink({
 function AdminNavGroups({
   onNavigate,
   fullWidth = false,
+  badgeCounts = {},
 }: {
   onNavigate?: () => void;
   fullWidth?: boolean;
+  badgeCounts?: Record<string, number>;
 }) {
   return (
     <>
@@ -166,6 +183,7 @@ function AdminNavGroups({
                 {...link}
                 onNavigate={onNavigate}
                 fullWidth={fullWidth}
+                badgeCount={badgeCounts[link.href] ?? 0}
               />
             ))}
           </div>
@@ -175,11 +193,21 @@ function AdminNavGroups({
   );
 }
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({
+  children,
+  badgeCounts = {},
+}: {
+  children: React.ReactNode;
+  badgeCounts?: Record<string, number>;
+}) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [canPortal, setCanPortal] = useState(false);
   const activeLabel = getActiveAdminLabel(pathname);
+  const pendingNavCount = Object.values(badgeCounts).reduce(
+    (sum, count) => sum + count,
+    0,
+  );
 
   useEffect(() => {
     setCanPortal(true);
@@ -238,6 +266,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <AdminNavGroups
               onNavigate={() => setMobileNavOpen(false)}
               fullWidth
+              badgeCounts={badgeCounts}
             />
           </nav>
         </aside>
@@ -286,7 +315,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         >
           <Menu className="h-4 w-4 shrink-0 text-zinc-400" />
           <span className="min-w-0 flex-1 truncate">{activeLabel}</span>
-          <span className="shrink-0 text-xs text-zinc-500">Menu</span>
+          {pendingNavCount > 0 ? (
+            <span className="inline-flex min-h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-amber-500 px-1.5 text-[10px] font-bold text-zinc-950">
+              {pendingNavCount > 99 ? "99+" : pendingNavCount}
+            </span>
+          ) : (
+            <span className="shrink-0 text-xs text-zinc-500">Menu</span>
+          )}
         </button>
       </div>
 
@@ -294,7 +329,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr] lg:gap-8">
         <nav className="hidden space-y-6 lg:block">
-          <AdminNavGroups />
+          <AdminNavGroups badgeCounts={badgeCounts} />
         </nav>
 
         <div className="min-w-0">{children}</div>

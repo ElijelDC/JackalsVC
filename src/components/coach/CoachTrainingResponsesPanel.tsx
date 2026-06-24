@@ -116,7 +116,7 @@ function PendingResponseCard({
             </div>
           </div>
           <ul className="mt-4 flex flex-wrap gap-2">
-            {item.players.map((player) => (
+            {item.players.slice(0, 2).map((player) => (
               <li
                 key={player.userId}
                 className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-zinc-300"
@@ -124,6 +124,11 @@ function PendingResponseCard({
                 {player.name}
               </li>
             ))}
+            {item.players.length > 2 && (
+              <li className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-amber-200">
+                +{item.players.length - 2} more
+              </li>
+            )}
           </ul>
         </div>
 
@@ -161,7 +166,6 @@ function PendingResponseCard({
       <Modal
         open={confirmOpen}
         onClose={() => !loading && setConfirmOpen(false)}
-        variant="fullscreen"
         title="Send reminder?"
         description={
           <p className="text-sm leading-relaxed text-zinc-400 sm:text-base">

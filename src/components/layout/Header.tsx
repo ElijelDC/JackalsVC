@@ -99,12 +99,26 @@ export function Header({ session }: { session: Session | null }) {
     >
       <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent" />
       <div className="mx-auto flex h-[4.25rem] max-w-7xl items-center justify-between gap-2 px-4 sm:gap-4 sm:px-6 lg:px-8">
-        <Logo
-          size="nav"
-          showText
-          className="min-w-[52px] shrink-0"
-          active={isLoggedIn && !isAdmin && !isCoach && pathname === "/"}
-        />
+        {isLoggedIn ? (
+          <Logo
+            size="nav"
+            showText
+            className="min-w-[52px] shrink-0"
+            active={isLoggedIn && !isAdmin && !isCoach && pathname === "/"}
+          />
+        ) : (
+          <Link
+            href="/"
+            className="flex items-center gap-2.5 rounded-sm text-white"
+            aria-label="Jackals VC home"
+          >
+            <Logo size="nav" href={null} className="shrink-0" />
+            <span className="font-display text-lg font-bold tracking-wider text-white sm:text-xl">
+              <span className="text-zinc-200">Jackals </span>
+              <span className="text-jackals-red">VC</span>
+            </span>
+          </Link>
+        )}
 
         <MemberMobileQuickNav
           pathname={pathname}

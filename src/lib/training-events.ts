@@ -11,6 +11,7 @@ import {
 import {
   buildTrainingEventDescription,
   calendarEventTypeForCategory,
+  SESSION_CATEGORIES,
 } from "@/lib/training-utils";
 
 export {
@@ -62,7 +63,7 @@ function firstOccurrenceOnOrAfter(from: Date, dayOfWeek: number) {
 }
 
 function buildSessionDescription(session: TrainingSession) {
-  return buildTrainingEventDescription(session);
+  return buildTrainingEventDescription(session, session.category);
 }
 
 type EventOccurrence = {
@@ -109,7 +110,7 @@ function applyOverride(
     title: override.title ?? session.title,
     description:
       override.coach != null || override.description != null
-        ? buildTrainingEventDescription(session, {
+        ? buildTrainingEventDescription(session, session.category, {
             ...(override.coach != null ? { coach: override.coach } : {}),
             ...(override.description != null
               ? { description: override.description }

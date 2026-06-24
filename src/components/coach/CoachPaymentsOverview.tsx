@@ -1,13 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import Link from "next/link";
 import { format } from "date-fns";
-import { CalendarDays, ChevronRight } from "lucide-react";
+import { X } from "lucide-react";
 import { DashboardSection } from "@/components/layout/DashboardSection";
 import { Card } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 import {
   COACH_PAYMENT_STATUS_LABELS,
   coachCanViewPaymentConfirmation,
@@ -297,7 +297,20 @@ export function CoachPaymentsOverview({
   teamName: string;
 }) {
   const [tab, setTab] = useState<PaymentsTab>("current");
+  const [dismissedPaymentSchedule, setDismissedPaymentSchedule] = useState(false);
+  const [showAllFuture, setShowAllFuture] = useState(false);
   const now = new Date();
+
+  useEffect(() => {
+    // Check if user has already dismissed the payment schedule info
+    const isDismissed = localStorage.getItem("paymentScheduleDismissed") === "true";
+    setDismissedPaymentSchedule(isDismissed);
+  }, []);
+
+  const handleDismissPaymentSchedule = () => {
+    localStorage.setItem("paymentScheduleDismissed", "true");
+    setDismissedPaymentSchedule(true);
+  };
 
   const { current, past, future } = useMemo(() => {
     const currentPayment =
@@ -343,6 +356,29 @@ export function CoachPaymentsOverview({
           </button>
         ))}
       </div>
+
+      {!dismissedPaymentSchedule && (
+        <Card className="border-jackals-red/15 bg-jackals-red/4">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-2">
+              <p className="font-medium text-white">Payment Schedule</p>
+              <p className="text-sm text-zinc-400">
+                Payments are made on the <strong>last Friday of every month</strong>. Your payment is calculated based on billable training sessions for that month. Sessions marked as "can't attend" are deducted from your total.
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleDismissPaymentSchedule}
+              className="shrink-0 text-zinc-500 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Dismiss</span>
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {tab === "current" && (
         <DashboardSection
@@ -420,31 +456,35 @@ export function CoachPaymentsOverview({
             </Card>
           ) : (
             <div className="space-y-4">
-              {future.map((payment) => (
+              {(showAllFuture ? future : future.slice(0, 3)).map((payment) => (
                 <MonthSummaryCard
                   key={payment.id}
                   payment={payment}
                   ratePerSession={ratePerSession}
                 />
               ))}
+              {!showAllFuture && future.length > 3 && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowAllFuture(true)}
+                >
+                  View more ({future.length - 3} additional)
+                </Button>
+              )}
+              {showAllFuture && future.length > 3 && (
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowAllFuture(false)}
+                >
+                  Show less
+                </Button>
+              )}
             </div>
           )}
         </DashboardSection>
       )}
-
-      <Card className="flex items-center justify-between gap-3 border-white/10 bg-white/[0.02] px-4 py-3">
-        <div className="flex items-center gap-2 text-sm text-zinc-400">
-          <CalendarDays className="h-4 w-4 shrink-0" />
-          Can&apos;t make a session? Mark it on the training page so your squad knows.
-        </div>
-        <Link
-          href="/training"
-          className="inline-flex shrink-0 items-center gap-1 text-sm text-jackals-red-light hover:text-jackals-red"
-        >
-          Training
-          <ChevronRight className="h-4 w-4" />
-        </Link>
-      </Card>
     </div>
   );
 }

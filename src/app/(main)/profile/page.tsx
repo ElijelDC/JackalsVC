@@ -6,6 +6,8 @@ import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { AnimatedBlock } from "@/components/motion/AnimatedBlock";
 import { MemberAvatar } from "@/components/member/MemberAvatar";
 import { ProfileMatchdaySection } from "@/components/profile/ProfileMatchdaySection";
+import { ProfileEmailSection } from "@/components/profile/ProfileEmailSection";
+import { ProfilePasswordSection } from "@/components/profile/ProfilePasswordSection";
 import {
   formatMembershipStatusLabel,
   isCoachMembershipStatus,
@@ -68,7 +70,7 @@ export default async function ProfilePage() {
               </p>
               <p className="text-sm text-zinc-500">
                 {clubMember
-                  ? "Club profile photo is managed by admins."
+                  ? "Club profile photo and name are managed by admins."
                   : "Link your VLY roster entry to unlock club profile details."}
               </p>
             </div>
@@ -113,21 +115,15 @@ export default async function ProfilePage() {
               </div>
             )}
 
-            <div>
-              <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                Email
-              </dt>
-              <dd className="mt-1 text-base text-zinc-300">
-                {session.user.email}
-              </dd>
-            </div>
+            <ProfileEmailSection initialEmail={session.user.email ?? ""} />
+            <ProfilePasswordSection />
           </dl>
 
           {clubMember && (
             <ProfileMatchdaySection
               initialVlyPhotoUrl={clubMember.vlyMembershipPhotoUrl}
               initialPlayerNumber={clubMember.playerNumber}
-              isCoach={clubMember.rosterRole === "COACH"}
+              isCoach={isCoach}
             />
           )}
         </Card>

@@ -4,6 +4,7 @@ import { jsonError, parseJsonBody } from "@/lib/api";
 import {
   getWeeklyTrainingSessionForTeam,
   updateWeeklyTrainingSchedule,
+  createWeeklyTrainingSession,
 } from "@/lib/training-schedule-actions";
 import { serializeTrainingSession } from "@/lib/training-utils";
 import { coachTrainingUpdateSchema } from "@/lib/validations";
@@ -34,10 +35,14 @@ export async function PATCH(request: Request) {
   );
   if (parseError || !data) return parseError!;
 
-  const result = await updateWeeklyTrainingSchedule(
-    coach!.trainingTeamKey,
-    data,
-  );
+  const existing = await getWeeklyTrainingSessionForTeam(coach!.trainingTeamKey);
+
+  let result;
+  if (existing) {
+    result = await updateWeeklyTrainingSchedule(coach!.trainingTeamKey, data);
+  } else {
+    result = await createWeeklyTrainingSession(coach!.trainingTeamKey, data);
+  }
 
   if (!result.ok) {
     return jsonError(result.error, 404);

@@ -36,14 +36,8 @@ export function CoachDashboardPaymentsPanel({
 }) {
   return (
     <section>
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-4">
         <h2 className="font-display text-xl font-semibold text-white">Payments</h2>
-        <Link
-          href="/payments"
-          className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
-        >
-          View history
-        </Link>
       </div>
 
       <Card className="overflow-hidden border-jackals-red/15 bg-gradient-to-br from-jackals-red/[0.06] to-transparent p-0">

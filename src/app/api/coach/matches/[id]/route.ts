@@ -2,29 +2,11 @@ import { NextResponse } from "next/server";
 import { requireCoach } from "@/lib/coach-auth";
 import { jsonError, parseJsonBody } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import {
+  applyTeamMatchDeleteAction,
+  toTeamMatchData,
+} from "@/lib/team-match-mutations";
 import { teamMatchSchema } from "@/lib/validations";
-
-function toMatchData(
-  trainingTeamKey: string,
-  data: {
-    opponentName: string;
-    venue: string;
-    location: string;
-    warmUpTime: string;
-    matchStart: string;
-    notes?: string;
-  },
-) {
-  return {
-    trainingTeamKey,
-    opponentName: data.opponentName.trim(),
-    venue: data.venue,
-    location: data.location.trim(),
-    warmUpTime: new Date(data.warmUpTime),
-    matchStart: new Date(data.matchStart),
-    notes: data.notes ?? null,
-  };
-}
 
 export async function PUT(
   request: Request,
@@ -51,7 +33,10 @@ export async function PUT(
 
   const match = await prisma.teamMatch.update({
     where: { id },
-    data: toMatchData(coach!.trainingTeamKey, data),
+    data: toTeamMatchData({
+      ...data,
+      trainingTeamKey: coach!.trainingTeamKey,
+    }),
   });
 
   return NextResponse.json({ match });
@@ -71,24 +56,6 @@ export async function DELETE(
   }
 
   const { searchParams } = new URL(request.url);
-  const action = searchParams.get("action");
-
-  if (action === "cancel") {
-    await prisma.teamMatch.update({
-      where: { id },
-      data: { cancelled: true },
-    });
-    return NextResponse.json({ success: true });
-  }
-
-  if (action === "restore") {
-    await prisma.teamMatch.update({
-      where: { id },
-      data: { cancelled: false },
-    });
-    return NextResponse.json({ success: true });
-  }
-
-  await prisma.teamMatch.delete({ where: { id } });
+  await applyTeamMatchDeleteAction(id, searchParams.get("action"));
   return NextResponse.json({ success: true });
 }

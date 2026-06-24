@@ -12,6 +12,8 @@ import {
 import { CoachSection } from "@/components/coach/CoachShell";
 import { Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
+import { DEFAULT_RECLUB_USERNAME } from "@/lib/club-payment-defaults";
+import { toDatetimeLocal } from "@/lib/datetime-form";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 
 type ClinicItem = {
@@ -39,11 +41,6 @@ type ClinicFormState = {
   reclubUsername: string;
 };
 
-function toDatetimeLocal(value: string | null) {
-  if (!value) return "";
-  return format(new Date(value), "yyyy-MM-dd'T'HH:mm");
-}
-
 function createEmptyForm(): ClinicFormState {
   return {
     title: "",
@@ -54,7 +51,7 @@ function createEmptyForm(): ClinicFormState {
     attendanceUrl: "",
     paymentUrl: "",
     sessionFee: "25",
-    reclubUsername: "JackalsVC",
+    reclubUsername: DEFAULT_RECLUB_USERNAME,
   };
 }
 

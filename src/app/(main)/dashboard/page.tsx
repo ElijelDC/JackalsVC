@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { CoachDashboard } from "@/components/dashboard/CoachDashboard";
+import { AddToHomescreenButton } from "@/components/dashboard/AddToHomescreenButton";
 import {
   DashboardUpcomingClubEventsPanel,
   DashboardUpcomingMatchesCard,
@@ -97,14 +98,17 @@ export default async function DashboardPage() {
 
     return (
       <PageContainer>
-        <PageHeader
-          title={`Welcome, ${firstName}`}
-          description={
-            coach.isPaidCoach
-              ? `${coach.teamName} · Your squad schedule and club payments`
-              : `${coach.teamName} · Your squad schedule and club events`
-          }
-        />
+        <div className="mb-6 flex items-center justify-between">
+          <PageHeader
+            title={`Welcome, ${firstName}`}
+            description={
+              coach.isPaidCoach
+                ? `${coach.teamName} · Your squad schedule and club payments`
+                : `${coach.teamName} · Your squad schedule and club events`
+            }
+          />
+          <AddToHomescreenButton />
+        </div>
         <CoachDashboard
           teamName={coach.teamName}
           ratePerSession={COACH_SESSION_RATE_EUR}
@@ -195,10 +199,13 @@ export default async function DashboardPage() {
 
   return (
     <PageContainer>
-      <PageHeader
-        title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
-        description="Your membership, training, and matches at a glance"
-      />
+      <div className="mb-6 flex items-center justify-between">
+        <PageHeader
+          title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
+          description="Your membership, training, and matches at a glance"
+        />
+        <AddToHomescreenButton />
+      </div>
 
       <AnimatedPageSections>
         <MemberPaymentsPanel

@@ -9,6 +9,7 @@ import {
   type MatchdaySheetData,
   type MatchdaySheetEntry,
 } from "@/lib/matchday-sheet-config";
+import { formatMatchDateTime } from "@/lib/match-config";
 
 function SheetEntryCard({ entry }: { entry: MatchdaySheetEntry }) {
   const { name, vlyNumber, vlyMembershipPhotoUrl } = entry;
@@ -72,6 +73,10 @@ export function MatchdaySheetView({
 }) {
   const matchDate = new Date(data.match.matchStart);
   const warmUpDate = new Date(data.match.warmUpTime);
+  const { dateLabel, timeLabel } = formatMatchDateTime(
+    data.match.warmUpTime,
+    data.match.matchStart,
+  );
 
   return (
     <div className="min-h-screen bg-white text-zinc-900">
@@ -108,9 +113,7 @@ export function MatchdaySheetView({
           <h1 className="text-2xl font-bold">{data.match.title}</h1>
           <p className="mt-1 text-zinc-700">{data.team.name}</p>
           <p className="mt-2 text-sm text-zinc-600">
-            {format(matchDate, "EEEE d MMMM yyyy")} · Warm-up{" "}
-            {format(warmUpDate, "HH:mm")} · Kick-off {format(matchDate, "HH:mm")}{" "}
-            · {data.match.location}
+            {dateLabel} · {timeLabel} · {data.match.location}
           </p>
           <p className="mt-3 text-sm text-zinc-500 print:hidden">
             Only players marked as attending and coaches who are not marked as

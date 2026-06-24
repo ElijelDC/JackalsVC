@@ -10,6 +10,11 @@ import { AdminSection } from "@/components/admin/AdminShell";
 import { EventFiltersToolbar } from "@/components/events/EventFiltersToolbar";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import {
+  DEFAULT_CLUB_IBAN,
+  DEFAULT_RECLUB_USERNAME,
+} from "@/lib/club-payment-defaults";
+import { toDatetimeLocal } from "@/lib/datetime-form";
+import {
   EventSourceFilter,
   filterEvents,
   getEventMonthFilterOptions,
@@ -56,11 +61,6 @@ type EventItem = {
 
 const EVENT_TYPES = MANUAL_EVENT_TYPES;
 
-function toDatetimeLocal(value: string | null) {
-  if (!value) return "";
-  return format(new Date(value), "yyyy-MM-dd'T'HH:mm");
-}
-
 const emptyForm = {
   title: "",
   description: "",
@@ -72,8 +72,8 @@ const emptyForm = {
   attendanceUrl: "",
   paymentUrl: "",
   sessionFee: "40",
-  reclubUsername: "JackalsVC",
-  clubIban: "IE29 AIBK 9311 5212 3456 78",
+  reclubUsername: DEFAULT_RECLUB_USERNAME,
+  clubIban: DEFAULT_CLUB_IBAN,
 };
 
 export function EventsManager({
@@ -183,8 +183,8 @@ export function EventsManager({
             : event.type === "TOURNAMENT"
               ? "40"
               : "15",
-        reclubUsername: event.reclubUsername ?? "JackalsVC",
-        clubIban: event.clubIban ?? "IE29 AIBK 9311 5212 3456 78",
+        reclubUsername: event.reclubUsername ?? DEFAULT_RECLUB_USERNAME,
+        clubIban: event.clubIban ?? DEFAULT_CLUB_IBAN,
       });
       setError(null);
       setMessage(null);
@@ -421,7 +421,7 @@ export function EventsManager({
                   onChange={(e) =>
                     setForm({ ...form, reclubUsername: e.target.value })
                   }
-                  placeholder="e.g. JackalsVC"
+                  placeholder={`e.g. ${DEFAULT_RECLUB_USERNAME}`}
                 />
               </div>
               <div className="sm:col-span-2">
@@ -467,7 +467,7 @@ export function EventsManager({
                     onChange={(e) =>
                       setForm({ ...form, clubIban: e.target.value })
                     }
-                    placeholder="IE29 AIBK 9311 5212 3456 78"
+                    placeholder={DEFAULT_CLUB_IBAN}
                     required
                   />
                 </div>
