@@ -9,6 +9,7 @@ import {
   Clock,
   Lock,
   Users,
+  ChevronRight,
 } from "lucide-react";
 import { MonthNavigator } from "@/components/calendar/MonthNavigator";
 import {
@@ -141,12 +142,14 @@ export function TeamTrainingMonthView({
   events,
   sessionTimes,
   attendanceByEventId,
+  isCoach = false,
 }: {
   team: TrainingTeam;
   month: Date;
   events: TrainingEvent[];
   sessionTimes?: SessionTimes | null;
   attendanceByEventId: Record<string, TrainingAttendanceStatus>;
+  isCoach?: boolean;
 }) {
   const router = useRouter();
   const monthLabel = format(month, "MMMM yyyy");
@@ -216,7 +219,7 @@ export function TeamTrainingMonthView({
           </div>
           <div className="px-6 py-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
+              <div className="flex-1">
                 <h2 className="font-display text-2xl font-semibold text-white">
                   {team.name}
                 </h2>
@@ -233,9 +236,17 @@ export function TeamTrainingMonthView({
                   )}
                 </p>
               </div>
-              <span className="rounded-full border border-jackals-red/30 bg-jackals-red/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-jackals-red-light">
-                {team.dayLabel}s
-              </span>
+              <div className="flex items-center gap-4">
+                {isCoach && (
+                  <Link
+                    href="/coach/training"
+                    className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-jackals-red-light hover:text-jackals-red transition-colors"
+                  >
+                    Edit schedule
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
+              </div>
             </div>
             <div className="mt-5">
               <MonthProgressBar

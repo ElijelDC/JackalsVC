@@ -4,5 +4,19 @@ export function normalizeVlyNumber(value: string): string {
 
 export function isValidVlyNumberFormat(value: string): boolean {
   const normalized = normalizeVlyNumber(value);
-  return /^VLY\d{3,8}$/.test(normalized);
+  return /^VLY([1-9]\d{0,4})$/.test(normalized);
+}
+
+export function isValidVlyCoachNumberFormat(value: string): boolean {
+  const normalized = normalizeVlyNumber(value);
+  return /^VLYC([1-9]\d{0,4})$/.test(normalized);
+}
+
+export function isValidClubMemberNumberForRole(
+  value: string,
+  rosterRole: "PLAYER" | "COACH",
+): boolean {
+  return rosterRole === "COACH"
+    ? isValidVlyCoachNumberFormat(value)
+    : isValidVlyNumberFormat(value);
 }

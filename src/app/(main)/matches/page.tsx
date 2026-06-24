@@ -51,6 +51,7 @@ export default async function MatchesPage({
     <TeamMatchesMonthView
       team={team}
       month={month}
+      isCoach={session.user.isCoach}
       matches={matches.map((match) => ({
         id: match.id,
         opponentName: match.opponentName,

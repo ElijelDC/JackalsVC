@@ -8,6 +8,7 @@ import {
   type MatchdaySheetEntry,
 } from "@/lib/matchday-sheet-config";
 import { normalizeSignupStatus } from "@/lib/training-attendance-config";
+import { formatMatchDateTime } from "@/lib/match-config";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
@@ -193,9 +194,10 @@ export function buildMatchdaySheetHtml(
   data: MatchdaySheetData,
   origin: string,
 ) {
-  const matchDate = format(new Date(data.match.matchStart), "EEEE d MMMM yyyy");
-  const warmUp = format(new Date(data.match.warmUpTime), "HH:mm");
-  const kickOff = format(new Date(data.match.matchStart), "HH:mm");
+  const { dateLabel, timeLabel } = formatMatchDateTime(
+    data.match.warmUpTime,
+    data.match.matchStart,
+  );
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -297,7 +299,7 @@ export function buildMatchdaySheetHtml(
   <header>
     <h1>${escapeHtml(data.match.title)}</h1>
     <p class="subtitle">${escapeHtml(data.team.name)}</p>
-    <p class="meta-line">${escapeHtml(matchDate)} · Warm-up ${escapeHtml(warmUp)} · Kick-off ${escapeHtml(kickOff)} · ${escapeHtml(data.match.location)}</p>
+    <p class="meta-line">${escapeHtml(dateLabel)} · ${escapeHtml(timeLabel)} · ${escapeHtml(data.match.location)}</p>
   </header>
   ${renderSection("Players", data.players, origin)}
   ${renderSection("Coaches", data.coaches, origin)}

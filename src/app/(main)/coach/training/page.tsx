@@ -10,6 +10,7 @@ import {
 } from "@/lib/training-teams-config";
 import { SESSION_CATEGORIES, serializeTrainingSession } from "@/lib/training-utils";
 import { prisma } from "@/lib/prisma";
+import { CoachShell } from "@/components/coach/CoachShell";
 
 export const metadata = {
   title: "Coach · Training times",
@@ -47,7 +48,24 @@ export default async function CoachTrainingPage({
     },
   });
 
-  if (!session) notFound();
+  if (!session) {
+    return (
+      <CoachTrainingEditor
+        teamName={coach.teamName}
+        initialSession={{
+          id: "",
+          title: coach.teamName,
+          dayOfWeek: 2, // Default to Tuesday
+          startTime: "19:00",
+          endTime: "20:30",
+          location: "",
+        }}
+        monthSessions={[]}
+        monthParam={monthParam}
+        isCreating={true}
+      />
+    );
+  }
 
   const serialized = serializeTrainingSession(session);
   const allSessions = await getCoachTrainingSessionsForTeam(
@@ -67,6 +85,8 @@ export default async function CoachTrainingPage({
         startTime: serialized.startTime,
         endTime: serialized.endTime,
         location: serialized.location,
+        recurringFrom: serialized.recurringFrom,
+        recurringTo: serialized.recurringTo,
       }}
       monthSessions={monthSessions}
       monthParam={monthParam}

@@ -54,7 +54,7 @@ export function Modal({
         aria-labelledby={titleId}
         tabIndex={-1}
         className={cn(
-          "fixed inset-0 z-[100] flex min-h-dvh flex-col bg-zinc-950",
+          "fixed inset-0 z-9999 flex min-h-dvh flex-col bg-zinc-950",
           className,
         )}
       >
@@ -85,24 +85,23 @@ export function Modal({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label="Close dialog"
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+    <>
+      <div
+        className="fixed inset-0 z-998 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div
-        ref={panelRef}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-        tabIndex={-1}
-        className={cn(
-          "relative z-10 w-full max-w-md rounded-xl border border-white/10 bg-zinc-950 p-6 shadow-2xl",
-          className,
-        )}
-      >
+      <div className="fixed inset-0 z-999 flex items-center justify-center p-4">
+        <div
+          ref={panelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={titleId}
+          tabIndex={-1}
+          className={cn(
+            "w-full max-w-md rounded-xl border border-white/10 bg-zinc-950 p-6 shadow-2xl",
+            className,
+          )}
+        >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 id={titleId} className="font-display text-xl font-bold text-white">
@@ -120,7 +119,8 @@ export function Modal({
           </button>
         </div>
         {children}
+        </div>
       </div>
-    </div>
+    </>
   );
 }

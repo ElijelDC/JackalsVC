@@ -15,6 +15,7 @@ import {
   type MatchFormState,
   type TeamMatchItem,
 } from "@/components/coach/match-form-utils";
+import { formatMatchDateTime } from "@/lib/match-config";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -149,8 +150,7 @@ function MatchRow({
           </div>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-400">
             <Clock className="h-3.5 w-3.5 shrink-0" />
-            Warm-up {format(new Date(match.warmUpTime), "HH:mm")} · Kick-off{" "}
-            {format(matchDate, "HH:mm")}
+            {formatMatchDateTime(match.warmUpTime, match.matchStart).timeLabel}
           </p>
           <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-500">
             <MapPin className="h-3.5 w-3.5 shrink-0" />

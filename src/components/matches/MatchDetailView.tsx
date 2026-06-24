@@ -24,6 +24,7 @@ import { TrainingResponsesLockedNotice } from "@/components/training/TrainingRes
 import {
   formatMatchTitle,
   formatMatchVenueLabel,
+  formatMatchDateTime,
 } from "@/lib/match-config";
 import type { MatchDetailData } from "@/lib/match-attendance";
 import {
@@ -48,8 +49,11 @@ export function MatchDetailView({
 }) {
   const { match, team } = detail;
   const matchDate = new Date(match.matchStart);
-  const warmUpDate = new Date(match.warmUpTime);
   const isHome = match.venue === "HOME";
+  const { dateLabel: matchDateLabel, timeLabel: matchTimeLabel } = formatMatchDateTime(
+    match.warmUpTime,
+    match.matchStart,
+  );
   const past = matchDate < new Date();
   const cancelled = match.cancelled;
   const canRespond =
@@ -156,7 +160,7 @@ export function MatchDetailView({
                     Warm-up time
                   </dt>
                   <dd className="mt-1 text-sm font-medium text-white">
-                    {format(warmUpDate, "HH:mm")}
+                    {formatMatchDateTime(match.warmUpTime, match.matchStart).timeLabel.split(" · ")[0].replace("Warm-up ", "")}
                   </dd>
                 </div>
               </div>
@@ -168,20 +172,25 @@ export function MatchDetailView({
                     Match start
                   </dt>
                   <dd className="mt-1 text-sm font-medium text-white">
-                    {format(matchDate, "HH:mm")}
+                    {formatMatchDateTime(match.warmUpTime, match.matchStart).timeLabel.split(" · ")[1].replace("Kick-off ", "")}
                   </dd>
                 </div>
               </div>
             </div>
           </dl>
-
-          {match.notes && (
-            <CardDescription className="mt-4 whitespace-pre-wrap border-t border-white/10 pt-4">
-              {match.notes}
-            </CardDescription>
-          )}
         </Card>
       </AnimateIn>
+
+      {match.notes && (
+        <AnimateIn delay={75}>
+          <Card>
+            <CardTitle className="text-base">Notes</CardTitle>
+            <CardDescription className="mt-2 whitespace-pre-wrap">
+              {match.notes}
+            </CardDescription>
+          </Card>
+        </AnimateIn>
+      )}
 
       <div className="grid gap-6 lg:grid-cols-5">
         <AnimateIn delay={100} className="lg:col-span-2">

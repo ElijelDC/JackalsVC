@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Camera, Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2, Upload } from "lucide-react";
 import { MemberAvatar } from "@/components/member/MemberAvatar";
 import { GALLERY_ACCEPTED_IMAGE_TYPES } from "@/lib/gallery-upload-config";
 import { apiDelete, apiPostForm } from "@/lib/client-api";
@@ -74,40 +74,31 @@ export function AdminMemberProfileImage({
   const isDisabled = disabled || loading;
 
   return (
-    <div className="shrink-0">
+    <div className="w-35 shrink-0 md:w-28">
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500 md:mb-0.5">
+        Profile photo
+      </p>
       <div className="relative">
-        <button
-          type="button"
-          disabled={isDisabled}
-          onClick={() => inputRef.current?.click()}
-          className={cn(
-            "group relative rounded-full focus-visible:outline focus-visible:ring-2 focus-visible:ring-jackals-red/60 focus-visible:ring-offset-2 focus-visible:ring-offset-jackals-surface",
-            isDisabled && "cursor-not-allowed opacity-60",
-          )}
-          aria-label={imageUrl ? `Change photo for ${name}` : `Add photo for ${name}`}
-          title={imageUrl ? "Change photo" : "Add photo"}
-        >
-          <MemberAvatar
-            name={name}
-            imageUrl={imageUrl}
-            size="md"
-            className="h-14 w-14 text-base ring-2 ring-white/10 transition-all group-hover:ring-jackals-red/40"
-          />
-          <span
+        <div className="inline-flex rounded-full focus-within:outline focus-within:ring-2 focus-within:ring-jackals-red/60 focus-within:ring-offset-2 focus-within:ring-offset-jackals-surface">
+          <button
+            type="button"
+            disabled={isDisabled}
+            onClick={() => inputRef.current?.click()}
             className={cn(
-              "absolute inset-0 flex items-center justify-center rounded-full bg-black/55 transition-opacity",
-              loading
-                ? "opacity-100"
-                : "opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100",
+              "rounded-full",
+              isDisabled && "cursor-not-allowed opacity-60",
             )}
+            aria-label={imageUrl ? `Change photo for ${name}` : `Add photo for ${name}`}
+            title={imageUrl ? "Change photo" : "Add photo"}
           >
-            {loading ? (
-              <Loader2 className="h-5 w-5 animate-spin text-white" aria-hidden />
-            ) : (
-              <Camera className="h-4 w-4 text-white" aria-hidden />
-            )}
-          </span>
-        </button>
+            <MemberAvatar
+              name={name}
+              imageUrl={imageUrl}
+              size="md"
+              className="h-14 w-14 text-base ring-2 ring-white/10 transition-all hover:ring-jackals-red/40 md:h-12 md:w-12"
+            />
+          </button>
+        </div>
 
         {imageUrl && !loading && (
           <button
@@ -123,6 +114,28 @@ export function AdminMemberProfileImage({
         )}
       </div>
 
+      <button
+        type="button"
+        disabled={isDisabled}
+        onClick={() => inputRef.current?.click()}
+        className={cn(
+          "mt-2 inline-flex w-full items-center justify-center gap-1 rounded-md border border-white/15 px-2 py-1.5 text-[11px] font-medium text-zinc-300 transition hover:border-white/30 hover:text-white md:mt-1 md:py-1 md:text-[10px]",
+          isDisabled && "cursor-not-allowed opacity-60",
+        )}
+      >
+        {loading ? (
+          <>
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Uploading
+          </>
+        ) : (
+          <>
+            <Upload className="h-3.5 w-3.5" />
+            Change photo
+          </>
+        )}
+      </button>
+
       <input
         ref={inputRef}
         type="file"
@@ -134,7 +147,7 @@ export function AdminMemberProfileImage({
         }}
       />
       {error && (
-        <p className="mt-1.5 max-w-[5.5rem] text-center text-[10px] leading-tight text-red-400">
+        <p className="mt-1 text-[10px] leading-tight text-red-400">
           {error}
         </p>
       )}

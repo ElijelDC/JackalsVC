@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { AdminFormCard, beginAdminEdit } from "@/components/admin/AdminForm";
@@ -37,7 +37,7 @@ const emptyForm = {
   coverImageUrl: "",
   category: "TRAINING" as (typeof GALLERY_CATEGORIES)[number],
   featured: false,
-  sortOrder: 0,
+  position: 1,
 };
 
 export function GalleryAlbumManager({
@@ -48,12 +48,20 @@ export function GalleryAlbumManager({
   const router = useRouter();
   const [albums, setAlbums] = useSyncedListState(initialAlbums);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
+  const [form, setForm] = useState({
+    ...emptyForm,
+    position: initialAlbums.length + 1,
+  });
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [savingOrder, setSavingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [albumOrder, setAlbumOrder] = useState<string[]>(
+    initialAlbums.map((album) => album.id),
+  );
+  const [draggingAlbumId, setDraggingAlbumId] = useState<string | null>(null);
 
   const filteredAlbums = useMemo(
     () =>
@@ -68,8 +76,39 @@ export function GalleryAlbumManager({
     [albums, search],
   );
 
+  const albumsById = useMemo(
+    () => Object.fromEntries(albums.map((album) => [album.id, album])),
+    [albums],
+  );
+
+  useEffect(() => {
+    setAlbumOrder((current) => {
+      const existing = new Set(albums.map((album) => album.id));
+      const kept = current.filter((id) => existing.has(id));
+      const missing = albums
+        .map((album) => album.id)
+        .filter((id) => !kept.includes(id));
+      return [...kept, ...missing];
+    });
+  }, [albums]);
+
+  const visibleAlbums = useMemo(() => {
+    if (search.trim()) return filteredAlbums;
+    return albumOrder
+      .map((id) => albumsById[id])
+      .filter((album): album is AlbumItem => Boolean(album));
+  }, [search, filteredAlbums, albumOrder, albumsById]);
+
+  const hasOrderChanges = useMemo(() => {
+    if (search.trim()) return false;
+    return albumOrder.some((id, index) => albumsById[id]?.sortOrder !== index);
+  }, [search, albumOrder, albumsById]);
+
   const resetForm = () => {
-    setForm(emptyForm);
+    setForm({
+      ...emptyForm,
+      position: albums.length + 1,
+    });
     setEditingId(null);
     setError(null);
   };
@@ -88,7 +127,7 @@ export function GalleryAlbumManager({
         coverImageUrl: album.coverImageUrl,
         category: album.category as (typeof GALLERY_CATEGORIES)[number],
         featured: album.featured,
-        sortOrder: album.sortOrder,
+        position: album.sortOrder + 1,
       });
       setError(null);
       setMessage(null);
@@ -107,7 +146,7 @@ export function GalleryAlbumManager({
       coverImageUrl: form.coverImageUrl.trim() || undefined,
       category: form.category,
       featured: form.featured,
-      sortOrder: form.sortOrder,
+      sortOrder: Math.max(0, form.position - 1),
     };
 
     if (editingId) {
@@ -144,6 +183,55 @@ export function GalleryAlbumManager({
       return;
     }
     if (editingId === id) resetForm();
+    await loadAlbums();
+    router.refresh();
+  };
+
+  const moveAlbumBefore = (sourceId: string, targetId: string) => {
+    if (sourceId === targetId) return;
+
+    setAlbumOrder((current) => {
+      const next = [...current];
+      const from = next.indexOf(sourceId);
+      const to = next.indexOf(targetId);
+      if (from < 0 || to < 0) return current;
+      const [item] = next.splice(from, 1);
+      next.splice(to, 0, item);
+      return next;
+    });
+  };
+
+  const saveOrder = async () => {
+    setSavingOrder(true);
+    setError(null);
+    setMessage(null);
+
+    for (const [index, id] of albumOrder.entries()) {
+      const album = albumsById[id];
+      if (!album || album.sortOrder === index) continue;
+
+      const result = await apiPut(
+        `/api/admin/gallery/${id}`,
+        {
+          title: album.title,
+          description: album.description ?? undefined,
+          coverImageUrl: album.coverImageUrl,
+          category: album.category,
+          featured: album.featured,
+          sortOrder: index,
+        },
+        "Failed to save album order.",
+      );
+
+      if (!result.ok) {
+        setSavingOrder(false);
+        setError(result.error);
+        return;
+      }
+    }
+
+    setSavingOrder(false);
+    setMessage("Album order updated.");
     await loadAlbums();
     router.refresh();
   };
@@ -196,21 +284,6 @@ export function GalleryAlbumManager({
               ))}
             </Select>
           </div>
-          <div>
-            <Label htmlFor="album-sort">Sort order</Label>
-            <Input
-              id="album-sort"
-              type="number"
-              min={0}
-              value={form.sortOrder}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  sortOrder: Number(event.target.value) || 0,
-                })
-              }
-            />
-          </div>
           {editingId && (
             <div className="sm:col-span-2">
               <GalleryCoverField
@@ -234,7 +307,7 @@ export function GalleryAlbumManager({
               placeholder="Short note shown on the gallery page"
             />
           </div>
-          <label className="flex items-center gap-2 text-sm text-zinc-300">
+          <label className="sm:col-span-2 flex items-center gap-2 text-sm text-zinc-300">
             <Checkbox
               checked={form.featured}
               onChange={(event) =>
@@ -243,13 +316,28 @@ export function GalleryAlbumManager({
             />
             Show on homepage
           </label>
+          <div className="sm:col-span-2 sm:max-w-xs">
+            <Label htmlFor="album-position">Position</Label>
+            <Input
+              id="album-position"
+              type="number"
+              min={1}
+              value={form.position}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  position: Math.max(1, Number(event.target.value) || 1),
+                })
+              }
+            />
+          </div>
         </div>
       </AdminFormCard>
 
       <div className="space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
-            Current albums ({filteredAlbums.length}
+            Current albums ({visibleAlbums.length}
             {search.trim() ? ` of ${albums.length}` : ""})
           </h3>
           <div className="w-full sm:max-w-xs">
@@ -260,17 +348,27 @@ export function GalleryAlbumManager({
             />
           </div>
         </div>
-        {filteredAlbums.length === 0 ? (
+        {visibleAlbums.length === 0 ? (
           <p className="text-sm text-zinc-400">
             {search.trim()
               ? "No albums match your search."
               : "No albums yet."}
           </p>
         ) : (
-          filteredAlbums.map((album) => (
+          visibleAlbums.map((album) => (
           <div
             key={album.id}
-            className="flex flex-col gap-3 rounded-sm border border-white/10 bg-jackals-inset/30 p-4 sm:flex-row sm:items-center"
+            draggable={!search.trim()}
+            onDragStart={() => setDraggingAlbumId(album.id)}
+            onDragEnd={() => setDraggingAlbumId(null)}
+            onDragOver={(event) => {
+              if (!search.trim()) event.preventDefault();
+            }}
+            onDrop={() => {
+              if (search.trim() || !draggingAlbumId) return;
+              moveAlbumBefore(draggingAlbumId, album.id);
+            }}
+            className="flex cursor-grab flex-col gap-3 rounded-sm border border-white/10 bg-jackals-inset/30 p-4 sm:flex-row sm:items-center"
           >
             <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-sm border border-white/10 bg-jackals-surface">
               {!isGalleryPlaceholderCover(album.coverImageUrl) ? (
@@ -318,6 +416,21 @@ export function GalleryAlbumManager({
             </div>
           </div>
           ))
+        )}
+        {!search.trim() && (
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-xs text-zinc-500">
+              Drag album cards to change order.
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!hasOrderChanges || savingOrder}
+              onClick={() => void saveOrder()}
+            >
+              {savingOrder ? "Saving..." : "Save order"}
+            </Button>
+          </div>
         )}
       </div>
     </AdminSection>

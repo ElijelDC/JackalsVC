@@ -21,7 +21,6 @@ type MembershipPlan = {
   description: string;
   price: number;
   durationMonths: number;
-  features: string;
   active: boolean;
   _count?: { memberships: number };
 };
@@ -31,7 +30,6 @@ const emptyForm = {
   description: "",
   price: "",
   durationMonths: "1",
-  features: "",
   active: true,
 };
 
@@ -70,7 +68,6 @@ export function MembershipPlansManager({
         description: plan.description,
         price: String(plan.price),
         durationMonths: String(plan.durationMonths),
-        features: parseJsonArray(plan.features).join(", "),
         active: plan.active,
       });
       setError(null);
@@ -84,23 +81,11 @@ export function MembershipPlansManager({
     setError(null);
     setMessage(null);
 
-    const featureList = form.features
-      .split(",")
-      .map((f) => f.trim())
-      .filter(Boolean);
-
-    if (featureList.length === 0) {
-      setLoading(false);
-      setError("Add at least one feature.");
-      return;
-    }
-
     const payload = {
       name: form.name,
       description: form.description,
       price: Number(form.price),
       durationMonths: Number(form.durationMonths),
-      features: JSON.stringify(featureList),
       active: form.active,
     };
 
@@ -148,7 +133,7 @@ export function MembershipPlansManager({
   return (
     <AdminSection
       title="Membership plans"
-      description="Set the membership price and features shown on the membership checkout. The monthly schedule charges more in the first month, then a lower rate each month after."
+            description="Set the membership price shown on the membership checkout."
     >
       <AdminFormCard
         collapsible
@@ -215,17 +200,6 @@ export function MembershipPlansManager({
               required
             />
           </div>
-          <div className="sm:col-span-2">
-            <Label htmlFor="plan-features">Features (comma-separated)</Label>
-            <Textarea
-              id="plan-features"
-              rows={4}
-              value={form.features}
-              onChange={(e) => setForm({ ...form, features: e.target.value })}
-              placeholder="Training Sessions, Personalized Club Kit, League Matchdays, Merchandise Discounts"
-              required
-            />
-          </div>
           <label className="flex items-center gap-2 text-sm text-zinc-300">
             <Checkbox
               checked={form.active}
@@ -247,7 +221,7 @@ export function MembershipPlansManager({
             <AdminListItem
               key={plan.id}
               title={plan.name}
-              subtitle={`${formatEuroFee(plan.price)} / ${plan.durationMonths} mo · ${parseJsonArray(plan.features).length} features${plan._count?.memberships ? ` · ${plan._count.memberships} member${plan._count.memberships !== 1 ? "s" : ""}` : ""}${plan.active ? "" : " · Hidden"}`}
+              subtitle={`${formatEuroFee(plan.price)} / ${plan.durationMonths} mo${plan._count?.memberships ? ` · ${plan._count.memberships} member${plan._count.memberships !== 1 ? "s" : ""}` : ""}${plan.active ? "" : " · Hidden"}`}
               onEdit={() => startEdit(plan)}
               onDelete={() => handleDelete(plan.id)}
               deleting={deletingId === plan.id}

@@ -6,7 +6,6 @@ import { useState } from "react";
 import { CheckCircle2, Clock3, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
-import { GALLERY_ACCEPTED_IMAGE_TYPES } from "@/lib/gallery-upload-config";
 import { apiGet, apiPatch } from "@/lib/client-api";
 
 export type RegistrationReviewItem = {
@@ -65,7 +64,7 @@ export function RegistrationReviewsManager({
 
   if (reviews.length === 0) {
     return (
-      <div className="rounded-xl border border-white/10 bg-white/[0.03] p-8 text-center">
+      <div className="rounded-xl border border-white/10 bg-white/3 p-8 text-center">
         <CheckCircle2 className="mx-auto h-10 w-10 text-green-400/80" />
         <p className="mt-4 font-display text-lg font-semibold text-white">
           No pending registrations
@@ -97,7 +96,7 @@ export function RegistrationReviewsManager({
         {reviews.map((review) => (
           <article
             key={review.id}
-            className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.03]"
+            className="overflow-hidden rounded-xl border border-white/10 bg-white/3"
           >
             <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-start sm:p-5">
               <div className="relative mx-auto h-48 w-36 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/30 sm:mx-0">

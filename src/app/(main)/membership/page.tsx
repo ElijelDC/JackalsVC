@@ -155,7 +155,6 @@ export default async function MembershipPage() {
           description: plan.description,
           price: plan.price,
           durationMonths: plan.durationMonths,
-          features: parseJsonArray(plan.features),
         }))}
       />
     </PageContainer>

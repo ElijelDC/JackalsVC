@@ -33,7 +33,6 @@ export type MembershipPlanCheckout = {
   description: string;
   price: number;
   durationMonths: number;
-  features: string[];
 };
 
 type LockedMembership = {

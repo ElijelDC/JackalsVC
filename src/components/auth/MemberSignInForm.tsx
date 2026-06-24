@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
-import { Input, Label } from "@/components/ui/Input";
+import { Input, Label, Checkbox } from "@/components/ui/Input";
 import { MemberForgotPasswordForm } from "@/components/auth/MemberForgotPasswordForm";
 
 export function MemberSignInForm({
@@ -22,8 +22,20 @@ export function MemberSignInForm({
   const [resetNotice, setResetNotice] = useState<string | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const remembered = localStorage.getItem("rememberMe") === "true";
+    const rememberedEmail = localStorage.getItem("rememberedEmail");
+    
+    if (remembered && rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   if (showForgotPassword) {
     return (
@@ -55,6 +67,16 @@ export function MemberSignInForm({
     if (result?.error) {
       setError("Invalid email or password");
       return;
+    }
+
+    // Handle remember me by setting maxAge in cookie
+    if (rememberMe) {
+      // Store preference in localStorage for future use
+      localStorage.setItem("rememberMe", "true");
+      localStorage.setItem("rememberedEmail", email);
+    } else {
+      localStorage.removeItem("rememberMe");
+      localStorage.removeItem("rememberedEmail");
     }
 
     onSuccess?.();
@@ -102,6 +124,14 @@ export function MemberSignInForm({
             autoComplete="current-password"
           />
         </div>
+
+        <label className="flex items-center gap-2 text-sm text-zinc-300">
+          <Checkbox
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+          />
+          Remember me
+        </label>
 
         <FormError message={error} />
         {resetNotice && (

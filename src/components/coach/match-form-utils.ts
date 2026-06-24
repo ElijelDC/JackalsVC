@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { formatMatchDateTime } from "@/lib/match-config";
 import {
   MATCH_VENUES,
   formatMatchTitle,
@@ -86,11 +87,11 @@ export function formatMatchRowTitle(match: TeamMatchItem) {
 }
 
 export function formatMatchRowMeta(match: TeamMatchItem) {
+  const { timeLabel } = formatMatchDateTime(match.warmUpTime, match.matchStart);
   return [
     formatMatchVenueLabel(match.venue),
     match.location,
-    `Warm-up ${format(new Date(match.warmUpTime), "d MMM yyyy HH:mm")}`,
-    `Kick-off ${format(new Date(match.matchStart), "HH:mm")}`,
+    `${format(new Date(match.matchStart), "d MMM yyyy")} · ${timeLabel}`,
   ].join(" · ");
 }
 

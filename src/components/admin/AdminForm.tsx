@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { GripVertical } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
@@ -166,6 +167,8 @@ export function AdminListItem({
   actionHref,
   actionLabel,
   formAction,
+  draggable,
+  dragging,
   onEdit,
   onDuplicate,
   onDelete,
@@ -179,15 +182,31 @@ export function AdminListItem({
   actionHref?: string;
   actionLabel?: string;
   formAction?: { label: string; onClick: () => void };
+  draggable?: boolean;
+  dragging?: boolean;
   onEdit?: () => void;
   onDuplicate?: () => void;
   onDelete: () => void;
   deleting?: boolean;
 }) {
   return (
-    <Card className="flex flex-col gap-4 py-4 sm:flex-row sm:items-start sm:justify-between">
+    <Card
+      className={cn(
+        "flex flex-col gap-4 py-4 transition-all duration-200 sm:flex-row sm:items-start sm:justify-between",
+        draggable && "cursor-grab active:cursor-grabbing",
+        dragging && "scale-[0.99] border-jackals-red/40 bg-jackals-red/5",
+      )}
+    >
       <div className="min-w-0 flex-1">
-        <p className="font-medium text-white">{title}</p>
+        <div className="flex items-center gap-2">
+          {draggable && (
+            <GripVertical
+              className="h-4 w-4 shrink-0 text-zinc-500"
+              aria-hidden
+            />
+          )}
+          <p className="font-medium text-white">{title}</p>
+        </div>
         <p className="mt-1 text-sm text-zinc-400">{subtitle}</p>
         {note && <p className="mt-1 text-xs text-zinc-500">{note}</p>}
         {(formAction || (secondaryHref && secondaryLabel)) && (

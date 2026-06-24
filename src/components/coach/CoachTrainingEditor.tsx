@@ -9,6 +9,7 @@ import {
   type CoachUpcomingSession,
 } from "@/components/coach/CoachTrainingOccurrences";
 import { Input, Label, Select } from "@/components/ui/Input";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { DAYS_OF_WEEK } from "@/lib/utils";
 import { apiPatch } from "@/lib/client-api";
 
@@ -19,6 +20,8 @@ type TrainingSessionData = {
   endTime: string;
   location: string;
   title: string;
+  recurringFrom?: string | null;
+  recurringTo?: string | null;
 };
 
 function toFormState(session: TrainingSessionData) {
@@ -27,6 +30,8 @@ function toFormState(session: TrainingSessionData) {
     startTime: session.startTime,
     endTime: session.endTime,
     location: session.location,
+    recurringFrom: session.recurringFrom ? session.recurringFrom.split("T")[0] : "",
+    recurringTo: session.recurringTo ? session.recurringTo.split("T")[0] : "",
   };
 }
 
@@ -39,6 +44,7 @@ export function CoachTrainingEditor({
   schedulePayload,
   occurrencesApiPath = "/api/coach/training/occurrences",
   buildPageUrl,
+  isCreating = false,
 }: {
   initialSession: TrainingSessionData;
   monthSessions: CoachUpcomingSession[];
@@ -48,6 +54,7 @@ export function CoachTrainingEditor({
   schedulePayload?: Record<string, unknown>;
   occurrencesApiPath?: string;
   buildPageUrl?: (monthParam: string) => string;
+  isCreating?: boolean;
 }) {
   const router = useRouter();
   const [form, setForm] = useState(() => toFormState(initialSession));
@@ -71,6 +78,8 @@ export function CoachTrainingEditor({
         startTime: form.startTime,
         endTime: form.endTime,
         location: form.location,
+        recurringFrom: form.recurringFrom || undefined,
+        recurringTo: form.recurringTo || undefined,
         ...schedulePayload,
       },
       "Could not save training schedule",
@@ -90,12 +99,16 @@ export function CoachTrainingEditor({
   return (
     <div className="space-y-10">
       <CoachSection
-        title="Weekly schedule"
-        description={`Default training times for ${teamName}. These apply to all upcoming sessions unless you override a specific date below.`}
+        title={isCreating ? "Set up training schedule" : "Weekly schedule"}
+        description={
+          isCreating
+            ? `Create the default training times for ${teamName}.`
+            : `Default training times for ${teamName}. These apply to all upcoming sessions unless you override a specific date below.`
+        }
       >
         <AdminFormCard
-          collapsible
-          openTriggerLabel="Edit weekly schedule"
+          collapsible={!isCreating}
+          openTriggerLabel={isCreating ? undefined : "Edit weekly schedule"}
           title={initialSession.title}
           error={error}
           message={message}
@@ -103,7 +116,7 @@ export function CoachTrainingEditor({
             event.preventDefault();
             void save();
           }}
-          submitLabel="Save weekly schedule"
+          submitLabel={isCreating ? "Create training schedule" : "Save weekly schedule"}
           loading={loading}
         >
           <div className="grid gap-4 sm:grid-cols-2">
@@ -170,16 +183,44 @@ export function CoachTrainingEditor({
                 required
               />
             </div>
+            <div>
+              <Label htmlFor="recurringFrom">Start date</Label>
+              <DatePicker
+                id="recurringFrom"
+                value={form.recurringFrom}
+                onChange={(date) =>
+                  setForm((current) => ({
+                    ...current,
+                    recurringFrom: date,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <Label htmlFor="recurringTo">End date</Label>
+              <DatePicker
+                id="recurringTo"
+                value={form.recurringTo}
+                onChange={(date) =>
+                  setForm((current) => ({
+                    ...current,
+                    recurringTo: date,
+                  }))
+                }
+              />
+            </div>
           </div>
         </AdminFormCard>
       </CoachSection>
 
-      <CoachTrainingOccurrences
-        sessions={monthSessions}
-        monthParam={monthParam}
-        occurrencesApiPath={occurrencesApiPath}
-        buildPageUrl={buildPageUrl}
-      />
+      {!isCreating && (
+        <CoachTrainingOccurrences
+          sessions={monthSessions}
+          monthParam={monthParam}
+          occurrencesApiPath={occurrencesApiPath}
+          buildPageUrl={buildPageUrl}
+        />
+      )}
     </div>
   );
 }

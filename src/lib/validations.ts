@@ -241,7 +241,6 @@ export const membershipPlanSchema = z.object({
   description: z.string().min(1, "Description is required"),
   price: z.number().positive("Price must be greater than 0"),
   durationMonths: z.number().int().min(1, "Duration must be at least 1 month"),
-  features: z.string().min(1, "At least one feature is required"),
   active: z.boolean(),
 });
 
@@ -353,6 +352,7 @@ export const clubMemberCreateSchema = z.object({
 });
 
 export const clubMemberUpdateSchema = z.object({
+  vlyNumber: z.string().min(3).optional(),
   name: z.string().min(2).optional(),
   active: z.boolean().optional(),
   rosterRole: z.enum(["PLAYER", "COACH"]).optional(),
@@ -471,6 +471,8 @@ export const coachTrainingUpdateSchema = z.object({
   startTime: z.string().min(1, "Start time is required"),
   endTime: z.string().min(1, "End time is required"),
   location: z.string().min(1, "Location is required"),
+  recurringFrom: z.string().optional(),
+  recurringTo: z.string().optional(),
 });
 
 export const coachTrainingOccurrenceSchema = z.object({

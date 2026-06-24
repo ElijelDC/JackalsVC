@@ -5,7 +5,11 @@ import {
   VLY_ALREADY_REGISTERED_MESSAGE,
   VLY_NOT_FOUND_MESSAGE,
 } from "@/lib/registration-review";
-import { isValidVlyNumberFormat, normalizeVlyNumber } from "@/lib/vly-number";
+import {
+  isValidVlyCoachNumberFormat,
+  isValidVlyNumberFormat,
+  normalizeVlyNumber,
+} from "@/lib/vly-number";
 import { validateVlySchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
 
@@ -15,8 +19,14 @@ export async function POST(request: Request) {
 
   const vlyNumber = normalizeVlyNumber(data.vlyNumber);
 
-  if (!isValidVlyNumberFormat(vlyNumber)) {
-    return jsonError("Enter a valid VLY number (e.g. VLY12345)", 400);
+  if (
+    !isValidVlyNumberFormat(vlyNumber) &&
+    !isValidVlyCoachNumberFormat(vlyNumber)
+  ) {
+    return jsonError(
+      "Enter a valid member number (e.g. VLY12345 or VLYC12345)",
+      400,
+    );
   }
 
   const clubMember = await prisma.clubMember.findUnique({

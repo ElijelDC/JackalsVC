@@ -29,7 +29,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "active",
       ],
       instructions:
-        "Download the current roster, add new rows at the top, then upload. Existing VLY numbers are skipped automatically.",
+        "Download the current roster, add new rows at the top, then upload. Use VLY12345 for players and VLYC12345 for coaches. Existing member numbers are skipped automatically.",
     },
     "weekly-training": {
       fileName: "jackals-weekly-training.csv",

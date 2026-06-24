@@ -27,6 +27,41 @@ export async function getWeeklyTrainingSessionForTeam(trainingTeamKey: string) {
   });
 }
 
+export async function createWeeklyTrainingSession(
+  trainingTeamKey: string,
+  data: WeeklyScheduleUpdate,
+) {
+  const squad = await prisma.trainingSquad.findUnique({
+    where: { key: trainingTeamKey },
+  });
+
+  if (!squad) {
+    return { ok: false as const, error: "Squad not found" };
+  }
+
+  const session = await prisma.trainingSession.create({
+    data: {
+      category: SESSION_CATEGORIES.WEEKLY,
+      trainingTeamKey,
+      title: squad.name,
+      dayOfWeek: data.dayOfWeek,
+      startTime: data.startTime,
+      endTime: data.endTime,
+      location: data.location,
+      level: "",
+      recurring: true,
+      recurrenceWeeks: 1,
+      recurringFrom: data.recurringFrom ? new Date(data.recurringFrom) : undefined,
+      recurringTo: data.recurringTo ? new Date(data.recurringTo) : undefined,
+    },
+  });
+
+  await syncTrainingSquadDayFromSession(session);
+  await syncTrainingSessionEvents(session);
+
+  return { ok: true as const, session: serializeTrainingSession(session) };
+}
+
 export async function updateWeeklyTrainingSchedule(
   trainingTeamKey: string,
   data: WeeklyScheduleUpdate,
@@ -43,6 +78,8 @@ export async function updateWeeklyTrainingSchedule(
       startTime: data.startTime,
       endTime: data.endTime,
       location: data.location,
+      recurringFrom: data.recurringFrom ? new Date(data.recurringFrom) : undefined,
+      recurringTo: data.recurringTo ? new Date(data.recurringTo) : undefined,
     },
   });
 

@@ -67,6 +67,7 @@ export default async function TrainingPage({
     <TeamTrainingMonthView
       team={displayTeam!}
       month={month}
+      isCoach={session.user.isCoach}
       sessionTimes={
         trainingSession
           ? { startTime: trainingSession.startTime, endTime: trainingSession.endTime }

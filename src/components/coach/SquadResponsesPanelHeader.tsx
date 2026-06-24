@@ -116,7 +116,6 @@ export function SquadResponsesPanelHeader({
       <Modal
         open={confirmOpen}
         onClose={() => !loading && setConfirmOpen(false)}
-        variant="fullscreen"
         title="Send reminder?"
         description={
           <p className="text-sm leading-relaxed text-zinc-400 sm:text-base">

@@ -347,7 +347,7 @@ export function MemberRegisterWizard({
             href="https://volleyballireland.justgo.com/Workbench.mvc/Show/5?t=profile"
             target="_blank"
             rel="noreferrer"
-            className="text-jackals-red underline underline-offset-2 hover:text-jackals-red-light"
+            className="font-semibold text-jackals-red underline underline-offset-2 hover:text-jackals-red-light bg-jackals-red/10 px-1.5 py-0.5 rounded"
           >
             here
           </Link>
