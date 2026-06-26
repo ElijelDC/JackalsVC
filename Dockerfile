@@ -15,6 +15,8 @@ FROM base AS builder
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_SITE_URL=http://localhost:3000
+ENV NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL
 # Migrations before build so static page generation can query SQLite.
 ENV DATABASE_URL="file:/tmp/build.db"
 RUN npx prisma generate \
