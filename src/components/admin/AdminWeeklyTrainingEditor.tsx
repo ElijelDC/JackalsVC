@@ -7,6 +7,7 @@ import { AdminSection } from "@/components/admin/AdminShell";
 import { CoachTrainingEditor } from "@/components/coach/CoachTrainingEditor";
 import type { CoachUpcomingSession } from "@/components/coach/CoachTrainingOccurrences";
 import { Label, Select, Input } from "@/components/ui/Input";
+import { DatePicker } from "@/components/ui/DatePicker";
 import { apiPost } from "@/lib/client-api";
 import {
   defaultRecurringFrom,
@@ -38,6 +39,8 @@ function AdminWeeklyTrainingSetup({
     startTime: "19:00",
     endTime: "21:00",
     location: "",
+    recurringFrom: defaultRecurringFrom(),
+    recurringTo: defaultRecurringTo(),
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,8 +69,8 @@ function AdminWeeklyTrainingSetup({
         level: team.name,
         recurring: true,
         recurrenceWeeks: 1,
-        recurringFrom: defaultRecurringFrom(),
-        recurringTo: defaultRecurringTo(),
+        recurringFrom: form.recurringFrom,
+        recurringTo: form.recurringTo,
       },
       "Could not create training session",
     );
@@ -157,6 +160,32 @@ function AdminWeeklyTrainingSetup({
               }))
             }
             required
+          />
+        </div>
+        <div>
+          <Label htmlFor="setup-recurringFrom">Start date</Label>
+          <DatePicker
+            id="setup-recurringFrom"
+            value={form.recurringFrom}
+            onChange={(date) =>
+              setForm((current) => ({
+                ...current,
+                recurringFrom: date,
+              }))
+            }
+          />
+        </div>
+        <div>
+          <Label htmlFor="setup-recurringTo">End date</Label>
+          <DatePicker
+            id="setup-recurringTo"
+            value={form.recurringTo}
+            onChange={(date) =>
+              setForm((current) => ({
+                ...current,
+                recurringTo: date,
+              }))
+            }
           />
         </div>
       </div>

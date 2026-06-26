@@ -12,7 +12,7 @@ export function formatMatchTitle(opponentName: string, venue: string) {
   return venue === "HOME"
     ? `vs ${opponentName}`
     : venue === "AWAY"
-      ? `@ ${opponentName}`
+      ? `vs ${opponentName}`
       : `vs ${opponentName}`;
 }
 
