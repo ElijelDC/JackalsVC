@@ -139,6 +139,23 @@ export async function ensureCoachSalaryPayment(
     ? await getCoachMonthPayroll(coachUserId, trainingTeamKey, year, month)
     : null;
 
+  return ensureCoachSalaryPaymentFromBreakdown(
+    clubMemberId,
+    trainingTeamKey,
+    year,
+    month,
+    payroll,
+  );
+}
+
+async function ensureCoachSalaryPaymentFromBreakdown(
+  clubMemberId: string,
+  trainingTeamKey: string,
+  year: number,
+  month: number,
+  payroll: CoachMonthPayrollBreakdown | null,
+) {
+
   const ratePerSession = COACH_SESSION_RATE_EUR;
   const sessionCount = payroll
     ? payroll.billableCount
@@ -226,12 +243,12 @@ export async function getCoachSalaryPayments(
         ? await getCoachMonthPayroll(coachUserId, trainingTeamKey, year, month)
         : EMPTY_BREAKDOWN;
 
-      const payment = await ensureCoachSalaryPayment(
+      const payment = await ensureCoachSalaryPaymentFromBreakdown(
         clubMemberId,
         trainingTeamKey,
         year,
         month,
-        coachUserId,
+        breakdown,
       );
 
       return serializePayment(payment, breakdown);

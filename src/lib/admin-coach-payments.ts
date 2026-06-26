@@ -11,8 +11,8 @@ export async function getAdminCoachPaymentRows(options?: {
   monthsBack?: number;
   monthsAhead?: number;
 }): Promise<AdminCoachPaymentRow[]> {
-  const monthsBack = options?.monthsBack ?? 12;
-  const monthsAhead = options?.monthsAhead ?? 6;
+  const monthsBack = options?.monthsBack ?? 6;
+  const monthsAhead = options?.monthsAhead ?? 3;
 
   const coaches = await prisma.clubMember.findMany({
     where: {
