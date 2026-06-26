@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { startOfDay } from "date-fns";
 import {
   filterEventsForViewer,
   filterFunSessionsWithinCalendarHorizon,
@@ -18,7 +19,16 @@ export async function getPublicEvents(
   isLoggedIn: boolean,
   userId?: string,
 ): Promise<EventListItem[]> {
-  const events = await prisma.event.findMany({ orderBy: { startDate: "asc" } });
+  const now = startOfDay(new Date());
+  const events = await prisma.event.findMany({
+    where: {
+      OR: [
+        { endDate: { gte: now } },
+        { endDate: null, startDate: { gte: now } },
+      ],
+    },
+    orderBy: { startDate: "asc" },
+  });
   const enriched = await enrichEventRecords(events);
   let serialized = enriched.map(serializeEnrichedEvent);
 
