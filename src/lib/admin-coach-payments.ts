@@ -3,7 +3,7 @@ import "server-only";
 import { getCoachSalaryPayments } from "@/lib/coach-payments";
 import type { AdminCoachPaymentRow } from "@/lib/coach-payments-config";
 import { prisma } from "@/lib/prisma";
-import { getTrainingTeamByKey } from "@/lib/training-squads";
+import { getTrainingSquads } from "@/lib/training-squads";
 
 export type { AdminCoachPaymentRow };
 
@@ -14,25 +14,26 @@ export async function getAdminCoachPaymentRows(options?: {
   const monthsBack = options?.monthsBack ?? 6;
   const monthsAhead = options?.monthsAhead ?? 3;
 
-  const coaches = await prisma.clubMember.findMany({
-    where: {
-      rosterRole: "COACH",
-      active: true,
-      trainingTeamKey: { not: null },
-      OR: [{ coachPaymentType: "PAID" }, { coachPaymentType: null }],
-    },
-    include: {
-      user: { select: { name: true, email: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+  const [coaches, squads] = await Promise.all([
+    prisma.clubMember.findMany({
+      where: {
+        rosterRole: "COACH",
+        active: true,
+        trainingTeamKey: { not: null },
+        OR: [{ coachPaymentType: "PAID" }, { coachPaymentType: null }],
+      },
+      include: {
+        user: { select: { name: true, email: true } },
+      },
+      orderBy: { name: "asc" },
+    }),
+    getTrainingSquads(),
+  ]);
+
+  const teamMap = new Map(squads.map((s) => [s.key, s.name]));
 
   return Promise.all(
     coaches.map(async (coach) => {
-      const team = coach.trainingTeamKey
-        ? await getTrainingTeamByKey(coach.trainingTeamKey)
-        : null;
-
       const payments = coach.trainingTeamKey
         ? await getCoachSalaryPayments(
             coach.id,
@@ -47,7 +48,7 @@ export async function getAdminCoachPaymentRows(options?: {
         name: coach.user?.name ?? coach.name,
         email: coach.user?.email ?? null,
         trainingTeamKey: coach.trainingTeamKey,
-        teamName: team?.name ?? coach.trainingTeamKey,
+        teamName: teamMap.get(coach.trainingTeamKey ?? "") ?? coach.trainingTeamKey,
         payments,
       };
     }),

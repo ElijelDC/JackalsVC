@@ -65,9 +65,25 @@ function enrichSingleEvent(
 export async function enrichEventRecords(events: Event[]) {
   if (events.length === 0) return [] as EnrichedEvent[];
 
+  const sessionIds = [
+    ...new Set(
+      events
+        .map((e) => e.trainingSessionId)
+        .filter((id): id is string => id != null),
+    ),
+  ];
+
   const [overrides, sessions] = await Promise.all([
-    prisma.trainingOccurrenceException.findMany(),
-    prisma.trainingSession.findMany(),
+    sessionIds.length > 0
+      ? prisma.trainingOccurrenceException.findMany({
+          where: { trainingSessionId: { in: sessionIds } },
+        })
+      : Promise.resolve([]),
+    sessionIds.length > 0
+      ? prisma.trainingSession.findMany({
+          where: { id: { in: sessionIds } },
+        })
+      : Promise.resolve([]),
   ]);
 
   const overrideMap = new Map(

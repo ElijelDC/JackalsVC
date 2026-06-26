@@ -73,18 +73,33 @@ async function getCoachUnansweredTrainingItems(
     take: 8,
   });
 
+  const eventIds = events
+    .filter((e) => isWithinTrainingResponseWindow(e.startDate, now))
+    .map((e) => e.id);
+
+  if (eventIds.length === 0) return [];
+
+  const allSignups = await prisma.eventSignup.findMany({
+    where: { eventId: { in: eventIds } },
+    select: { eventId: true, userId: true, status: true },
+  });
+
+  const signupsByEvent = new Map<string, Map<string, string | undefined>>();
+  for (const signup of allSignups) {
+    let map = signupsByEvent.get(signup.eventId);
+    if (!map) {
+      map = new Map();
+      signupsByEvent.set(signup.eventId, map);
+    }
+    map.set(signup.userId, signup.status);
+  }
+
   const items: CoachUnansweredItem[] = [];
 
   for (const event of events) {
     if (!isWithinTrainingResponseWindow(event.startDate, now)) continue;
 
-    const signups = await prisma.eventSignup.findMany({
-      where: { eventId: event.id },
-      select: { userId: true, status: true },
-    });
-    const signupMap = new Map(
-      signups.map((signup) => [signup.userId, signup.status]),
-    );
+    const signupMap = signupsByEvent.get(event.id) ?? new Map();
     const unansweredPlayers = getUnansweredPlayers(players, signupMap);
 
     if (unansweredPlayers.length === 0) continue;
@@ -117,18 +132,33 @@ async function getCoachUnansweredMatchItems(
     take: 8,
   });
 
+  const matchIds = matches
+    .filter((m) => isWithinTrainingResponseWindow(m.matchStart, now))
+    .map((m) => m.id);
+
+  if (matchIds.length === 0) return [];
+
+  const allSignups = await prisma.matchSignup.findMany({
+    where: { matchId: { in: matchIds } },
+    select: { matchId: true, userId: true, status: true },
+  });
+
+  const signupsByMatch = new Map<string, Map<string, string | undefined>>();
+  for (const signup of allSignups) {
+    let map = signupsByMatch.get(signup.matchId);
+    if (!map) {
+      map = new Map();
+      signupsByMatch.set(signup.matchId, map);
+    }
+    map.set(signup.userId, signup.status);
+  }
+
   const items: CoachUnansweredItem[] = [];
 
   for (const match of matches) {
     if (!isWithinTrainingResponseWindow(match.matchStart, now)) continue;
 
-    const signups = await prisma.matchSignup.findMany({
-      where: { matchId: match.id },
-      select: { userId: true, status: true },
-    });
-    const signupMap = new Map(
-      signups.map((signup) => [signup.userId, signup.status]),
-    );
+    const signupMap = signupsByMatch.get(match.id) ?? new Map();
     const unansweredPlayers = getUnansweredPlayers(players, signupMap);
 
     if (unansweredPlayers.length === 0) continue;
