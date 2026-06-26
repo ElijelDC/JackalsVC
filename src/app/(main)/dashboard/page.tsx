@@ -13,7 +13,8 @@ import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 import { getCoachProfile } from "@/lib/coach-auth";
 import { getCoachUnansweredItemsWithReminders } from "@/lib/coach-unanswered";
 import {
-  getCoachSalaryPayments,
+  getCoachSalaryPaymentsWithCache,
+  preloadTeamEvents,
 } from "@/lib/coach-payments";
 import { COACH_SESSION_RATE_EUR, isCurrentPaymentMonth, maskCoachPaymentForCoachView } from "@/lib/coach-payments-config";
 import {
@@ -79,12 +80,15 @@ export default async function DashboardPage() {
       ),
     ]);
 
+    const paymentOpts = { monthsBack: 3, monthsAhead: 1 };
+    const eventCache = await preloadTeamEvents([coach.trainingTeamKey], paymentOpts.monthsBack, paymentOpts.monthsAhead);
     const payments = coach.isPaidCoach
-      ? await getCoachSalaryPayments(
+      ? await getCoachSalaryPaymentsWithCache(
           coach.clubMemberId,
           coach.trainingTeamKey,
           coach.userId,
-          { monthsBack: 3, monthsAhead: 1 },
+          paymentOpts,
+          eventCache,
         )
       : [];
 
