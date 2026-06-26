@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { format } from "date-fns";
 import { Download, Printer } from "lucide-react";
 import {
   formatMatchdayRoleLabel,
@@ -71,8 +70,6 @@ export function MatchdaySheetView({
   downloadUrl: string;
   backHref: string;
 }) {
-  const matchDate = new Date(data.match.matchStart);
-  const warmUpDate = new Date(data.match.warmUpTime);
   const { dateLabel, timeLabel } = formatMatchDateTime(
     data.match.warmUpTime,
     data.match.matchStart,

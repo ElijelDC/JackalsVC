@@ -1,21 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
-import { validateMembershipPlanPrice } from "@/lib/membership-config";
+import { toPlanData, validateMembershipPlanPrice } from "@/lib/membership-config";
 import { prisma } from "@/lib/prisma";
 import { membershipPlanSchema } from "@/lib/validations";
-import type { z } from "zod";
 
-function toPlanData(data: z.infer<typeof membershipPlanSchema>) {
-  return {
-    name: data.name,
-    description: data.description,
-    price: data.price,
-    durationMonths: data.durationMonths,
-    active: data.active,
-  };
-}
-
-function validatePlanPricing(data: z.infer<typeof membershipPlanSchema>) {
+function validatePlanPricing(data: { price: number; durationMonths: number }) {
   return validateMembershipPlanPrice(data.price, data.durationMonths);
 }
 

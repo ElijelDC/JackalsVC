@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import {
-  getTrainingSquadUsageCounts,
-  slugifyTrainingSquadKey,
-} from "@/lib/training-squads";
+import { slugifyTrainingSquadKey } from "@/lib/training-squads";
 import { trainingSquadCreateSchema } from "@/lib/validations";
 
 export async function GET() {

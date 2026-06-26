@@ -1,16 +1,12 @@
 "use client";
 
-import { Camera, Images, Layers } from "lucide-react";
+import { Images, Layers } from "lucide-react";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
-import { GALLERY_CATEGORIES } from "@/lib/gallery-categories";
 import type { GalleryAlbumItem } from "@/components/gallery/GalleryAlbumCard";
 
 export function GalleryShowcase({ albums }: { albums: GalleryAlbumItem[] }) {
   const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0);
-  const categoryCount = GALLERY_CATEGORIES.filter((category) =>
-    albums.some((album) => album.category === category),
-  ).length;
 
   return (
     <>
@@ -35,11 +31,6 @@ export function GalleryShowcase({ albums }: { albums: GalleryAlbumItem[] }) {
                       },
                     ]
                   : []),
-                {
-                  icon: Camera,
-                  value: categoryCount,
-                  label: categoryCount === 1 ? "category" : "categories",
-                },
               ]
             : undefined
         }

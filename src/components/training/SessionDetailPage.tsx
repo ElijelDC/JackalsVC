@@ -15,7 +15,7 @@ import type {
   SessionCalendarExport,
 } from "@/lib/session-calendar";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Card, CardTitle } from "@/components/ui/Card";
 import { PageContainer } from "@/components/layout/PageShell";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { FunSessionJoinFlow } from "@/components/training/FunSessionJoinFlow";
@@ -23,7 +23,6 @@ import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailab
 import { TrainingAttendanceActions } from "@/components/training/TrainingAttendanceActions";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
 import { AnimateIn } from "@/components/motion/AnimateIn";
-import { FUN_SESSION_CALENDAR_WEEKS } from "@/lib/event-filters";
 import { cn } from "@/lib/utils";
 
 type Session = {
@@ -127,8 +126,8 @@ export function SessionDetailPage({
       <div className="mb-8 overflow-hidden border border-jackals-red/25 bg-gradient-to-br from-jackals-red/15 via-jackals-surface to-jackals-surface">
         <div className="border-b border-jackals-red/20 px-6 py-3">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-            <Repeat className="h-3.5 w-3.5" />
-            Full session schedule
+            <CalendarDays className="h-3.5 w-3.5" />
+            Session details
           </div>
         </div>
         <div className="px-6 py-6">
@@ -170,259 +169,201 @@ export function SessionDetailPage({
       </div>
       </AnimateIn>
 
+      {/* Actions & registration — immediately after session info */}
       <AnimateIn delay={100}>
-      <div className="grid gap-8 lg:grid-cols-3 lg:items-start">
-        <div className="lg:col-span-2">
-          <Card className="overflow-hidden p-0">
-            <div className="border-b border-white/10 bg-jackals-surface-muted/50 px-6 py-4">
-              <CardTitle>Upcoming dates</CardTitle>
-              <CardDescription className="mt-1">
-                {session.recurring
-                  ? openAttendance
-                    ? `Scheduled dates for the next ${FUN_SESSION_CALENDAR_WEEKS} weeks. Tap a date for that session’s details.`
-                    : "All upcoming scheduled dates. Tap a date for that session’s details."
-                  : "Scheduled date for this session."}
-              </CardDescription>
+      <div className="max-w-3xl space-y-6">
+        {/* Join / Pay / Register */}
+        {openAttendance && paymentUrl && (
+          <FunSessionJoinFlow
+            paymentUrl={paymentUrl}
+            sessionTitle={session.title}
+            sessionDate={nextSessionStart ?? attendanceOccurrenceDate}
+            reclubUsername={reclubUsername}
+            sessionFee={sessionFee}
+            payLabel={
+              nextSessionStart
+                ? `Pay for ${format(nextSessionStart, "EEE d MMM")}`
+                : "Session Payment Link"
+            }
+            attendanceUrl={attendanceUrl}
+            sessionId={session.id}
+            attendBasePath={attendBasePath}
+            attendanceOccurrenceDate={attendanceOccurrenceDate}
+            attendanceLabel={
+              nextSessionStart
+                ? `Register for ${format(nextSessionStart, "EEE d MMM")}`
+                : "Register on ReClub"
+            }
+          />
+        )}
+
+        {openAttendance && !paymentUrl && attendanceUrl && (
+          <Card className="border-jackals-red/30">
+            <p className="text-sm font-medium text-zinc-300">
+              ReClub registration
+            </p>
+            <div className="mt-2">
+              <AttendanceLink
+                sessionId={session.id}
+                basePath={attendBasePath}
+                occurrenceDate={attendanceOccurrenceDate}
+                label={
+                  nextSessionStart
+                    ? `Register for ${format(nextSessionStart, "EEE d MMM")} on Reclub`
+                    : "Register on ReClub"
+                }
+                variant="primary"
+              />
             </div>
-
-            {upcomingSchedule.length === 0 ? (
-              <p className="px-6 py-8 text-sm text-zinc-500">
-                No upcoming dates scheduled right now. Check back later.
-              </p>
-            ) : (
-              <ul className="divide-y divide-white/10">
-                {upcomingSchedule.map((occurrence, index) => {
-                  const isNext =
-                    index === (nextScheduleIndex >= 0 ? nextScheduleIndex : 0);
-                  const start = new Date(occurrence.startDate);
-                  const end = new Date(occurrence.endDate);
-                  const rowContent = (
-                    <>
-                      <div className="flex min-w-0 flex-1 items-center gap-4">
-                        <div
-                          className={cn(
-                            "flex h-14 w-14 shrink-0 flex-col items-center justify-center border text-center",
-                            isNext
-                              ? "border-jackals-red/40 bg-jackals-red/15 text-jackals-red-light"
-                              : "border-white/10 bg-jackals-surface text-zinc-300",
-                          )}
-                        >
-                          <span className="text-xs uppercase">
-                            {format(start, "MMM")}
-                          </span>
-                          <span className="text-lg font-bold leading-none">
-                            {format(start, "d")}
-                          </span>
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-medium text-white">
-                            {format(start, "EEEE, d MMMM yyyy")}
-                          </p>
-                          <p className="text-sm text-zinc-500">
-                            {format(start, "HH:mm")} – {format(end, "HH:mm")}
-                            {occurrence.location
-                              ? ` · ${occurrence.location}`
-                              : ""}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex shrink-0 items-center gap-2">
-                        {isNext && (
-                          <span className="rounded-full bg-jackals-red/15 px-2.5 py-0.5 text-xs font-medium text-jackals-red-light">
-                            Next up
-                          </span>
-                        )}
-                        {!openAttendance &&
-                          occurrence.calendarEventId &&
-                          isLoggedIn &&
-                          canAccessAttendance && (
-                            <TrainingAttendanceActions
-                              eventId={occurrence.calendarEventId}
-                              initialStatus={
-                                signedUpIds.has(occurrence.calendarEventId)
-                                  ? "ATTENDING"
-                                  : "UNANSWERED"
-                              }
-                              canAccessAttendance={canAccessAttendance}
-                              isLoggedIn={isLoggedIn}
-                              signInUrl={`/login?callbackUrl=${sessionPagePath}`}
-                              compact
-                              detailHref={`/training/session/${occurrence.calendarEventId}`}
-                            />
-                          )}
-                        {occurrence.calendarEventId && (
-                          <ChevronRight className="h-4 w-4 text-zinc-500" />
-                        )}
-                      </div>
-                    </>
-                  );
-
-                  return (
-                    <li key={occurrence.startDate}>
-                      {occurrence.calendarEventId ? (
-                        <Link
-                          href={`/calendar/${occurrence.calendarEventId}`}
-                          className="flex items-center justify-between gap-4 px-6 py-4 transition-colors hover:bg-white/5"
-                        >
-                          {rowContent}
-                        </Link>
-                      ) : (
-                        <div className="flex items-center justify-between gap-4 px-6 py-4">
-                          {rowContent}
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
           </Card>
-        </div>
+        )}
 
-        <div className="space-y-4">
-          <Card className="border-jackals-red/30 bg-jackals-surface-muted/30">
-            <CardTitle className="flex items-center gap-2 text-base">
+        {openAttendance && !paymentUrl && !attendanceUrl && (
+          <Card className="border-jackals-red/30">
+            <p className="text-sm font-medium text-zinc-300">
+              ReClub registration
+            </p>
+            <div className="mt-2">
+              <ReclubLinkUnavailable />
+            </div>
+          </Card>
+        )}
+
+        {!openAttendance && nextCalendarEventId && (
+          <TrainingAttendanceActions
+            eventId={nextCalendarEventId}
+            initialStatus={
+              signedUpIds.has(nextCalendarEventId) ? "ATTENDING" : "UNANSWERED"
+            }
+            canAccessAttendance={canAccessAttendance}
+            isLoggedIn={isLoggedIn}
+            signInUrl={`/login?callbackUrl=${sessionPagePath}`}
+            detailHref={`/training/session/${nextCalendarEventId}`}
+          />
+        )}
+
+        {/* Add to calendar */}
+        {calendarExport && (
+          <Card className="border-white/10">
+            <CardTitle className="flex items-center gap-2 text-sm">
               <CalendarDays className="h-4 w-4 text-jackals-red-light" />
-              Next upcoming session
+              Add to calendar
             </CardTitle>
-            <CardDescription className="mt-2">
-              Save the next session to your calendar or bookmark it on your
-              dashboard.
-            </CardDescription>
-
-            {nextSessionStart && nextSessionEnd ? (
-              <div className="mt-4 rounded-lg border border-jackals-red/40 bg-jackals-red/10 p-4">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center border border-jackals-red/40 bg-jackals-red/15 text-center text-jackals-red-light">
-                    <span className="text-xs uppercase">
-                      {format(nextSessionStart, "MMM")}
-                    </span>
-                    <span className="text-lg font-bold leading-none">
-                      {format(nextSessionStart, "d")}
-                    </span>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-jackals-red-light">
-                      Next up
-                    </span>
-                    <p className="mt-1 font-medium text-white">
-                      {format(nextSessionStart, "EEEE, d MMMM yyyy")}
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      {format(nextSessionStart, "HH:mm")} –{" "}
-                      {format(nextSessionEnd, "HH:mm")}
-                      {nextSessionLocation ? ` · ${nextSessionLocation}` : ""}
-                    </p>
-                    {nextCalendarEventId && (
-                      <Link
-                        href={`/calendar/${nextCalendarEventId}`}
-                        className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-jackals-red-light transition-colors hover:text-jackals-red"
-                      >
-                        View this date’s event page
-                        <ChevronRight className="h-4 w-4" />
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="mt-4 text-sm text-zinc-500">
-                No upcoming session scheduled right now.
-              </p>
-            )}
-
-            <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
-              {calendarExport ? (
-                <AddToCalendarActions
-                  icsUrl={calendarIcsPath}
-                  eventPageUrl={sessionPagePath}
-                  siteOrigin={siteOrigin}
-                  event={{
-                    id: calendarExport.id,
-                    title: calendarExport.title,
-                    description: calendarExport.description,
-                    startDate: calendarExport.startDate,
-                    endDate: calendarExport.endDate,
-                    location: calendarExport.location,
-                  }}
-                />
-              ) : (
-                <p className="text-sm text-zinc-500">
-                  No upcoming session to add to your calendar yet.
-                </p>
-              )}
-
-              {openAttendance && !paymentUrl && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium text-zinc-300">
-                    ReClub registration
-                  </p>
-                  {attendanceUrl ? (
-                    <AttendanceLink
-                      sessionId={session.id}
-                      basePath={attendBasePath}
-                      occurrenceDate={attendanceOccurrenceDate}
-                      label={
-                        nextSessionStart
-                          ? `Register for ${format(nextSessionStart, "EEE d MMM")} on Reclub`
-                          : "Register on ReClub"
-                      }
-                      variant="primary"
-                    />
-                  ) : (
-                    <ReclubLinkUnavailable />
-                  )}
-                </div>
-              )}
+            <div className="mt-3">
+              <AddToCalendarActions
+                icsUrl={calendarIcsPath}
+                eventPageUrl={sessionPagePath}
+                siteOrigin={siteOrigin}
+                event={{
+                  id: calendarExport.id,
+                  title: calendarExport.title,
+                  description: calendarExport.description,
+                  startDate: calendarExport.startDate,
+                  endDate: calendarExport.endDate,
+                  location: calendarExport.location,
+                }}
+              />
             </div>
           </Card>
-
-          {!openAttendance && nextCalendarEventId && (
-            <TrainingAttendanceActions
-              eventId={nextCalendarEventId}
-              initialStatus={
-                signedUpIds.has(nextCalendarEventId) ? "ATTENDING" : "UNANSWERED"
-              }
-              canAccessAttendance={canAccessAttendance}
-              isLoggedIn={isLoggedIn}
-              signInUrl={`/login?callbackUrl=${sessionPagePath}`}
-              detailHref={`/training/session/${nextCalendarEventId}`}
-            />
-          )}
-
-          {openAttendance && paymentUrl && (
-            <FunSessionJoinFlow
-              paymentUrl={paymentUrl}
-              sessionTitle={session.title}
-              sessionDate={nextSessionStart ?? attendanceOccurrenceDate}
-              reclubUsername={reclubUsername}
-              sessionFee={sessionFee}
-              payLabel={
-                nextSessionStart
-                  ? `Pay for ${format(nextSessionStart, "EEE d MMM")}`
-                  : "Pay on ReClub"
-              }
-              attendanceUrl={attendanceUrl}
-              sessionId={session.id}
-              attendBasePath={attendBasePath}
-              attendanceOccurrenceDate={attendanceOccurrenceDate}
-              attendanceLabel={
-                nextSessionStart
-                  ? `Register for ${format(nextSessionStart, "EEE d MMM")}`
-                  : "Register on ReClub"
-              }
-            />
-          )}
-
-          <Card>
-            <CardDescription>
-              Looking for one specific date? Pick it from the schedule — each
-              date has its own event page with calendar export.
-            </CardDescription>
-          </Card>
-        </div>
+        )}
       </div>
       </AnimateIn>
+
+      {/* Recurring dates — small section at the bottom */}
+      {session.recurring && upcomingSchedule.length > 0 && (
+        <AnimateIn delay={150}>
+        <div className="mt-10 max-w-3xl">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-400">
+            <Repeat className="h-4 w-4" />
+            Upcoming dates
+          </div>
+          <div className="divide-y divide-white/5 rounded-lg border border-white/10 bg-jackals-surface-muted/30">
+            {upcomingSchedule.map((occurrence, index) => {
+              const isNext =
+                index === (nextScheduleIndex >= 0 ? nextScheduleIndex : 0);
+              const start = new Date(occurrence.startDate);
+              const end = new Date(occurrence.endDate);
+              const content = (
+                <div className="flex items-center justify-between gap-3 px-4 py-2.5">
+                  <div className="flex items-center gap-3 text-sm">
+                    <span
+                      className={cn(
+                        "inline-block h-2 w-2 rounded-full",
+                        isNext ? "bg-jackals-red-light" : "bg-zinc-600",
+                      )}
+                    />
+                    <span className={cn("font-medium", isNext ? "text-white" : "text-zinc-300")}>
+                      {format(start, "EEE, d MMM")}
+                    </span>
+                    <span className="text-zinc-500">
+                      {format(start, "HH:mm")} – {format(end, "HH:mm")}
+                    </span>
+                    {occurrence.location && occurrence.location !== session.location && (
+                      <span className="text-zinc-600">· {occurrence.location}</span>
+                    )}
+                  </div>
+                  {isNext && (
+                    <span className="rounded-full bg-jackals-red/15 px-2 py-0.5 text-[10px] font-medium text-jackals-red-light">
+                      Next
+                    </span>
+                  )}
+                  {occurrence.calendarEventId && (
+                    <ChevronRight className="h-3.5 w-3.5 text-zinc-600" />
+                  )}
+                </div>
+              );
+
+              return (
+                <div key={occurrence.startDate}>
+                  {occurrence.calendarEventId ? (
+                    <Link
+                      href={`/calendar/${occurrence.calendarEventId}`}
+                      className="block transition-colors hover:bg-white/5"
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    content
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        </AnimateIn>
+      )}
+
+      {/* One-off date */}
+      {!session.recurring && upcomingSchedule.length > 0 && (
+        <AnimateIn delay={150}>
+        <div className="mt-10 max-w-3xl">
+          <div className="mb-3 flex items-center gap-2 text-sm font-medium text-zinc-400">
+            <CalendarDays className="h-4 w-4" />
+            Scheduled date
+          </div>
+          <div className="rounded-lg border border-white/10 bg-jackals-surface-muted/30 px-4 py-3">
+            {upcomingSchedule.map((occurrence) => {
+              const start = new Date(occurrence.startDate);
+              const end = new Date(occurrence.endDate);
+              return (
+                <div key={occurrence.startDate} className="flex items-center gap-3 text-sm">
+                  <span className="inline-block h-2 w-2 rounded-full bg-jackals-red-light" />
+                  <span className="font-medium text-white">
+                    {format(start, "EEEE, d MMMM yyyy")}
+                  </span>
+                  <span className="text-zinc-500">
+                    {format(start, "HH:mm")} – {format(end, "HH:mm")}
+                  </span>
+                  {occurrence.location && (
+                    <span className="text-zinc-600">· {occurrence.location}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        </AnimateIn>
+      )}
     </PageContainer>
   );
 }

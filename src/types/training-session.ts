@@ -13,4 +13,6 @@ export type TrainingSessionCardData = {
   recurringFrom: Date | null;
   recurringTo: Date | null;
   sessionDate: Date | null;
+  nextEventId: string | null;
+  nextEventDate: Date | null;
 };

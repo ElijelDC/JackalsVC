@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 
 const upsertSchema = z.object({

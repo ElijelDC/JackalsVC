@@ -168,6 +168,23 @@ export function validateMembershipPlanPrice(
   return null;
 }
 
+export function toPlanData(data: {
+  name: string;
+  description: string;
+  price: number;
+  durationMonths: number;
+  active: boolean;
+}) {
+  return {
+    name: data.name,
+    description: data.description,
+    price: data.price,
+    durationMonths: data.durationMonths,
+    features: "[]",
+    active: data.active,
+  };
+}
+
 export function getPaymentScheduleOptions(
   pricing: MembershipPricing,
 ): PaymentScheduleOption[] {

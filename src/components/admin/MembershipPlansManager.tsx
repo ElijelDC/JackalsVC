@@ -13,7 +13,7 @@ import {
   getMonthlyFirstAmount,
   getMonthlyRecurringAmount,
 } from "@/lib/membership-config";
-import { formatEuroFee, parseJsonArray } from "@/lib/utils";
+import { formatEuroFee } from "@/lib/utils";
 
 type MembershipPlan = {
   id: string;

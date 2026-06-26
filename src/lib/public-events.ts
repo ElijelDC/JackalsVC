@@ -11,7 +11,6 @@ import {
 } from "@/lib/event-enrichment";
 import { resolveOccurrenceAttendanceUrl, resolveOccurrencePaymentUrl } from "@/lib/training-occurrence";
 import { prisma } from "@/lib/prisma";
-import { SESSION_CATEGORIES } from "@/lib/training-utils";
 import { getTeamTrainingSession, getUserTrainingTeamKey } from "@/lib/training-teams";
 import { isOpenReclubEvent } from "@/lib/event-reclub";
 
@@ -59,17 +58,6 @@ export async function getPublicEvent(
   }
 
   return serialized;
-}
-
-export function sessionSchedulePath(event: EventListItem) {
-  if (!event.trainingSessionId) return null;
-  if (event.sessionCategory === SESSION_CATEGORIES.FUN) {
-    return `/fun-sessions/${event.trainingSessionId}`;
-  }
-  if (event.type === "TRAINING") {
-    return `/training/session/${event.id}`;
-  }
-  return null;
 }
 
 export async function getEventAttendanceContext(event: EventListItem) {

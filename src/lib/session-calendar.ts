@@ -1,13 +1,11 @@
 import { addWeeks, startOfDay } from "date-fns";
 import { notFound } from "next/navigation";
 import { FUN_SESSION_CALENDAR_WEEKS } from "@/lib/event-filters";
-import { getNextUpcomingOccurrence, resolveUpcomingAttendanceUrl, resolveUpcomingPaymentUrl } from "@/lib/training-events";
-import { startOfOccurrenceDay } from "@/lib/training-occurrence";
+import { getNextUpcomingOccurrence } from "@/lib/training-events";
 import { prisma } from "@/lib/prisma";
 import type { TrainingSession } from "@/generated/prisma/client";
 import type { SessionCategory } from "@/lib/training-utils";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
-import { getPublicSession } from "@/lib/session-detail";
 
 export type SessionCalendarExport = {
   id: string;
@@ -32,21 +30,6 @@ export async function getSessionCalendarExport(session: TrainingSession) {
     location: nextOccurrence.location,
     occurrenceDate: nextOccurrence.trainingOccurrenceDate.toISOString(),
   } satisfies SessionCalendarExport;
-}
-
-export async function getLinkedCalendarEventId(
-  sessionId: string,
-  occurrenceDate: string,
-) {
-  const event = await prisma.event.findFirst({
-    where: {
-      trainingSessionId: sessionId,
-      trainingOccurrenceDate: startOfOccurrenceDay(new Date(occurrenceDate)),
-    },
-    select: { id: true },
-  });
-
-  return event?.id ?? null;
 }
 
 export type ScheduleOccurrence = {
@@ -104,7 +87,8 @@ export async function getVisibleFunSessions(
         startDate: { lte: through },
         OR: [{ endDate: { gte: now } }, { endDate: null, startDate: { gte: now } }],
       },
-      select: { trainingSessionId: true },
+      select: { id: true, trainingSessionId: true, startDate: true },
+      orderBy: { startDate: "asc" },
     }),
   ]);
 
@@ -112,62 +96,36 @@ export async function getVisibleFunSessions(
     upcomingEvents.map((event) => event.trainingSessionId!),
   );
 
-  return sessions.filter((session) => {
-    if (sessionsWithUpcoming.has(session.id)) return true;
-
-    if (session.recurring) return false;
-
-    if (!session.sessionDate) return false;
-
-    const sessionDay = startOfDay(new Date(session.sessionDate));
-    const today = startOfDay(now);
-    const horizon = startOfDay(through);
-
-    return sessionDay >= today && sessionDay <= horizon;
-  });
-}
-
-export async function getSessionDetailPageContext(
-  id: string,
-  category: SessionCategory,
-) {
-  const session = await getPublicSession(id, category);
-  const scheduleWeeksAhead =
-    category === SESSION_CATEGORIES.FUN ? FUN_SESSION_CALENDAR_WEEKS : undefined;
-
-  const [attendance, payment, calendarExport, upcomingSchedule] = await Promise.all([
-    resolveUpcomingAttendanceUrl(session),
-    resolveUpcomingPaymentUrl(session),
-    getSessionCalendarExport(session),
-    getUpcomingScheduleItems(session.id, scheduleWeeksAhead),
-  ]);
-
-  let linkedCalendarEventId: string | null = null;
-
-  if (calendarExport) {
-    linkedCalendarEventId = await getLinkedCalendarEventId(
-      session.id,
-      calendarExport.occurrenceDate,
-    );
+  // Build map of session → next upcoming event ID + date
+  const nextEventBySession = new Map<string, { id: string; startDate: Date }>();
+  for (const event of upcomingEvents) {
+    if (event.trainingSessionId && event.startDate >= now && !nextEventBySession.has(event.trainingSessionId)) {
+      nextEventBySession.set(event.trainingSessionId, { id: event.id, startDate: event.startDate });
+    }
   }
 
-  return {
-    session,
-    attendanceUrl: attendance.url,
-    attendanceOccurrenceDate: attendance.occurrenceDate?.toISOString() ?? null,
-    paymentUrl: payment.url,
-    reclubUsername: session.reclubUsername,
-    calendarExport,
-    linkedCalendarEventId,
-    upcomingSchedule,
-  };
-}
+  return sessions
+    .filter((session) => {
+      if (sessionsWithUpcoming.has(session.id)) return true;
 
-export function sessionCalendarIcsPath(
-  sessionId: string,
-  category: SessionCategory,
-) {
-  return `/api/sessions/${sessionId}/calendar?category=${category}`;
+      if (session.recurring) return false;
+
+      if (!session.sessionDate) return false;
+
+      const sessionDay = startOfDay(new Date(session.sessionDate));
+      const today = startOfDay(now);
+      const horizon = startOfDay(through);
+
+      return sessionDay >= today && sessionDay <= horizon;
+    })
+    .map((session) => {
+      const next = nextEventBySession.get(session.id);
+      return {
+        ...session,
+        nextEventId: next?.id ?? null,
+        nextEventDate: next?.startDate ?? null,
+      };
+    });
 }
 
 export function assertSessionCalendarAccess(

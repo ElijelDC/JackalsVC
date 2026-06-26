@@ -27,3 +27,22 @@ export function getMailTransporter() {
 export function getMailFromAddress(): string | undefined {
   return process.env.SMTP_FROM ?? process.env.SMTP_USER;
 }
+
+/**
+ * Returns a ready-to-use transporter + from address, or throws if email is not configured.
+ * Use this in email-sending functions to avoid repeating the guard boilerplate.
+ */
+export function requireMailTransporter() {
+  if (!isEmailConfigured()) {
+    throw new Error("Email delivery is not configured");
+  }
+
+  const transporter = getMailTransporter();
+  const from = getMailFromAddress();
+
+  if (!transporter || !from) {
+    throw new Error("Email delivery is not configured");
+  }
+
+  return { transporter, from };
+}

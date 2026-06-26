@@ -50,7 +50,7 @@ export function MatchDetailView({
   const { match, team } = detail;
   const matchDate = new Date(match.matchStart);
   const isHome = match.venue === "HOME";
-  const { dateLabel: matchDateLabel, timeLabel: matchTimeLabel } = formatMatchDateTime(
+  formatMatchDateTime(
     match.warmUpTime,
     match.matchStart,
   );

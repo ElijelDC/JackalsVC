@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { jsonError, requireClubMember } from "@/lib/api";
 
 export async function POST() {

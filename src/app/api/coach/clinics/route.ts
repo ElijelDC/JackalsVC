@@ -52,7 +52,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { coach, response } = await requireCoach();
+  const { response } = await requireCoach();
   if (response) return response;
 
   const { data, response: parseError } = await parseJsonBody(

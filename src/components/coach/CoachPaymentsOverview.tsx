@@ -363,7 +363,7 @@ export function CoachPaymentsOverview({
             <div className="space-y-2">
               <p className="font-medium text-white">Payment Schedule</p>
               <p className="text-sm text-zinc-400">
-                Payments are made on the <strong>last Friday of every month</strong>. Your payment is calculated based on billable training sessions for that month. Sessions marked as "can't attend" are deducted from your total.
+                Payments are made on the <strong>last Friday of every month</strong>. Your payment is calculated based on billable training sessions for that month. Sessions marked as &ldquo;can&apos;t attend&rdquo; are deducted from your total.
               </p>
             </div>
             <Button

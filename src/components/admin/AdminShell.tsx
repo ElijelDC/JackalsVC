@@ -45,12 +45,11 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     links: [{ href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true }],
   },
   {
-    title: "Club members",
+    title: "Members",
     links: [
       { href: "/admin/users", label: "Users", icon: Users },
       { href: "/admin/registration-reviews", label: "Registration review", icon: UserPlus },
-      { href: "/admin/squads", label: "Squads", icon: Flag },
-      { href: "/admin/roster", label: "Registered Members", icon: ClipboardList },
+      { href: "/admin/roster", label: "Roster", icon: ClipboardList },
       { href: "/admin/subscriptions", label: "Subscriptions", icon: UserCheck },
     ],
   },
@@ -65,19 +64,20 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
   {
     title: "Schedule",
     links: [
+      { href: "/admin/squads", label: "Squads", icon: Flag },
       { href: "/admin/training", label: "Weekly training", icon: Dumbbell },
-      { href: "/admin/matches", label: "Matches", icon: Trophy },
       { href: "/admin/fun-sessions", label: "Fun sessions", icon: PartyPopper },
+      { href: "/admin/teams", label: "Teams", icon: Volleyball },
+      { href: "/admin/matches", label: "Matches", icon: Trophy },
       { href: "/admin/events", label: "Calendar", icon: Calendar },
       { href: "/admin/reminders", label: "Reminders", icon: Bell },
     ],
   },
   {
-    title: "Club content",
+    title: "Content",
     links: [
       { href: "/admin/gallery", label: "Gallery", icon: Camera },
       { href: "/admin/achievements", label: "Achievements", icon: Award },
-      { href: "/admin/teams", label: "Teams", icon: Volleyball },
     ],
   },
   {

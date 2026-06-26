@@ -8,8 +8,7 @@ import {
   type MatchdaySheetEntry,
 } from "@/lib/matchday-sheet-config";
 import { normalizeSignupStatus } from "@/lib/training-attendance-config";
-import { formatMatchDateTime } from "@/lib/match-config";
-import { formatMatchTitle } from "@/lib/match-config";
+import { formatMatchDateTime, formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
 

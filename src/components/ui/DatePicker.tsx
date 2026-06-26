@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   format,
@@ -8,30 +8,13 @@ import {
   getDate,
   getDaysInMonth,
   startOfMonth,
-  isSameMonth,
   isSameDay,
   addMonths,
   subMonths,
 } from "date-fns";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
 import { cn } from "@/lib/utils";
-
-const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
 
 const WEEKDAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
@@ -42,8 +25,7 @@ type DatePickerProps = {
   label?: string;
 };
 
-export function DatePicker({ id, value, onChange, label }: DatePickerProps) {
-  const pickerId = useId();
+export function DatePicker({ value, onChange }: DatePickerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -194,14 +176,15 @@ export function DatePicker({ id, value, onChange, label }: DatePickerProps) {
                     "h-8 rounded text-xs font-medium transition-all",
                     !day && "invisible",
                     day &&
-                      !isSameDay(day, currentDate) &&
+                      (!currentDate || !isSameDay(day, currentDate)) &&
                       "text-white hover:bg-white/10",
                     day &&
+                      currentDate &&
                       isSameDay(day, currentDate) &&
                       "bg-jackals-red text-white hover:bg-jackals-red-dark",
                     day &&
                       isToday(day) &&
-                      !isSameDay(day, currentDate) &&
+                      (!currentDate || !isSameDay(day, currentDate)) &&
                       "ring-1 ring-jackals-red/40",
                   )}
                 >

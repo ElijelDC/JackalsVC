@@ -16,7 +16,6 @@ import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import { getCoachProfile } from "@/lib/coach-auth";
 import { isCoachMembershipStatus } from "@/lib/membership-status";
 import { prisma } from "@/lib/prisma";
-import { parseJsonArray } from "@/lib/utils";
 
 export const metadata = {
   title: CLUB_MEMBERSHIP_PLAN_NAME,

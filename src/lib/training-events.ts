@@ -1,3 +1,4 @@
+import { startOfDay, endOfDay, addWeeks } from "date-fns";
 import { prisma } from "@/lib/prisma";
 import type { TrainingOccurrenceException } from "@/generated/prisma/client";
 import type { TrainingSession } from "@/generated/prisma/client";
@@ -11,7 +12,6 @@ import {
 import {
   buildTrainingEventDescription,
   calendarEventTypeForCategory,
-  SESSION_CATEGORIES,
 } from "@/lib/training-utils";
 
 export {
@@ -34,24 +34,6 @@ function applyTimeToDate(date: Date, time: string) {
   const { hours, minutes } = parseTime(time);
   const result = new Date(date);
   result.setHours(hours, minutes, 0, 0);
-  return result;
-}
-
-function startOfDay(date: Date) {
-  const result = new Date(date);
-  result.setHours(0, 0, 0, 0);
-  return result;
-}
-
-function endOfDay(date: Date) {
-  const result = new Date(date);
-  result.setHours(23, 59, 59, 999);
-  return result;
-}
-
-function addWeeks(date: Date, weeks: number) {
-  const result = new Date(date);
-  result.setDate(result.getDate() + weeks * 7);
   return result;
 }
 

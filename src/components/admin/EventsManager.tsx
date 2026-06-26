@@ -168,7 +168,9 @@ export function EventsManager({
         description: event.sessionDescription ?? "",
         startDate: toDatetimeLocal(event.startDate),
         endDate: toDatetimeLocal(event.endDate),
-        type: normalizeManualEventType(event),
+        type: event.trainingSessionId
+          ? (event.type as ManualEventType)
+          : normalizeManualEventType(event),
         location: event.location ?? "",
         coach: event.coach ?? "",
         attendanceUrl: event.hasOccurrenceOverride

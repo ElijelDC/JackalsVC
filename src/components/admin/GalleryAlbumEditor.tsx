@@ -9,7 +9,6 @@ import { GalleryBulkUpload } from "@/components/admin/GalleryBulkUpload";
 import { GalleryCoverField } from "@/components/admin/GalleryCoverField";
 import { GalleryPhotoGrid } from "@/components/admin/GalleryPhotoGrid";
 import { AdminSection } from "@/components/admin/AdminShell";
-import { Button } from "@/components/ui/Button";
 import { Checkbox, Input, Label, Select } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import { GALLERY_PLACEHOLDER_COVER } from "@/lib/gallery-config";

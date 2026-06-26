@@ -123,7 +123,7 @@ export function MemberRegisterWizard({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<RegisterStep>("vly");
   const [vlyNumber, setVlyNumber] = useState("");
-  const [memberName, setMemberName] = useState("");
+  const [, setMemberName] = useState("");
   const [registrationToken, setRegistrationToken] = useState("");
   const [vlyPhotoUrl, setVlyPhotoUrl] = useState<string | null>(null);
   const [photoSubmittedAt, setPhotoSubmittedAt] = useState<string | null>(null);
@@ -544,7 +544,7 @@ export function MemberRegisterWizard({
     return (
       <>
         <StepHint step="verify" />
-        <VerifiedBanner memberName={memberName} vlyNumber={vlyNumber} />
+        <VerifiedBanner vlyNumber={vlyNumber} />
 
         <form onSubmit={verifyCode} className="space-y-4">
           <div>
@@ -621,7 +621,7 @@ export function MemberRegisterWizard({
   return (
     <>
       <StepHint step="password" />
-      <VerifiedBanner memberName={memberName} vlyNumber={vlyNumber} email={email} />
+      <VerifiedBanner vlyNumber={vlyNumber} email={email} />
 
       <form onSubmit={createAccount} className="space-y-4">
         <div>

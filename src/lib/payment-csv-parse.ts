@@ -1,3 +1,5 @@
+import { parseCsvLine } from "@/lib/csv-utils";
+
 export type ParsedBankTransferRow = {
   rowKey: string;
   amount: number;
@@ -5,36 +7,6 @@ export type ParsedBankTransferRow = {
   transactionDate?: Date;
   rawLine: string;
 };
-
-function parseCsvLine(line: string): string[] {
-  const cells: string[] = [];
-  let current = "";
-  let inQuotes = false;
-
-  for (let index = 0; index < line.length; index += 1) {
-    const char = line[index];
-    if (char === '"') {
-      if (inQuotes && line[index + 1] === '"') {
-        current += '"';
-        index += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-      continue;
-    }
-
-    if (char === "," && !inQuotes) {
-      cells.push(current.trim());
-      current = "";
-      continue;
-    }
-
-    current += char;
-  }
-
-  cells.push(current.trim());
-  return cells;
-}
 
 function normalizeHeader(value: string): string {
   return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
