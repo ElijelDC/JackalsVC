@@ -1,6 +1,9 @@
 import "server-only";
 
-import { getCoachSalaryPayments } from "@/lib/coach-payments";
+import {
+  getCoachSalaryPaymentsWithCache,
+  preloadTeamEvents,
+} from "@/lib/coach-payments";
 import type { AdminCoachPaymentRow } from "@/lib/coach-payments-config";
 import { prisma } from "@/lib/prisma";
 import { getTrainingSquads } from "@/lib/training-squads";
@@ -32,14 +35,25 @@ export async function getAdminCoachPaymentRows(options?: {
 
   const teamMap = new Map(squads.map((s) => [s.key, s.name]));
 
+  const teamKeys = [
+    ...new Set(
+      coaches
+        .map((c) => c.trainingTeamKey)
+        .filter((k): k is string => k != null),
+    ),
+  ];
+
+  const eventCache = await preloadTeamEvents(teamKeys, monthsBack, monthsAhead);
+
   return Promise.all(
     coaches.map(async (coach) => {
       const payments = coach.trainingTeamKey
-        ? await getCoachSalaryPayments(
+        ? await getCoachSalaryPaymentsWithCache(
             coach.id,
             coach.trainingTeamKey,
             coach.userId,
             { monthsBack, monthsAhead },
+            eventCache,
           )
         : [];
 

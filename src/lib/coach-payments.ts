@@ -1,4 +1,5 @@
 import { endOfMonth, startOfMonth } from "date-fns";
+import type { EnrichedEvent } from "@/lib/event-enrichment";
 import { enrichEventRecords } from "@/lib/event-enrichment";
 import {
   calculateCoachSalaryAmount,
@@ -25,6 +26,122 @@ const EMPTY_BREAKDOWN: CoachMonthPayrollBreakdown = {
   cancelledCount: 0,
   totalScheduled: 0,
 };
+
+/* ── Shared event cache for batch payroll computation ─────── */
+
+type EventCache = Map<string, EnrichedEvent[]>;
+
+export async function preloadTeamEvents(
+  trainingTeamKeys: string[],
+  monthsBack: number,
+  monthsAhead: number,
+): Promise<EventCache> {
+  const now = new Date();
+  const rangeStart = startOfMonth(
+    new Date(now.getFullYear(), now.getMonth() - monthsBack, 1),
+  );
+  const rangeEnd = endOfMonth(
+    new Date(now.getFullYear(), now.getMonth() + monthsAhead, 1),
+  );
+
+  const sessions = await prisma.trainingSession.findMany({
+    where: {
+      category: SESSION_CATEGORIES.WEEKLY,
+      trainingTeamKey: { in: trainingTeamKeys },
+    },
+    select: { id: true, trainingTeamKey: true },
+  });
+
+  if (sessions.length === 0) return new Map();
+
+  const sessionIdToTeam = new Map(
+    sessions.map((s) => [s.id, s.trainingTeamKey!]),
+  );
+
+  const events = await prisma.event.findMany({
+    where: {
+      type: "TRAINING",
+      trainingSessionId: { in: sessions.map((s) => s.id) },
+      startDate: { gte: rangeStart, lte: rangeEnd },
+    },
+    orderBy: { startDate: "asc" },
+  });
+
+  const enriched = await enrichEventRecords(events);
+
+  const cache: EventCache = new Map();
+  for (const event of enriched) {
+    const teamKey = sessionIdToTeam.get(event.trainingSessionId!);
+    if (!teamKey) continue;
+    const monthKey = `${teamKey}:${event.startDate.getFullYear()}-${event.startDate.getMonth() + 1}`;
+    const list = cache.get(monthKey) ?? [];
+    list.push(event);
+    cache.set(monthKey, list);
+  }
+
+  return cache;
+}
+
+function computePayrollFromEvents(
+  enrichedEvents: EnrichedEvent[],
+  coachUserId: string,
+  signupMap: Map<string, string>,
+): CoachMonthPayrollBreakdown {
+  if (enrichedEvents.length === 0) return EMPTY_BREAKDOWN;
+
+  const sessions: CoachTrainingPayItem[] = enrichedEvents.map((event) => {
+    const cancelled = event.occurrenceCancelled;
+    const coachStatus = cancelled
+      ? ("CANCELLED" as const)
+      : normalizeSignupStatus(signupMap.get(event.id));
+    const payable = !cancelled && coachStatus !== "NOT_ATTENDING";
+
+    return {
+      eventId: event.id,
+      startDate: event.startDate.toISOString(),
+      location: event.location,
+      cancelled,
+      coachStatus,
+      payable,
+      amount: payable ? COACH_SESSION_RATE_EUR : 0,
+    };
+  });
+
+  const billableCount = sessions.filter((item) => item.payable).length;
+  const cantAttendCount = sessions.filter(
+    (item) => !item.cancelled && item.coachStatus === "NOT_ATTENDING",
+  ).length;
+  const cancelledCount = sessions.filter((item) => item.cancelled).length;
+
+  return {
+    sessions,
+    billableCount,
+    cantAttendCount,
+    cancelledCount,
+    totalScheduled: sessions.length,
+  };
+}
+
+export async function getCoachMonthPayrollFromCache(
+  coachUserId: string,
+  trainingTeamKey: string,
+  year: number,
+  month: number,
+  eventCache: EventCache,
+): Promise<CoachMonthPayrollBreakdown> {
+  const monthKey = `${trainingTeamKey}:${year}-${month}`;
+  const events = eventCache.get(monthKey) ?? [];
+  if (events.length === 0) return EMPTY_BREAKDOWN;
+
+  const eventIds = events.map((e) => e.id);
+  const signups = await prisma.eventSignup.findMany({
+    where: { userId: coachUserId, eventId: { in: eventIds } },
+    select: { eventId: true, status: true },
+  });
+  const signupMap = new Map(signups.map((s) => [s.eventId, s.status]));
+
+  return computePayrollFromEvents(events, coachUserId, signupMap);
+}
 
 export async function getCoachMonthPayroll(
   coachUserId: string,
@@ -242,6 +359,52 @@ export async function getCoachSalaryPayments(
       const breakdown = coachUserId
         ? await getCoachMonthPayroll(coachUserId, trainingTeamKey, year, month)
         : EMPTY_BREAKDOWN;
+
+      const payment = await ensureCoachSalaryPaymentFromBreakdown(
+        clubMemberId,
+        trainingTeamKey,
+        year,
+        month,
+        breakdown,
+      );
+
+      return serializePayment(payment, breakdown);
+    }),
+  );
+
+  return payments;
+}
+
+export async function getCoachSalaryPaymentsWithCache(
+  clubMemberId: string,
+  trainingTeamKey: string,
+  coachUserId?: string | null,
+  options: { monthsBack?: number; monthsAhead?: number } = {},
+  eventCache?: EventCache,
+) {
+  if (!eventCache || !coachUserId) {
+    return getCoachSalaryPayments(clubMemberId, trainingTeamKey, coachUserId, options);
+  }
+
+  const monthsBack = options.monthsBack ?? 12;
+  const monthsAhead = options.monthsAhead ?? 3;
+  const now = new Date();
+  const periods: { year: number; month: number }[] = [];
+
+  for (let offset = monthsAhead; offset >= -monthsBack; offset -= 1) {
+    const date = new Date(now.getFullYear(), now.getMonth() + offset, 1);
+    periods.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
+  }
+
+  const payments = await Promise.all(
+    periods.map(async ({ year, month }) => {
+      const breakdown = await getCoachMonthPayrollFromCache(
+        coachUserId,
+        trainingTeamKey,
+        year,
+        month,
+        eventCache,
+      );
 
       const payment = await ensureCoachSalaryPaymentFromBreakdown(
         clubMemberId,
