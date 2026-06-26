@@ -19,7 +19,6 @@ import { TrainingResponsesLockedBadge } from "@/components/training/TrainingResp
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Badge } from "@/components/ui/Badge";
-import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import {

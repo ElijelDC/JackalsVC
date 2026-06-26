@@ -10,7 +10,7 @@ export async function generateMetadata({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  await params;
   return { title: "Matchday sheet" };
 }
 

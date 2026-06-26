@@ -1,4 +1,4 @@
-import { getMailFromAddress, getMailTransporter, isEmailConfigured } from "@/lib/email";
+import { requireMailTransporter } from "@/lib/email";
 
 export async function sendTrainingResponseReminderEmail(input: {
   email: string;
@@ -13,16 +13,7 @@ export async function sendTrainingResponseReminderEmail(input: {
   const itemLabel = kind === "match" ? "match" : "training";
   const respondLabel = kind === "match" ? "Respond to match" : "Respond to training";
 
-  if (!isEmailConfigured()) {
-    throw new Error("Email delivery is not configured");
-  }
-
-  const transporter = getMailTransporter();
-  const from = getMailFromAddress();
-
-  if (!transporter || !from) {
-    throw new Error("Email delivery is not configured");
-  }
+  const { transporter, from } = requireMailTransporter();
 
   const subject = `${itemLabel === "match" ? "Match" : "Training"} response needed — ${input.teamName}`;
   const text = [

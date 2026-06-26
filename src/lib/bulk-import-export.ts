@@ -20,11 +20,6 @@ function formatCsvDateTime(value: Date | null | undefined): string {
   return safeFormatDate(value, "yyyy-MM-dd'T'HH:mm");
 }
 
-function cell(value: string | number | null | undefined): string {
-  if (value == null) return "";
-  return String(value);
-}
-
 async function exportRosterRows(): Promise<string[][]> {
   const members = await prisma.clubMember.findMany({
     orderBy: [{ trainingTeamKey: "asc" }, { vlyNumber: "asc" }],

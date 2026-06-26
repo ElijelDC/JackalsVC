@@ -1,4 +1,4 @@
-import { getMailFromAddress, getMailTransporter, isEmailConfigured } from "@/lib/email";
+import { requireMailTransporter } from "@/lib/email";
 
 export async function sendVerificationEmail(input: {
   email: string;
@@ -13,16 +13,8 @@ export async function sendVerificationEmail(input: {
       : purpose === "password-reset"
         ? "Use this code to reset your Jackals VC password:"
         : "Use this code to verify your email and finish creating your Jackals VC account:";
-  if (!isEmailConfigured()) {
-    throw new Error("Email delivery is not configured");
-  }
 
-  const transporter = getMailTransporter();
-  const from = getMailFromAddress();
-
-  if (!transporter || !from) {
-    throw new Error("Email delivery is not configured");
-  }
+  const { transporter, from } = requireMailTransporter();
 
   await transporter.sendMail({
     from,

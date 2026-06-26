@@ -4,7 +4,6 @@ import { hasAttendanceAccess } from "@/lib/membership";
 import {
   getEventAttendanceContext,
   getPublicEvent,
-  sessionSchedulePath,
 } from "@/lib/public-events";
 import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
 import { getSiteUrl } from "@/lib/site-url.server";
@@ -38,7 +37,6 @@ export default async function CalendarEventPage({
   const isLoggedIn = Boolean(session?.user);
 
   const event = await getPublicEvent(id, isLoggedIn);
-  const schedulePath = sessionSchedulePath(event);
   const attendance = await getEventAttendanceContext(event);
   const eventsBack = resolveEventsBackLink(from);
 
@@ -57,7 +55,6 @@ export default async function CalendarEventPage({
   return (
     <EventDetailPage
       event={event}
-      schedulePath={schedulePath}
       attendanceUrl={attendance.attendanceUrl}
       paymentUrl={attendance.paymentUrl}
       attendanceOccurrenceDate={attendance.attendanceOccurrenceDate}

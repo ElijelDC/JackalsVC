@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ArrowRight, Images } from "lucide-react";
 import { GalleryCoverImage } from "@/components/gallery/GalleryCoverImage";
 import { fillImageStyle } from "@/lib/fill-image-layout";
-import { formatCategoryLabel } from "@/lib/utils";
 
 export type GalleryAlbumItem = {
   id: string;
@@ -35,12 +34,9 @@ export function GalleryAlbumCard({ album }: { album: GalleryAlbumItem }) {
             alt={album.title}
             className="h-full w-full"
           />
-          <div className="absolute left-2 top-2 z-10 inline-flex items-center border border-jackals-red/30 bg-black/60 px-2 py-1 text-[10px] font-semibold uppercase tracking-widest text-jackals-red-light backdrop-blur-sm sm:left-3 sm:top-3 sm:px-3 sm:py-1.5 sm:text-xs">
-            {formatCategoryLabel(album.category)}
-          </div>
-          <div className="absolute right-2 top-2 z-10 inline-flex items-center gap-1 border border-white/20 bg-black/60 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm sm:right-3 sm:top-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs">
+          <div className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 border border-white/20 bg-black/60 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm sm:left-3 sm:top-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs">
             <Images className="h-3 w-3 text-jackals-red-light sm:h-3.5 sm:w-3.5" />
-            {album.photoCount}
+            {album.photoCount} {album.photoCount === 1 ? "photo" : "photos"}
           </div>
           <div className="absolute inset-x-0 bottom-0 z-10 p-2 sm:p-5">
             <h3 className="line-clamp-2 font-display text-sm font-bold leading-snug text-white sm:text-xl">

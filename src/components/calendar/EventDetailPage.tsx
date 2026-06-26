@@ -10,7 +10,6 @@ import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { FunSessionJoinFlow } from "@/components/training/FunSessionJoinFlow";
 import { TournamentJoinFlow } from "@/components/training/TournamentJoinFlow";
-import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
 import { TrainingAttendanceStatusBadge } from "@/components/training/TrainingAttendancePicker";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
 import type { TrainingAttendanceStatus } from "@/lib/training-attendance-config";
@@ -19,7 +18,6 @@ import { cn } from "@/lib/utils";
 
 export function EventDetailPage({
   event,
-  schedulePath,
   attendanceUrl,
   paymentUrl,
   attendanceOccurrenceDate,
@@ -33,7 +31,6 @@ export function EventDetailPage({
   initialAttendanceStatus = "UNANSWERED",
 }: {
   event: EventListItem;
-  schedulePath: string | null;
   attendanceUrl: string | null;
   paymentUrl: string | null;
   attendanceOccurrenceDate: string | null;
@@ -64,7 +61,8 @@ export function EventDetailPage({
   const typeStyle = getEventDisplayStyle(event);
 
   const showFunJoinFlow =
-    usesPaidJoinFlow(event.type) && Boolean(paymentUrl);
+    usesPaidJoinFlow(event.type) &&
+    (Boolean(paymentUrl) || event.sessionFee != null || Boolean(attendanceUrl));
   const showTournamentJoinFlow = usesTournamentJoinFlow(event);
   const showStructuredJoinFlow = showFunJoinFlow || showTournamentJoinFlow;
 
@@ -137,54 +135,56 @@ export function EventDetailPage({
             </div>
           )}
 
-          {schedulePath && (
+          {showFunJoinFlow && (
             <div className="mt-6 border-t border-white/10 pt-6">
-              <Link
-                href={schedulePath}
-                className="group flex items-center justify-between gap-4 rounded-lg border border-jackals-red/30 bg-jackals-red/10 px-4 py-4 transition-colors hover:border-jackals-red/50 hover:bg-jackals-red/15"
-              >
-                <div>
-                  <p className="font-medium text-white">
-                    View schedule details
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    See the session details and upcoming dates
-                  </p>
-                </div>
-                <ChevronRight className="h-5 w-5 shrink-0 text-jackals-red-light transition-transform group-hover:translate-x-0.5" />
-              </Link>
+              <FunSessionJoinFlow
+                paymentUrl={paymentUrl}
+                payLabel="Session Payment Link"
+                sessionTitle={event.title}
+                sessionDate={event.startDate}
+                reclubUsername={event.reclubUsername}
+                sessionFee={event.sessionFee}
+                attendanceUrl={attendanceUrl}
+                sessionId={attendanceEntityId}
+                attendBasePath={attendBasePath ?? "/fun-sessions"}
+                attendanceOccurrenceDate={attendanceOccurrenceDate}
+                attendanceLabel="Register on ReClub"
+                showPayBeforeNote
+                inline
+              />
             </div>
           )}
+
+          {showTournamentJoinFlow && (
+            <div className="mt-6 border-t border-white/10 pt-6">
+              <TournamentJoinFlow
+                attendanceUrl={attendanceUrl}
+                sessionId={attendanceEntityId}
+                attendBasePath={attendBasePath ?? "/calendar"}
+                tournamentFee={event.sessionFee}
+                clubIban={event.clubIban}
+              />
+            </div>
+          )}
+
+          {showAttendance && !showStructuredJoinFlow && attendanceUrl && attendBasePath && (openAttendance || canAccessAttendance) && (
+            <div className="mt-6 border-t border-white/10 pt-6">
+              <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-zinc-500">
+                Registration
+              </h2>
+              <AttendanceLink
+                sessionId={attendanceEntityId}
+                basePath={attendBasePath}
+                occurrenceDate={attendanceOccurrenceDate}
+                label={isOpenReclub ? "Register on Reclub" : "Register attendance on Reclub"}
+                variant="primary"
+              />
+            </div>
+          )}
+
         </Card>
 
         <div className="space-y-4">
-          {showTournamentJoinFlow && (
-            <TournamentJoinFlow
-              attendanceUrl={attendanceUrl}
-              sessionId={attendanceEntityId}
-              attendBasePath={attendBasePath ?? "/calendar"}
-              tournamentFee={event.sessionFee}
-              clubIban={event.clubIban}
-            />
-          )}
-
-          {showFunJoinFlow && (
-            <FunSessionJoinFlow
-              paymentUrl={paymentUrl!}
-              payLabel="Pay on ReClub"
-              sessionTitle={event.title}
-              sessionDate={event.startDate}
-              reclubUsername={event.reclubUsername}
-              sessionFee={event.sessionFee}
-              attendanceUrl={attendanceUrl}
-              sessionId={attendanceEntityId}
-              attendBasePath={attendBasePath ?? "/fun-sessions"}
-              attendanceOccurrenceDate={attendanceOccurrenceDate}
-              attendanceLabel="Register on ReClub"
-              showPayBeforeNote
-            />
-          )}
-
           {isTrainingEvent && (
             <Card>
               <CardTitle>Squad training</CardTitle>
@@ -201,58 +201,6 @@ export function EventDetailPage({
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </Link>
-              </div>
-            </Card>
-          )}
-
-          {showAttendance && !showStructuredJoinFlow && (
-            <Card>
-              <CardTitle>
-                {isOpenReclub ? "Registration" : "Attendance"}
-              </CardTitle>
-              <CardDescription className="mt-2">
-                {attendanceUrl
-                  ? isOpenReclub
-                    ? "Register on Reclub — open to everyone."
-                    : openAttendance
-                      ? "Register attendance on Reclub — open to everyone."
-                      : "Paid membership is required to register attendance via Reclub."
-                  : "Registration on ReClub is not available yet."}
-              </CardDescription>
-
-              <div className="mt-6 space-y-3">
-                {attendanceUrl &&
-                  attendBasePath &&
-                  (openAttendance || canAccessAttendance) && (
-                    <AttendanceLink
-                      sessionId={attendanceEntityId}
-                      basePath={attendBasePath}
-                      occurrenceDate={attendanceOccurrenceDate}
-                      label={
-                        isOpenReclub
-                          ? "Register on Reclub"
-                          : "Register attendance on Reclub"
-                      }
-                      variant="primary"
-                    />
-                  )}
-
-                {attendanceUrl &&
-                  !openAttendance &&
-                  !canAccessAttendance &&
-                  isLoggedIn && (
-                    <Link href="/membership">
-                      <Button className="w-full">Get membership to register</Button>
-                    </Link>
-                  )}
-
-                {attendanceUrl && !openAttendance && !isLoggedIn && (
-                  <Link href={`/login?callbackUrl=/calendar/${event.id}`}>
-                    <Button className="w-full">Sign in to register attendance</Button>
-                  </Link>
-                )}
-
-                {!attendanceUrl && <ReclubLinkUnavailable />}
               </div>
             </Card>
           )}

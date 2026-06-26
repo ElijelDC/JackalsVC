@@ -46,12 +46,10 @@ function enrichSingleEvent(
     occurrenceCancelled: override?.cancelled ?? false,
     hasOccurrenceOverride: Boolean(override),
     coach: override?.coach ?? session?.coach ?? null,
-    attendanceUrl: override
-      ? override.attendanceUrl
-      : (session?.attendanceUrl ?? event.attendanceUrl ?? null),
-    paymentUrl: override
-      ? override.paymentUrl
-      : (session?.paymentUrl ?? event.paymentUrl ?? null),
+    attendanceUrl: override?.attendanceUrl
+      ?? session?.attendanceUrl ?? event.attendanceUrl ?? null,
+    paymentUrl: override?.paymentUrl
+      ?? session?.paymentUrl ?? event.paymentUrl ?? null,
     seriesAttendanceUrl: session?.attendanceUrl ?? null,
     seriesPaymentUrl: session?.paymentUrl ?? null,
     reclubUsername: session?.reclubUsername ?? event.reclubUsername ?? null,

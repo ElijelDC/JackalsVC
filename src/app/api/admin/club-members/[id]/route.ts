@@ -33,7 +33,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   const existing = await prisma.clubMember.findUnique({ where: { id } });
   if (!existing) return jsonError("Roster entry not found", 404);
 
-  const nextRosterRole = data.rosterRole ?? existing.rosterRole;
+  const nextRosterRole = (data.rosterRole ?? existing.rosterRole) as "PLAYER" | "COACH";
   const nextVlyNumber =
     data.vlyNumber !== undefined
       ? normalizeVlyNumber(data.vlyNumber)

@@ -1,4 +1,3 @@
-import { notFound } from "next/navigation";
 import { endOfMonth, startOfMonth } from "date-fns";
 import { CoachTrainingEditor } from "@/components/coach/CoachTrainingEditor";
 import { requireCoachPage } from "@/lib/coach-auth";
@@ -10,7 +9,6 @@ import {
 } from "@/lib/training-teams-config";
 import { SESSION_CATEGORIES, serializeTrainingSession } from "@/lib/training-utils";
 import { prisma } from "@/lib/prisma";
-import { CoachShell } from "@/components/coach/CoachShell";
 
 export const metadata = {
   title: "Coach · Training times",

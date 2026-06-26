@@ -1,6 +1,14 @@
 import { z } from "zod";
 import { COACH_PAYMENT_TYPES } from "@/lib/coach-payment-type";
 
+/** Preprocess empty strings/null/undefined → undefined for optional Zod fields */
+const emptyToUndefined = (val: unknown) =>
+  val === "" || val == null ? undefined : val;
+
+/** Preprocess empty strings/undefined → null for nullable Zod fields */
+const emptyToNull = (val: unknown) =>
+  val === "" || val === undefined ? null : val;
+
 export const validateVlySchema = z.object({
   vlyNumber: z.string().min(3, "VLY number is required"),
 });
@@ -73,20 +81,16 @@ export const trainingSessionSchema = z
     level: z.string().min(1, "Level is required"),
     description: z.string().optional(),
     coach: z.string().optional(),
-    attendanceUrl: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    attendanceUrl: z.preprocess(emptyToUndefined,
       z.string().url("Must be a valid URL").optional(),
     ),
-    paymentUrl: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    paymentUrl: z.preprocess(emptyToUndefined,
       z.string().url("Must be a valid URL").optional(),
     ),
-    reclubUsername: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    reclubUsername: z.preprocess(emptyToUndefined,
       z.string().min(1).optional(),
     ),
-    sessionFee: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    sessionFee: z.preprocess(emptyToUndefined,
       z.coerce
         .number()
         .positive("Session fee must be greater than zero")
@@ -94,20 +98,16 @@ export const trainingSessionSchema = z
     ),
     recurring: z.boolean(),
     recurrenceWeeks: z.number().int().min(1).max(52),
-    sessionDate: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    sessionDate: z.preprocess(emptyToUndefined,
       z.string().optional(),
     ),
-    recurringFrom: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    recurringFrom: z.preprocess(emptyToUndefined,
       z.string().optional(),
     ),
-    recurringTo: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    recurringTo: z.preprocess(emptyToUndefined,
       z.string().optional(),
     ),
-    trainingTeamKey: z.preprocess(
-      (val) => (val === "" || val == null ? undefined : val),
+    trainingTeamKey: z.preprocess(emptyToUndefined,
       z.string().optional(),
     ),
   })
@@ -155,12 +155,10 @@ export const trainingOccurrenceSchema = z.object({
   endDate: z.string().optional(),
   location: z.string().optional(),
   coach: z.string().optional(),
-  attendanceUrl: z.preprocess(
-    (val) => (val === "" || val === undefined ? null : val),
+  attendanceUrl: z.preprocess(emptyToNull,
     z.union([z.string().url("Must be a valid URL"), z.null()]).optional(),
   ),
-  paymentUrl: z.preprocess(
-    (val) => (val === "" || val === undefined ? null : val),
+  paymentUrl: z.preprocess(emptyToNull,
     z.union([z.string().url("Must be a valid URL"), z.null()]).optional(),
   ),
 });
@@ -172,27 +170,22 @@ export const eventSchema = z.object({
   endDate: z.string().optional(),
   type: z.enum(["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"]),
   location: z.string().optional(),
-  attendanceUrl: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  attendanceUrl: z.preprocess(emptyToUndefined,
     z.string().url("Must be a valid URL").optional(),
   ),
-  paymentUrl: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  paymentUrl: z.preprocess(emptyToUndefined,
     z.string().url("Must be a valid URL").optional(),
   ),
-  sessionFee: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  sessionFee: z.preprocess(emptyToUndefined,
     z.coerce
       .number()
       .positive("Session fee must be greater than zero")
       .optional(),
   ),
-  reclubUsername: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  reclubUsername: z.preprocess(emptyToUndefined,
     z.string().min(1).optional(),
   ),
-  clubIban: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  clubIban: z.preprocess(emptyToUndefined,
     z.string().min(1).optional(),
   ),
 });
@@ -491,23 +484,19 @@ export const coachClinicSchema = z.object({
   startDate: z.string().min(1, "Start date is required"),
   endDate: z.string().optional(),
   location: z.string().optional(),
-  attendanceUrl: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  attendanceUrl: z.preprocess(emptyToUndefined,
     z.string().url("Must be a valid URL").optional(),
   ),
-  paymentUrl: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  paymentUrl: z.preprocess(emptyToUndefined,
     z.string().url("Must be a valid URL").optional(),
   ),
-  sessionFee: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  sessionFee: z.preprocess(emptyToUndefined,
     z.coerce
       .number()
       .positive("Session fee must be greater than zero")
       .optional(),
   ),
-  reclubUsername: z.preprocess(
-    (val) => (val === "" || val == null ? undefined : val),
+  reclubUsername: z.preprocess(emptyToUndefined,
     z.string().min(1).optional(),
   ),
 });

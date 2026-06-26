@@ -34,10 +34,13 @@ export function SessionCard({
   const recurrence =
     showRecurrence ?? sessionRecurrenceLabel(session);
   const accentStyle = accentType ? getEventTypeStyle(accentType) : null;
+  const href = session.nextEventId
+    ? `/calendar/${session.nextEventId}`
+    : `${detailBasePath}/${session.id}`;
 
   return (
     <Link
-      href={`${detailBasePath}/${session.id}`}
+      href={href}
       className="group block h-full"
     >
       <Card
@@ -73,6 +76,12 @@ export function SessionCard({
               <div className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 shrink-0 text-zinc-500" />
                 {recurrence}
+              </div>
+            )}
+            {session.nextEventDate && (
+              <div className="flex items-center gap-2 text-jackals-red-light/80">
+                <CalendarDays className="h-4 w-4 shrink-0 text-jackals-red-light/60" />
+                Upcoming: {format(new Date(session.nextEventDate), "EEE, d MMM")}
               </div>
             )}
             <div className="flex items-center gap-2">

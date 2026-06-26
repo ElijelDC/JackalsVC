@@ -158,8 +158,7 @@ export async function resolveOccurrenceAttendanceUrl(
     select: { attendanceUrl: true },
   });
 
-  if (override) return override.attendanceUrl;
-  return sessionAttendanceUrl;
+  return override?.attendanceUrl ?? sessionAttendanceUrl;
 }
 
 export async function resolveOccurrencePaymentUrl(
@@ -177,8 +176,7 @@ export async function resolveOccurrencePaymentUrl(
     select: { paymentUrl: true },
   });
 
-  if (override) return override.paymentUrl;
-  return sessionPaymentUrl;
+  return override?.paymentUrl ?? sessionPaymentUrl;
 }
 
 export function isOccurrenceCustomized(override: {

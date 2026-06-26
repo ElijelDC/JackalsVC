@@ -54,7 +54,6 @@ export type BulkImportResult = {
 };
 
 type TrainingSessionData = ReturnType<typeof toTrainingSessionData>;
-type ParsedTrainingSession = z.infer<typeof trainingSessionSchema>;
 type ParsedTeamMatch = z.infer<typeof teamMatchSchema>;
 type ParsedEvent = z.infer<typeof eventSchema>;
 

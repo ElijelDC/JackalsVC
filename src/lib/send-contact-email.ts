@@ -1,23 +1,15 @@
-import { getMailFromAddress, getMailTransporter } from "@/lib/email";
+import { requireMailTransporter } from "@/lib/email";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import type { z } from "zod";
 import type { contactSchema } from "@/lib/validations";
 
 type ContactFormData = z.infer<typeof contactSchema>;
 
-function getTransporter() {
-  return getMailTransporter();
-}
-
 export async function sendContactEmail(data: ContactFormData) {
-  const transporter = getTransporter();
-
-  if (!transporter) {
-    throw new Error("Email delivery is not configured");
-  }
+  const { transporter, from } = requireMailTransporter();
 
   await transporter.sendMail({
-    from: getMailFromAddress() ?? process.env.SMTP_USER,
+    from,
     to: CONTACT_EMAIL,
     replyTo: data.email,
     subject: `[Jackals VC] ${data.subject}`,
