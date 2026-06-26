@@ -145,7 +145,7 @@ export function GalleryBulkUpload({
       </h3>
       <p className="mb-4 text-sm text-zinc-400">
         Drag images here or browse your device. Up to {GALLERY_MAX_BULK_FILES} files
-        per batch, 5 MB each.
+        per batch, 15 MB each.
       </p>
 
       <SuccessBanner message={message} />
@@ -203,7 +203,7 @@ export function GalleryBulkUpload({
             <p className="text-sm text-zinc-400">
               {files.length} selected · {totalSizeMb} MB total
               {hasOversized && (
-                <span className="ml-2 text-red-400">Some files exceed 5 MB</span>
+                <span className="ml-2 text-red-400">Some files exceed 15 MB</span>
               )}
             </p>
             <Button type="button" variant="ghost" size="sm" disabled={loading} onClick={clearFiles}>

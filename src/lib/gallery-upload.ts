@@ -32,7 +32,7 @@ export async function saveGalleryImageFile(file: File, albumId: string) {
   }
 
   if (file.size > GALLERY_MAX_UPLOAD_BYTES) {
-    throw new Error(`"${file.name}" exceeds the 5 MB limit.`);
+    throw new Error(`"${file.name}" exceeds the 15 MB limit.`);
   }
 
   const ext = EXT_BY_TYPE[file.type] ?? ".jpg";

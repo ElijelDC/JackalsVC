@@ -62,3 +62,4 @@ next-env.d.ts
 !/public/uploads/vly-membership-photos/.gitkeep
 /public/uploads/coach-invoices/*
 !/public/uploads/coach-invoices/.gitkeep
+.env.production
