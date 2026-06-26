@@ -396,23 +396,64 @@ export async function getCoachSalaryPaymentsWithCache(
     periods.push({ year: date.getFullYear(), month: date.getMonth() + 1 });
   }
 
+  // Batch-load all existing salary payment records for this coach at once
+  const existingPayments = await prisma.coachSalaryPayment.findMany({
+    where: { clubMemberId },
+  });
+  const existingMap = new Map(
+    existingPayments.map((p) => [`${p.year}-${p.month}`, p]),
+  );
+
+  // Batch-load all signups for this coach across all cached events
+  const allEventIds: string[] = [];
+  for (const [key, events] of eventCache) {
+    if (key.startsWith(`${trainingTeamKey}:`)) {
+      for (const e of events) allEventIds.push(e.id);
+    }
+  }
+  const allSignups = allEventIds.length > 0
+    ? await prisma.eventSignup.findMany({
+        where: { userId: coachUserId, eventId: { in: allEventIds } },
+        select: { eventId: true, status: true },
+      })
+    : [];
+  const globalSignupMap = new Map(allSignups.map((s) => [s.eventId, s.status]));
+
   const payments = await Promise.all(
     periods.map(async ({ year, month }) => {
-      const breakdown = await getCoachMonthPayrollFromCache(
-        coachUserId,
-        trainingTeamKey,
-        year,
-        month,
-        eventCache,
-      );
+      const monthKey = `${trainingTeamKey}:${year}-${month}`;
+      const events = eventCache.get(monthKey) ?? [];
+      const breakdown = computePayrollFromEvents(events, coachUserId, globalSignupMap);
 
-      const payment = await ensureCoachSalaryPaymentFromBreakdown(
-        clubMemberId,
-        trainingTeamKey,
-        year,
-        month,
-        breakdown,
-      );
+      const ratePerSession = COACH_SESSION_RATE_EUR;
+      const sessionCount = breakdown.billableCount;
+      const amount = calculateCoachSalaryAmount(sessionCount, ratePerSession);
+
+      const existing = existingMap.get(`${year}-${month}`);
+
+      let payment;
+      if (existing) {
+        if (existing.status === "PENDING" && (existing.sessionCount !== sessionCount || existing.amount !== amount)) {
+          payment = await prisma.coachSalaryPayment.update({
+            where: { id: existing.id },
+            data: { sessionCount, amount, ratePerSession },
+          });
+        } else {
+          payment = existing;
+        }
+      } else {
+        payment = await prisma.coachSalaryPayment.create({
+          data: {
+            clubMemberId,
+            year,
+            month,
+            sessionCount,
+            ratePerSession,
+            amount,
+            status: "PENDING",
+          },
+        });
+      }
 
       return serializePayment(payment, breakdown);
     }),
