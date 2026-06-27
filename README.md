@@ -10,21 +10,24 @@ Production site for **Jackals Volleyball Club**: [jackalsvolleyball.com](https:/
 | Backend | Next.js API Routes |
 | Database | SQLite via Prisma ORM 7 |
 | Auth | NextAuth.js v5 (credentials) |
-| Hosting | Fly.io (Docker, persistent volume) |
+| Hosting | Hetzner VPS (Docker Compose + Caddy); Fly.io config also in repo |
 
 ## Deploy
 
-See **[DEPLOY.md](./DEPLOY.md)** for Fly.io setup and **[docs/CLOUDFLARE-DNS.md](./docs/CLOUDFLARE-DNS.md)** for domain DNS.
+Production runs on **Hetzner** — see **[docs/HETZNER-DEPLOY.md](./docs/HETZNER-DEPLOY.md)**.
+
+Legacy Fly.io setup: **[DEPLOY.md](./DEPLOY.md)**. DNS: **[docs/CLOUDFLARE-DNS.md](./docs/CLOUDFLARE-DNS.md)**.
 
 ```bash
-fly deploy
+# Hetzner — after editing .env.production
+./scripts/hetzner-deploy-env.sh
 ```
 
-Migrations run automatically on container start (`prisma migrate deploy`).
+Migrations run automatically on container start (`prisma db push` via entrypoint).
 
 ## Environment variables
 
-Copy `.env.example` to `.env` for local runs. On Fly, set secrets via `fly secrets set` (see DEPLOY.md).
+Copy `.env.example` to `.env` for local runs. On Hetzner, use `.env.production` (see docs/HETZNER-DEPLOY.md). On Fly, set secrets via `fly secrets set` (see DEPLOY.md).
 
 Required in production:
 
