@@ -13,6 +13,7 @@ model User {
   email              String            @unique
   passwordHash       String
   role               String            @default("MEMBER")
+  eventNewsletterOptOut Boolean        @default(false)
   registrationCodeId String?
   registrationCode   RegistrationCode? @relation(fields: [registrationCodeId], references: [id])
   createdAt          DateTime          @default(now())
@@ -38,6 +39,7 @@ model ClubMember {
   profileImageUrl        String?
   vlyMembershipPhotoUrl  String?
   playerNumber           Int?
+  registrationContactEmail       String?
   registrationReviewStatus       String?
   registrationPhotoSubmittedAt   DateTime?
   registrationReviewedAt         DateTime?
@@ -286,11 +288,22 @@ model Payment {
   user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   membership           Membership? @relation(fields: [membershipId], references: [id], onDelete: SetNull)
   emailMatches         ProcessedPaymentEmail[]
+  dueReminders         MembershipDueReminder[]
   createdAt            DateTime    @default(now())
 
   @@unique([userId, paymentReference])
   @@index([status, dueDate])
   @@index([sumupTransactionId])
+}
+
+model MembershipDueReminder {
+  id        String   @id @default(cuid())
+  paymentId String
+  payment   Payment  @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  kind      String
+  sentAt    DateTime @default(now())
+
+  @@unique([paymentId, kind])
 }
 
 model ProcessedPaymentEmail {
