@@ -1,5 +1,7 @@
 # Deploying Jackals VC on Fly.io
 
+> **Production hosting** is on **Hetzner** (Docker Compose + Caddy). See **[docs/HETZNER-DEPLOY.md](./docs/HETZNER-DEPLOY.md)** for the live setup at jackalsvolleyball.com.
+
 This app uses **SQLite** and **local file uploads**, so it runs on Fly.io as a **single machine with a persistent volume** (not serverless).
 
 Estimated cost: about **$5–7/month** (512 MB VM + 1 GB volume) for ~50 members.
