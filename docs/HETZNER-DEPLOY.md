@@ -118,6 +118,18 @@ docker compose logs app --tail 50
 
 Homepage Instagram section only appears when `INSTAGRAM_USER_ID` and `INSTAGRAM_ACCESS_TOKEN` are set.
 
+### One-command code deploy
+
+On the VPS (or from your laptop with `HETZNER_USER` + `HETZNER_APP_DIR` set):
+
+```bash
+./scripts/hetzner-deploy.sh
+```
+
+This pulls `main`, rebuilds the Docker image, recreates the app container, and runs `prisma migrate deploy`.
+
+Pushes to `main` also deploy automatically when GitHub Actions secrets are configured (`HETZNER_HOST`, `HETZNER_USER`, `HETZNER_SSH_KEY`, `HETZNER_APP_DIR`).
+
 ## Email notifications & the reminder cron
 
 Transactional and notification emails use the same `SMTP_*` settings as registration verification. Two extra variables tune notifications:
@@ -142,8 +154,9 @@ Membership "payment due" reminders (a week ahead, then the day before) are sent 
 |---------|---------|
 | `docker compose ps` | Container status |
 | `docker compose logs -f app` | App logs |
-| `docker compose pull && docker compose --env-file .env.production up -d --build` | Deploy code updates |
-| `docker compose exec app npx prisma db push` | Apply schema changes |
+| `./scripts/hetzner-deploy.sh` | **Pull main, rebuild app, run migrations** |
+| `./scripts/hetzner-deploy-env.sh` | Upload `.env.production` and recreate container |
+| `docker compose exec app npx prisma migrate deploy` | Apply schema changes only |
 
 ## Architecture
 
