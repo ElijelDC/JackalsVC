@@ -5,6 +5,7 @@ import {
   validateCoachInvoiceFile,
 } from "@/lib/coach-invoice-proof";
 import { jsonError, requireAdmin } from "@/lib/api";
+import { notifyCoachPaymentPaid } from "@/lib/coach-payment-notify";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(
@@ -43,6 +44,10 @@ export async function POST(
         paidAt: existing.paidAt ?? new Date(),
       },
     });
+
+    if (existing.status !== "PAID") {
+      await notifyCoachPaymentPaid(payment.id);
+    }
 
     return NextResponse.json({
       payment: {

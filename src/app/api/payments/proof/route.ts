@@ -1,4 +1,5 @@
 import { jsonError, requireSession } from "@/lib/api";
+import { emailSiteUrl, notifyAdmins } from "@/lib/notify";
 import {
   deletePaymentProofFile,
   savePaymentProofFile,
@@ -6,6 +7,11 @@ import {
 } from "@/lib/payment-proof";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+
+const EUR = new Intl.NumberFormat("en-IE", {
+  style: "currency",
+  currency: "EUR",
+});
 
 export async function POST(request: Request) {
   const { session, response: authError } = await requireSession();
@@ -29,6 +35,7 @@ export async function POST(request: Request) {
 
     const payment = await prisma.payment.findFirst({
       where: { id: paymentId, userId: session!.user.id },
+      include: { user: { select: { name: true, email: true } } },
     });
 
     if (!payment) return jsonError("Payment not found", 404);
@@ -43,6 +50,28 @@ export async function POST(request: Request) {
       data: {
         proofScreenshotUrl,
         proofSubmittedAt: new Date(),
+      },
+    });
+
+    const memberName = payment.user?.name ?? "A member";
+    await notifyAdmins({
+      subject: `Payment proof submitted — ${memberName}`,
+      replyTo: payment.user?.email ?? undefined,
+      content: {
+        heading: "New payment proof to verify",
+        paragraphs: [
+          `${memberName} uploaded a payment screenshot. Check it against the bank statement, then mark the payment as paid.`,
+        ],
+        details: [
+          { label: "Member", value: memberName },
+          { label: "Amount", value: EUR.format(payment.amount) },
+          { label: "Description", value: payment.description },
+          { label: "Reference", value: payment.paymentReference },
+        ],
+        imageUrl: emailSiteUrl(proofScreenshotUrl),
+        imageAlt: "Submitted payment screenshot",
+        ctaUrl: emailSiteUrl("/admin/payments"),
+        ctaLabel: "Review payments",
       },
     });
 

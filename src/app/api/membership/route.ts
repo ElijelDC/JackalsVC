@@ -6,6 +6,7 @@ import {
   validateMembershipPlanPrice,
   type PaymentSchedule,
 } from "@/lib/membership-config";
+import { emailSiteUrl, notifyAdmins } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { createMembershipPayments } from "@/lib/sumup-reconcile";
 import { membershipSubscribeSchema } from "@/lib/validations";
@@ -83,6 +84,24 @@ export async function POST(request: Request) {
       });
 
       return created;
+    });
+
+    const memberName = session!.user.name ?? "A member";
+    await notifyAdmins({
+      subject: `New membership signup — ${memberName}`,
+      content: {
+        heading: "New membership signup",
+        paragraphs: [
+          `${memberName} chose a membership plan and a payment schedule. Their first payment is pending.`,
+        ],
+        details: [
+          { label: "Member", value: memberName },
+          { label: "Plan", value: plan.name },
+          { label: "Schedule", value: scheduleLabel },
+        ],
+        ctaUrl: emailSiteUrl("/admin/subscriptions"),
+        ctaLabel: "View subscriptions",
+      },
     });
 
     return NextResponse.json({ membership }, { status: 201 });

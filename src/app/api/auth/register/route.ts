@@ -7,6 +7,7 @@ import {
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { emailSiteUrl, notifyAdmins } from "@/lib/notify";
 import { verifyRegistrationToken } from "@/lib/registration-token";
 import { requireApprovedRegistration } from "@/lib/registration-review-server";
 import { normalizeVlyNumber } from "@/lib/vly-number";
@@ -78,6 +79,23 @@ export async function POST(request: Request) {
     });
 
     await clearEmailVerifications(email);
+
+    await notifyAdmins({
+      subject: `New member account created — ${user.name}`,
+      content: {
+        heading: "New member account",
+        paragraphs: [
+          `${user.name} finished registration and now has a Jackals VC account.`,
+        ],
+        details: [
+          { label: "Member", value: user.name },
+          { label: "VLY number", value: vlyNumber },
+          { label: "Email", value: user.email },
+        ],
+        ctaUrl: emailSiteUrl("/admin/users"),
+        ctaLabel: "View members",
+      },
+    });
 
     return NextResponse.json({ user }, { status: 201 });
   } catch {
