@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { emailSiteUrl, sendNotificationEmail } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
@@ -25,9 +26,11 @@ export async function PATCH(
     where: { id },
     select: {
       id: true,
+      name: true,
       userId: true,
       registrationReviewStatus: true,
       vlyMembershipPhotoUrl: true,
+      registrationContactEmail: true,
     },
   });
 
@@ -61,6 +64,40 @@ export async function PATCH(
       registrationReviewedAt: true,
     },
   });
+
+  if (member.registrationContactEmail) {
+    if (data.action === "approve") {
+      await sendNotificationEmail({
+        to: member.registrationContactEmail,
+        subject: "Your Jackals VC registration is approved",
+        content: {
+          heading: "You're approved!",
+          greeting: `Hi ${member.name},`,
+          paragraphs: [
+            "An admin has approved your VLY membership photo. You can now finish creating your Jackals VC account.",
+            "Open the registration window, enter your VLY number again, and you'll continue straight to the email and password steps.",
+          ],
+          ctaUrl: emailSiteUrl("/?auth=register"),
+          ctaLabel: "Finish registration",
+        },
+      });
+    } else {
+      await sendNotificationEmail({
+        to: member.registrationContactEmail,
+        subject: "Your Jackals VC registration photo needs another look",
+        content: {
+          heading: "Registration photo declined",
+          greeting: `Hi ${member.name},`,
+          paragraphs: [
+            "An admin couldn't approve the VLY membership photo you submitted. This usually means the photo was unclear or didn't match your VLY number.",
+            "Please re-enter your VLY number in the registration window and upload a clearer photo of your VLY membership card.",
+          ],
+          ctaUrl: emailSiteUrl("/?auth=register"),
+          ctaLabel: "Re-upload photo",
+        },
+      });
+    }
+  }
 
   return NextResponse.json({
     review: {

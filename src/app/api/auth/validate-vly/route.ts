@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       vlyMembershipPhotoUrl: true,
       registrationReviewStatus: true,
       registrationPhotoSubmittedAt: true,
+      registrationContactEmail: true,
     },
   });
 
@@ -60,5 +61,6 @@ export async function POST(request: Request) {
     registrationReviewStatus: clubMember.registrationReviewStatus,
     registrationPhotoSubmittedAt:
       clubMember.registrationPhotoSubmittedAt?.toISOString() ?? null,
+    registrationContactEmail: clubMember.registrationContactEmail,
   });
 }

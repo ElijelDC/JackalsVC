@@ -24,6 +24,7 @@ type VlyValidationPayload = {
   vlyMembershipPhotoUrl: string | null;
   registrationReviewStatus: string | null;
   registrationPhotoSubmittedAt: string | null;
+  registrationContactEmail: string | null;
 };
 
 function StepHint({ step }: { step: RegisterStep }) {
@@ -143,6 +144,9 @@ export function MemberRegisterWizard({
     setRegistrationToken(payload.registrationToken);
     setVlyPhotoUrl(payload.vlyMembershipPhotoUrl);
     setPhotoSubmittedAt(payload.registrationPhotoSubmittedAt);
+    if (payload.registrationContactEmail) {
+      setEmail(payload.registrationContactEmail);
+    }
 
     if (payload.registrationReviewStatus === "APPROVED") {
       setStep("email");
@@ -185,6 +189,11 @@ export function MemberRegisterWizard({
   const uploadPhoto = async (event: React.FormEvent) => {
     event.preventDefault();
 
+    if (!email.trim()) {
+      setError("Enter your email address so we can let you know once you're approved.");
+      return;
+    }
+
     if (!selectedFile) {
       setError("Choose a screenshot of your VLY membership card first.");
       return;
@@ -197,6 +206,7 @@ export function MemberRegisterWizard({
     formData.append("file", selectedFile);
     formData.append("vlyNumber", vlyNumber);
     formData.append("registrationToken", registrationToken);
+    formData.append("email", email.trim());
 
     const result = await apiPostForm<{
       vlyMembershipPhotoUrl: string;
@@ -378,6 +388,22 @@ export function MemberRegisterWizard({
           <p className="text-sm text-zinc-400">
             Upload a clear screenshot or photo of your VLY membership card.
           </p>
+
+          <div>
+            <Label htmlFor="member-register-photo-email">Email address</Label>
+            <Input
+              id="member-register-photo-email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+              autoComplete="email"
+              placeholder="you@example.com"
+            />
+            <p className="mt-1 text-xs text-zinc-500">
+              We&apos;ll email you when an admin approves your photo so you can finish signing up.
+            </p>
+          </div>
 
           <button
             type="button"
