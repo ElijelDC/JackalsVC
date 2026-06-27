@@ -188,6 +188,7 @@ export const eventSchema = z.object({
   clubIban: z.preprocess(emptyToUndefined,
     z.string().min(1).optional(),
   ),
+  notifyMembers: z.boolean().optional(),
 });
 
 export const productSchema = z.object({
