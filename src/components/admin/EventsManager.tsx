@@ -74,6 +74,7 @@ const emptyForm = {
   sessionFee: "40",
   reclubUsername: DEFAULT_RECLUB_USERNAME,
   clubIban: DEFAULT_CLUB_IBAN,
+  notifyMembers: true,
 };
 
 export function EventsManager({
@@ -187,6 +188,7 @@ export function EventsManager({
               : "15",
         reclubUsername: event.reclubUsername ?? DEFAULT_RECLUB_USERNAME,
         clubIban: event.clubIban ?? DEFAULT_CLUB_IBAN,
+        notifyMembers: false,
       });
       setError(null);
       setMessage(null);
@@ -213,6 +215,7 @@ export function EventsManager({
     const manualPayload = {
       ...occurrencePayload,
       type: form.type,
+      notifyMembers: form.notifyMembers,
       ...(savesClinicPaymentFields(form.type)
         ? {
             paymentUrl: form.paymentUrl.trim() || undefined,
@@ -526,6 +529,27 @@ export function EventsManager({
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
+          {!editingId && !editingTrainingOccurrence && (
+            <div className="sm:col-span-2">
+              <label className="flex items-start gap-2.5 text-sm text-zinc-300">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/20 accent-jackals-red"
+                  checked={form.notifyMembers}
+                  onChange={(e) =>
+                    setForm({ ...form, notifyMembers: e.target.checked })
+                  }
+                />
+                <span>
+                  Email members about this event
+                  <span className="mt-0.5 block text-xs text-zinc-500">
+                    Sends an announcement to all members who haven&apos;t opted
+                    out of event emails.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
         </div>
       </AdminFormCard>
 

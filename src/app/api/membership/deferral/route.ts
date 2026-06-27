@@ -6,6 +6,7 @@ import {
   assessMembershipPaymentAccess,
   isInstallmentSchedule,
 } from "@/lib/membership-overdue";
+import { emailSiteUrl, notifyAdmins } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { paymentDeferralRequestSchema } from "@/lib/validations";
 
@@ -76,6 +77,27 @@ export async function POST(request: Request) {
       paymentDeferralExcuse: true,
       paymentDeferralDueDate: true,
       paymentDeferralRequestedAt: true,
+    },
+  });
+
+  const memberName = session.user.name ?? "A member";
+  await notifyAdmins({
+    subject: `Payment extension requested — ${memberName}`,
+    content: {
+      heading: "Payment extension request",
+      paragraphs: [
+        `${memberName} requested more time to pay a membership instalment.`,
+      ],
+      details: [
+        { label: "Member", value: memberName },
+        {
+          label: "Pay-by date",
+          value: requestedDueDate.toLocaleDateString("en-GB"),
+        },
+        { label: "Reason", value: data.excuse.trim() },
+      ],
+      ctaUrl: emailSiteUrl("/admin/subscriptions"),
+      ctaLabel: "Review subscriptions",
     },
   });
 

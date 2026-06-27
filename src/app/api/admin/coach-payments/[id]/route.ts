@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { notifyCoachPaymentPaid } from "@/lib/coach-payment-notify";
 import {
   calculateCoachSalaryAmount,
   COACH_SESSION_RATE_EUR,
@@ -42,6 +43,10 @@ export async function PUT(
       notes: data.notes ?? existing.notes,
     },
   });
+
+  if (existing.status !== "PAID" && nextStatus === "PAID") {
+    await notifyCoachPaymentPaid(payment.id);
+  }
 
   return NextResponse.json({
     payment: {

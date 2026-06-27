@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
+import { emailSiteUrl, notifyAdmins } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { verifyRegistrationToken } from "@/lib/registration-token";
 import { normalizeVlyNumber } from "@/lib/vly-number";
@@ -10,14 +11,23 @@ import {
   validateVlyMembershipPhotoFile,
 } from "@/lib/vly-membership-photo";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export async function POST(request: Request) {
   const formData = await request.formData();
   const file = formData.get("file");
   const vlyNumber = normalizeVlyNumber(String(formData.get("vlyNumber") ?? ""));
   const registrationToken = String(formData.get("registrationToken") ?? "");
+  const contactEmail = String(formData.get("email") ?? "")
+    .trim()
+    .toLowerCase();
 
   if (!vlyNumber || !registrationToken) {
     return jsonError("Registration session expired — verify your VLY number again.", 400);
+  }
+
+  if (!contactEmail || !EMAIL_PATTERN.test(contactEmail)) {
+    return jsonError("Enter a valid email address so we can notify you once approved.", 400);
   }
 
   const tokenCheck = verifyRegistrationToken(registrationToken, vlyNumber);
@@ -59,15 +69,39 @@ export async function POST(request: Request) {
       where: { id: clubMember.id },
       data: {
         vlyMembershipPhotoUrl,
+        registrationContactEmail: contactEmail,
         registrationReviewStatus: "PENDING",
         registrationPhotoSubmittedAt: new Date(),
         registrationReviewedAt: null,
         registrationReviewedByUserId: null,
       },
       select: {
+        name: true,
         vlyMembershipPhotoUrl: true,
         registrationReviewStatus: true,
         registrationPhotoSubmittedAt: true,
+      },
+    });
+
+    await notifyAdmins({
+      subject: `New registration to review — ${updated.name}`,
+      replyTo: contactEmail,
+      content: {
+        heading: "New membership registration",
+        paragraphs: [
+          `${updated.name} submitted their VLY membership photo and is waiting for approval.`,
+        ],
+        details: [
+          { label: "Member", value: updated.name },
+          { label: "VLY number", value: vlyNumber },
+          { label: "Email", value: contactEmail },
+        ],
+        imageUrl: updated.vlyMembershipPhotoUrl
+          ? emailSiteUrl(updated.vlyMembershipPhotoUrl)
+          : undefined,
+        imageAlt: "Submitted VLY membership photo",
+        ctaUrl: emailSiteUrl("/admin/registration-reviews"),
+        ctaLabel: "Review registration",
       },
     });
 

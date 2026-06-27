@@ -7,6 +7,7 @@ import { AnimatedBlock } from "@/components/motion/AnimatedBlock";
 import { MemberAvatar } from "@/components/member/MemberAvatar";
 import { ProfileMatchdaySection } from "@/components/profile/ProfileMatchdaySection";
 import { ProfileEmailSection } from "@/components/profile/ProfileEmailSection";
+import { ProfileNewsletterSection } from "@/components/profile/ProfileNewsletterSection";
 import { ProfilePasswordSection } from "@/components/profile/ProfilePasswordSection";
 import {
   formatMembershipStatusLabel,
@@ -33,6 +34,11 @@ export default async function ProfilePage() {
     },
     orderBy: { createdAt: "desc" },
     select: { status: true },
+  });
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { eventNewsletterOptOut: true },
   });
 
   const displayName = clubMember?.name ?? session.user.name ?? "Member";
@@ -126,6 +132,10 @@ export default async function ProfilePage() {
               isCoach={isCoach}
             />
           )}
+
+          <ProfileNewsletterSection
+            initialOptOut={user?.eventNewsletterOptOut ?? false}
+          />
         </Card>
       </AnimatedBlock>
     </PageContainer>

@@ -74,6 +74,7 @@ function createEmptyForm() {
     recurringFrom: defaultRecurringFrom(),
     recurringTo: defaultRecurringTo(),
     sessionDate: "",
+    notifyMembers: true,
   };
 }
 
@@ -117,6 +118,7 @@ function toFormState(session: TrainingSession) {
     sessionDate: normalized.sessionDate
       ? format(new Date(normalized.sessionDate), "yyyy-MM-dd")
       : "",
+    notifyMembers: true,
   };
 }
 
@@ -252,6 +254,9 @@ export function TrainingManager({
       recurringFrom: recurring ? form.recurringFrom : undefined,
       recurringTo: recurring ? form.recurringTo : undefined,
       sessionDate: recurring ? undefined : sessionDate,
+      ...(config.category === SESSION_CATEGORIES.FUN && !editingId
+        ? { notifyMembers: form.notifyMembers ?? true }
+        : {}),
     };
   };
 
@@ -601,6 +606,27 @@ export function TrainingManager({
               onChange={(e) => setForm({ ...form, description: e.target.value })}
             />
           </div>
+          {config.category === SESSION_CATEGORIES.FUN && !editingId && (
+            <div className="sm:col-span-2">
+              <label className="flex items-start gap-2.5 text-sm text-zinc-300">
+                <input
+                  type="checkbox"
+                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/20 accent-jackals-red"
+                  checked={form.notifyMembers ?? true}
+                  onChange={(e) =>
+                    setForm({ ...form, notifyMembers: e.target.checked })
+                  }
+                />
+                <span>
+                  Email members about this fun session
+                  <span className="mt-0.5 block text-xs text-zinc-500">
+                    Sends an announcement to all members who haven&apos;t opted
+                    out of event emails.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
         </div>
       </AdminFormCard>
 
