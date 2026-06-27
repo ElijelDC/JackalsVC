@@ -28,6 +28,46 @@ export type EventNewsletterResult = {
   delivered: number;
 };
 
+const emptyNewsletterResult = (): EventNewsletterResult => ({
+  recipients: 0,
+  batches: 0,
+  delivered: 0,
+});
+
+/**
+ * Emails members about the next upcoming calendar event for a training/fun session.
+ * For recurring sessions, only the nearest future occurrence is announced.
+ */
+export async function sendTrainingSessionEventNewsletter(
+  trainingSessionId: string,
+): Promise<EventNewsletterResult> {
+  try {
+    const now = new Date();
+    const event =
+      (await prisma.event.findFirst({
+        where: {
+          trainingSessionId,
+          endDate: { gte: now },
+        },
+        orderBy: { startDate: "asc" },
+      })) ??
+      (await prisma.event.findFirst({
+        where: { trainingSessionId },
+        orderBy: { startDate: "asc" },
+      }));
+
+    if (!event) return emptyNewsletterResult();
+
+    return sendEventNewsletter(event.id);
+  } catch (error) {
+    console.error(
+      "[notify] failed to send training session event newsletter",
+      error,
+    );
+    return emptyNewsletterResult();
+  }
+}
+
 /**
  * Emails active members (who haven't opted out) about a newly created event.
  * Recipients are BCC'd in batches so addresses stay private. Never throws.
@@ -35,11 +75,7 @@ export type EventNewsletterResult = {
 export async function sendEventNewsletter(
   eventId: string,
 ): Promise<EventNewsletterResult> {
-  const result: EventNewsletterResult = {
-    recipients: 0,
-    batches: 0,
-    delivered: 0,
-  };
+  const result = emptyNewsletterResult();
 
   try {
     const event = await prisma.event.findUnique({ where: { id: eventId } });

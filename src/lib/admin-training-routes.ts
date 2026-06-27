@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { sendTrainingSessionEventNewsletter } from "@/lib/event-newsletter";
 import { prisma } from "@/lib/prisma";
 import { syncTrainingSessionEvents } from "@/lib/training-events";
 import { syncTrainingSquadDayFromSession } from "@/lib/training-squads";
 import {
+  SESSION_CATEGORIES,
   type SessionCategory,
   toTrainingSessionData,
 } from "@/lib/training-utils";
@@ -38,6 +40,11 @@ export async function createTrainingSession(
     data: { ...toTrainingSessionData(data), category },
   });
   await syncTrainingSessionEvents(session);
+
+  if (category === SESSION_CATEGORIES.FUN && data.notifyMembers) {
+    await sendTrainingSessionEventNewsletter(session.id);
+  }
+
   return NextResponse.json({ session }, { status: 201 });
 }
 

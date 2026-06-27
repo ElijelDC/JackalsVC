@@ -110,6 +110,7 @@ export const trainingSessionSchema = z
     trainingTeamKey: z.preprocess(emptyToUndefined,
       z.string().optional(),
     ),
+    notifyMembers: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (!data.recurring && !data.sessionDate) {
