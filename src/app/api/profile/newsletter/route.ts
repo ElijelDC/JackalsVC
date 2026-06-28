@@ -1,11 +1,19 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
-import { prisma } from "@/lib/prisma";
+import {
+  isSubscribedToEventNewsletter,
+  subscribeToEventNewsletter,
+  unsubscribeFromEventNewsletter,
+} from "@/lib/event-newsletter-subscription";
+import { eventNewsletterPreferenceSchema } from "@/lib/validations";
 
-const newsletterSchema = z.object({
-  optOut: z.boolean(),
-});
+export async function GET() {
+  const { session, response } = await requireSession();
+  if (response) return response;
+
+  const subscribed = await isSubscribedToEventNewsletter(session!.user.email!);
+  return NextResponse.json({ subscribed });
+}
 
 export async function PATCH(request: Request) {
   const { session, response } = await requireSession();
@@ -13,21 +21,26 @@ export async function PATCH(request: Request) {
 
   const { data, response: parseError } = await parseJsonBody(
     request,
-    newsletterSchema,
+    eventNewsletterPreferenceSchema,
     "Invalid newsletter preference.",
   );
   if (parseError || !data) return parseError!;
 
   try {
-    const updated = await prisma.user.update({
-      where: { id: session!.user.id },
-      data: { eventNewsletterOptOut: data.optOut },
-      select: { eventNewsletterOptOut: true },
-    });
+    const email = session!.user.email!;
+    const userId = session!.user.id;
 
-    return NextResponse.json({
-      eventNewsletterOptOut: updated.eventNewsletterOptOut,
-    });
+    if (data.subscribed) {
+      const subscription = await subscribeToEventNewsletter({
+        email,
+        userId,
+        source: "profile",
+      });
+      return NextResponse.json({ subscribed: subscription.active });
+    }
+
+    const subscription = await unsubscribeFromEventNewsletter(email);
+    return NextResponse.json({ subscribed: subscription.active });
   } catch (error) {
     console.error("Failed to update newsletter preference:", error);
     return jsonError("Failed to update newsletter preference", 500);

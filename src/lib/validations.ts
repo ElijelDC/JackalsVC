@@ -192,6 +192,15 @@ export const eventSchema = z.object({
   notifyMembers: z.boolean().optional(),
 });
 
+export const eventNewsletterSubscribeSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  source: z.enum(["homepage", "footer", "profile"]).optional(),
+});
+
+export const eventNewsletterPreferenceSchema = z.object({
+  subscribed: z.boolean(),
+});
+
 export const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),

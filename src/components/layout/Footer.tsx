@@ -11,6 +11,7 @@ import { CONTACT_EMAIL } from "@/lib/contact";
 import { SHOP_ENABLED } from "@/lib/features";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
+import { NewsletterSubscribeForm } from "@/components/newsletter/NewsletterSubscribeForm";
 import { cn } from "@/lib/utils";
 
 function FooterBrand({
@@ -178,7 +179,35 @@ function FooterColumn({
   );
 }
 
-function GuestFooter() {
+function FooterNewsletter({
+  userEmail,
+  eventNewsletterSubscribed,
+}: {
+  userEmail?: string | null;
+  eventNewsletterSubscribed?: boolean;
+}) {
+  return (
+    <div className="border-b border-white/10 pb-8 sm:border-b-0 sm:pb-0">
+      <h3 className="font-display text-xs font-semibold tracking-[0.2em] text-jackals-red-light">
+        Event emails
+      </h3>
+      <NewsletterSubscribeForm
+        source="footer"
+        initialEmail={userEmail ?? ""}
+        initialSubscribed={eventNewsletterSubscribed ?? false}
+        compact
+      />
+    </div>
+  );
+}
+
+function GuestFooter({
+  userEmail,
+  eventNewsletterSubscribed,
+}: {
+  userEmail?: string | null;
+  eventNewsletterSubscribed?: boolean;
+}) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
@@ -223,12 +252,25 @@ function GuestFooter() {
         <FooterColumn title="Get in touch">
           <FooterContactLinks />
         </FooterColumn>
+
+        <div className="sm:col-span-2 lg:col-span-1">
+          <FooterNewsletter
+            userEmail={userEmail}
+            eventNewsletterSubscribed={eventNewsletterSubscribed}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-function MemberFooter() {
+function MemberFooter({
+  userEmail,
+  eventNewsletterSubscribed,
+}: {
+  userEmail?: string | null;
+  eventNewsletterSubscribed?: boolean;
+}) {
   return (
     <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
       <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
@@ -278,17 +320,42 @@ function MemberFooter() {
           </li>
           <FooterContactLinks />
         </FooterColumn>
+
+        <div className="sm:col-span-2 lg:col-span-1">
+          <FooterNewsletter
+            userEmail={userEmail}
+            eventNewsletterSubscribed={eventNewsletterSubscribed}
+          />
+        </div>
       </div>
     </div>
   );
 }
 
-export function Footer({ isLoggedIn = false }: { isLoggedIn?: boolean }) {
+export function Footer({
+  isLoggedIn = false,
+  userEmail = null,
+  eventNewsletterSubscribed = false,
+}: {
+  isLoggedIn?: boolean;
+  userEmail?: string | null;
+  eventNewsletterSubscribed?: boolean;
+}) {
   return (
     <footer className="relative mt-auto border-t border-white/10 bg-jackals-inset/65">
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent" />
 
-      {isLoggedIn ? <MemberFooter /> : <GuestFooter />}
+      {isLoggedIn ? (
+        <MemberFooter
+          userEmail={userEmail}
+          eventNewsletterSubscribed={eventNewsletterSubscribed}
+        />
+      ) : (
+        <GuestFooter
+          userEmail={userEmail}
+          eventNewsletterSubscribed={eventNewsletterSubscribed}
+        />
+      )}
 
       <div className="border-t border-white/10 bg-jackals-inset/90">
         <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">

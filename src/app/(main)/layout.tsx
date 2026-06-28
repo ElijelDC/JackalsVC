@@ -7,6 +7,7 @@ import { AuthModalProvider } from "@/components/providers/AuthModalProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { SiteEditProvider } from "@/components/providers/SiteEditProvider";
 import { getSiteContentMap } from "@/lib/site-content";
+import { isSubscribedToEventNewsletter } from "@/lib/event-newsletter-subscription";
 
 export default async function AppLayout({
   children,
@@ -27,6 +28,12 @@ export default async function AppLayout({
 
   const isAdmin = session?.user?.role === "ADMIN";
 
+  const isLoggedIn = Boolean(session?.user);
+  const eventNewsletterSubscribed =
+    session?.user?.email && isLoggedIn
+      ? await isSubscribedToEventNewsletter(session.user.email)
+      : false;
+
   return (
     <SessionProvider session={session}>
       <SiteEditProvider isAdmin={isAdmin} initialContent={siteContent}>
@@ -36,7 +43,11 @@ export default async function AppLayout({
             <main className="flex-1">
               <PageTransition>{children}</PageTransition>
             </main>
-            <Footer isLoggedIn={Boolean(session?.user)} />
+            <Footer
+              isLoggedIn={isLoggedIn}
+              userEmail={session?.user?.email ?? null}
+              eventNewsletterSubscribed={eventNewsletterSubscribed}
+            />
           </AuthModalProvider>
         </Suspense>
       </SiteEditProvider>

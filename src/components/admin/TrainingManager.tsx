@@ -618,10 +618,10 @@ export function TrainingManager({
                   }
                 />
                 <span>
-                  Email members about this fun session
+                  Email opted-in subscribers about this fun session
                   <span className="mt-0.5 block text-xs text-zinc-500">
-                    Sends an announcement to all members who haven&apos;t opted
-                    out of event emails.
+                    Sends to everyone who subscribed to event emails (members
+                    and guests). Training and payment emails are unaffected.
                   </span>
                 </span>
               </label>

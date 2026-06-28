@@ -13,7 +13,6 @@ model User {
   email              String            @unique
   passwordHash       String
   role               String            @default("MEMBER")
-  eventNewsletterOptOut Boolean        @default(false)
   registrationCodeId String?
   registrationCode   RegistrationCode? @relation(fields: [registrationCodeId], references: [id])
   createdAt          DateTime          @default(now())
@@ -26,6 +25,20 @@ model User {
   matchSignups       MatchSignup[]
   clubMember         ClubMember?
   coachResponseReminders CoachResponseReminder[]
+  eventNewsletterSubscription EventNewsletterSubscription?
+}
+
+model EventNewsletterSubscription {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  userId    String?  @unique
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  active    Boolean  @default(true)
+  source    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
 }
 
 model ClubMember {

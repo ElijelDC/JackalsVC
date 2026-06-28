@@ -1,7 +1,9 @@
 import { auth } from "@/auth";
 import { HomePage } from "@/components/home/HomePage";
+import { NewsletterHomeOverlay } from "@/components/newsletter/NewsletterHomeOverlay";
 import { SHOP_ENABLED } from "@/lib/features";
 import { getHomepageUpcomingEvents } from "@/lib/home-events";
+import { isSubscribedToEventNewsletter } from "@/lib/event-newsletter-subscription";
 import { getInstagramPosts } from "@/lib/instagram";
 import { visibleFeatureItems } from "@/lib/navigation";
 import { prisma } from "@/lib/prisma";
@@ -28,13 +30,23 @@ export default async function HomePageRoute() {
       getInstagramPosts(6),
     ]);
 
+  const eventNewsletterSubscribed = session?.user?.email
+    ? await isSubscribedToEventNewsletter(session.user.email)
+    : false;
+
   return (
-    <HomePage
-      featureItems={visibleFeatureItems(isLoggedIn)}
-      upcomingEvents={upcomingEvents}
-      featuredProducts={featuredProducts}
-      featuredAlbums={featuredAlbums}
-      instagramPosts={instagramPosts}
-    />
+    <>
+      <HomePage
+        featureItems={visibleFeatureItems(isLoggedIn)}
+        upcomingEvents={upcomingEvents}
+        featuredProducts={featuredProducts}
+        featuredAlbums={featuredAlbums}
+        instagramPosts={instagramPosts}
+      />
+      <NewsletterHomeOverlay
+        initialSubscribed={eventNewsletterSubscribed}
+        userEmail={session?.user?.email ?? ""}
+      />
+    </>
   );
 }

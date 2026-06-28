@@ -3,13 +3,14 @@
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { apiPatch } from "@/lib/client-api";
+import { EVENT_NEWSLETTER_SUBSCRIBED_STORAGE_KEY } from "@/lib/event-newsletter-config";
 
 export function ProfileNewsletterSection({
-  initialOptOut,
+  initialSubscribed,
 }: {
-  initialOptOut: boolean;
+  initialSubscribed: boolean;
 }) {
-  const [subscribed, setSubscribed] = useState(!initialOptOut);
+  const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -20,9 +21,9 @@ export function ProfileNewsletterSection({
     setError(null);
     setSaved(false);
 
-    const result = await apiPatch<{ eventNewsletterOptOut: boolean }>(
+    const result = await apiPatch<{ subscribed: boolean }>(
       "/api/profile/newsletter",
-      { optOut: !next },
+      { subscribed: next },
       "Failed to update event email preference.",
     );
 
@@ -33,7 +34,12 @@ export function ProfileNewsletterSection({
       return;
     }
 
-    setSubscribed(!result.data.eventNewsletterOptOut);
+    setSubscribed(result.data.subscribed);
+    if (result.data.subscribed) {
+      localStorage.setItem(EVENT_NEWSLETTER_SUBSCRIBED_STORAGE_KEY, "true");
+    } else {
+      localStorage.removeItem(EVENT_NEWSLETTER_SUBSCRIBED_STORAGE_KEY);
+    }
     setSaved(true);
   };
 
@@ -43,18 +49,22 @@ export function ProfileNewsletterSection({
         Event emails
       </h2>
       <p className="mt-1 text-sm text-zinc-500">
-        Get an email when the club adds a new tournament, clinic, or social.
+        Opt in to get an email when we add a fun session, tournament, or skills
+        clinic. Training reminders and payment emails are separate and always
+        sent when relevant.
       </p>
 
       <div className="mt-4 flex items-center justify-between gap-4">
         <span className="text-sm text-zinc-300">
-          {subscribed ? "Subscribed to event emails" : "Event emails turned off"}
+          {subscribed
+            ? "Subscribed to event emails"
+            : "Not subscribed to event emails"}
         </span>
         <button
           type="button"
           role="switch"
           aria-checked={subscribed}
-          aria-label="Toggle event emails"
+          aria-label="Toggle event email subscription"
           disabled={loading}
           onClick={() => void toggle()}
           className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors disabled:opacity-60 ${
