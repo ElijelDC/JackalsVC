@@ -18,7 +18,12 @@ const EXT_BY_TYPE: Record<string, string> = {
   "image/gif": ".gif",
 };
 
-export { GALLERY_MAX_BULK_FILES, GALLERY_MAX_UPLOAD_BYTES } from "@/lib/gallery-upload-config";
+export {
+  GALLERY_MAX_BULK_FILES,
+  GALLERY_MAX_SELECTION,
+  GALLERY_MAX_UPLOAD_BYTES,
+  GALLERY_UPLOAD_BATCH_DELAY_MS,
+} from "@/lib/gallery-upload-config";
 
 export function isGalleryImageFile(file: File) {
   return ALLOWED_TYPES.has(file.type);

@@ -24,7 +24,7 @@ export default async function HomePageRoute() {
         : Promise.resolve([]),
       prisma.galleryAlbum.findMany({
         where: { featured: true },
-        take: 4,
+        take: 3,
         orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
       }),
       getInstagramPosts(6),

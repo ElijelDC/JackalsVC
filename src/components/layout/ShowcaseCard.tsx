@@ -66,8 +66,8 @@ export function ShowcaseCtaBand({
         aria-hidden
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_80%_at_100%_0%,rgba(232,34,42,0.2),transparent_60%)]"
       />
-      <div className="relative flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
-        <div className="shrink-0">
+      <div className="relative flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 flex-1">
           <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
             {title}
           </h2>
@@ -75,7 +75,7 @@ export function ShowcaseCtaBand({
             {description}
           </p>
         </div>
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap lg:flex-nowrap [&_button]:whitespace-nowrap [&>*]:shrink-0">
+        <div className="flex w-full min-w-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap xl:max-w-xl xl:justify-end [&>*]:w-full sm:[&>*]:w-auto [&_button]:whitespace-nowrap">
           {children}
         </div>
       </div>

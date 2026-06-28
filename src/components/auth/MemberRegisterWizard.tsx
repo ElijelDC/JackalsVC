@@ -14,6 +14,7 @@ import { apiPost, apiPostForm } from "@/lib/client-api";
 import {
   REGISTRATION_DECLINED_MESSAGE,
 } from "@/lib/registration-review";
+import { sanitizeCallbackUrl } from "@/lib/safe-callback-url";
 
 type RegisterStep = "vly" | "photo" | "pending" | "email" | "verify" | "password";
 
@@ -322,7 +323,7 @@ export function MemberRegisterWizard({
     }
 
     onSuccess?.();
-    router.push(callbackUrl);
+    router.push(sanitizeCallbackUrl(callbackUrl));
     router.refresh();
   };
 

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label, Checkbox } from "@/components/ui/Input";
 import { MemberForgotPasswordForm } from "@/components/auth/MemberForgotPasswordForm";
+import { sanitizeCallbackUrl } from "@/lib/safe-callback-url";
 
 export function MemberSignInForm({
   callbackUrl,
@@ -80,7 +81,7 @@ export function MemberSignInForm({
     }
 
     onSuccess?.();
-    router.push(callbackUrl);
+    router.push(sanitizeCallbackUrl(callbackUrl));
     router.refresh();
   };
 
