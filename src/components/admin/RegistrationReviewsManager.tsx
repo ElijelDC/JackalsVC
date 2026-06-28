@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CheckCircle2, Clock3, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { FormError } from "@/components/ui/FormMessage";
+import { FormError, WarningBanner } from "@/components/ui/FormMessage";
 import { apiGet, apiPatch } from "@/lib/client-api";
 
 export type RegistrationReviewItem = {
@@ -27,15 +27,24 @@ export function RegistrationReviewsManager({
   const [reviews, setReviews] = useState(initialReviews);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [warning, setWarning] = useState<string | null>(null);
 
   const act = async (id: string, action: "approve" | "decline") => {
     setLoadingId(id);
     setError(null);
+    setWarning(null);
 
-    const result = await apiPatch(
+    const result = await apiPatch<{
+      review: {
+        id: string;
+        registrationReviewStatus: string;
+        registrationReviewedAt: string | null;
+      };
+      emailWarning?: string | null;
+    }>(
       `/api/admin/registration-reviews/${id}`,
       { action },
-      `Failed to ${action} registration.`,
+      action === "approve" ? "approve this registration" : "decline this registration",
     );
 
     setLoadingId(null);
@@ -45,15 +54,20 @@ export function RegistrationReviewsManager({
       return;
     }
 
+    if (result.data.emailWarning) {
+      setWarning(result.data.emailWarning);
+    }
+
     setReviews((current) => current.filter((review) => review.id !== id));
     router.refresh();
   };
 
   const refresh = async () => {
     setError(null);
+    setWarning(null);
     const result = await apiGet<{ reviews: RegistrationReviewItem[] }>(
       "/api/admin/registration-reviews",
-      "Failed to refresh reviews.",
+      "refresh the registration list",
     );
     if (!result.ok) {
       setError(result.error);
@@ -91,6 +105,7 @@ export function RegistrationReviewsManager({
       </div>
 
       <FormError message={error} />
+      <WarningBanner message={warning} />
 
       <div className="space-y-4">
         {reviews.map((review) => (

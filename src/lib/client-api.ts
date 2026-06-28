@@ -1,3 +1,5 @@
+import { describeHttpError, NETWORK_ERROR_MESSAGE } from "@/lib/http-errors";
+
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
 type ApiResult<T> =
@@ -14,7 +16,7 @@ async function parseResponse<T>(
       ok: false,
       error: res.ok
         ? fallbackError
-        : `${fallbackError} (HTTP ${res.status})`,
+        : describeHttpError(res.status, fallbackError),
     };
   }
 
@@ -29,12 +31,15 @@ async function parseResponse<T>(
           "error" in data &&
           typeof data.error === "string"
             ? data.error
-            : fallbackError,
+            : describeHttpError(res.status, fallbackError),
       };
     }
     return { ok: true, data: data as T };
   } catch {
-    return { ok: false, error: fallbackError };
+    return {
+      ok: false,
+      error: res.ok ? fallbackError : describeHttpError(res.status, fallbackError),
+    };
   }
 }
 
@@ -46,7 +51,7 @@ export async function apiGet<T>(
     const res = await fetch(url);
     return parseResponse<T>(res, fallbackError);
   } catch {
-    return { ok: false, error: fallbackError };
+    return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
 
@@ -63,7 +68,7 @@ export async function apiPost<T>(
     });
     return parseResponse<T>(res, fallbackError);
   } catch {
-    return { ok: false, error: fallbackError };
+    return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
 
@@ -79,7 +84,7 @@ export async function apiPostForm<T>(
     });
     return parseResponse<T>(res, fallbackError);
   } catch {
-    return { ok: false, error: fallbackError };
+    return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
 
@@ -96,7 +101,7 @@ export async function apiPut<T>(
     });
     return parseResponse<T>(res, fallbackError);
   } catch {
-    return { ok: false, error: fallbackError };
+    return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
 
@@ -113,7 +118,7 @@ export async function apiPatch<T>(
     });
     return parseResponse<T>(res, fallbackError);
   } catch {
-    return { ok: false, error: fallbackError };
+    return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
 
@@ -125,7 +130,7 @@ export async function apiDelete<T = { success: boolean }>(
     const res = await fetch(url, { method: "DELETE" });
     return parseResponse<T>(res, fallbackError);
   } catch {
-    return { ok: false, error: fallbackError };
+    return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
 
