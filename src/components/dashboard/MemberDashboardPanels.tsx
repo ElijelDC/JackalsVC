@@ -242,7 +242,7 @@ export function DashboardUpcomingTrainingCard({
               {!teamName
                 ? "No training team assigned"
                 : needsResponse > 0
-                  ? `${needsResponse} session${needsResponse === 1 ? "" : "s"} need your response this week`
+                  ? `${needsResponse} session${needsResponse === 1 ? "" : "s"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
                   : `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"} · within the next 2 weeks`}
             </p>
           </div>
@@ -310,7 +310,7 @@ export function DashboardUpcomingMatchesCard({
               {!teamName
                 ? "No team assigned"
                 : needsResponse > 0
-                  ? `${needsResponse} match${needsResponse === 1 ? "" : "es"} need your response this week`
+                  ? `${needsResponse} match${needsResponse === 1 ? "" : "es"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
                   : `${matches.length} match${matches.length === 1 ? "" : "es"} · within the next 2 weeks`}
             </p>
           </div>

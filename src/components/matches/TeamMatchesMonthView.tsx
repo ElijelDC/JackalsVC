@@ -320,9 +320,9 @@ export function TeamMatchesMonthView({
               </p>
               <p className="mt-1 text-xs text-zinc-600">
                 {needsResponseCount > 0
-                  ? `${needsResponseCount} match${needsResponseCount === 1 ? "" : "es"} need your response this week — highlighted below.`
+                  ? `${needsResponseCount} match${needsResponseCount === 1 ? "" : "es"} ${needsResponseCount === 1 ? "needs" : "need"} your response this week — highlighted below.`
                   : unansweredUpcoming > 0
-                    ? `${unansweredUpcoming} match${unansweredUpcoming === 1 ? "" : "es"} still need a response.`
+                    ? `${unansweredUpcoming} match${unansweredUpcoming === 1 ? "" : "es"} still ${unansweredUpcoming === 1 ? "needs" : "need"} a response.`
                     : hasUpcomingNotYetOpen
                       ? "Responses open 2 weeks before each match."
                       : "Open a match to respond and see who else is playing."}

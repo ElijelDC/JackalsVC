@@ -1,14 +1,14 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { CoachDashboard } from "@/components/dashboard/CoachDashboard";
-import { AddToHomescreenButton } from "@/components/dashboard/AddToHomescreenButton";
+import { DashboardWelcomeSection } from "@/components/dashboard/DashboardWelcomeSection";
 import {
   DashboardUpcomingClubEventsPanel,
   DashboardUpcomingMatchesCard,
   DashboardUpcomingTrainingCard,
   MemberPaymentsPanel,
 } from "@/components/dashboard/MemberDashboardPanels";
-import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { PageContainer } from "@/components/layout/PageShell";
 import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 import { getCoachProfile } from "@/lib/coach-auth";
 import { getCoachUnansweredItemsWithReminders } from "@/lib/coach-unanswered";
@@ -101,18 +101,15 @@ export default async function DashboardPage() {
       ) ?? null;
 
     return (
-      <PageContainer>
-        <div className="mb-6 flex items-center justify-between">
-          <PageHeader
-            title={`Welcome, ${firstName}`}
-            description={
-              coach.isPaidCoach
-                ? `${coach.teamName} · Your squad schedule and club payments`
-                : `${coach.teamName} · Your squad schedule and club events`
-            }
-          />
-          <AddToHomescreenButton />
-        </div>
+      <PageContainer className="py-8 sm:py-12">
+        <DashboardWelcomeSection
+          title={`Welcome, ${firstName}`}
+          description={
+            coach.isPaidCoach
+              ? `${coach.teamName} · Your squad schedule and club payments`
+              : `${coach.teamName} · Your squad schedule and club events`
+          }
+        />
         <CoachDashboard
           teamName={coach.teamName}
           ratePerSession={COACH_SESSION_RATE_EUR}
@@ -202,14 +199,11 @@ export default async function DashboardPage() {
   const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
 
   return (
-    <PageContainer>
-      <div className="mb-6 flex items-center justify-between">
-        <PageHeader
-          title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
-          description="Your membership, training, and matches at a glance"
-        />
-        <AddToHomescreenButton />
-      </div>
+    <PageContainer className="py-8 sm:py-12">
+      <DashboardWelcomeSection
+        title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
+        description="Your membership, training, and matches at a glance"
+      />
 
       <AnimatedPageSections>
         <MemberPaymentsPanel
