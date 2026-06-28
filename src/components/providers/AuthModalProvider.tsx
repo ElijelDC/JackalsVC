@@ -6,6 +6,10 @@ import { Modal } from "@/components/ui/Modal";
 import { MemberSignInForm } from "@/components/auth/MemberSignInForm";
 import { MemberRegisterWizard } from "@/components/auth/MemberRegisterWizard";
 import { sanitizeCallbackUrl } from "@/lib/safe-callback-url";
+import {
+  REGISTER_STEP_DESCRIPTIONS,
+  type RegisterStep,
+} from "@/lib/registration-wizard-copy";
 
 type AuthMode = "signin" | "register";
 
@@ -41,6 +45,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [manual, setManual] = useState<ManualAuthState | null>(null);
+  const [registerStep, setRegisterStep] = useState<RegisterStep>("vly");
 
   const authFromUrl = useMemo(() => {
     const authParam = parseAuthMode(searchParams.get("auth"));
@@ -68,6 +73,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router, searchParams]);
 
   const openAuth = useCallback((nextMode: AuthMode = "signin", nextCallbackUrl = "/dashboard") => {
+    setRegisterStep("vly");
     setManual({
       open: true,
       mode: nextMode,
@@ -77,6 +83,9 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
 
   const setMode = useCallback(
     (nextMode: AuthMode) => {
+      if (nextMode === "register") {
+        setRegisterStep("vly");
+      }
       setManual((prev) => ({
         open: true,
         mode: nextMode,
@@ -103,7 +112,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
           Only for Registered Members
         </p>
         <p className="mt-2 text-sm text-zinc-400">
-          Verify your VLY number and upload your membership photo for approval.
+          {REGISTER_STEP_DESCRIPTIONS[registerStep]}
         </p>
       </>
     );
@@ -123,6 +132,7 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
             callbackUrl={callbackUrl}
             onSuccess={closeAuth}
             onSignIn={() => setMode("signin")}
+            onStepChange={setRegisterStep}
           />
         )}
       </Modal>
