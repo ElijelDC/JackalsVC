@@ -13,6 +13,7 @@ import {
   formatMembershipStatusLabel,
   isCoachMembershipStatus,
 } from "@/lib/membership-status";
+import { isSubscribedToEventNewsletter } from "@/lib/event-newsletter-subscription";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = {
@@ -36,10 +37,9 @@ export default async function ProfilePage() {
     select: { status: true },
   });
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { eventNewsletterOptOut: true },
-  });
+  const eventNewsletterSubscribed = session.user.email
+    ? await isSubscribedToEventNewsletter(session.user.email)
+    : false;
 
   const displayName = clubMember?.name ?? session.user.name ?? "Member";
   const isCoach =
@@ -134,7 +134,7 @@ export default async function ProfilePage() {
           )}
 
           <ProfileNewsletterSection
-            initialOptOut={user?.eventNewsletterOptOut ?? false}
+            initialSubscribed={eventNewsletterSubscribed}
           />
         </Card>
       </AnimatedBlock>

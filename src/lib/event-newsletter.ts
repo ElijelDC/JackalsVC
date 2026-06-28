@@ -1,4 +1,5 @@
 import { emailSiteUrl, sendNotificationEmail } from "@/lib/notify";
+import { getSubscribedEventNewsletterEmails } from "@/lib/event-newsletter-subscription";
 import { prisma } from "@/lib/prisma";
 
 const BATCH_SIZE = 50;
@@ -69,7 +70,7 @@ export async function sendTrainingSessionEventNewsletter(
 }
 
 /**
- * Emails active members (who haven't opted out) about a newly created event.
+ * Emails opted-in subscribers about a newly created event.
  * Recipients are BCC'd in batches so addresses stay private. Never throws.
  */
 export async function sendEventNewsletter(
@@ -81,15 +82,7 @@ export async function sendEventNewsletter(
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) return result;
 
-    const users = await prisma.user.findMany({
-      where: {
-        eventNewsletterOptOut: false,
-        clubMember: { is: { active: true } },
-      },
-      select: { email: true },
-    });
-
-    const emails = users.map((user) => user.email).filter(Boolean);
+    const emails = await getSubscribedEventNewsletterEmails();
     result.recipients = emails.length;
     if (emails.length === 0) return result;
 
@@ -117,7 +110,7 @@ export async function sendEventNewsletter(
           ctaUrl: emailSiteUrl("/events"),
           ctaLabel: "See event details",
           footnote:
-            "You're receiving this because you're a Jackals VC member. Turn off event emails any time from your profile page.",
+            "You're receiving this because you subscribed to Jackals VC event emails. Unsubscribe any time from the site footer or your profile.",
         },
       });
       result.batches += 1;
