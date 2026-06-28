@@ -66,7 +66,7 @@ export function CoachDashboard({
 
       <CoachTrainingResponsesPanel pending={pendingResponses} />
 
-      <div className="grid gap-8 lg:grid-cols-2">
+      <div className="grid min-w-0 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
         <DashboardUpcomingTrainingCard
           teamName={teamName}
           sessions={upcomingTraining}

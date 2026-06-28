@@ -85,17 +85,19 @@ function CompactEventRow({
   return (
     <Link
       href={href}
-      className="group flex items-center gap-3 px-4 py-3 transition-colors hover:bg-white/[0.03]"
+      className="group flex items-start gap-2.5 px-3 py-3 transition-colors hover:bg-white/[0.03] sm:items-center sm:gap-3 sm:px-4"
     >
       <DatePill date={date} />
       <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="truncate font-medium text-white">{title}</p>
-          {status && eventDate && <ResponseStatusBadge status={status} eventDate={eventDate} />}
-        </div>
-        <p className="mt-0.5 truncate text-xs text-zinc-500">{meta}</p>
+        <p className="font-medium leading-snug text-white">{title}</p>
+        {status && eventDate && (
+          <div className="mt-1.5">
+            <ResponseStatusBadge status={status} eventDate={eventDate} />
+          </div>
+        )}
+        <p className="mt-1 truncate text-xs text-zinc-500">{meta}</p>
       </div>
-      <ChevronRight className="h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400" />
+      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400 sm:mt-0" />
     </Link>
   );
 }
@@ -111,7 +113,7 @@ function UpcomingList({
   items: DashboardUpcomingItem[];
   emptyMessage: string;
   buildHref: (item: DashboardUpcomingItem) => string;
-  buildMeta: (item: DashboardUpcomingItem, date: Date, statusLabel: string) => string;
+  buildMeta: (item: DashboardUpcomingItem, date: Date) => string;
   viewAllHref: string;
   viewAllLabel: string;
 }) {
@@ -126,14 +128,13 @@ function UpcomingList({
     <StaggerIn className="divide-y divide-white/10" stagger={60}>
       {preview.map((item) => {
         const startDate = new Date(item.startDate);
-        const display = getDashboardResponseDisplay(item.userStatus, startDate);
         return (
           <CompactEventRow
             key={item.id}
             href={buildHref(item)}
             date={startDate}
             title={item.title}
-            meta={buildMeta(item, startDate, display.label)}
+            meta={buildMeta(item, startDate)}
             status={item.userStatus}
             eventDate={startDate}
           />
@@ -159,9 +160,9 @@ export function DashboardUpcomingClubEventsPanel({
   const clubEvents = upcomingEvents.filter((event) => event.type !== "TRAINING");
 
   return (
-    <section>
+    <section className="min-w-0">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <div>
+        <div className="min-w-0">
           <h2 className="font-display text-xl font-semibold text-white">
             Upcoming club events
           </h2>
@@ -175,7 +176,7 @@ export function DashboardUpcomingClubEventsPanel({
         </Link>
       </div>
 
-      <Card className="overflow-hidden p-0">
+      <Card className="min-w-0 overflow-hidden p-0">
         <div className="divide-y divide-white/10">
           {clubEvents.length === 0 ? (
             <p className="px-4 py-6 text-center text-sm text-zinc-500">
@@ -230,26 +231,24 @@ export function DashboardUpcomingTrainingCard({
   ).length;
 
   return (
-    <section className="flex h-full flex-col">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse">
-            <CalendarDays className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-display text-xl font-semibold text-white">Upcoming training</h2>
-            <p className="mt-1 text-xs text-zinc-500">
-              {!teamName
-                ? "No training team assigned"
-                : needsResponse > 0
-                  ? `${needsResponse} session${needsResponse === 1 ? "" : "s"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
-                  : `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"} · within the next 2 weeks`}
-            </p>
-          </div>
-        </div>
+    <section className="flex min-w-0 flex-col">
+      <div className="mb-4">
+        <h2 className="font-display text-xl font-semibold text-white">
+          <span className="inline-flex items-center gap-2">
+            <CalendarDays className="h-5 w-5 shrink-0 text-jackals-red-light" />
+            Upcoming training
+          </span>
+        </h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          {!teamName
+            ? "No training team assigned"
+            : needsResponse > 0
+              ? `${needsResponse} session${needsResponse === 1 ? "" : "s"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
+              : `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"} · within the next 2 weeks`}
+        </p>
       </div>
 
-      <Card className="flex flex-1 flex-col overflow-hidden p-0">
+      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
         {attendanceBlocked && attendanceBlockReason === "overdue" && (
           <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             Training responses are paused until your overdue membership payment is cleared.
@@ -269,8 +268,8 @@ export function DashboardUpcomingTrainingCard({
               items={sessions}
               emptyMessage="No training sessions within the next 2 weeks."
               buildHref={(item) => `/training/session/${item.id}`}
-              buildMeta={(item, date, statusLabel) =>
-                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""} · ${statusLabel}`
+              buildMeta={(item, date) =>
+                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""}`
               }
               viewAllHref="/training"
               viewAllLabel="View training schedule"
@@ -298,26 +297,24 @@ export function DashboardUpcomingMatchesCard({
   ).length;
 
   return (
-    <section className="flex h-full flex-col">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse">
-            <Swords className="h-5 w-5" />
-          </div>
-          <div>
-            <h2 className="font-display text-xl font-semibold text-white">Upcoming matches</h2>
-            <p className="mt-1 text-xs text-zinc-500">
-              {!teamName
-                ? "No team assigned"
-                : needsResponse > 0
-                  ? `${needsResponse} match${needsResponse === 1 ? "" : "es"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
-                  : `${matches.length} match${matches.length === 1 ? "" : "es"} · within the next 2 weeks`}
-            </p>
-          </div>
-        </div>
+    <section className="flex min-w-0 flex-col">
+      <div className="mb-4">
+        <h2 className="font-display text-xl font-semibold text-white">
+          <span className="inline-flex items-center gap-2">
+            <Swords className="h-5 w-5 shrink-0 text-jackals-red-light" />
+            Upcoming matches
+          </span>
+        </h2>
+        <p className="mt-1 text-xs text-zinc-500">
+          {!teamName
+            ? "No team assigned"
+            : needsResponse > 0
+              ? `${needsResponse} match${needsResponse === 1 ? "" : "es"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
+              : `${matches.length} match${matches.length === 1 ? "" : "es"} · within the next 2 weeks`}
+        </p>
       </div>
 
-      <Card className="flex flex-1 flex-col overflow-hidden p-0">
+      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
         {attendanceBlocked && attendanceBlockReason === "overdue" && (
           <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
             Match responses are paused until your overdue membership payment is cleared.
@@ -337,8 +334,8 @@ export function DashboardUpcomingMatchesCard({
               items={matches}
               emptyMessage="No matches within the next 2 weeks."
               buildHref={(item) => `/matches/${item.id}`}
-              buildMeta={(item, date, statusLabel) =>
-                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""} · ${statusLabel}`
+              buildMeta={(item, date) =>
+                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""}`
               }
               viewAllHref="/matches"
               viewAllLabel="View match schedule"
@@ -396,7 +393,7 @@ export function MemberPaymentsPanel({
   const instalmentLabel = schedule === "MONTHLY" ? "months" : "instalments";
 
   return (
-    <section>
+    <section className="min-w-0">
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="font-display text-xl font-semibold text-white">Membership</h2>
         <Link
@@ -407,7 +404,7 @@ export function MemberPaymentsPanel({
         </Link>
       </div>
 
-      <Card className="overflow-hidden p-0">
+      <Card className="min-w-0 overflow-hidden p-0">
         <div className="flex items-start gap-3 px-4 py-4">
           <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-jackals-red-light" />
           <div className="min-w-0 flex-1">

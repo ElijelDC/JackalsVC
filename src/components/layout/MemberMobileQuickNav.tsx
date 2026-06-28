@@ -35,7 +35,7 @@ export function MemberMobileQuickNav({
   return (
     <nav
       aria-label={isAdmin ? "Admin quick links" : "Member quick links"}
-      className="flex min-w-0 shrink items-center justify-end gap-0.5 sm:gap-1 lg:hidden"
+      className="flex min-w-0 flex-1 items-center justify-end gap-0.5 lg:hidden"
     >
       {items.map(({ href, label, icon: Icon }) => {
         const active =
@@ -50,14 +50,14 @@ export function MemberMobileQuickNav({
             aria-label={label}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "motion-nav-link flex h-10 w-10 shrink-0 items-center justify-center rounded-sm sm:h-auto sm:w-auto sm:min-w-0 sm:flex-col sm:gap-0.5 sm:px-1.5 sm:py-1.5 sm:text-[11px] sm:font-medium sm:leading-none",
+              "motion-nav-link flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-sm px-1 py-1.5 text-[10px] font-medium leading-none sm:px-1.5 sm:text-[11px]",
               active
                 ? "bg-jackals-red/15 text-jackals-red-light"
                 : "text-zinc-400 active:bg-white/5",
             )}
           >
             <Icon className="h-4 w-4 shrink-0" aria-hidden />
-            <span className="hidden max-w-full truncate sm:block">{label}</span>
+            <span className="max-w-full truncate">{label}</span>
           </Link>
         );
       })}

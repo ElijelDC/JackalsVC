@@ -101,7 +101,7 @@ export default async function DashboardPage() {
       ) ?? null;
 
     return (
-      <PageContainer className="py-8 sm:py-12">
+      <PageContainer className="overflow-x-hidden py-8 sm:py-12">
         <DashboardWelcomeSection
           title={`Welcome, ${firstName}`}
           description={
@@ -199,7 +199,7 @@ export default async function DashboardPage() {
   const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
 
   return (
-    <PageContainer className="py-8 sm:py-12">
+    <PageContainer className="overflow-x-hidden py-8 sm:py-12">
       <DashboardWelcomeSection
         title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
         description="Your membership, training, and matches at a glance"
@@ -226,7 +226,7 @@ export default async function DashboardPage() {
           paymentAccess={paymentAccess}
         />
 
-        <div className="grid gap-8 lg:grid-cols-2">
+        <div className="grid min-w-0 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
           <DashboardUpcomingTrainingCard
             teamName={team?.name ?? null}
             sessions={upcomingTraining}
