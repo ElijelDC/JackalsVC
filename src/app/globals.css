@@ -33,6 +33,15 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
+/* iOS Safari zooms focused fields below 16px — keep mobile form controls at 16px+. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not([type="hidden"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
 /* Keep next/image fill contained before utility classes paint on reload */
 img[data-nimg="fill"] {
   object-fit: cover;
