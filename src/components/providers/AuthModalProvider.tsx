@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Modal } from "@/components/ui/Modal";
 import { MemberSignInForm } from "@/components/auth/MemberSignInForm";
 import { MemberRegisterWizard } from "@/components/auth/MemberRegisterWizard";
+import { sanitizeCallbackUrl } from "@/lib/safe-callback-url";
 
 type AuthMode = "signin" | "register";
 
@@ -46,13 +47,13 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
     if (!authParam) return null;
     return {
       mode: authParam,
-      callbackUrl: searchParams.get("callbackUrl") ?? "/dashboard",
+      callbackUrl: sanitizeCallbackUrl(searchParams.get("callbackUrl")),
     };
   }, [searchParams]);
 
   const open = manual?.open ?? authFromUrl !== null;
   const mode = manual?.mode ?? authFromUrl?.mode ?? "signin";
-  const callbackUrl = manual?.callbackUrl ?? authFromUrl?.callbackUrl ?? "/dashboard";
+  const callbackUrl = manual?.callbackUrl ?? authFromUrl?.callbackUrl ?? sanitizeCallbackUrl(null);
 
   const closeAuth = useCallback(() => {
     setManual(null);
@@ -67,7 +68,11 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
   }, [pathname, router, searchParams]);
 
   const openAuth = useCallback((nextMode: AuthMode = "signin", nextCallbackUrl = "/dashboard") => {
-    setManual({ open: true, mode: nextMode, callbackUrl: nextCallbackUrl });
+    setManual({
+      open: true,
+      mode: nextMode,
+      callbackUrl: sanitizeCallbackUrl(nextCallbackUrl),
+    });
   }, []);
 
   const setMode = useCallback(
@@ -75,7 +80,9 @@ export function AuthModalProvider({ children }: { children: React.ReactNode }) {
       setManual((prev) => ({
         open: true,
         mode: nextMode,
-        callbackUrl: prev?.callbackUrl ?? authFromUrl?.callbackUrl ?? "/dashboard",
+        callbackUrl: sanitizeCallbackUrl(
+          prev?.callbackUrl ?? authFromUrl?.callbackUrl,
+        ),
       }));
     },
     [authFromUrl?.callbackUrl],

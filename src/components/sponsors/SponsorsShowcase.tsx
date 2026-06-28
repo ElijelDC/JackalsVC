@@ -65,7 +65,7 @@ export function SponsorsShowcase() {
               A concise overview of the club, our audience, and how to get started —
               ideal for sharing with your marketing team.
             </p>
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
               <DownloadPresentationButton />
               <Link href="/sponsors/presentation" className="w-full sm:w-auto">
                 <Button variant="outline" size="lg" className="w-full sm:w-auto">

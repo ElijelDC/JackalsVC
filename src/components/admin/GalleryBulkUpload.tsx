@@ -9,7 +9,9 @@ import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
 import {
   GALLERY_ACCEPTED_IMAGE_TYPES,
   GALLERY_MAX_BULK_FILES,
+  GALLERY_MAX_SELECTION,
   GALLERY_MAX_UPLOAD_BYTES,
+  GALLERY_UPLOAD_BATCH_DELAY_MS,
 } from "@/lib/gallery-upload-config";
 import { apiPostForm } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
@@ -26,6 +28,18 @@ type PreviewFile = {
   tooLarge: boolean;
 };
 
+function chunkFiles<T>(items: T[], size: number) {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) {
+    chunks.push(items.slice(i, i + size));
+  }
+  return chunks;
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function GalleryBulkUpload({
   albumId,
   onUploaded,
@@ -37,6 +51,7 @@ export function GalleryBulkUpload({
   const [files, setFiles] = useState<PreviewFile[]>([]);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -58,7 +73,7 @@ export function GalleryBulkUpload({
     setFiles((current) => {
       const merged = [...current];
       for (const file of images) {
-        if (merged.length >= GALLERY_MAX_BULK_FILES) break;
+        if (merged.length >= GALLERY_MAX_SELECTION) break;
         merged.push({
           id: `${file.name}-${file.lastModified}-${file.size}`,
           file,
@@ -102,32 +117,62 @@ export function GalleryBulkUpload({
     setLoading(true);
     setError(null);
     setMessage(null);
+    setUploadProgress(null);
 
-    const formData = new FormData();
-    for (const entry of validFiles) {
-      formData.append("files", entry.file);
+    const batches = chunkFiles(validFiles, GALLERY_MAX_BULK_FILES);
+    let uploadedTotal = 0;
+    const warnings: string[] = [];
+
+    for (let index = 0; index < batches.length; index += 1) {
+      const batch = batches[index]!;
+      setUploadProgress(
+        batches.length > 1
+          ? `Uploading batch ${index + 1} of ${batches.length} (${batch.length} photo${batch.length === 1 ? "" : "s"})…`
+          : `Uploading ${batch.length} photo${batch.length === 1 ? "" : "s"}…`,
+      );
+
+      const formData = new FormData();
+      for (const entry of batch) {
+        formData.append("files", entry.file);
+      }
+
+      const result = await apiPostForm<UploadResponse>(
+        `/api/admin/gallery/${albumId}/photos/upload`,
+        formData,
+        "Upload failed. Please try again.",
+      );
+
+      if (!result.ok) {
+        setLoading(false);
+        setUploadProgress(null);
+        setError(
+          uploadedTotal > 0
+            ? `${result.error} (${uploadedTotal} photo${uploadedTotal === 1 ? "" : "s"} uploaded before the error.)`
+            : result.error,
+        );
+        return;
+      }
+
+      uploadedTotal += result.data.uploaded;
+      if (result.data.errors?.length) {
+        warnings.push(...result.data.errors);
+      }
+
+      if (index < batches.length - 1) {
+        await wait(GALLERY_UPLOAD_BATCH_DELAY_MS);
+      }
     }
-
-    const result = await apiPostForm<UploadResponse>(
-      `/api/admin/gallery/${albumId}/photos/upload`,
-      formData,
-      "Upload failed. Please try again.",
-    );
 
     setLoading(false);
+    setUploadProgress(null);
 
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-
-    const warnings =
-      result.data.errors && result.data.errors.length > 0
-        ? ` Some files were skipped: ${result.data.errors.join(" ")}`
+    const warningText =
+      warnings.length > 0
+        ? ` Some files were skipped: ${warnings.join(" ")}`
         : "";
 
     setMessage(
-      `${result.data.uploaded} photo${result.data.uploaded === 1 ? "" : "s"} uploaded.${warnings}`,
+      `${uploadedTotal} photo${uploadedTotal === 1 ? "" : "s"} uploaded.${warningText}`,
     );
     clearFiles();
     await onUploaded();
@@ -144,11 +189,15 @@ export function GalleryBulkUpload({
         Upload photos
       </h3>
       <p className="mb-4 text-sm text-zinc-400">
-        Drag images here or browse your device. Up to {GALLERY_MAX_BULK_FILES} files
-        per batch, 15 MB each.
+        Drag images here or browse your device. Up to {GALLERY_MAX_SELECTION}{" "}
+        images per upload session ({GALLERY_MAX_BULK_FILES} at a time), 15 MB
+        each.
       </p>
 
       <SuccessBanner message={message} />
+      {uploadProgress && (
+        <p className="mb-4 text-sm text-zinc-400">{uploadProgress}</p>
+      )}
 
       <div
         className={cn(
@@ -243,9 +292,11 @@ export function GalleryBulkUpload({
             ))}
           </div>
 
-          <Button type="button" disabled={loading || hasOversized} onClick={handleUpload}>
+          <Button type="button" disabled={loading || hasOversized} onClick={() => void handleUpload()}>
             <Upload className="h-4 w-4" />
-            {loading ? "Uploading..." : `Upload ${files.length} photo${files.length === 1 ? "" : "s"}`}
+            {loading
+              ? "Uploading..."
+              : `Upload ${files.filter((entry) => !entry.tooLarge).length} photo${files.filter((entry) => !entry.tooLarge).length === 1 ? "" : "s"}`}
           </Button>
         </div>
       )}

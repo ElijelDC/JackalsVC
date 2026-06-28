@@ -216,7 +216,7 @@ export function HomePage({
                 linkLabel="View gallery"
               />
             </AnimateIn>
-            <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-4" stagger={80}>
+            <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-3" stagger={80}>
               {featuredAlbums.map((album) => (
                 <Link
                   key={album.id}
