@@ -71,9 +71,11 @@ function VerifiedBanner({
 function RegistrationPendingPanel({
   photoUrl,
   submittedAt,
+  email,
 }: {
   photoUrl: string;
   submittedAt: string | null;
+  email?: string;
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-blue-500/35 bg-blue-500/10">
@@ -85,8 +87,18 @@ function RegistrationPendingPanel({
           <div>
             <p className="font-semibold text-blue-100">Screenshot submitted</p>
             <p className="mt-1 text-sm leading-relaxed text-blue-200/80">
-              Waiting for admin approval. You can close this and come back later
-              — enter your VLY number again to check your status.
+              Waiting for admin approval.
+              {email ? (
+                <>
+                  {" "}
+                  We&apos;ll email you at <span className="font-medium text-blue-100">{email}</span>{" "}
+                  once your photo has been reviewed.
+                </>
+              ) : (
+                <> You&apos;ll receive an email once your photo has been reviewed.</>
+              )}{" "}
+              You can close this and come back later — enter your VLY number again to check your
+              status.
             </p>
             {submittedAt && (
               <p className="mt-2 flex items-center gap-1.5 text-xs text-blue-300/70">
@@ -486,6 +498,7 @@ export function MemberRegisterWizard({
           <RegistrationPendingPanel
             photoUrl={vlyPhotoUrl}
             submittedAt={photoSubmittedAt}
+            email={email || undefined}
           />
         )}
 
