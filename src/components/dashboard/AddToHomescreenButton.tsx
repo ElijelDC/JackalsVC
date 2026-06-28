@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { Download, Bookmark } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { cn } from "@/lib/utils";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-export function AddToHomescreenButton() {
+export function AddToHomescreenButton({ className }: { className?: string }) {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -85,7 +86,7 @@ export function AddToHomescreenButton() {
         onClick={handleDesktopBookmark}
         variant="outline"
         size="sm"
-        className="gap-2"
+        className={cn("gap-2", className)}
       >
         <Bookmark className="h-4 w-4" />
         Bookmark
@@ -99,7 +100,7 @@ export function AddToHomescreenButton() {
         onClick={handleIOSInstall}
         variant="outline"
         size="sm"
-        className="gap-2"
+        className={cn("gap-2", className)}
       >
         <Download className="h-4 w-4" />
         Add to Home Screen
@@ -113,7 +114,7 @@ export function AddToHomescreenButton() {
         onClick={handleInstall}
         variant="outline"
         size="sm"
-        className="gap-2"
+        className={cn("gap-2", className)}
       >
         <Download className="h-4 w-4" />
         Install App

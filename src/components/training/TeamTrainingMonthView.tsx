@@ -310,9 +310,9 @@ export function TeamTrainingMonthView({
               </p>
               <p className="mt-1 text-xs text-zinc-600">
                 {needsResponseCount > 0
-                  ? `${needsResponseCount} session${needsResponseCount === 1 ? "" : "s"} need your response this week — highlighted below.`
+                  ? `${needsResponseCount} session${needsResponseCount === 1 ? "" : "s"} ${needsResponseCount === 1 ? "needs" : "need"} your response this week — highlighted below.`
                   : unansweredUpcoming > 0
-                    ? `${unansweredUpcoming} session${unansweredUpcoming === 1 ? "" : "s"} still need a response.`
+                    ? `${unansweredUpcoming} session${unansweredUpcoming === 1 ? "" : "s"} still ${unansweredUpcoming === 1 ? "needs" : "need"} a response.`
                     : hasUpcomingNotYetOpen
                       ? "Responses open 2 weeks before each session."
                       : "Open a session to respond and see who else is coming."}
