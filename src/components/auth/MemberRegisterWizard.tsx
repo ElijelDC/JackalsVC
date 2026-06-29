@@ -603,7 +603,8 @@ export function MemberRegisterWizard({
               </p>
               <p className="mt-1 text-sm text-white">{email}</p>
               <p className="mt-2 text-xs text-zinc-500">
-                Using the same email you provided when submitting your VLY photo.
+                Using the same email you provided when submitting your VLY photo. This
+                will be the email for your Jackals VC account.
               </p>
             </div>
           ) : (
@@ -621,6 +622,9 @@ export function MemberRegisterWizard({
                 autoComplete="email"
                 placeholder="you@example.com"
               />
+              <p className="mt-1 text-xs text-zinc-500">
+                This will be the email you use to sign in to Jackals VC.
+              </p>
             </div>
           )}
 

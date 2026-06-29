@@ -15,6 +15,6 @@ export const REGISTER_STEP_DESCRIPTIONS: Record<RegisterStep, string> = {
   pending:
     "Your photo is with an admin for review. We'll email you when you can continue.",
   email:
-    "Confirm your email with a 6-digit code. If you already gave us an email for photo approval, we'll use that one.",
+    "Confirm your email with a 6-digit code. This becomes the email for your Jackals VC account — if you already gave us one for photo approval, we'll use that.",
   password: "Choose a password to finish creating your account.",
 };
