@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Clock3, Loader2, Upload } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Clock3, Loader2, Mail, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label } from "@/components/ui/Input";
@@ -141,7 +141,7 @@ export function MemberRegisterWizard({
   const [email, setEmail] = useState("");
   const [emailLocked, setEmailLocked] = useState(false);
   const [allowEmailChange, setAllowEmailChange] = useState(false);
-  const [autoSendingCode, setAutoSendingCode] = useState(false);
+  const [codeSent, setCodeSent] = useState(false);
   const [emailCode, setEmailCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -154,23 +154,20 @@ export function MemberRegisterWizard({
     onStepChange?.(step);
   }, [onStepChange, step]);
 
-  useEffect(() => {
-    if (autoSendingCode) {
-      onStepChange?.("verify");
-    }
-  }, [autoSendingCode, onStepChange]);
+  const resetEmailVerification = () => {
+    setCodeSent(false);
+    setEmailCode("");
+    setCodeMessage(null);
+  };
 
   const sendVerificationCode = async (
     emailToUse: string,
     session: { vlyNumber: string; registrationToken: string },
-    options?: { fromAuto?: boolean },
   ) => {
     const normalizedEmail = emailToUse.trim().toLowerCase();
     if (!normalizedEmail) {
       setError("Enter your email address to continue.");
-      setAutoSendingCode(false);
-      setStep("email");
-      return;
+      return false;
     }
 
     setLoading(true);
@@ -188,25 +185,23 @@ export function MemberRegisterWizard({
     );
 
     setLoading(false);
-    setAutoSendingCode(false);
 
     if (!result.ok) {
       setError(result.error);
-      if (options?.fromAuto) {
-        setStep("email");
-      }
-      return;
+      return false;
     }
 
     const payload = result.data as { message?: string };
     setEmail(normalizedEmail);
     setEmailLocked(true);
     setAllowEmailChange(false);
+    setCodeSent(true);
+    setEmailCode("");
     setCodeMessage(
       payload.message ?? "Verification code sent — check your email (and spam folder).",
     );
-    setEmailCode("");
-    setStep("verify");
+    setStep("email");
+    return true;
   };
 
   const applyVlyPayload = (payload: VlyValidationPayload) => {
@@ -219,6 +214,8 @@ export function MemberRegisterWizard({
     };
     setVlyPhotoUrl(payload.vlyMembershipPhotoUrl);
     setPhotoSubmittedAt(payload.registrationPhotoSubmittedAt);
+    resetEmailVerification();
+
     if (payload.registrationContactEmail) {
       setEmail(payload.registrationContactEmail);
       setEmailLocked(true);
@@ -226,19 +223,14 @@ export function MemberRegisterWizard({
     }
 
     if (payload.registrationReviewStatus === "APPROVED") {
+      setStep("email");
       if (payload.registrationContactEmail) {
-        setAutoSendingCode(true);
-        void sendVerificationCode(
-          payload.registrationContactEmail,
-          {
-            vlyNumber: payload.vlyNumber,
-            registrationToken: payload.registrationToken,
-          },
-          { fromAuto: true },
-        );
+        void sendVerificationCode(payload.registrationContactEmail, {
+          vlyNumber: payload.vlyNumber,
+          registrationToken: payload.registrationToken,
+        });
       } else {
         setEmailLocked(false);
-        setStep("email");
       }
       return;
     }
@@ -320,16 +312,14 @@ export function MemberRegisterWizard({
     setStep("pending");
   };
 
-  const sendCode = async (event: React.FormEvent) => {
+  const submitEmailStep = async (event: React.FormEvent) => {
     event.preventDefault();
-    await sendVerificationCode(email, {
-      vlyNumber,
-      registrationToken,
-    });
-  };
 
-  const verifyCode = async (event: React.FormEvent) => {
-    event.preventDefault();
+    if (!codeSent) {
+      await sendVerificationCode(email, { vlyNumber, registrationToken });
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -398,24 +388,6 @@ export function MemberRegisterWizard({
     router.push(sanitizeCallbackUrl(callbackUrl));
     router.refresh();
   };
-
-  if (autoSendingCode) {
-    return (
-      <>
-        <StepHint step="verify" />
-        <div className="flex flex-col items-center gap-4 py-8 text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-jackals-red-light" aria-hidden />
-          <p className="text-sm text-zinc-400">
-            Sending a verification code to{" "}
-            <span className="font-medium text-white">{email}</span>…
-          </p>
-          <p className="text-xs text-zinc-500">
-            Using the same email you provided for photo approval.
-          </p>
-        </div>
-      </>
-    );
-  }
 
   if (step === "vly") {
     return (
@@ -612,21 +584,26 @@ export function MemberRegisterWizard({
   }
 
   if (step === "email") {
+    const showLockedEmail = emailLocked && !allowEmailChange;
+    const primaryDisabled =
+      loading ||
+      !email.trim() ||
+      (codeSent && emailCode.length !== 6);
+
     return (
       <>
         <StepHint step="email" />
         <VerifiedBanner vlyNumber={vlyNumber} />
 
-        <form onSubmit={sendCode} className="space-y-4">
-          {emailLocked && !allowEmailChange ? (
+        <form onSubmit={(event) => void submitEmailStep(event)} className="space-y-4">
+          {showLockedEmail ? (
             <div className="rounded-lg border border-white/10 bg-white/5 px-4 py-3">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
                 Email
               </p>
               <p className="mt-1 text-sm text-white">{email}</p>
               <p className="mt-2 text-xs text-zinc-500">
-                We&apos;ll use the same email you provided when submitting your VLY
-                photo.
+                Using the same email you provided when submitting your VLY photo.
               </p>
             </div>
           ) : (
@@ -636,14 +613,54 @@ export function MemberRegisterWizard({
                 id="member-register-email"
                 type="email"
                 value={email}
-                onChange={(event) => setEmail(event.target.value)}
+                onChange={(event) => {
+                  setEmail(event.target.value);
+                  resetEmailVerification();
+                }}
                 required
                 autoComplete="email"
                 placeholder="you@example.com"
               />
-              <p className="mt-1 text-xs text-zinc-500">
-                We&apos;ll send a 6-digit code to confirm this email belongs to you.
-              </p>
+            </div>
+          )}
+
+          {showLockedEmail && (
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full gap-2 border-white/20"
+              onClick={() => {
+                setAllowEmailChange(true);
+                resetEmailVerification();
+                setError(null);
+              }}
+            >
+              <Mail className="h-4 w-4" aria-hidden />
+              Use a different email
+            </Button>
+          )}
+
+          {codeSent && (
+            <div>
+              <Label htmlFor="member-register-email-code">Verification code</Label>
+              <Input
+                id="member-register-email-code"
+                inputMode="numeric"
+                pattern="\d{6}"
+                maxLength={6}
+                value={emailCode}
+                onChange={(event) =>
+                  setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))
+                }
+                required
+                placeholder="Enter 6-digit code"
+                autoComplete="one-time-code"
+                className="tracking-[0.3em]"
+                autoFocus
+              />
+              {codeMessage && (
+                <p className="mt-1 text-xs text-green-400/90">{codeMessage}</p>
+              )}
             </div>
           )}
 
@@ -662,108 +679,30 @@ export function MemberRegisterWizard({
               <ArrowLeft className="h-4 w-4" />
               Back
             </Button>
-            <Button type="submit" className="flex-1" disabled={loading || !email.trim()}>
-              {loading ? "Sending..." : "Send verification code"}
+            <Button type="submit" className="flex-1" disabled={primaryDisabled}>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  {codeSent ? "Checking..." : "Sending..."}
+                </>
+              ) : codeSent ? (
+                "Confirm email"
+              ) : (
+                "Send verification code"
+              )}
             </Button>
           </div>
 
-          {emailLocked && !allowEmailChange && (
+          {codeSent && (
             <button
               type="button"
-              onClick={() => {
-                setAllowEmailChange(true);
-                setError(null);
-              }}
-              className="w-full text-center text-sm text-zinc-400 hover:text-jackals-red-light"
+              onClick={() => void sendVerificationCode(email, { vlyNumber, registrationToken })}
+              className="w-full text-center text-sm font-medium text-jackals-red-light hover:text-jackals-red"
+              disabled={loading}
             >
-              Use a different email
+              Didn&apos;t get a code? Resend
             </button>
           )}
-        </form>
-      </>
-    );
-  }
-
-  if (step === "verify") {
-    return (
-      <>
-        <StepHint step="verify" />
-        <VerifiedBanner vlyNumber={vlyNumber} />
-
-        <form onSubmit={verifyCode} className="space-y-4">
-          <div>
-            <Label htmlFor="member-verify-email-display">Email</Label>
-            <Input
-              id="member-verify-email-display"
-              type="email"
-              value={email}
-              readOnly
-              className="text-zinc-400"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="member-register-email-code">Verification code</Label>
-            <Input
-              id="member-register-email-code"
-              inputMode="numeric"
-              pattern="\d{6}"
-              maxLength={6}
-              value={emailCode}
-              onChange={(event) =>
-                setEmailCode(event.target.value.replace(/\D/g, "").slice(0, 6))
-              }
-              required
-              placeholder="Enter 6-digit code"
-              autoComplete="one-time-code"
-              className="tracking-[0.3em]"
-            />
-            {codeMessage && (
-              <p className="mt-1 text-xs text-zinc-500">{codeMessage}</p>
-            )}
-          </div>
-
-          <FormError message={error} />
-
-          <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="ghost"
-              className="gap-1.5"
-              onClick={() => {
-                setStep("email");
-                setError(null);
-              }}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={loading || emailCode.length !== 6}
-            >
-              {loading ? "Checking..." : "Confirm email"}
-            </Button>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (emailLocked) {
-                void sendVerificationCode(email, { vlyNumber, registrationToken });
-                return;
-              }
-              setStep("email");
-              setError(null);
-            }}
-            className="w-full text-center text-sm text-zinc-400 hover:text-jackals-red-light"
-            disabled={loading}
-          >
-            {emailLocked
-              ? "Didn't get a code? Resend"
-              : "Didn't get a code? Change email or resend"}
-          </button>
         </form>
       </>
     );
@@ -809,7 +748,7 @@ export function MemberRegisterWizard({
             variant="ghost"
             className="gap-1.5"
             onClick={() => {
-              setStep("verify");
+              setStep("email");
               setError(null);
             }}
           >
