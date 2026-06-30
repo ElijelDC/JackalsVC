@@ -42,42 +42,51 @@ export function ShowcaseHero({
         aria-hidden
         className="pointer-events-none absolute inset-0 home-hero-grid opacity-30"
       />
+      <div
+        aria-hidden
+        className="motion-ambient-orb pointer-events-none absolute -left-20 top-1/4 h-56 w-56 rounded-full bg-jackals-red/15 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="motion-ambient-orb-delayed pointer-events-none absolute -right-16 bottom-0 h-48 w-48 rounded-full bg-jackals-red/10 blur-3xl"
+      />
 
       <div className="relative mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
         {action}
-        <AnimateIn
-          immediate
-          variant="scale-in"
-          className={cn("mx-auto max-w-3xl text-center", contentClassName)}
-        >
-          <h1 className="font-display text-4xl font-bold tracking-wide text-white sm:text-5xl lg:text-6xl">
-            {title}{" "}
-            <span className="motion-gradient-text bg-gradient-to-r from-jackals-red-light via-jackals-red to-jackals-red-light bg-clip-text text-transparent">
-              {highlight}
-            </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
-            {description}
-          </p>
+        <div className={cn("mx-auto max-w-3xl text-center", contentClassName)}>
+          <AnimateIn immediate variant="spring-up">
+            <h1 className="font-display text-4xl font-bold tracking-wide text-white sm:text-5xl lg:text-6xl">
+              {title}{" "}
+              <span className="motion-gradient-text bg-gradient-to-r from-jackals-red-light via-jackals-red to-jackals-red-light bg-clip-text text-transparent">
+                {highlight}
+              </span>
+            </h1>
+          </AnimateIn>
+          <AnimateIn immediate variant="blur-in" delay={120}>
+            <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-zinc-400">
+              {description}
+            </p>
+          </AnimateIn>
 
           {stats && stats.length > 0 && (
             <StaggerIn
               className={cn(
-                "mt-10 grid gap-x-6 gap-y-8 text-sm text-zinc-500 sm:mt-12 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3",
+                "mt-10 grid grid-cols-2 gap-x-4 gap-y-6 text-sm text-zinc-500 sm:mt-12 sm:gap-x-8 sm:gap-y-8 lg:grid-cols-3",
               )}
-              stagger={80}
+              stagger={65}
+              variant="pop"
             >
               {stats.map(({ icon: Icon, value, label }) => (
                 <div
                   key={label}
-                  className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left"
+                  className="flex flex-col items-start gap-1.5 text-left sm:gap-2"
                 >
-                  <Icon className="h-5 w-5 shrink-0 text-jackals-red-light" />
+                  <Icon className="motion-icon-pop h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
                   <span>
-                    <span className="font-display text-2xl font-bold text-white sm:text-3xl">
+                    <span className="motion-stat-value font-display text-xl font-bold text-white sm:text-3xl">
                       {value}
                     </span>
-                    <span className="mt-1 block text-sm leading-snug text-zinc-400">
+                    <span className="mt-0.5 block text-xs leading-snug text-zinc-400 sm:mt-1 sm:text-sm">
                       {label}
                     </span>
                   </span>
@@ -85,7 +94,7 @@ export function ShowcaseHero({
               ))}
             </StaggerIn>
           )}
-        </AnimateIn>
+        </div>
       </div>
     </section>
   );

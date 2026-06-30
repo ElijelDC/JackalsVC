@@ -14,7 +14,9 @@ export type MotionVariant =
   | "scale-in"
   | "slide-left"
   | "slide-right"
-  | "blur-in";
+  | "blur-in"
+  | "pop-in"
+  | "spring-up";
 
 const variantClass: Record<MotionVariant, string> = {
   "fade-up": "motion-fade-up",
@@ -22,6 +24,8 @@ const variantClass: Record<MotionVariant, string> = {
   "slide-left": "motion-slide-left",
   "slide-right": "motion-slide-right",
   "blur-in": "motion-blur-in",
+  "pop-in": "motion-pop-in",
+  "spring-up": "motion-spring-up",
 };
 
 type AnimateInProps = {

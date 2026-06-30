@@ -36,12 +36,12 @@ function FeatureCard({
 }: NavItem) {
   return (
     <Link href={href} className="group block h-full">
-      <Card className="motion-hover-lift relative h-full overflow-hidden border-white/10 bg-jackals-surface/80 p-5 group-hover:border-jackals-red/35 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] sm:p-6">
+      <Card className="motion-hover-pop motion-shine relative h-full overflow-hidden border-white/10 bg-jackals-surface/80 p-5 group-hover:border-jackals-red/35 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] sm:p-6">
         <div
           aria-hidden
           className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent opacity-0 transition-opacity group-hover:opacity-100"
         />
-        <div className="mb-4 flex h-11 w-11 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse transition-colors group-hover:bg-jackals-red/25">
+        <div className="motion-icon-pop mb-4 flex h-11 w-11 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse transition-colors group-hover:bg-jackals-red/25">
           <Icon className="h-5 w-5" />
         </div>
         <CardTitle className="flex items-center justify-between gap-2">
@@ -76,9 +76,17 @@ export function HomePage({
           aria-hidden
           className="pointer-events-none absolute inset-0 home-hero-grid opacity-40"
         />
+        <div
+          aria-hidden
+          className="motion-ambient-orb pointer-events-none absolute -left-16 top-24 h-48 w-48 rounded-full bg-jackals-red/20 blur-3xl"
+        />
+        <div
+          aria-hidden
+          className="motion-ambient-orb-delayed pointer-events-none absolute -right-12 bottom-16 h-56 w-56 rounded-full bg-jackals-red/15 blur-3xl"
+        />
         <PageContainer className="relative py-20 sm:py-28">
           <div className="grid items-center gap-12 lg:grid-cols-2">
-            <AnimateIn immediate variant="slide-left" delay={0}>
+            <AnimateIn immediate variant="spring-up" delay={0}>
               <div className="text-center lg:text-left">
                 <h1 className="font-display text-4xl font-bold tracking-wide text-white sm:text-6xl lg:text-7xl">
                   Jackals{" "}
@@ -86,32 +94,40 @@ export function HomePage({
                     Volleyball
                   </span>
                 </h1>
-                <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-400 lg:mx-0">
-                  <EditableText
-                    contentKey="home.hero.subtitle"
-                    fallback={`${CLUB_SLOGAN} Your home for competitive volleyball — open sessions, tournaments, skills clinics and social activities!`}
-                    label="Home hero subtitle"
-                    multiline
-                  />
-                </p>
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
-                  <a
-                    href={INSTAGRAM_PROFILE_URL}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2.5 border border-white/20 bg-transparent px-6 py-3 text-base font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 hover:scale-[1.02] active:scale-[0.96]"
-                  >
-                    <InstagramIcon className="transition-transform group-hover:scale-110" />
-                    @jackalsvolleyball
-                  </a>
-                  <Link href="/events">
-                    <Button size="lg">Events</Button>
-                  </Link>
-                </div>
+                <AnimateIn immediate variant="blur-in" delay={120}>
+                  <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-zinc-400 lg:mx-0">
+                    <EditableText
+                      contentKey="home.hero.subtitle"
+                      fallback={`${CLUB_SLOGAN} Your home for competitive volleyball — open sessions, tournaments, skills clinics and social activities!`}
+                      label="Home hero subtitle"
+                      multiline
+                    />
+                  </p>
+                </AnimateIn>
+                <AnimateIn immediate variant="pop-in" delay={240}>
+                  <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+                    <a
+                      href={INSTAGRAM_PROFILE_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="motion-hover-pop group inline-flex items-center justify-center gap-2.5 border border-white/20 bg-transparent px-6 py-3 text-base font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96]"
+                    >
+                      <InstagramIcon className="motion-icon-pop transition-transform group-hover:scale-110" />
+                      @jackalsvolleyball
+                    </a>
+                    <Link href="/events">
+                      <Button size="lg">Events</Button>
+                    </Link>
+                  </div>
+                </AnimateIn>
               </div>
             </AnimateIn>
 
-            <AnimateIn immediate variant="scale-in" delay={160} className="relative flex justify-center lg:justify-end">
+            <AnimateIn immediate variant="pop-in" delay={180} className="relative flex justify-center lg:justify-end">
+              <div
+                aria-hidden
+                className="motion-hero-ring pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full border border-jackals-red/20 lg:left-auto lg:right-12 lg:translate-x-0"
+              />
               <div
                 aria-hidden
                 className="motion-hero-glow pointer-events-none absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-jackals-red/25 blur-3xl lg:left-auto lg:right-12 lg:translate-x-0"
@@ -129,21 +145,24 @@ export function HomePage({
       <div className="section-divider mx-auto max-w-7xl" />
 
       <PageContainer className="py-16 sm:py-20">
-        <AnimateIn>
+        <AnimateIn variant="pop-in">
           <SectionHeading eyebrow="Explore" title="Browse Around" />
         </AnimateIn>
         <div className="md:hidden">
-          <FeatureCarousel
-            items={featureItems.map(({ href, label, description }) => ({
-              href,
-              label,
-              description,
-            }))}
-          />
+          <AnimateIn variant="spring-up" delay={80}>
+            <FeatureCarousel
+              items={featureItems.map(({ href, label, description }) => ({
+                href,
+                label,
+                description,
+              }))}
+            />
+          </AnimateIn>
         </div>
         <StaggerIn
           className="hidden grid-cols-3 gap-5 md:grid"
-          stagger={90}
+          stagger={70}
+          variant="pop"
         >
           {featureItems.map((item) => (
             <FeatureCard key={item.href} {...item} />
@@ -158,7 +177,7 @@ export function HomePage({
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(232,34,42,0.07),transparent_70%)]"
           />
           <PageContainer className="relative py-0">
-            <AnimateIn>
+            <AnimateIn variant="blur-in">
               <SectionHeading
                 eyebrow="Don't miss out"
                 title="Upcoming events"
@@ -166,7 +185,7 @@ export function HomePage({
                 linkLabel="View all"
               />
             </AnimateIn>
-            <StaggerIn className="grid gap-5 md:grid-cols-3" stagger={100}>
+            <StaggerIn className="grid gap-5 md:grid-cols-3" stagger={75} variant="pop">
               {upcomingEvents.map((event) => (
                 <EventListCard key={event.id} event={event} />
               ))}
@@ -177,7 +196,7 @@ export function HomePage({
 
       {featuredProducts.length > 0 && (
         <PageContainer className="py-16 sm:py-20">
-          <AnimateIn>
+          <AnimateIn variant="pop-in">
             <SectionHeading
               eyebrow="Official kit"
               title="Club shop"
@@ -185,10 +204,10 @@ export function HomePage({
               linkLabel="Browse all"
             />
           </AnimateIn>
-          <StaggerIn className="grid gap-5 sm:grid-cols-3">
+          <StaggerIn className="grid gap-5 sm:grid-cols-3" stagger={75} variant="pop">
             {featuredProducts.map((product) => (
               <Link key={product.id} href={`/shop/${product.id}`} className="group block">
-                <Card className="motion-hover-lift overflow-hidden border-white/10 p-0 group-hover:border-jackals-red/30 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
+                <Card className="motion-hover-pop motion-shine overflow-hidden border-white/10 p-0 group-hover:border-jackals-red/30 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]">
                   <ProductPlaceholder className="h-44 transition-transform duration-300 group-hover:scale-[1.02]" />
                   <div className="p-5">
                     <CardTitle>{product.name}</CardTitle>
@@ -208,7 +227,7 @@ export function HomePage({
       {featuredAlbums.length > 0 && (
         <section className="border-t border-white/10 bg-jackals-inset/50 py-16 sm:py-20">
           <PageContainer className="py-0">
-            <AnimateIn>
+            <AnimateIn variant="blur-in">
               <SectionHeading
                 eyebrow="From the court"
                 title="Gallery highlights"
@@ -216,12 +235,12 @@ export function HomePage({
                 linkLabel="View gallery"
               />
             </AnimateIn>
-            <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-3" stagger={80}>
+            <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-3" stagger={65} variant="pop">
               {featuredAlbums.map((album) => (
                 <Link
                   key={album.id}
                   href={`/gallery/${album.id}`}
-                  className="motion-hover-lift group relative block overflow-hidden border border-white/10 bg-jackals-surface hover:border-jackals-red/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+                  className="motion-hover-pop motion-shine group relative block overflow-hidden border border-white/10 bg-jackals-surface hover:border-jackals-red/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
                 >
                   <Image
                     src={album.coverImageUrl}
