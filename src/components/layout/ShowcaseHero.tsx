@@ -15,6 +15,7 @@ export function ShowcaseHero({
   highlight,
   description,
   stats,
+  statsGridClassName,
   action,
   className,
   contentClassName,
@@ -23,6 +24,7 @@ export function ShowcaseHero({
   highlight: string;
   description: ReactNode;
   stats?: ShowcaseStat[];
+  statsGridClassName?: string;
   action?: React.ReactNode;
   className?: string;
   contentClassName?: string;
@@ -71,7 +73,8 @@ export function ShowcaseHero({
           {stats && stats.length > 0 && (
             <StaggerIn
               className={cn(
-                "mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:mt-12 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-3",
+                "mt-10 grid gap-x-4 gap-y-8 sm:mt-12 sm:gap-x-8 sm:gap-y-10",
+                statsGridClassName ?? "grid-cols-2 lg:grid-cols-3",
               )}
               stagger={65}
               variant="pop"

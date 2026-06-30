@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Users } from "lucide-react";
+import { GraduationCap, Shield, Volleyball } from "lucide-react";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
@@ -24,6 +24,7 @@ export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
         title="Our"
         highlight="Teams"
         description="From competitive league squads to open social play — find the right fit for your level and goals."
+        statsGridClassName="grid-cols-3 gap-x-2 gap-y-6 sm:gap-x-8 sm:gap-y-10"
         stats={
           teams.length > 0
             ? [
@@ -35,7 +36,7 @@ export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
                 ...(totalCoachCount > 0
                   ? [
                       {
-                        icon: Users,
+                        icon: GraduationCap,
                         value: totalCoachCount,
                         label: totalCoachCount === 1 ? "coach" : "coaches",
                       },
@@ -44,7 +45,7 @@ export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
                 ...(totalPlayerCount > 0
                   ? [
                       {
-                        icon: Users,
+                        icon: Volleyball,
                         value: totalPlayerCount,
                         label: totalPlayerCount === 1 ? "player" : "players",
                       },

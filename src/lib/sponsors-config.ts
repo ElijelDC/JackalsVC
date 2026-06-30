@@ -2,8 +2,11 @@ import type { LucideIcon } from "lucide-react";
 import {
   Globe,
   Megaphone,
+  Shield,
   Shirt,
+  TrendingUp,
   Trophy,
+  UserCheck,
   Users,
   Volleyball,
 } from "lucide-react";
@@ -16,14 +19,22 @@ export const SPONSOR_PRESENTATION_URL =
 export const SPONSOR_PRESENTATION_FILENAME =
   "Jackals-VC-Sponsor-Presentation-2026-27.pdf";
 
-export const SPONSOR_HERO_STATS = [
-  { value: "3", label: "competitive teams" },
-  { value: "500+", label: "social members" },
-  { value: "40+", label: "club members" },
-  { value: "150+", label: "training and social volleyball sessions" },
-  { value: "15K+", label: "monthly reach" },
-  { value: "40+", label: "league matches per year" },
-] as const;
+export const SPONSOR_HERO_STATS: {
+  icon: LucideIcon;
+  value: string;
+  label: string;
+}[] = [
+  { icon: Shield, value: "3", label: "competitive teams" },
+  { icon: Users, value: "500+", label: "social members" },
+  { icon: UserCheck, value: "40+", label: "club members" },
+  {
+    icon: Volleyball,
+    value: "150+",
+    label: "training and social volleyball sessions",
+  },
+  { icon: TrendingUp, value: "15K+", label: "monthly reach" },
+  { icon: Trophy, value: "40+", label: "league matches per year" },
+];
 
 export const SPONSOR_WHY_POINTS = [
   {
