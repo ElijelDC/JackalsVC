@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, Download, Mail, Sparkles } from "lucide-react";
+import { BookOpen, Download, Mail } from "lucide-react";
 import { ShowcaseCard, ShowcaseCtaBand } from "@/components/layout/ShowcaseCard";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
 import { AnimateIn } from "@/components/motion/AnimateIn";
@@ -45,11 +45,7 @@ export function SponsorsShowcase() {
         title="Partner with"
         highlight="Jackals VC"
         description="Put your brand in front of a passionate volleyball community — league matchdays, training nights, tournaments, and digital channels across the 2026/27 season."
-        stats={SPONSOR_HERO_STATS.map((stat) => ({
-          icon: Sparkles,
-          value: stat.value,
-          label: stat.label,
-        }))}
+        stats={SPONSOR_HERO_STATS}
       />
 
       <section className="relative overflow-hidden border-b border-white/10 bg-jackals-red/5 py-14 sm:py-16">
