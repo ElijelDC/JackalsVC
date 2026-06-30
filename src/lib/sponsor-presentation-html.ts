@@ -91,14 +91,14 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
     .page:last-child { page-break-after: auto; }
     .page__inner {
       height: 100%;
-      padding: 11mm 14mm 13mm;
+      padding: 12mm 14mm 14mm;
       display: flex;
       flex-direction: column;
     }
     .page__body { flex: 1; min-height: 0; }
     .page-footer {
       margin-top: auto;
-      padding-top: 3mm;
+      padding-top: 4mm;
       border-top: 1px solid rgba(255, 255, 255, 0.1);
       display: flex;
       justify-content: space-between;
@@ -123,11 +123,11 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       font-size: 15pt;
       font-weight: 700;
       color: #fff;
-      margin-bottom: 4mm;
+      margin-bottom: 5mm;
       line-height: 1.15;
     }
     .prose { color: #a3a3a3; }
-    .prose p + p { margin-top: 2.5mm; }
+    .prose p + p { margin-top: 3mm; }
     .prose--sm { font-size: 9.5pt; line-height: 1.45; }
     .divider {
       height: 2px;
@@ -139,8 +139,8 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding-bottom: 3mm;
-      margin-bottom: 5mm;
+      padding-bottom: 3.5mm;
+      margin-bottom: 6mm;
       border-bottom: 1.5px solid #e8222a;
     }
     .page-header__title {
@@ -176,8 +176,8 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
     }
     .stat-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 3mm;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3.5mm;
     }
     .stat-card, .opp-card, .invest-card, .panel {
       background: #2a2b2b;
@@ -192,15 +192,15 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       height: 2px;
       background: linear-gradient(90deg, #e8222a, #ff4d54);
     }
-    .stat-card { padding: 3.5mm 4mm; }
+    .stat-card { padding: 4mm 4mm; }
     .stat-card__value {
       font-family: Oswald, sans-serif;
-      font-size: 22pt;
+      font-size: 20pt;
       font-weight: 700;
       color: #ff4d54;
       line-height: 1;
     }
-    .stat-card__label { margin-top: 1.5mm; font-size: 8.5pt; color: #a3a3a3; }
+    .stat-card__label { margin-top: 2mm; font-size: 8pt; color: #a3a3a3; line-height: 1.3; }
     .opp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 3mm; }
     .opp-card { padding: 3.5mm 4mm; min-height: 22mm; }
     .opp-card h3 {
@@ -370,8 +370,8 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
     }
     .cta-links { margin-top: 2mm; font-size: 9pt; color: #a3a3a3; }
     .cta-links span + span::before { content: " · "; }
-    .stack-sm > * + * { margin-top: 3mm; }
-    .stack-md > * + * { margin-top: 5mm; }
+    .stack-sm > * + * { margin-top: 4mm; }
+    .stack-md > * + * { margin-top: 7mm; }
   </style>
 </head>
 <body>

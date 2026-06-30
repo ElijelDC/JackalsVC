@@ -62,17 +62,24 @@ export function ShowcaseHero({
 
           {stats && stats.length > 0 && (
             <StaggerIn
-              className="mt-8 flex flex-wrap items-center justify-center gap-8 text-sm text-zinc-500"
-              stagger={100}
+              className={cn(
+                "mt-10 grid gap-x-6 gap-y-8 text-sm text-zinc-500 sm:mt-12 sm:grid-cols-2 sm:gap-x-8 lg:grid-cols-3",
+              )}
+              stagger={80}
             >
               {stats.map(({ icon: Icon, value, label }) => (
-                <div key={label} className="flex items-center gap-2">
-                  <Icon className="h-5 w-5 text-jackals-red-light" />
+                <div
+                  key={label}
+                  className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left"
+                >
+                  <Icon className="h-5 w-5 shrink-0 text-jackals-red-light" />
                   <span>
-                    <span className="font-display text-2xl font-bold text-white">
+                    <span className="font-display text-2xl font-bold text-white sm:text-3xl">
                       {value}
-                    </span>{" "}
-                    {label}
+                    </span>
+                    <span className="mt-1 block text-sm leading-snug text-zinc-400">
+                      {label}
+                    </span>
                   </span>
                 </div>
               ))}

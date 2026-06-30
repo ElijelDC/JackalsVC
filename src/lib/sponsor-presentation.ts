@@ -55,7 +55,7 @@ export const PRESENTATION_INVESTMENT_AREAS = [
 
 export const PRESENTATION_SUPPORT_POINTS = [
   "Support competitive and social volleyball in Dublin",
-  "Support a growing club with men's and women's squads and open community sessions",
+  "Support a growing club with 3 competitive teams, 500+ social members, and 40+ registered club members",
   "Support diversity in sport — members across age groups and backgrounds united by the game",
 ];
 
