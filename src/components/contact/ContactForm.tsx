@@ -77,7 +77,7 @@ export function ContactForm() {
           value={subject}
           onChange={(event) => setSubject(event.target.value)}
           required
-          placeholder="Training, membership, events..."
+          placeholder="e.g. Upcoming fun session"
         />
       </div>
       <div>
