@@ -103,25 +103,27 @@ export function AboutShowcase() {
       <section className="relative border-b border-white/10 bg-jackals-inset/30 py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <AnimateIn variant="scale-in" className="text-center">
-            <p className="font-display mx-auto max-w-3xl text-2xl font-bold tracking-wide text-white sm:text-3xl">
-              <EditableText
-                contentKey="brand.slogan.lead"
-                fallback={CLUB_SLOGAN_PARTS.lead}
-                label="Slogan (lead)"
-              />{" "}
-              <span className="text-jackals-red-light">
+            <div className="mx-auto w-full max-w-3xl overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+              <p className="font-display whitespace-nowrap text-[clamp(0.75rem,3.2vw,1.875rem)] font-bold tracking-tight text-white sm:text-3xl sm:tracking-wide">
                 <EditableText
-                  contentKey="brand.slogan.accent"
-                  fallback={CLUB_SLOGAN_PARTS.accent}
-                  label="Slogan (accent)"
+                  contentKey="brand.slogan.lead"
+                  fallback={CLUB_SLOGAN_PARTS.lead}
+                  label="Slogan (lead)"
+                />{" "}
+                <span className="text-jackals-red-light">
+                  <EditableText
+                    contentKey="brand.slogan.accent"
+                    fallback={CLUB_SLOGAN_PARTS.accent}
+                    label="Slogan (accent)"
+                  />
+                </span>{" "}
+                <EditableText
+                  contentKey="brand.slogan.tail"
+                  fallback={CLUB_SLOGAN_PARTS.tail}
+                  label="Slogan (tail)"
                 />
-              </span>{" "}
-              <EditableText
-                contentKey="brand.slogan.tail"
-                fallback={CLUB_SLOGAN_PARTS.tail}
-                label="Slogan (tail)"
-              />
-            </p>
+              </p>
+            </div>
           </AnimateIn>
         </div>
       </section>
