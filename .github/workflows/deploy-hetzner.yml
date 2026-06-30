@@ -15,14 +15,27 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: >-
-      github.repository == 'ElijelDC/JackalsVC' &&
-      secrets.HETZNER_HOST != '' &&
-      secrets.HETZNER_USER != '' &&
-      secrets.HETZNER_SSH_KEY != '' &&
-      secrets.HETZNER_APP_DIR != ''
+    if: github.repository == 'ElijelDC/JackalsVC'
     steps:
+      - name: Check Hetzner secrets
+        id: secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_APP_DIR: ${{ secrets.HETZNER_APP_DIR }}
+        run: |
+          if [[ -z "$HETZNER_HOST" || -z "$HETZNER_USER" || -z "$HETZNER_SSH_KEY" || -z "$HETZNER_APP_DIR" ]]; then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "Hetzner deploy secrets are not fully configured — skipping deploy."
+            echo "Required: HETZNER_HOST, HETZNER_USER, HETZNER_SSH_KEY, HETZNER_APP_DIR"
+          else
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+            echo "Hetzner deploy secrets present."
+          fi
+
       - name: Deploy over SSH
+        if: steps.secrets.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HETZNER_HOST }}
