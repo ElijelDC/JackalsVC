@@ -13,7 +13,7 @@ function InstagramPostCard({ post }: { post: InstagramPost }) {
       href={post.permalink}
       target="_blank"
       rel="noopener noreferrer"
-      className="motion-hover-pop motion-shine group relative aspect-square overflow-hidden border border-white/10 bg-jackals-surface hover:border-jackals-red/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
+      className="motion-hover-lift group relative aspect-square overflow-hidden border border-white/10 bg-jackals-surface hover:border-jackals-red/30 hover:shadow-[0_8px_32px_rgba(0,0,0,0.35)]"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
@@ -57,7 +57,7 @@ export function InstagramFeed({ posts }: { posts: InstagramPost[] }) {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_0%,rgba(232,34,42,0.07),transparent_70%)]"
       />
       <PageContainer className="relative py-0">
-        <AnimateIn variant="pop-in">
+        <AnimateIn variant="fade-up">
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-jackals-red-light">
@@ -80,8 +80,7 @@ export function InstagramFeed({ posts }: { posts: InstagramPost[] }) {
         </AnimateIn>
         <StaggerIn
           className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6"
-          stagger={70}
-          variant="pop"
+          stagger={90}
         >
           {posts.map((post) => (
             <InstagramPostCard key={post.id} post={post} />
