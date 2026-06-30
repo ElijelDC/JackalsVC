@@ -3,6 +3,7 @@ import { HomePage } from "@/components/home/HomePage";
 import { NewsletterHomeOverlay } from "@/components/newsletter/NewsletterHomeOverlay";
 import { SHOP_ENABLED } from "@/lib/features";
 import { getHomepageUpcomingEvents } from "@/lib/home-events";
+import { getHomepageGalleryHighlights } from "@/lib/home-gallery";
 import { isSubscribedToEventNewsletter } from "@/lib/event-newsletter-subscription";
 import { getInstagramPosts } from "@/lib/instagram";
 import { visibleFeatureItems } from "@/lib/navigation";
@@ -22,11 +23,7 @@ export default async function HomePageRoute() {
       SHOP_ENABLED
         ? prisma.product.findMany({ where: { active: true }, take: 3 })
         : Promise.resolve([]),
-      prisma.galleryAlbum.findMany({
-        where: { featured: true },
-        take: 3,
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
-      }),
+      getHomepageGalleryHighlights(),
       getInstagramPosts(6),
     ]);
 

@@ -205,7 +205,7 @@ export function HomePage({
 
       <InstagramFeed posts={instagramPosts} />
 
-      {featuredAlbums.length > 0 && (
+      {featuredAlbums.length >= 2 && (
         <section className="border-t border-white/10 bg-jackals-inset/50 py-16 sm:py-20">
           <PageContainer className="py-0">
             <AnimateIn>
