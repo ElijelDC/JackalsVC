@@ -99,6 +99,7 @@ function EventsViewToggle({
 
 export function EventsPage({
   funSessions,
+  reclubFunEvents = [],
   tournaments,
   skillsClinics,
   socials,
@@ -107,6 +108,7 @@ export function EventsPage({
   initialView = "list",
 }: {
   funSessions: TrainingSessionCardData[];
+  reclubFunEvents?: EventsCalendarEvent[];
   tournaments: EventsCalendarEvent[];
   skillsClinics: EventsCalendarEvent[];
   socials: EventsCalendarEvent[];
@@ -149,6 +151,7 @@ export function EventsPage({
         {view === "list" ? (
           <EventsListView
             funSessions={funSessions}
+            reclubFunEvents={reclubFunEvents}
             tournaments={tournaments}
             skillsClinics={skillsClinics}
             socials={socials}

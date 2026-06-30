@@ -20,7 +20,7 @@ export async function getEventsCalendarRows(): Promise<EventsCalendarEvent[]> {
   return prisma.event.findMany({
     where: {
       trainingSessionId: null,
-      type: { in: ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"] },
+      type: { in: ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL", "FUN"] },
       OR: [{ endDate: { gte: now } }, { endDate: null, startDate: { gte: now } }],
     },
     orderBy: { startDate: "asc" },
@@ -37,9 +37,11 @@ export async function getEventsPageData() {
     (event) => event.type === "SKILLS_CLINIC",
   );
   const socials = calendarEvents.filter((event) => event.type === "SOCIAL");
+  const reclubFunEvents = calendarEvents.filter((event) => event.type === "FUN");
 
   return {
     funSessions,
+    reclubFunEvents,
     tournaments: calendarEvents.filter((event) => event.type === "TOURNAMENT"),
     skillsClinics,
     socials,
