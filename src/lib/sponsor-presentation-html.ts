@@ -176,8 +176,11 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
     }
     .stat-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, 1fr);
       gap: 3.5mm;
+    }
+    @media (min-width: 480px) {
+      .stat-grid { grid-template-columns: repeat(3, 1fr); }
     }
     .stat-card, .opp-card, .invest-card, .panel {
       background: #2a2b2b;
@@ -329,11 +332,12 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
     }
     .cover__slogan {
       font-family: Oswald, sans-serif;
-      font-size: 9pt;
+      font-size: clamp(6pt, 2.4vw, 9pt);
       font-weight: 600;
-      letter-spacing: 0.1em;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       color: #ff4d54;
+      white-space: nowrap;
     }
 
     /* Thank you */
