@@ -17,7 +17,7 @@ export function ShowcaseCard({
   return (
     <article
       className={cn(
-        "motion-hover-lift relative overflow-hidden border border-white/10 bg-jackals-surface/90 shadow-[0_20px_60px_rgba(0,0,0,0.35)]",
+        "motion-hover-pop motion-shine relative overflow-hidden border border-white/10 bg-jackals-surface/90 shadow-[0_20px_60px_rgba(0,0,0,0.35)]",
         padding && "p-6 sm:p-8",
         className,
       )}
