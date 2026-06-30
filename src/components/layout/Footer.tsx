@@ -239,9 +239,6 @@ function GuestFooter({
 
         <FooterColumn title="Plan ahead">
           <li>
-            <FooterLink href="/membership">Membership</FooterLink>
-          </li>
-          <li>
             <FooterLink href="/sponsors">For sponsors</FooterLink>
           </li>
           <li>
