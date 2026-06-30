@@ -48,7 +48,7 @@ export function ContactShowcase() {
         description={
           <EditableText
             contentKey="contact.hero.description"
-            fallback="Questions about training, membership, or events? Reach out — we would love to hear from you."
+            fallback="Questions about training or events? Reach out — we would love to hear from you."
             label="Contact hero description"
             multiline
           />
@@ -64,7 +64,7 @@ export function ContactShowcase() {
                   href={`mailto:${CONTACT_EMAIL}`}
                   label="Email"
                   value={CONTACT_EMAIL}
-                  description="Best for training, membership, and event enquiries."
+                  description="Best for training and event enquiries."
                 />
                 <ContactLink
                   href={INSTAGRAM_PROFILE_URL}
@@ -89,8 +89,7 @@ export function ContactShowcase() {
             <ShowcaseCard title="Send a message">
               <p className="mb-6">
                 Tell us a little about what you need — whether you are new to
-                the club, interested in membership, or curious about an upcoming
-                session.
+                the club or curious about an upcoming session.
               </p>
               <ContactForm />
             </ShowcaseCard>
