@@ -71,7 +71,7 @@ export function ShowcaseHero({
           {stats && stats.length > 0 && (
             <StaggerIn
               className={cn(
-                "mt-10 grid grid-cols-2 gap-x-4 gap-y-6 text-sm text-zinc-500 sm:mt-12 sm:gap-x-8 sm:gap-y-8 lg:grid-cols-3",
+                "mt-10 grid grid-cols-2 gap-x-4 gap-y-8 sm:mt-12 sm:gap-x-8 sm:gap-y-10 lg:grid-cols-3",
               )}
               stagger={65}
               variant="pop"
@@ -79,17 +79,19 @@ export function ShowcaseHero({
               {stats.map(({ icon: Icon, value, label }) => (
                 <div
                   key={label}
-                  className="flex flex-col items-start gap-1.5 text-left sm:gap-2"
+                  className="flex flex-col items-center gap-3 text-center"
                 >
-                  <Icon className="motion-icon-pop h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
-                  <span>
-                    <span className="motion-stat-value font-display text-xl font-bold text-white sm:text-3xl">
+                  <div className="flex h-9 w-9 items-center justify-center bg-jackals-red/15 text-jackals-red-light clip-slash-reverse">
+                    <Icon className="motion-icon-pop h-4 w-4" />
+                  </div>
+                  <div className="space-y-1">
+                    <p className="motion-stat-value font-display text-xl font-bold leading-none text-white sm:text-3xl">
                       {value}
-                    </span>
-                    <span className="mt-0.5 block text-xs leading-snug text-zinc-400 sm:mt-1 sm:text-sm">
+                    </p>
+                    <p className="mx-auto max-w-[11rem] text-balance text-xs leading-snug text-zinc-400 sm:max-w-none sm:text-sm">
                       {label}
-                    </span>
-                  </span>
+                    </p>
+                  </div>
                 </div>
               ))}
             </StaggerIn>
