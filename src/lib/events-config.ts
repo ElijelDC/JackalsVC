@@ -143,7 +143,7 @@ export function whatsOnSectionPath(section: EventsSectionKey) {
 
 export function eventsEventDetailPath(
   eventId: string,
-  section: "tournaments" | "skillsClinics" | "socials",
+  section: "funSessions" | "tournaments" | "skillsClinics" | "socials",
 ) {
   return `/calendar/${eventId}?from=events-${EVENTS_SECTIONS[section]}`;
 }
@@ -155,12 +155,18 @@ export function eventsCalendarEventDetailPath(eventId: string) {
 /** @deprecated Use eventsEventDetailPath */
 export function whatsOnEventDetailPath(
   eventId: string,
-  section: "tournaments" | "skillsClinics" | "socials",
+  section: "funSessions" | "tournaments" | "skillsClinics" | "socials",
 ) {
   return eventsEventDetailPath(eventId, section);
 }
 
 export function resolveEventsBackLink(from: string | undefined) {
+  if (
+    from === `events-${EVENTS_SECTIONS.funSessions}` ||
+    from === `whats-on-${EVENTS_SECTIONS.funSessions}`
+  ) {
+    return { path: eventsSectionPath("funSessions"), label: "Events" };
+  }
   if (
     from === `events-${EVENTS_SECTIONS.tournaments}` ||
     from === `whats-on-${EVENTS_SECTIONS.tournaments}`

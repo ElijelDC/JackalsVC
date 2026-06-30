@@ -178,6 +178,7 @@ model Event {
   paymentUrl             String?
   sessionFee             Float?
   reclubUsername         String?
+  reclubReferenceCode    String?          @unique
   clubIban               String?
   trainingSessionId      String?
   trainingSession        TrainingSession? @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)

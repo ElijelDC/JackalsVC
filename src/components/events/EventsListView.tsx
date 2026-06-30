@@ -145,8 +145,16 @@ function calendarEventToCard(event: EventsCalendarEvent) {
   };
 }
 
-function FunSessionsGrid({ funSessions }: { funSessions: TrainingSessionCardData[] }) {
+function FunSessionsGrid({
+  funSessions,
+  reclubFunEvents = [],
+}: {
+  funSessions: TrainingSessionCardData[];
+  reclubFunEvents?: EventsCalendarEvent[];
+}) {
   const { grouped: groupedFun, oneOff } = groupSessionsByDay(funSessions);
+  const hasSessions = funSessions.length > 0;
+  const hasReclubEvents = reclubFunEvents.length > 0;
 
   return (
     <div className="space-y-8">
@@ -177,6 +185,10 @@ function FunSessionsGrid({ funSessions }: { funSessions: TrainingSessionCardData
           ))}
         </StaggerIn>
       )}
+      {hasReclubEvents && (
+        <CalendarEventsGrid events={reclubFunEvents} section="funSessions" />
+      )}
+      {!hasSessions && !hasReclubEvents && null}
     </div>
   );
 }
@@ -186,7 +198,7 @@ function CalendarEventsGrid({
   section,
 }: {
   events: EventsCalendarEvent[];
-  section: "tournaments" | "skillsClinics" | "socials";
+  section: "funSessions" | "tournaments" | "skillsClinics" | "socials";
 }) {
   return (
     <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -213,11 +225,13 @@ function getHashSnapshot() {
 
 export function EventsListView({
   funSessions,
+  reclubFunEvents = [],
   tournaments,
   skillsClinics,
   socials,
 }: {
   funSessions: TrainingSessionCardData[];
+  reclubFunEvents?: EventsCalendarEvent[];
   tournaments: EventsCalendarEvent[];
   skillsClinics: EventsCalendarEvent[];
   socials: EventsCalendarEvent[];
@@ -226,12 +240,18 @@ export function EventsListView({
   const hash = useSyncExternalStore(subscribeToHash, getHashSnapshot, () => "");
   const counts = useMemo(
     () => ({
-      "fun-sessions": funSessions.length,
+      "fun-sessions": funSessions.length + reclubFunEvents.length,
       tournaments: tournaments.length,
       "skills-clinics": skillsClinics.length,
       socials: socials.length,
     }),
-    [funSessions.length, tournaments.length, skillsClinics.length, socials.length],
+    [
+      funSessions.length,
+      reclubFunEvents.length,
+      tournaments.length,
+      skillsClinics.length,
+      socials.length,
+    ],
   );
 
   const filterKey = `${hash}:${counts["fun-sessions"]}:${counts.tournaments}:${counts["skills-clinics"]}:${counts.socials}`;
@@ -243,6 +263,7 @@ export function EventsListView({
       hash={hash}
       counts={counts}
       funSessions={funSessions}
+      reclubFunEvents={reclubFunEvents}
       tournaments={tournaments}
       skillsClinics={skillsClinics}
       socials={socials}
@@ -255,6 +276,7 @@ function EventsListViewInner({
   hash,
   counts,
   funSessions,
+  reclubFunEvents = [],
   tournaments,
   skillsClinics,
   socials,
@@ -263,6 +285,7 @@ function EventsListViewInner({
   hash: string;
   counts: Record<BrowseFilter, number>;
   funSessions: TrainingSessionCardData[];
+  reclubFunEvents?: EventsCalendarEvent[];
   tournaments: EventsCalendarEvent[];
   skillsClinics: EventsCalendarEvent[];
   socials: EventsCalendarEvent[];
@@ -311,8 +334,11 @@ function EventsListViewInner({
         </h2>
 
         {activeFilter === "fun-sessions" && (
-          funSessions.length > 0 ? (
-            <FunSessionsGrid funSessions={funSessions} />
+          funSessions.length > 0 || reclubFunEvents.length > 0 ? (
+            <FunSessionsGrid
+              funSessions={funSessions}
+              reclubFunEvents={reclubFunEvents}
+            />
           ) : (
             <Card>
               <CardTitle>{activeMeta.emptyTitle}</CardTitle>
