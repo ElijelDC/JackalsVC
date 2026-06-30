@@ -20,9 +20,9 @@ export const SPONSOR_HERO_STATS = [
   { value: "3", label: "competitive teams" },
   { value: "500+", label: "social members" },
   { value: "40+", label: "club members" },
-  { value: "150+", label: "volleyball sessions per year" },
+  { value: "150+", label: "training and social volleyball sessions" },
   { value: "15K+", label: "monthly reach" },
-  { value: "20+", label: "league matchdays per year" },
+  { value: "40+", label: "league matches per year" },
 ] as const;
 
 export const SPONSOR_WHY_POINTS = [
