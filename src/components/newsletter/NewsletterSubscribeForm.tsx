@@ -15,6 +15,7 @@ type NewsletterSubscribeFormProps = {
   initialEmail?: string;
   initialSubscribed?: boolean;
   compact?: boolean;
+  stacked?: boolean;
   onSubscribed?: () => void;
 };
 
@@ -23,6 +24,7 @@ export function NewsletterSubscribeForm({
   initialEmail = "",
   initialSubscribed = false,
   compact = false,
+  stacked = false,
   onSubscribed,
 }: NewsletterSubscribeFormProps) {
   const [email, setEmail] = useState(initialEmail);
@@ -65,14 +67,25 @@ export function NewsletterSubscribeForm({
   }
 
   return (
-    <form onSubmit={(event) => void submit(event)} className={compact ? "space-y-3" : "mt-4 space-y-3"}>
-      {!compact && (
+    <form
+      onSubmit={(event) => void submit(event)}
+      className={compact || stacked ? "space-y-3" : "mt-4 space-y-3"}
+    >
+      {!compact && !stacked && (
         <p className="text-sm text-zinc-500">
           Fun sessions, tournaments, and skills clinics — opt in to get an email
           when new ones are added.
         </p>
       )}
-      <div className={compact ? "flex flex-col gap-2 sm:flex-row" : "space-y-3"}>
+      <div
+        className={
+          compact
+            ? "flex flex-col gap-2 sm:flex-row"
+            : stacked
+              ? "flex flex-col gap-3"
+              : "space-y-3"
+        }
+      >
         <Input
           type="email"
           value={email}
@@ -82,7 +95,13 @@ export function NewsletterSubscribeForm({
           autoComplete="email"
           className={compact ? "sm:flex-1" : undefined}
         />
-        <Button type="submit" disabled={loading} className={compact ? "shrink-0" : "w-full sm:w-auto"}>
+        <Button
+          type="submit"
+          disabled={loading}
+          className={
+            compact ? "shrink-0" : stacked ? "w-full" : "w-full sm:w-auto"
+          }
+        >
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />

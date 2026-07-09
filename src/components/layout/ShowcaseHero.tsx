@@ -10,6 +10,16 @@ export type ShowcaseStat = {
   label: string;
 };
 
+function defaultStatsGridClassName(count: number) {
+  if (count === 1) {
+    return "grid-cols-1 max-w-[11rem] mx-auto";
+  }
+  if (count === 2) {
+    return "grid-cols-2 max-w-md mx-auto sm:max-w-lg";
+  }
+  return "grid-cols-2 lg:grid-cols-3";
+}
+
 export function ShowcaseHero({
   title,
   highlight,
@@ -74,7 +84,7 @@ export function ShowcaseHero({
             <StaggerIn
               className={cn(
                 "mt-10 grid gap-x-4 gap-y-8 sm:mt-12 sm:gap-x-8 sm:gap-y-10",
-                statsGridClassName ?? "grid-cols-2 lg:grid-cols-3",
+                statsGridClassName ?? defaultStatsGridClassName(stats.length),
               )}
               stagger={65}
               variant="pop"

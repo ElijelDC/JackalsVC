@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev -p 3005",
     "build": "prisma generate && next build",
+    "build:local": "DATABASE_URL=\"file:./prisma/dev.db\" prisma generate && DATABASE_URL=\"file:./prisma/dev.db\" next build",
     "start": "next start",
+    "start:local": "DATABASE_URL=\"file:./prisma/dev.db\" next start -p 3000",
+    "preview:local": "npm run build:local && npm run start:local",
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:deploy": "prisma migrate deploy",

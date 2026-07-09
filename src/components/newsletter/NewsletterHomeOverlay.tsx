@@ -67,6 +67,7 @@ export function NewsletterHomeOverlay({
         initialEmail={userEmail}
         initialSubscribed={initialSubscribed}
         onSubscribed={handleSubscribed}
+        stacked
       />
       <button
         type="button"
