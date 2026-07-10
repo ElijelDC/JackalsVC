@@ -85,15 +85,15 @@ export function ContactShowcase() {
             </ShowcaseCard>
           </StaggerIn>
 
-          <AnimateIn variant="fade-up" className="lg:col-span-3">
-            <ShowcaseCard title="Send a message">
+          <div className="lg:col-span-3">
+            <ShowcaseCard title="Send a message" highlighted>
               <p className="mb-6">
                 Tell us a little about what you need — whether you are new to
                 the club or curious about an upcoming session.
               </p>
               <ContactForm />
             </ShowcaseCard>
-          </AnimateIn>
+          </div>
         </div>
 
         <AnimateIn className="mt-16 sm:mt-20">

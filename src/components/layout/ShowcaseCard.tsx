@@ -7,17 +7,22 @@ export function ShowcaseCard({
   className,
   contentClassName,
   padding = true,
+  highlighted = false,
 }: {
   title?: string;
   children: ReactNode;
   className?: string;
   contentClassName?: string;
   padding?: boolean;
+  highlighted?: boolean;
 }) {
   return (
     <article
       className={cn(
-        "motion-hover-pop motion-shine relative overflow-hidden border border-white/10 bg-jackals-surface/90 shadow-[0_20px_60px_rgba(0,0,0,0.35)]",
+        "relative overflow-hidden border bg-jackals-surface/90 shadow-[0_20px_60px_rgba(0,0,0,0.35)]",
+        highlighted
+          ? "border-jackals-red/40 bg-jackals-red/[0.06] shadow-[0_20px_60px_rgba(232,34,42,0.2)]"
+          : "motion-hover-pop motion-shine border-white/10",
         padding && "p-6 sm:p-8",
         className,
       )}
@@ -28,7 +33,10 @@ export function ShowcaseCard({
       />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-jackals-red/10 blur-3xl"
+        className={cn(
+          "pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full blur-3xl",
+          highlighted ? "bg-jackals-red/20" : "bg-jackals-red/10",
+        )}
       />
       <div className={cn("relative", contentClassName)}>
         {title ? (
