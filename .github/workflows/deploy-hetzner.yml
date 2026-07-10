@@ -26,16 +26,15 @@ jobs:
           HETZNER_APP_DIR: ${{ secrets.HETZNER_APP_DIR }}
         run: |
           if [[ -z "$HETZNER_HOST" || -z "$HETZNER_USER" || -z "$HETZNER_SSH_KEY" || -z "$HETZNER_APP_DIR" ]]; then
-            echo "configured=false" >> "$GITHUB_OUTPUT"
-            echo "Hetzner deploy secrets are not fully configured — skipping deploy."
-            echo "Required: HETZNER_HOST, HETZNER_USER, HETZNER_SSH_KEY, HETZNER_APP_DIR"
-          else
-            echo "configured=true" >> "$GITHUB_OUTPUT"
-            echo "Hetzner deploy secrets present."
+            echo "::error::Hetzner deploy secrets are not fully configured — deploy was skipped."
+            echo "Add these GitHub repo secrets: HETZNER_HOST, HETZNER_USER, HETZNER_SSH_KEY, HETZNER_APP_DIR"
+            echo "Or deploy manually: ./scripts/hetzner-deploy.sh (see docs/HETZNER-DEPLOY.md)"
+            exit 1
           fi
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+          echo "Hetzner deploy secrets present."
 
       - name: Deploy over SSH
-        if: steps.secrets.outputs.configured == 'true'
         uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.HETZNER_HOST }}
