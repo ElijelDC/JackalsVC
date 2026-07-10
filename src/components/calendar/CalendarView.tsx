@@ -87,7 +87,9 @@ function EventPreviewCard({
 }: {
   event: EventListItem;
 }) {
-  const { timeLabel } = formatEventDateTime(event.startDate, event.endDate);
+  const { timeLabel } = formatEventDateTime(event.startDate, event.endDate, {
+    eventType: event.type,
+  });
   const typeStyle = getEventDisplayStyle(event);
 
   return (
@@ -123,6 +125,7 @@ function EventPreviewCard({
 
       <Link
         href={eventsCalendarEventDetailPath(event.id)}
+        prefetch={false}
         className="group block px-6 pb-6 pt-3 transition-colors hover:text-white"
       >
         <CardTitle>{event.title}</CardTitle>
@@ -186,6 +189,7 @@ function UpNextPreview({
             <li key={event.id}>
               <Link
                 href={eventsCalendarEventDetailPath(event.id)}
+                prefetch={false}
                 onClick={() => onSelectDate(eventDate)}
                 className="flex items-center gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5 transition-colors hover:border-white/20 hover:bg-white/[0.04]"
               >
@@ -303,6 +307,7 @@ function CalendarDayCell({
           const { timeLabel } = formatEventDateTime(
             event.startDate,
             event.endDate,
+            { eventType: event.type },
           );
           return (
             <div

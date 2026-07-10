@@ -38,6 +38,7 @@ export function EventListCard({
   const { dateLabel, timeLabel } = formatEventDateTime(
     event.startDate,
     event.endDate,
+    { eventType: event.type },
   );
   const resolvedFeeLabel =
     feeLabel ?? (event.type === "TOURNAMENT" ? "tournament fee" : "session fee");
@@ -45,7 +46,7 @@ export function EventListCard({
   const linkHref = href ?? eventDetailPath(event.id);
 
   return (
-    <Link href={linkHref} className="group block h-full">
+    <Link href={linkHref} prefetch={false} className="group block h-full">
       <Card
         className={cn(
           "motion-hover-lift relative h-full overflow-hidden border-white/10 bg-jackals-surface/90 p-0 group-hover:border-jackals-red/30 group-hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]",

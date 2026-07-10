@@ -32,8 +32,12 @@ export const metadata: Metadata = {
     "Jackals Volleyball Club — training sessions, events, membership, gallery, and official club shop.",
   manifest: "/manifest.json",
   icons: {
-    icon: PUBLIC_PATHS.brand.logo,
-    apple: PUBLIC_PATHS.brand.logo,
+    icon: [
+      { url: PUBLIC_PATHS.brand.favicon, type: "image/png" },
+      { url: PUBLIC_PATHS.brand.favicon, sizes: "32x32", type: "image/png" },
+    ],
+    shortcut: PUBLIC_PATHS.brand.favicon,
+    apple: PUBLIC_PATHS.brand.favicon,
   },
   appleWebApp: {
     capable: true,

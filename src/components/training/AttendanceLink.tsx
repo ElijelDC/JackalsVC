@@ -12,13 +12,32 @@ export function AttendanceLink({
   occurrenceDate,
   label = "Register attendance on Reclub",
   variant = "outline",
+  externalHref,
 }: {
   sessionId: string;
   basePath?: string;
   occurrenceDate?: string | null;
   label?: string;
   variant?: "outline" | "primary";
+  /** Opens the Reclub (or other external) registration page directly. */
+  externalHref?: string | null;
 }) {
+  const className =
+    variant === "primary" ? primaryButtonClass : outlineButtonClass;
+
+  if (externalHref) {
+    return (
+      <a
+        href={externalHref}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+      >
+        {label}
+      </a>
+    );
+  }
+
   const query = occurrenceDate
     ? `?date=${encodeURIComponent(occurrenceDate)}`
     : "";
@@ -26,7 +45,7 @@ export function AttendanceLink({
   return (
     <Link
       href={`${basePath}/${sessionId}/attend${query}`}
-      className={variant === "primary" ? primaryButtonClass : outlineButtonClass}
+      className={className}
     >
       {label}
     </Link>

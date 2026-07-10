@@ -93,7 +93,7 @@ export function AboutShowcase() {
         description={
           <EditableText
             contentKey="about.hero.description"
-            fallback="A community volleyball club built around open sessions, competitive training, and a welcoming team spirit."
+            fallback="An amateur sports club built around community volleyball — open sessions, competitive training, and a welcoming team spirit."
             label="About hero description"
             multiline
           />
@@ -134,7 +134,7 @@ export function AboutShowcase() {
             <p>
               <EditableText
                 contentKey="about.who-we-are"
-                fallback="Jackals VC is a community volleyball club built around open sessions, competitive training, and a welcoming team spirit. Whether you are picking up a ball for the first time or chasing league titles, there is a place for you here."
+                fallback="Founded in 2024, Jackals VC is an amateur sports club built around community volleyball — open sessions, competitive training, and a welcoming team spirit. Whether you are picking up a ball for the first time or chasing league titles, there is a place for you here."
                 label="Who we are"
                 multiline
               />

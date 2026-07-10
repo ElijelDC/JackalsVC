@@ -82,6 +82,20 @@ export async function getEventAttendanceContext(event: EventListItem) {
   }
 
   if (
+    !event.trainingSessionId &&
+    event.type === "FUN" &&
+    event.attendanceUrl
+  ) {
+    return {
+      attendanceUrl: event.attendanceUrl,
+      attendanceOccurrenceDate: null as string | null,
+      attendBasePath: "/calendar" as string | null,
+      openAttendance: true,
+      paymentUrl: event.paymentUrl ?? null,
+    };
+  }
+
+  if (
     !event.trainingSessionId ||
     (event.type !== "TRAINING" && event.type !== "FUN")
   ) {

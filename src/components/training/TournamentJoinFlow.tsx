@@ -1,3 +1,4 @@
+import { isExternalAttendanceUrl } from "@/lib/reclub-config";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { EntryFeeBadge, JoinFlowStep } from "@/components/training/JoinFlowStep";
 import { ReclubLinkUnavailable } from "@/components/training/ReclubLinkUnavailable";
@@ -36,6 +37,9 @@ export function TournamentJoinFlow({
               </p>
               <div className="mt-4">
                 <AttendanceLink
+                  externalHref={
+                    isExternalAttendanceUrl(attendanceUrl) ? attendanceUrl : null
+                  }
                   sessionId={sessionId}
                   basePath={attendBasePath}
                   label="Register a team on ReClub"

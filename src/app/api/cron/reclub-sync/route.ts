@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError } from "@/lib/api";
 import { authorizeCronRequest } from "@/lib/cron-auth";
 import { getReclubWatchReferenceCodes } from "@/lib/reclub-config";
-import { syncTrackedReclubMeets } from "@/lib/reclub-sync";
+import { syncReclubClubUpcomingActivities, syncTrackedReclubMeets } from "@/lib/reclub-sync";
 
 async function handle(request: Request) {
   if (!(await authorizeCronRequest(request))) {
@@ -10,14 +10,20 @@ async function handle(request: Request) {
   }
 
   try {
-    const results = await syncTrackedReclubMeets({
-      extraCodes: getReclubWatchReferenceCodes(),
-      notifyMembers: false,
-    });
+    const [clubSync, trackedResults] = await Promise.all([
+      syncReclubClubUpcomingActivities({ notifyMembers: false }),
+      syncTrackedReclubMeets({
+        extraCodes: getReclubWatchReferenceCodes(),
+        notifyMembers: false,
+      }),
+    ]);
 
     return NextResponse.json({
-      synced: results.length,
-      results,
+      club: clubSync,
+      tracked: {
+        synced: trackedResults.length,
+        results: trackedResults,
+      },
     });
   } catch (error) {
     const message =

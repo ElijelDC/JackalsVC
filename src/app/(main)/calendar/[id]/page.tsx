@@ -5,6 +5,12 @@ import {
   getEventAttendanceContext,
   getPublicEvent,
 } from "@/lib/public-events";
+import {
+  isReclubCompetitionId,
+  parseReclubCompetitionId,
+  parseReclubReferenceCode,
+} from "@/lib/reclub-config";
+import { fetchReclubMeetConfirmedParticipants } from "@/lib/reclub-payload";
 import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
 import { getSiteUrl } from "@/lib/site-url.server";
 import { resolveEventsBackLink } from "@/lib/events-config";
@@ -39,6 +45,16 @@ export default async function CalendarEventPage({
   const event = await getPublicEvent(id, isLoggedIn);
   const attendance = await getEventAttendanceContext(event);
   const eventsBack = resolveEventsBackLink(from);
+  const attendanceUrl = attendance.attendanceUrl ?? event.attendanceUrl ?? "";
+  const competitionId =
+    (event.reclubReferenceCode && isReclubCompetitionId(event.reclubReferenceCode)
+      ? event.reclubReferenceCode
+      : parseReclubCompetitionId(attendanceUrl)) ?? null;
+  const reclubReferenceCode = parseReclubReferenceCode(attendanceUrl) ?? null;
+  const reclubConfirmedParticipants =
+    reclubReferenceCode && !competitionId
+      ? await fetchReclubMeetConfirmedParticipants(reclubReferenceCode)
+      : [];
 
   const canAccessAttendance =
     isLoggedIn && session?.user
@@ -66,6 +82,7 @@ export default async function CalendarEventPage({
       listPath={eventsBack?.path}
       listLabel={eventsBack?.label}
       initialAttendanceStatus={initialAttendanceStatus}
+      reclubConfirmedParticipants={reclubConfirmedParticipants}
     />
   );
 }

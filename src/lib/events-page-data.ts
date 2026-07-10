@@ -2,6 +2,7 @@ import "server-only";
 
 import { startOfDay } from "date-fns";
 import type { EventsCalendarEvent } from "@/lib/events-config";
+import { inferReclubEventType } from "@/lib/reclub-event-type";
 import { getVisibleFunSessions } from "@/lib/session-calendar";
 import { prisma } from "@/lib/prisma";
 
@@ -27,6 +28,19 @@ export async function getEventsCalendarRows(): Promise<EventsCalendarEvent[]> {
   });
 }
 
+type CalendarEventRow = Awaited<ReturnType<typeof getEventsCalendarRows>>[number];
+
+function resolveBrowseEventType(event: CalendarEventRow): string {
+  if (event.reclubReferenceCode) {
+    return inferReclubEventType({
+      title: event.title,
+      description: event.description,
+    });
+  }
+
+  return event.type;
+}
+
 export async function getEventsPageData() {
   const [funSessions, calendarEvents] = await Promise.all([
     getVisibleFunSessions(),
@@ -34,15 +48,21 @@ export async function getEventsPageData() {
   ]);
 
   const skillsClinics = calendarEvents.filter(
-    (event) => event.type === "SKILLS_CLINIC",
+    (event) => resolveBrowseEventType(event) === "SKILLS_CLINIC",
   );
-  const socials = calendarEvents.filter((event) => event.type === "SOCIAL");
-  const reclubFunEvents = calendarEvents.filter((event) => event.type === "FUN");
+  const socials = calendarEvents.filter(
+    (event) => resolveBrowseEventType(event) === "SOCIAL",
+  );
+  const reclubFunEvents = calendarEvents.filter(
+    (event) => resolveBrowseEventType(event) === "FUN",
+  );
 
   return {
     funSessions,
     reclubFunEvents,
-    tournaments: calendarEvents.filter((event) => event.type === "TOURNAMENT"),
+    tournaments: calendarEvents.filter(
+      (event) => resolveBrowseEventType(event) === "TOURNAMENT",
+    ),
     skillsClinics,
     socials,
   };

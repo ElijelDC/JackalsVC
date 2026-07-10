@@ -145,6 +145,9 @@ function calendarEventToCard(event: EventsCalendarEvent) {
   };
 }
 
+const EVENTS_CARD_GRID_CLASS =
+  "grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3";
+
 function FunSessionsGrid({
   funSessions,
   reclubFunEvents = [],
@@ -153,43 +156,36 @@ function FunSessionsGrid({
   reclubFunEvents?: EventsCalendarEvent[];
 }) {
   const { grouped: groupedFun, oneOff } = groupSessionsByDay(funSessions);
-  const hasSessions = funSessions.length > 0;
+  const allSessions = [
+    ...groupedFun.flatMap(({ sessions }) => sessions),
+    ...oneOff,
+  ];
+  const hasSessions = allSessions.length > 0;
   const hasReclubEvents = reclubFunEvents.length > 0;
 
+  if (!hasSessions && !hasReclubEvents) {
+    return null;
+  }
+
   return (
-    <div className="space-y-8">
-      {groupedFun.map(({ day, sessions }) => (
-        <StaggerIn
-          key={day}
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
-        >
-          {sessions.map((session) => (
-            <SessionCard
-              key={session.id}
-              session={session}
-              detailBasePath="/fun-sessions"
-              accentType="FUN"
-            />
-          ))}
-        </StaggerIn>
+    <StaggerIn className={EVENTS_CARD_GRID_CLASS}>
+      {allSessions.map((session) => (
+        <SessionCard
+          key={session.id}
+          session={session}
+          detailBasePath="/fun-sessions"
+          accentType="FUN"
+        />
       ))}
-      {oneOff.length > 0 && (
-        <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {oneOff.map((session) => (
-            <SessionCard
-              key={session.id}
-              session={session}
-              detailBasePath="/fun-sessions"
-              accentType="FUN"
-            />
-          ))}
-        </StaggerIn>
-      )}
-      {hasReclubEvents && (
-        <CalendarEventsGrid events={reclubFunEvents} section="funSessions" />
-      )}
-      {!hasSessions && !hasReclubEvents && null}
-    </div>
+      {reclubFunEvents.map((event) => (
+        <EventListCard
+          key={event.id}
+          event={calendarEventToCard(event)}
+          href={eventsEventDetailPath(event.id, "funSessions")}
+          cta="text"
+        />
+      ))}
+    </StaggerIn>
   );
 }
 
@@ -201,7 +197,7 @@ function CalendarEventsGrid({
   section: "funSessions" | "tournaments" | "skillsClinics" | "socials";
 }) {
   return (
-    <StaggerIn className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+    <StaggerIn className={EVENTS_CARD_GRID_CLASS}>
       {events.map((event) => (
         <EventListCard
           key={event.id}

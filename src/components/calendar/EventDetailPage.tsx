@@ -4,6 +4,7 @@ import type { EventListItem } from "@/lib/event-filters";
 import { getBrowseEventTypeLabel } from "@/lib/events-config";
 import { getEventDisplayStyle, formatEventDateTime } from "@/lib/event-display";
 import { isOpenReclubEvent, usesPaidJoinFlow, usesTournamentJoinFlow } from "@/lib/event-reclub";
+import { isExternalAttendanceUrl } from "@/lib/reclub-config";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
@@ -12,6 +13,9 @@ import { FunSessionJoinFlow } from "@/components/training/FunSessionJoinFlow";
 import { TournamentJoinFlow } from "@/components/training/TournamentJoinFlow";
 import { TrainingAttendanceStatusBadge } from "@/components/training/TrainingAttendancePicker";
 import { AddToCalendarActions } from "@/components/calendar/AddToCalendarActions";
+import { EventDescription } from "@/components/calendar/EventDescription";
+import { ReclubConfirmedParticipants } from "@/components/calendar/ReclubConfirmedParticipants";
+import type { ReclubMeetParticipant } from "@/lib/reclub-payload";
 import type { TrainingAttendanceStatus } from "@/lib/training-attendance-config";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { cn } from "@/lib/utils";
@@ -29,6 +33,7 @@ export function EventDetailPage({
   listPath = "/events",
   listLabel = "events",
   initialAttendanceStatus = "UNANSWERED",
+  reclubConfirmedParticipants = [],
 }: {
   event: EventListItem;
   attendanceUrl: string | null;
@@ -42,10 +47,12 @@ export function EventDetailPage({
   listPath?: string;
   listLabel?: string;
   initialAttendanceStatus?: TrainingAttendanceStatus;
+  reclubConfirmedParticipants?: ReclubMeetParticipant[];
 }) {
   const { dateLabel, timeLabel } = formatEventDateTime(
     event.startDate,
     event.endDate,
+    { eventType: event.type },
   );
   const bodyDescription = event.sessionDescription ?? event.description;
   const isSessionEvent = Boolean(event.trainingSessionId);
@@ -65,6 +72,34 @@ export function EventDetailPage({
     (Boolean(paymentUrl) || event.sessionFee != null || Boolean(attendanceUrl));
   const showTournamentJoinFlow = usesTournamentJoinFlow(event);
   const showStructuredJoinFlow = showFunJoinFlow || showTournamentJoinFlow;
+
+  const funJoinFlow = showFunJoinFlow ? (
+    <FunSessionJoinFlow
+      paymentUrl={paymentUrl}
+      payLabel="Session Payment Link"
+      sessionTitle={event.title}
+      sessionDate={event.startDate}
+      reclubUsername={event.reclubUsername}
+      sessionFee={event.sessionFee}
+      attendanceUrl={attendanceUrl}
+      sessionId={attendanceEntityId}
+      attendBasePath={attendBasePath ?? "/fun-sessions"}
+      attendanceOccurrenceDate={attendanceOccurrenceDate}
+      attendanceLabel="Register on ReClub"
+      showPayBeforeNote
+      inline
+    />
+  ) : null;
+
+  const tournamentJoinFlow = showTournamentJoinFlow ? (
+    <TournamentJoinFlow
+      attendanceUrl={attendanceUrl}
+      sessionId={attendanceEntityId}
+      attendBasePath={attendBasePath ?? "/calendar"}
+      tournamentFee={event.sessionFee}
+      clubIban={event.clubIban}
+    />
+  ) : null;
 
   return (
     <PageContainer>
@@ -129,41 +164,19 @@ export function EventDetailPage({
               <h2 className="text-sm font-semibold uppercase tracking-wider text-zinc-500">
                 {descriptionLabel}
               </h2>
-              <p className="mt-3 leading-relaxed text-zinc-300">
-                {bodyDescription}
-              </p>
+              <EventDescription text={bodyDescription} />
             </div>
           )}
 
-          {showFunJoinFlow && (
-            <div className="mt-6 border-t border-white/10 pt-6">
-              <FunSessionJoinFlow
-                paymentUrl={paymentUrl}
-                payLabel="Session Payment Link"
-                sessionTitle={event.title}
-                sessionDate={event.startDate}
-                reclubUsername={event.reclubUsername}
-                sessionFee={event.sessionFee}
-                attendanceUrl={attendanceUrl}
-                sessionId={attendanceEntityId}
-                attendBasePath={attendBasePath ?? "/fun-sessions"}
-                attendanceOccurrenceDate={attendanceOccurrenceDate}
-                attendanceLabel="Register on ReClub"
-                showPayBeforeNote
-                inline
-              />
+          {funJoinFlow && (
+            <div className="mt-6 border-t border-white/10 pt-6 lg:hidden">
+              {funJoinFlow}
             </div>
           )}
 
-          {showTournamentJoinFlow && (
-            <div className="mt-6 border-t border-white/10 pt-6">
-              <TournamentJoinFlow
-                attendanceUrl={attendanceUrl}
-                sessionId={attendanceEntityId}
-                attendBasePath={attendBasePath ?? "/calendar"}
-                tournamentFee={event.sessionFee}
-                clubIban={event.clubIban}
-              />
+          {tournamentJoinFlow && (
+            <div className="mt-6 border-t border-white/10 pt-6 lg:hidden">
+              {tournamentJoinFlow}
             </div>
           )}
 
@@ -173,6 +186,9 @@ export function EventDetailPage({
                 Registration
               </h2>
               <AttendanceLink
+                externalHref={
+                  isExternalAttendanceUrl(attendanceUrl) ? attendanceUrl : null
+                }
                 sessionId={attendanceEntityId}
                 basePath={attendBasePath}
                 occurrenceDate={attendanceOccurrenceDate}
@@ -202,6 +218,18 @@ export function EventDetailPage({
                   </Button>
                 </Link>
               </div>
+            </Card>
+          )}
+
+          <ReclubConfirmedParticipants participants={reclubConfirmedParticipants} />
+
+          {tournamentJoinFlow && (
+            <div className="hidden lg:block">{tournamentJoinFlow}</div>
+          )}
+
+          {funJoinFlow && (
+            <Card className="hidden bg-jackals-surface-muted/20 lg:block">
+              {funJoinFlow}
             </Card>
           )}
 

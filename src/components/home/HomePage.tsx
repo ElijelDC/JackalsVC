@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import type { NavItem } from "@/lib/navigation";
 import type { EventListItem } from "@/lib/event-filters";
 import { Button } from "@/components/ui/Button";
@@ -18,6 +18,7 @@ import { CLUB_SLOGAN } from "@/lib/brand";
 import { EditableText } from "@/components/site-edit/EditableText";
 import type { InstagramPost } from "@/lib/instagram";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import { RECLUB_CLUB_URL } from "@/lib/reclub-config";
 import { InstagramFeed } from "@/components/home/InstagramFeed";
 import { FeatureCarousel } from "@/components/home/FeatureCarousel";
 import type { Product } from "@/types/product";
@@ -103,6 +104,15 @@ export function HomePage({
                   >
                     <InstagramIcon className="transition-transform group-hover:scale-110" />
                     @jackalsvolleyball
+                  </a>
+                  <a
+                    href={RECLUB_CLUB_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group inline-flex items-center justify-center gap-2 border border-white/20 bg-transparent px-6 py-3 text-base font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 hover:scale-[1.02] active:scale-[0.96]"
+                  >
+                    ReClub
+                    <ExternalLink className="h-4 w-4 transition-transform group-hover:scale-110" />
                   </a>
                   <Link href="/events">
                     <Button size="lg">Events</Button>

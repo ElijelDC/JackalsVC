@@ -58,7 +58,7 @@ export function ContactShowcase() {
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-5 lg:gap-10">
           <StaggerIn className="space-y-6 lg:col-span-2" stagger={100}>
-            <ShowcaseCard title="Get in touch">
+            <ShowcaseCard title="Get in touch" interactive={false}>
               <div className="space-y-4">
                 <ContactLink
                   href={`mailto:${CONTACT_EMAIL}`}
@@ -76,7 +76,7 @@ export function ContactShowcase() {
               </div>
             </ShowcaseCard>
 
-            <ShowcaseCard title="What to expect">
+            <ShowcaseCard title="What to expect" interactive={false}>
               <p>
                 We read every message and aim to reply within a few days. For
                 urgent session or event questions, Instagram is often the fastest
@@ -86,7 +86,7 @@ export function ContactShowcase() {
           </StaggerIn>
 
           <AnimateIn variant="fade-up" className="lg:col-span-3">
-            <ShowcaseCard title="Send a message">
+            <ShowcaseCard title="Send a message" interactive={false}>
               <p className="mb-6">
                 Tell us a little about what you need — whether you are new to
                 the club or curious about an upcoming session.

@@ -1,4 +1,10 @@
-type PayloadRoot = unknown[];
+import {
+  fetchReclubJson,
+  RECLUB_CACHE_TTL_MS,
+  withReclubRequestCache,
+} from "@/lib/reclub-request-cache";
+
+export type PayloadRoot = unknown[];
 
 type ReclubLocation = {
   address?: string | null;
@@ -19,6 +25,14 @@ export type ReclubMeet = {
   isPast: boolean;
   isCancelled: boolean;
 };
+
+export type ReclubMeetParticipant = {
+  name: string;
+  imageUrl: string | null;
+  isHost: boolean;
+};
+
+const RECLUB_CONFIRMED_PARTICIPANT_STATUS = 1;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -94,27 +108,80 @@ function extractPaymentUrl(notes: string | null): string | null {
   return match?.[0] ?? null;
 }
 
-function getMeetState(data: PayloadRoot): Record<string, unknown> | null {
+export function getPayloadState(data: PayloadRoot): Record<string, unknown> | null {
   const rootState = data[2];
-  if (!Array.isArray(rootState) || !isRecord(rootState[1])) {
-    return null;
+
+  if (Array.isArray(rootState)) {
+    return isRecord(rootState[1]) ? rootState[1] : null;
   }
 
-  const state = rootState[1];
+  return isRecord(rootState) ? rootState : null;
+}
+
+function getMeetWrapper(
+  data: PayloadRoot,
+): Record<string, unknown> | null {
+  const state = getPayloadState(data);
+  if (!state) return null;
+
   const meetKey = Object.keys(state).find((key) => key.startsWith("meet-"));
   if (!meetKey) return null;
 
   const wrapperIndex = state[meetKey];
   if (typeof wrapperIndex !== "number") return null;
 
-  const wrapper = data[wrapperIndex];
-  if (!isRecord(wrapper) || typeof wrapper.meet !== "number") {
-    return null;
-  }
+  const resolve = createPayloadResolver(data);
+  const wrapper = resolve(wrapperIndex);
+  return isRecord(wrapper) ? wrapper : null;
+}
+
+function getMeetState(data: PayloadRoot): Record<string, unknown> | null {
+  const wrapper = getMeetWrapper(data);
+  if (!wrapper) return null;
 
   const resolve = createPayloadResolver(data);
-  const resolved = resolve(wrapper.meet);
+  const meetValue = wrapper.meet;
+  const resolved =
+    typeof meetValue === "number" ? resolve(meetValue) : meetValue;
+
   return isRecord(resolved) ? resolved : null;
+}
+
+export function parseReclubMeetParticipants(
+  payload: unknown,
+): ReclubMeetParticipant[] {
+  if (!Array.isArray(payload)) return [];
+
+  const data = payload as PayloadRoot;
+  const wrapper = getMeetWrapper(data);
+  const meet = getMeetState(data);
+
+  if (!wrapper || !meet || !Array.isArray(meet.participants)) {
+    return [];
+  }
+
+  const usersMap = isRecord(wrapper.usersMap) ? wrapper.usersMap : {};
+
+  return meet.participants
+    .filter(
+      (participant): participant is Record<string, unknown> =>
+        isRecord(participant) &&
+        participant.status === RECLUB_CONFIRMED_PARTICIPANT_STATUS,
+    )
+    .map((participant) => {
+      const userId = String(participant.referenceId ?? "");
+      const user = isRecord(usersMap[userId]) ? usersMap[userId] : null;
+      const name = user ? readString(user.name) : null;
+
+      if (!name) return null;
+
+      return {
+        name,
+        imageUrl: user ? readString(user.imageUrl) : null,
+        isHost: participant.isHost === true,
+      };
+    })
+    .filter((participant): participant is ReclubMeetParticipant => participant !== null);
 }
 
 export function parseReclubMeetPayload(
@@ -163,15 +230,14 @@ export function parseReclubMeetPayload(
   };
 }
 
-export async function fetchReclubMeet(referenceCode: string): Promise<ReclubMeet | null> {
+async function fetchReclubMeetPayload(
+  referenceCode: string,
+): Promise<ReclubMeet | null> {
   const code = referenceCode.trim().toUpperCase();
-  const response = await fetch(`https://reclub.co/m/${code}/_payload.json`, {
-    headers: {
-      "User-Agent": "JackalsVC-ReclubSync/1.0",
-      Accept: "application/json",
-    },
-    next: { revalidate: 0 },
-  });
+  const response = await fetchReclubJson(
+    `https://reclub.co/m/${code}/_payload.json`,
+    { next: { revalidate: 120 } },
+  );
 
   if (!response.ok) {
     return null;
@@ -179,4 +245,43 @@ export async function fetchReclubMeet(referenceCode: string): Promise<ReclubMeet
 
   const payload = (await response.json()) as unknown;
   return parseReclubMeetPayload(payload, code);
+}
+
+export async function fetchReclubMeet(
+  referenceCode: string,
+): Promise<ReclubMeet | null> {
+  const code = referenceCode.trim().toUpperCase();
+  return withReclubRequestCache(
+    `meet-payload:${code}`,
+    RECLUB_CACHE_TTL_MS.payload,
+    () => fetchReclubMeetPayload(code),
+  );
+}
+
+async function fetchReclubMeetConfirmedParticipantsPayload(
+  referenceCode: string,
+): Promise<ReclubMeetParticipant[]> {
+  const code = referenceCode.trim().toUpperCase();
+  const response = await fetchReclubJson(
+    `https://reclub.co/m/${code}/_payload.json`,
+    { next: { revalidate: 120 } },
+  );
+
+  if (!response.ok) {
+    return [];
+  }
+
+  const payload = (await response.json()) as unknown;
+  return parseReclubMeetParticipants(payload);
+}
+
+export async function fetchReclubMeetConfirmedParticipants(
+  referenceCode: string,
+): Promise<ReclubMeetParticipant[]> {
+  const code = referenceCode.trim().toUpperCase();
+  return withReclubRequestCache(
+    `meet-participants:${code}`,
+    RECLUB_CACHE_TTL_MS.participants,
+    () => fetchReclubMeetConfirmedParticipantsPayload(code),
+  );
 }

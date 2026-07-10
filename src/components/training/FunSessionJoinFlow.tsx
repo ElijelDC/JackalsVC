@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { isExternalAttendanceUrl } from "@/lib/reclub-config";
 import { AttendanceLink } from "@/components/training/AttendanceLink";
 import { EntryFeeBadge, JoinFlowStep } from "@/components/training/JoinFlowStep";
 import { PaymentLink } from "@/components/training/PaymentLink";
@@ -116,6 +117,9 @@ export function FunSessionJoinFlow({
             </p>
             <div className="mt-4">
               <AttendanceLink
+                externalHref={
+                  isExternalAttendanceUrl(attendanceUrl) ? attendanceUrl : null
+                }
                 sessionId={sessionId}
                 basePath={attendBasePath}
                 occurrenceDate={attendanceOccurrenceDate}

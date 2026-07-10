@@ -89,18 +89,30 @@ export function getEventDisplayStyleKey(event: {
   return event.type;
 }
 
+function formatStartTimeLabel(date: Date) {
+  const hours = date.getHours();
+  const minutes = date.getMinutes();
+  const hour12 = hours % 12 || 12;
+  const ampm = hours < 12 ? "am" : "pm";
+  return `${hour12}:${minutes.toString().padStart(2, "0")}${ampm} start`;
+}
+
 export function formatEventDateTime(
   startDate: string,
   endDate: string | null,
+  options?: { eventType?: string },
 ) {
   const start = new Date(startDate);
   const end = endDate ? new Date(endDate) : null;
+  const isTournament = options?.eventType === "TOURNAMENT";
 
   return {
     dateLabel: format(start, "EEEE, d MMMM yyyy"),
-    timeLabel: end
-      ? `${format(start, "HH:mm")} – ${format(end, "HH:mm")}`
-      : format(start, "HH:mm"),
+    timeLabel: isTournament
+      ? formatStartTimeLabel(start)
+      : end
+        ? `${format(start, "HH:mm")} – ${format(end, "HH:mm")}`
+        : format(start, "HH:mm"),
   };
 }
 
