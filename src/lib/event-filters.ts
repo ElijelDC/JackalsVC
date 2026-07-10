@@ -23,6 +23,7 @@ export type EventListItem = {
   coach?: string | null;
   attendanceUrl?: string | null;
   paymentUrl?: string | null;
+  reclubReferenceCode?: string | null;
   reclubUsername?: string | null;
   sessionFee?: number | null;
   clubIban?: string | null;

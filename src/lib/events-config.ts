@@ -22,6 +22,7 @@ export type EventsCalendarEvent = {
   location: string | null;
   description: string | null;
   sessionFee: number | null;
+  reclubReferenceCode?: string | null;
 };
 
 /** @deprecated Use EventsCalendarEvent */

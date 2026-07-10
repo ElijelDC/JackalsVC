@@ -119,6 +119,7 @@ export function serializeEnrichedEvent(event: EnrichedEvent) {
     paymentUrl: event.paymentUrl,
     seriesAttendanceUrl: event.seriesAttendanceUrl,
     seriesPaymentUrl: event.seriesPaymentUrl,
+    reclubReferenceCode: event.reclubReferenceCode,
     reclubUsername: event.reclubUsername,
     sessionFee: event.sessionFee,
     clubIban: event.clubIban,
