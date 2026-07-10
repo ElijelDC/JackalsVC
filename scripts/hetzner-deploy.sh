@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Pull latest main on the Hetzner VPS, rebuild the app container, and apply DB migrations.
+# Triggered from GitHub Actions on push to main (see .github/workflows/deploy-hetzner.yml).
 #
 # Run on the server:
 #   cd /opt/app   # or your app directory
