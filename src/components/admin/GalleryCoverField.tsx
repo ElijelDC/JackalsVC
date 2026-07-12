@@ -6,8 +6,10 @@ import { ImagePlus } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Input";
 import { FormError } from "@/components/ui/FormMessage";
-import { GALLERY_ACCEPTED_IMAGE_TYPES } from "@/lib/gallery-upload-config";
+import { GALLERY_ACCEPTED_IMAGE_TYPES, GALLERY_MAX_UPLOAD_BYTES } from "@/lib/gallery-upload-config";
 import { isGalleryPlaceholderCover } from "@/lib/gallery-config";
+import { validateImageFile } from "@/lib/image-upload-types";
+import { normalizePublicAssetUrl } from "@/lib/public-paths";
 import { cn } from "@/lib/utils";
 
 export function GalleryCoverField({
@@ -27,6 +29,16 @@ export function GalleryCoverField({
 
   const handleFile = async (file: File | null) => {
     if (!file) return;
+
+    const validationError = validateImageFile(file, {
+      maxBytes: GALLERY_MAX_UPLOAD_BYTES,
+      sizeError: "Cover image must be smaller than 15 MB.",
+    });
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setError(null);
     try {
       await onUpload(file);
@@ -36,6 +48,8 @@ export function GalleryCoverField({
       );
     }
   };
+
+  const previewUrl = normalizePublicAssetUrl(coverImageUrl);
 
   return (
     <div>
@@ -56,9 +70,10 @@ export function GalleryCoverField({
             </div>
           ) : (
             <Image
-              src={coverImageUrl}
+              src={previewUrl}
               alt="Album cover preview"
               fill
+              unoptimized
               sizes="192px"
               className="object-cover"
             />

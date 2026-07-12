@@ -20,6 +20,7 @@ import { cn } from "@/lib/utils";
 type UploadResponse = {
   uploaded: number;
   errors?: string[];
+  coverImageUrl?: string;
 };
 
 type PreviewFile = {
@@ -46,7 +47,7 @@ export function GalleryBulkUpload({
   onUploaded,
 }: {
   albumId: string;
-  onUploaded: () => void | Promise<void>;
+  onUploaded: (result?: UploadResponse) => void | Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<PreviewFile[]>([]);
@@ -71,10 +72,14 @@ export function GalleryBulkUpload({
       return;
     }
 
+    let skipped = 0;
     setFiles((current) => {
       const merged = [...current];
       for (const file of images) {
-        if (merged.length >= GALLERY_MAX_SELECTION) break;
+        if (merged.length >= GALLERY_MAX_SELECTION) {
+          skipped += 1;
+          continue;
+        }
         merged.push({
           id: `${file.name}-${file.lastModified}-${file.size}`,
           file,
@@ -84,7 +89,11 @@ export function GalleryBulkUpload({
       }
       return merged;
     });
-    setError(null);
+    if (skipped > 0) {
+      setError(`Only ${GALLERY_MAX_SELECTION} images can be uploaded at once.`);
+    } else {
+      setError(null);
+    }
     setMessage(null);
   };
 
@@ -123,6 +132,7 @@ export function GalleryBulkUpload({
     const batches = chunkFiles(validFiles, GALLERY_MAX_BULK_FILES);
     let uploadedTotal = 0;
     const warnings: string[] = [];
+    let latestCoverImageUrl: string | undefined;
 
     for (let index = 0; index < batches.length; index += 1) {
       const batch = batches[index]!;
@@ -155,6 +165,9 @@ export function GalleryBulkUpload({
       }
 
       uploadedTotal += result.data.uploaded;
+      if (result.data.coverImageUrl) {
+        latestCoverImageUrl = result.data.coverImageUrl;
+      }
       if (result.data.errors?.length) {
         warnings.push(...result.data.errors);
       }
@@ -176,7 +189,11 @@ export function GalleryBulkUpload({
       `${uploadedTotal} photo${uploadedTotal === 1 ? "" : "s"} uploaded.${warningText}`,
     );
     clearFiles();
-    await onUploaded();
+    await onUploaded({
+      uploaded: uploadedTotal,
+      errors: warnings.length > 0 ? warnings : undefined,
+      coverImageUrl: latestCoverImageUrl,
+    });
   };
 
   const totalSizeMb = (
@@ -191,8 +208,8 @@ export function GalleryBulkUpload({
       </h3>
       <p className="mb-4 text-sm text-zinc-400">
         Drag images here or browse your device. Up to {GALLERY_MAX_SELECTION}{" "}
-        images per upload session ({GALLERY_MAX_BULK_FILES} at a time), 15 MB
-        each.
+        images per session ({GALLERY_MAX_BULK_FILES} at a time with a short pause
+        between batches), 15 MB each.
       </p>
 
       <SuccessBanner message={message} />

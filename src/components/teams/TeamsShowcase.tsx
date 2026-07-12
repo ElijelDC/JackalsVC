@@ -7,18 +7,12 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { TeamCard, type TeamCardData } from "@/components/teams/TeamCard";
-import { countTeamMembers } from "@/lib/teams";
+import { countUniqueMembersAcrossTeams } from "@/lib/teams";
 import { SEO_COPY } from "@/lib/seo";
 
 export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
-  const totalCoachCount = teams.reduce(
-    (sum, team) => sum + countTeamMembers(team.members).coaches,
-    0,
-  );
-  const totalPlayerCount = teams.reduce(
-    (sum, team) => sum + countTeamMembers(team.members).players,
-    0,
-  );
+  const totalCoachCount = countUniqueMembersAcrossTeams(teams, "COACH");
+  const totalPlayerCount = countUniqueMembersAcrossTeams(teams, "PLAYER");
 
   return (
     <>
@@ -65,11 +59,11 @@ export function TeamsShowcase({ teams }: { teams: TeamCardData[] }) {
           </p>
           <p className="mt-4 text-sm text-zinc-500">
             New player?{" "}
-            <Link href="/events" className="font-semibold text-jackals-red-light hover:underline">
+            <Link href="/events" className="font-bold text-jackals-red hover:text-jackals-red-light hover:underline">
               Browse open sessions
             </Link>{" "}
             or{" "}
-            <Link href="/contact" className="font-semibold text-jackals-red-light hover:underline">
+            <Link href="/contact" className="font-bold text-jackals-red hover:text-jackals-red-light hover:underline">
               contact us
             </Link>{" "}
             to ask about joining a squad.

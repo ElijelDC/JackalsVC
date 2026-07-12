@@ -13,6 +13,7 @@ export type TeamCardData = {
     name: string;
     role: string;
     photoUrl: string | null;
+    clubMemberId?: string | null;
   }[];
 };
 

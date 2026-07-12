@@ -22,6 +22,7 @@ export default async function TeamsPage() {
           name: true,
           role: true,
           photoUrl: true,
+          clubMemberId: true,
         },
       },
     },

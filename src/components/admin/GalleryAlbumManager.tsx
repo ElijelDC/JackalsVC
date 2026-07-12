@@ -376,6 +376,7 @@ export function GalleryAlbumManager({
                   src={album.coverImageUrl}
                   alt=""
                   fill
+                  unoptimized
                   sizes="112px"
                   className="object-cover"
                 />

@@ -87,7 +87,13 @@ function GalleryAlbumEditorInner({
     const result = await apiGet<{ album: GalleryAlbum }>(
       `/api/admin/gallery/${initialAlbum.id}`,
     );
-    if (result.ok) setAlbum(result.data.album);
+    if (result.ok) {
+      setAlbum(result.data.album);
+      setAlbumForm((current) => ({
+        ...current,
+        coverImageUrl: result.data.album.coverImageUrl,
+      }));
+    }
   }, [initialAlbum.id]);
 
   const resetPhotoForm = () => {
@@ -191,6 +197,10 @@ function GalleryAlbumEditorInner({
     }
 
     setAlbumForm((current) => ({
+      ...current,
+      coverImageUrl: result.data.coverImageUrl,
+    }));
+    setAlbum((current) => ({
       ...current,
       coverImageUrl: result.data.coverImageUrl,
     }));
@@ -321,7 +331,13 @@ function GalleryAlbumEditorInner({
 
       <GalleryBulkUpload
         albumId={album.id}
-        onUploaded={async () => {
+        onUploaded={async (result) => {
+          if (result?.coverImageUrl) {
+            setAlbumForm((current) => ({
+              ...current,
+              coverImageUrl: result.coverImageUrl!,
+            }));
+          }
           await loadAlbum();
           router.refresh();
         }}

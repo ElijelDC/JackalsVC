@@ -8,6 +8,8 @@ import {
 import { isGalleryPlaceholderCover } from "@/lib/gallery-config";
 import { prisma } from "@/lib/prisma";
 
+export const maxDuration = 120;
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -78,9 +80,15 @@ export async function POST(
     });
   }
 
+  const updatedAlbum = await prisma.galleryAlbum.findUnique({
+    where: { id: albumId },
+    select: { coverImageUrl: true },
+  });
+
   return NextResponse.json({
     photos,
     uploaded: photos.length,
     errors,
+    coverImageUrl: updatedAlbum?.coverImageUrl,
   });
 }

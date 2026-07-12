@@ -10,12 +10,19 @@ import {
 } from "@/lib/image-upload-types";
 import { prepareImageForStorage } from "@/lib/image-normalize.server";
 
-function publicUploadDir(...segments: string[]) {
-  return path.join(process.cwd(), "public", "uploads", ...segments);
+const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "public");
+const UPLOADS_ROOT = path.join(DATA_DIR, "uploads");
+
+function managedUploadDir(...segments: string[]) {
+  return path.join(UPLOADS_ROOT, ...segments);
 }
 
-function publicUploadPathFromUrl(imageUrl: string) {
-  return path.join(process.cwd(), "public", imageUrl);
+function managedUploadPathFromUrl(imageUrl: string) {
+  if (imageUrl.startsWith("/uploads/")) {
+    return path.join(DATA_DIR, imageUrl.slice(1));
+  }
+
+  return path.join(process.cwd(), "public", imageUrl.replace(/^\//, ""));
 }
 
 export async function saveManagedImageFile({
@@ -48,7 +55,7 @@ export async function saveManagedImageFile({
     preset,
   });
   const filename = buildFilename(extension);
-  const directory = publicUploadDir(...relativeDir);
+  const directory = managedUploadDir(...relativeDir);
 
   await mkdir(directory, { recursive: true });
   await writeFile(path.join(directory, filename), buffer);
@@ -63,7 +70,7 @@ export async function deleteManagedUploadFile(
   if (!imageUrl?.startsWith(`${urlPrefix}/`)) return;
 
   try {
-    await unlink(publicUploadPathFromUrl(imageUrl));
+    await unlink(managedUploadPathFromUrl(imageUrl));
   } catch {
     // File may already be gone.
   }
