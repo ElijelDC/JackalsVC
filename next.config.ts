@@ -12,12 +12,8 @@ const nextConfig: NextConfig = {
     return {
       beforeFiles: [
         {
-          source: "/uploads/:path*.heic",
-          destination: "/api/internal-uploads/:path*.heic",
-        },
-        {
-          source: "/uploads/:path*.heif",
-          destination: "/api/internal-uploads/:path*.heif",
+          source: "/uploads/:path*",
+          destination: "/api/internal-uploads/:path*",
         },
       ],
     };
