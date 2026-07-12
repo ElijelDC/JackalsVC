@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { jsonError, requireAdmin } from "@/lib/api";
 import {
   GALLERY_MAX_BULK_FILES,
-  photoTitleFromFilename,
   saveGalleryImageFile,
 } from "@/lib/gallery-upload";
 import { isGalleryPlaceholderCover } from "@/lib/gallery-config";
@@ -56,7 +55,7 @@ export async function POST(
         data: {
           albumId,
           imageUrl,
-          title: photoTitleFromFilename(file.name) ?? null,
+          title: null,
           sortOrder: nextSort,
         },
       });

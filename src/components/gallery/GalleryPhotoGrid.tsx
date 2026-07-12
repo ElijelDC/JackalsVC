@@ -29,7 +29,7 @@ function GalleryPhotoTile({
   tileRef: (element: HTMLButtonElement | null) => void;
 }) {
   const [imageError, setImageError] = useState(false);
-  const label = photo.title ?? photo.caption ?? "Gallery photo";
+  const label = photo.caption ?? "Gallery photo";
 
   return (
     <button
@@ -59,24 +59,20 @@ function GalleryPhotoTile({
         <div
           aria-hidden
           className={cn(
-            "absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80 transition-opacity group-hover:opacity-100",
+            "absolute inset-0 transition-opacity group-hover:opacity-100",
+            photo.caption
+              ? "bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-80"
+              : "bg-gradient-to-t from-black/30 via-transparent to-transparent opacity-0 group-hover:opacity-100",
           )}
         />
         <div className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center border border-white/20 bg-black/60 text-white opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100">
           <ZoomIn className="h-4 w-4" />
         </div>
-        {(photo.title || photo.caption) && (
+        {photo.caption && (
           <div className="absolute inset-x-0 bottom-0 p-4">
-            {photo.title && (
-              <p className="font-display text-sm font-bold text-white sm:text-base">
-                {photo.title}
-              </p>
-            )}
-            {photo.caption && (
-              <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-zinc-300 sm:text-sm">
-                {photo.caption}
-              </p>
-            )}
+            <p className="line-clamp-2 text-xs leading-relaxed text-zinc-200 sm:text-sm">
+              {photo.caption}
+            </p>
           </div>
         )}
       </div>

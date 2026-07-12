@@ -19,7 +19,7 @@ export function GalleryLightbox({
   const photo = photos[activeIndex];
   const hasPrev = activeIndex > 0;
   const hasNext = activeIndex < photos.length - 1;
-  const label = photo.title ?? photo.caption ?? "Gallery photo";
+  const label = photo.caption ?? "Gallery photo";
 
   const goPrev = useCallback(() => {
     if (hasPrev) onChangeIndex(activeIndex - 1);
@@ -109,21 +109,14 @@ export function GalleryLightbox({
         />
       </div>
 
-      {(photo.title || photo.caption) && (
+      {photo.caption && (
         <div
           className="shrink-0 border-t border-white/10 bg-black/80 px-4 py-4 text-center pb-[max(1rem,env(safe-area-inset-bottom))] sm:py-5"
           onClick={(event) => event.stopPropagation()}
         >
-          {photo.title && (
-            <p className="font-display text-lg font-bold text-white sm:text-xl">
-              {photo.title}
-            </p>
-          )}
-          {photo.caption && (
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-              {photo.caption}
-            </p>
-          )}
+          <p className="mx-auto max-w-2xl text-sm leading-relaxed text-zinc-300 sm:text-base">
+            {photo.caption}
+          </p>
         </div>
       )}
     </div>
