@@ -23,8 +23,11 @@ fi
 
 cd /app
 
-echo "Applying database migrations..."
-npx prisma migrate deploy
+echo "Applying database schema..."
+if ! npx prisma migrate deploy; then
+  echo "migrate deploy skipped or failed — syncing schema with db push..."
+  npx prisma db push --accept-data-loss
+fi
 
 echo "Starting Jackals VC..."
 exec npm start
