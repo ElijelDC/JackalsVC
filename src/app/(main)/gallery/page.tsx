@@ -1,9 +1,15 @@
 import { GalleryShowcase } from "@/components/gallery/GalleryShowcase";
+import { pageMetadata } from "@/lib/seo";
 import { prisma } from "@/lib/prisma";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Gallery",
-};
+  description:
+    "Photos from Jackals Volleyball Club — match days, training, tournaments, and club events in Dublin.",
+  path: "/gallery",
+});
+
+export const revalidate = 3600;
 
 export default async function GalleryPage() {
   const albums = await prisma.galleryAlbum.findMany({

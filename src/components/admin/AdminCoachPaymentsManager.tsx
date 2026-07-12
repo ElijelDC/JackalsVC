@@ -21,6 +21,7 @@ import {
   type CoachPaymentStatus,
 } from "@/lib/coach-payments-config";
 import type { AdminCoachPaymentRow } from "@/lib/coach-payments-config";
+import { GALLERY_ACCEPTED_IMAGE_TYPES } from "@/lib/gallery-upload-config";
 import { apiDelete, apiGet, apiPostForm, apiPut } from "@/lib/client-api";
 import { formatEuroFee } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -193,7 +194,7 @@ function CoachPaymentAdminCard({
             <label className="inline-flex cursor-pointer items-center">
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
+                accept={GALLERY_ACCEPTED_IMAGE_TYPES}
                 className="sr-only"
                 disabled={uploading}
                 onChange={(event) => {

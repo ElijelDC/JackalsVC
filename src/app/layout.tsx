@@ -1,6 +1,11 @@
 import type { Metadata } from "next";
-import { PUBLIC_PATHS } from "@/lib/public-paths";
 import { getSiteMetadataBase } from "@/lib/site-config";
+import { OrganizationJsonLd } from "@/components/seo/OrganizationJsonLd";
+import {
+  SEO_DEFAULT_DESCRIPTION,
+  SEO_KEYWORDS,
+  SEO_SITE_NAME,
+} from "@/lib/seo";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Oswald } from "next/font/google";
 import { CartProvider } from "@/components/shop/CartProvider";
@@ -25,20 +30,12 @@ const oswald = Oswald({
 export const metadata: Metadata = {
   metadataBase: getSiteMetadataBase(),
   title: {
-    default: "Jackals VC | Volleyball Club",
-    template: "%s | Jackals VC",
+    default: SEO_SITE_NAME,
+    template: `%s | ${SEO_SITE_NAME}`,
   },
-  description:
-    "Jackals Volleyball Club — training sessions, events, membership, gallery, and official club shop.",
+  description: SEO_DEFAULT_DESCRIPTION,
+  keywords: SEO_KEYWORDS,
   manifest: "/manifest.json",
-  icons: {
-    icon: [
-      { url: PUBLIC_PATHS.brand.favicon, type: "image/png" },
-      { url: PUBLIC_PATHS.brand.favicon, sizes: "32x32", type: "image/png" },
-    ],
-    shortcut: PUBLIC_PATHS.brand.favicon,
-    apple: PUBLIC_PATHS.brand.favicon,
-  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
@@ -75,6 +72,7 @@ export default function RootLayout({
             `,
           }}
         />
+        <OrganizationJsonLd />
         <CartProvider>{children}</CartProvider>
       </body>
     </html>

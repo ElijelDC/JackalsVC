@@ -6,6 +6,7 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Button } from "@/components/ui/Button";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { CONTACT_EMAIL } from "@/lib/contact";
+import { CLUB_LOCATION, SEO_COPY } from "@/lib/seo";
 import { EditableText } from "@/components/site-edit/EditableText";
 import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
 
@@ -48,7 +49,7 @@ export function ContactShowcase() {
         description={
           <EditableText
             contentKey="contact.hero.description"
-            fallback="Questions about training or events? Reach out — we would love to hear from you."
+            fallback={SEO_COPY.contactHero}
             label="Contact hero description"
             multiline
           />
@@ -64,7 +65,13 @@ export function ContactShowcase() {
                   href={`mailto:${CONTACT_EMAIL}`}
                   label="Email"
                   value={CONTACT_EMAIL}
-                  description="Best for training and event enquiries."
+                  description="Best for training, membership, and event enquiries."
+                />
+                <ContactLink
+                  href="/events"
+                  label="Location"
+                  value={`${CLUB_LOCATION.locality}, ${CLUB_LOCATION.country}`}
+                  description="We train at venues across Dublin. Session addresses are listed on each event."
                 />
                 <ContactLink
                   href={INSTAGRAM_PROFILE_URL}
@@ -98,8 +105,8 @@ export function ContactShowcase() {
 
         <AnimateIn className="mt-16 sm:mt-20">
           <ShowcaseCtaBand
-            title="New to Jackals VC?"
-            description="Browse open sessions and events to see what is coming up before you get in touch."
+            title="New to Jackals Volleyball Club?"
+            description="Browse open sessions and events to see what is coming up, or read about our squads and how to join."
           >
             <Link href="/events" className="w-full sm:w-auto">
               <Button size="lg" className="w-full sm:w-auto">

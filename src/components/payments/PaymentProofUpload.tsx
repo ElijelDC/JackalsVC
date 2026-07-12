@@ -180,7 +180,7 @@ export function PaymentProofUpload({
                     {selectedFile ? selectedFile.name : "Choose replacement screenshot"}
                   </span>
                   <span className="mt-1 text-xs text-zinc-500">
-                    JPEG, PNG or WebP · max 5 MB
+                    JPEG, PNG, WebP, GIF, or HEIC · max 5 MB
                   </span>
                 </button>
 
@@ -257,7 +257,7 @@ export function PaymentProofUpload({
             <span className="text-sm font-medium text-white">
               {selectedFile ? selectedFile.name : "Choose payment screenshot"}
             </span>
-            <span className="mt-1 text-xs text-zinc-500">JPEG, PNG or WebP · max 5 MB</span>
+            <span className="mt-1 text-xs text-zinc-500">JPEG, PNG, WebP, GIF, or HEIC · max 5 MB</span>
           </button>
 
           <input

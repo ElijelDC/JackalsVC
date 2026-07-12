@@ -384,15 +384,16 @@ model Achievement {
 }
 
 model ClubTeam {
-  id              String           @id @default(cuid())
-  name            String
-  level           String
-  description     String
-  details         String?
-  trainingTeamKey String?          @unique
-  sortOrder       Int              @default(0)
-  createdAt       DateTime         @default(now())
-  members         ClubTeamMember[]
+  id                         String           @id @default(cuid())
+  name                       String
+  level                      String
+  description                String
+  details                    String?
+  trainingTeamKey            String?          @unique
+  syncExcludedClubMemberIds  String           @default("[]")
+  sortOrder                  Int              @default(0)
+  createdAt                  DateTime         @default(now())
+  members                    ClubTeamMember[]
 }
 
 model ClubTeamMember {
@@ -405,6 +406,7 @@ model ClubTeamMember {
   role         String
   position     String?
   isCaptain    Boolean     @default(false)
+  hidden       Boolean     @default(false)
   photoUrl     String?
   sortOrder    Int         @default(0)
   createdAt    DateTime    @default(now())

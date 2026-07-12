@@ -93,4 +93,4 @@ fly deploy
 
 ## Email (optional, same domain later)
 
-If you later send mail as `@jackalsvolleyball.com`, add SPF/DKIM in Cloudflare. For now, Gmail SMTP (`thunderjackals@gmail.com`) in Fly secrets is fine and needs no DNS change.
+If you later send mail as `@jackalsvolleyball.com`, add SPF/DKIM in Cloudflare. For now, Gmail SMTP (`jackalsvolleyballclub@gmail.com`) in Fly secrets is fine and needs no DNS change.

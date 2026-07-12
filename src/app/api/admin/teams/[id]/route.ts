@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import {
+  detachClubTeamMembersForManualMode,
+  parseSyncExcludedClubMemberIds,
+  serializeSyncExcludedClubMemberIds,
   syncClubTeamFromRoster,
   syncClubTeamsForSquadKey,
 } from "@/lib/club-team-roster-sync";
@@ -69,6 +72,10 @@ export async function PUT(
 
     if (existing.trainingTeamKey && existing.trainingTeamKey !== team.trainingTeamKey) {
       await syncClubTeamsForSquadKey(existing.trainingTeamKey);
+    }
+
+    if (existing.trainingTeamKey && !team.trainingTeamKey) {
+      await detachClubTeamMembersForManualMode(team.id);
     }
 
     if (team.trainingTeamKey) {

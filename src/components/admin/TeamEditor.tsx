@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { AdminFormCard } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Badge } from "@/components/ui/Badge";
@@ -23,6 +23,7 @@ type TeamMember = {
   role: string;
   position: string | null;
   isCaptain: boolean;
+  hidden: boolean;
   photoUrl: string | null;
   sortOrder: number;
 };
@@ -100,6 +101,8 @@ function TeamEditorInner({
   const [coachDraft, setCoachDraft] = useState(emptyManualDraft);
   const [playerDraft, setPlayerDraft] = useState(emptyManualDraft);
   const [addingMember, setAddingMember] = useState(false);
+  const [resyncing, setResyncing] = useState(false);
+  const [resyncMessage, setResyncMessage] = useState<string | null>(null);
 
   const squadLinked = Boolean(team.trainingTeamKey);
 
@@ -139,7 +142,13 @@ function TeamEditorInner({
 
   const saveMember = async (
     member: TeamMember,
-    updates: { name?: string; position?: string; photoUrl?: string; isCaptain?: boolean },
+    updates: {
+      name?: string;
+      position?: string;
+      photoUrl?: string;
+      isCaptain?: boolean;
+      hidden?: boolean;
+    },
   ) => {
     setSavingMemberId(member.id);
     setMemberError(null);
@@ -150,6 +159,7 @@ function TeamEditorInner({
           ...(updates.isCaptain !== undefined
             ? { isCaptain: updates.isCaptain }
             : {}),
+          ...(updates.hidden !== undefined ? { hidden: updates.hidden } : {}),
         })
       : await apiPut(`/api/admin/teams/${team.id}/members/${member.id}`, {
           name: updates.name ?? member.name,
@@ -158,6 +168,7 @@ function TeamEditorInner({
           photoUrl: updates.photoUrl ?? member.photoUrl ?? undefined,
           sortOrder: member.sortOrder,
           isCaptain: updates.isCaptain ?? member.isCaptain,
+          hidden: updates.hidden ?? member.hidden,
         });
 
     setSavingMemberId(null);
@@ -212,8 +223,11 @@ function TeamEditorInner({
   };
 
   const deleteMember = async (member: TeamMember) => {
-    if (member.clubMemberId) return;
-    if (!confirm(`Remove ${member.name} from this team page?`)) return;
+    const message = member.clubMemberId
+      ? `Remove ${member.name} from this team page? They will stay on the club roster and won't be re-added until you resync.`
+      : `Remove ${member.name} from this team page?`;
+
+    if (!confirm(message)) return;
 
     setDeletingMemberId(member.id);
     setMemberError(null);
@@ -229,6 +243,41 @@ function TeamEditorInner({
       return;
     }
 
+    await loadTeam();
+    router.refresh();
+  };
+
+  const toggleHidden = async (member: TeamMember) => {
+    setSavingMemberId(member.id);
+    setMemberError(null);
+
+    const ok = await saveMember(member, { hidden: !member.hidden });
+    setSavingMemberId(null);
+
+    if (!ok) return;
+  };
+
+  const resyncRoster = async (clearExclusions = false) => {
+    setResyncing(true);
+    setResyncMessage(null);
+    setMemberError(null);
+
+    const result = await apiPost<{ result: { synced: number; removed: number } }>(
+      `/api/admin/teams/${team.id}/resync`,
+      { clearExclusions },
+    );
+
+    setResyncing(false);
+
+    if (!result.ok) {
+      setMemberError(result.error);
+      return;
+    }
+
+    const { synced, removed } = result.data.result;
+    setResyncMessage(
+      `Roster synced — ${synced} member${synced === 1 ? "" : "s"} updated${removed > 0 ? `, ${removed} removed` : ""}.`,
+    );
     await loadTeam();
     router.refresh();
   };
@@ -320,6 +369,10 @@ function TeamEditorInner({
                 </option>
               ))}
             </Select>
+            <p className="mt-1.5 text-xs text-zinc-500">
+              Manual mode keeps everyone on the list and lets you remove players freely.
+              Linked squads sync from the club roster.
+            </p>
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="team-description">Short description</Label>
@@ -352,6 +405,34 @@ function TeamEditorInner({
         <p className="mb-4 text-sm text-red-400">{memberError}</p>
       )}
 
+      {resyncMessage && (
+        <p className="mb-4 text-sm text-emerald-400">{resyncMessage}</p>
+      )}
+
+      {squadLinked && (
+        <div className="mb-6 flex flex-wrap gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            disabled={resyncing}
+            onClick={() => void resyncRoster(false)}
+          >
+            <RefreshCw className={cn("h-4 w-4", resyncing && "animate-spin")} />
+            {resyncing ? "Syncing…" : "Resync from roster"}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={resyncing}
+            onClick={() => void resyncRoster(true)}
+          >
+            Full resync
+          </Button>
+        </div>
+      )}
+
       <div className="space-y-6">
         <RosterSection
           title="Coaches"
@@ -362,6 +443,7 @@ function TeamEditorInner({
           deletingMemberId={deletingMemberId}
           onSave={saveMember}
           onDelete={deleteMember}
+          onToggleHidden={toggleHidden}
           footer={
             addingCoach ? (
               <ManualAddRow
@@ -403,9 +485,10 @@ function TeamEditorInner({
           deletingMemberId={deletingMemberId}
           onSave={saveMember}
           onDelete={deleteMember}
+          onToggleHidden={toggleHidden}
           headerNote={
             squadLinked
-              ? "Synced from the club roster. Change squad or deactivate on the roster to remove."
+              ? "Synced from the club roster. Hide members from the public page, remove them here, or switch to manual roster to edit freely."
               : undefined
           }
           footer={
@@ -450,6 +533,7 @@ function RosterSection({
   deletingMemberId,
   onSave,
   onDelete,
+  onToggleHidden,
   footer,
 }: {
   title: string;
@@ -461,9 +545,16 @@ function RosterSection({
   deletingMemberId: string | null;
   onSave: (
     member: TeamMember,
-    updates: { name?: string; position?: string; photoUrl?: string; isCaptain?: boolean },
+    updates: {
+      name?: string;
+      position?: string;
+      photoUrl?: string;
+      isCaptain?: boolean;
+      hidden?: boolean;
+    },
   ) => Promise<boolean>;
   onDelete: (member: TeamMember) => void;
+  onToggleHidden: (member: TeamMember) => void;
   footer: React.ReactNode;
 }) {
   return (
@@ -491,6 +582,7 @@ function RosterSection({
               deleting={deletingMemberId === member.id}
               onSave={onSave}
               onDelete={onDelete}
+              onToggleHidden={onToggleHidden}
             />
           ))}
         </ul>
@@ -508,6 +600,7 @@ function MemberRow({
   deleting,
   onSave,
   onDelete,
+  onToggleHidden,
 }: {
   member: TeamMember;
   memberRole: "PLAYER" | "COACH";
@@ -515,15 +608,21 @@ function MemberRow({
   deleting: boolean;
   onSave: (
     member: TeamMember,
-    updates: { name?: string; position?: string; photoUrl?: string; isCaptain?: boolean },
+    updates: {
+      name?: string;
+      position?: string;
+      photoUrl?: string;
+      isCaptain?: boolean;
+      hidden?: boolean;
+    },
   ) => Promise<boolean>;
   onDelete: (member: TeamMember) => void;
+  onToggleHidden: (member: TeamMember) => void;
 }) {
   const [name, setName] = useState(member.name);
   const [position, setPosition] = useState(member.position ?? "");
   const [isCaptain, setIsCaptain] = useState(member.isCaptain ?? false);
   const rosterLinked = Boolean(member.clubMemberId);
-  const canDelete = !rosterLinked;
   const isPlayer = memberRole === "PLAYER";
 
   useEffect(() => {
@@ -578,25 +677,49 @@ function MemberRow({
   };
 
   return (
-    <li className="px-4 py-3 sm:px-5">
+    <li
+      className={cn(
+        "px-4 py-3 sm:px-5",
+        member.hidden && "bg-white/[0.02]",
+      )}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <div className="min-w-0 flex-1">
           {rosterLinked ? (
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium text-white">{member.name}</span>
+              <span
+                className={cn(
+                  "font-medium text-white",
+                  member.hidden && "text-zinc-500 line-through",
+                )}
+              >
+                {member.name}
+              </span>
               <Badge className="border border-blue-500/30 bg-blue-500/10 px-2 py-0 text-[10px] text-blue-300">
                 Club Member
               </Badge>
+              {member.hidden && (
+                <Badge className="border border-zinc-500/30 bg-zinc-500/10 px-2 py-0 text-[10px] text-zinc-400">
+                  Hidden
+                </Badge>
+              )}
             </div>
           ) : (
-            <Input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              onBlur={() => void persist()}
-              disabled={saving || deleting}
-              className="py-2"
-              aria-label="Name"
-            />
+            <div className="space-y-2">
+              <Input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                onBlur={() => void persist()}
+                disabled={saving || deleting}
+                className={cn("py-2", member.hidden && "opacity-60")}
+                aria-label="Name"
+              />
+              {member.hidden && (
+                <Badge className="border border-zinc-500/30 bg-zinc-500/10 px-2 py-0 text-[10px] text-zinc-400">
+                  Hidden from public page
+                </Badge>
+              )}
+            </div>
           )}
         </div>
 
@@ -626,7 +749,24 @@ function MemberRow({
           )}
         </div>
 
-        {canDelete && (
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            disabled={deleting || saving}
+            onClick={() => onToggleHidden(member)}
+            className={cn(
+              "inline-flex shrink-0 items-center justify-center rounded-sm p-2 text-zinc-500 transition-colors",
+              "hover:bg-white/10 hover:text-zinc-200 disabled:opacity-50",
+            )}
+            aria-label={member.hidden ? `Show ${member.name}` : `Hide ${member.name}`}
+            title={member.hidden ? "Show on public team page" : "Hide from public team page"}
+          >
+            {member.hidden ? (
+              <EyeOff className="h-4 w-4" />
+            ) : (
+              <Eye className="h-4 w-4" />
+            )}
+          </button>
           <button
             type="button"
             disabled={deleting || saving}
@@ -636,10 +776,11 @@ function MemberRow({
               "hover:bg-red-500/10 hover:text-red-300 disabled:opacity-50",
             )}
             aria-label={`Remove ${member.name}`}
+            title="Remove from team page"
           >
             <Trash2 className="h-4 w-4" />
           </button>
-        )}
+        </div>
       </div>
     </li>
   );

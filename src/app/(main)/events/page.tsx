@@ -4,10 +4,13 @@ import { EventsPage } from "@/components/events/EventsPage";
 import { getPublicEvents } from "@/lib/public-events";
 import { getEventsPageData } from "@/lib/events-page-data";
 import { syncReclubClubUpcomingActivitiesForBrowse } from "@/lib/reclub-sync";
+import { pageMetadata, SEO_COPY } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Events",
-};
+  description: SEO_COPY.eventsIntro,
+  path: "/events",
+});
 
 export default async function EventsRoute({
   searchParams,
@@ -18,11 +21,9 @@ export default async function EventsRoute({
   const isLoggedIn = Boolean(session?.user);
   const { view } = await searchParams;
 
-  try {
-    await syncReclubClubUpcomingActivitiesForBrowse();
-  } catch (error) {
+  void syncReclubClubUpcomingActivitiesForBrowse().catch((error) => {
     console.error("Reclub club sync failed:", error);
-  }
+  });
 
   const [eventsData, calendarEvents] = await Promise.all([
     getEventsPageData(),

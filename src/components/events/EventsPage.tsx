@@ -9,6 +9,7 @@ import { AnimateIn } from "@/components/motion/AnimateIn";
 import type { EventListItem } from "@/lib/event-filters";
 import type { EventsCalendarEvent } from "@/lib/events-config";
 import type { TrainingSessionCardData } from "@/types/training-session";
+import { SEO_COPY } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 type EventsView = "list" | "calendar";
@@ -136,12 +137,16 @@ export function EventsPage({
     <PageContainer>
       <PageHeader
         title="Events"
-        description={
-          view === "list"
-            ? "Fun sessions, tournaments, skills clinics, and social activity — filter by type below."
-            : "All upcoming club events by date — add any to your phone or desktop calendar."
-        }
+        description={SEO_COPY.eventsIntro}
       />
+
+      <AnimateIn delay={25} className="mb-6">
+        <p className="max-w-3xl text-sm leading-relaxed text-zinc-500">
+          {view === "list"
+            ? "Filter by category below — fun sessions, tournaments, skills clinics, and social activities."
+            : "Switch to calendar view to see everything by date and add events to your phone or desktop calendar."}
+        </p>
+      </AnimateIn>
 
       <AnimateIn delay={50} className="mb-10">
         <EventsViewToggle view={view} onViewChange={setView} />

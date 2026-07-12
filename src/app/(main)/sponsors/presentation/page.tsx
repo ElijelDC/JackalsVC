@@ -1,9 +1,11 @@
 import { SponsorPresentationPreview } from "@/components/sponsors/SponsorPresentationPreview";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata = {
+export const metadata = pageMetadata({
   title: "Sponsor Presentation",
-  robots: { index: false, follow: false },
-};
+  path: "/sponsors/presentation",
+  noIndex: true,
+});
 
 export default function SponsorPresentationPage() {
   return <SponsorPresentationPreview />;

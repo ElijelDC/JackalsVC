@@ -3,7 +3,7 @@ import {
   deleteCoachInvoiceFile,
   saveCoachInvoiceFile,
   validateCoachInvoiceFile,
-} from "@/lib/coach-invoice-proof";
+} from "@/lib/payment-proof";
 import { jsonError, requireAdmin } from "@/lib/api";
 import { notifyCoachPaymentPaid } from "@/lib/coach-payment-notify";
 import { prisma } from "@/lib/prisma";

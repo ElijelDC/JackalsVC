@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { CLUB_SLOGAN_PARTS } from "@/lib/brand";
+import { SEO_COPY } from "@/lib/seo";
 import { EditableText } from "@/components/site-edit/EditableText";
 import { ShowcaseCard, ShowcaseCtaBand } from "@/components/layout/ShowcaseCard";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
@@ -89,11 +90,11 @@ export function AboutShowcase() {
     <>
       <ShowcaseHero
         title="About"
-        highlight="Jackals VC"
+        highlight="Jackals Volleyball"
         description={
           <EditableText
             contentKey="about.hero.description"
-            fallback="An amateur sports club built around community volleyball — open sessions, competitive training, and a welcoming team spirit."
+            fallback={SEO_COPY.aboutHero}
             label="About hero description"
             multiline
           />
@@ -134,7 +135,7 @@ export function AboutShowcase() {
             <p>
               <EditableText
                 contentKey="about.who-we-are"
-                fallback="Founded in 2024, Jackals VC is an amateur sports club built around community volleyball — open sessions, competitive training, and a welcoming team spirit. Whether you are picking up a ball for the first time or chasing league titles, there is a place for you here."
+                fallback="Founded in 2024, Jackals Volleyball Club is an amateur sports club based in Dublin, built around community volleyball — open sessions, competitive Irish National League training, and a welcoming team spirit. Whether you are picking up a ball for the first time or chasing league titles, there is a place for you here."
                 label="Who we are"
                 multiline
               />
@@ -159,6 +160,50 @@ export function AboutShowcase() {
                 </li>
               ))}
             </ul>
+          </AboutFeatureCard>
+        </StaggerIn>
+
+        <StaggerIn className="mt-6 grid gap-6 lg:grid-cols-2" stagger={100}>
+          <AboutFeatureCard title="Where we train">
+            <p>
+              <EditableText
+                contentKey="about.where-we-train"
+                fallback={SEO_COPY.aboutWhereWeTrain}
+                label="Where we train"
+                multiline
+              />
+            </p>
+            <Link
+              href="/events"
+              className="mt-4 inline-block text-sm font-semibold text-jackals-red-light hover:underline"
+            >
+              View upcoming sessions →
+            </Link>
+          </AboutFeatureCard>
+
+          <AboutFeatureCard title="How to join">
+            <p>
+              <EditableText
+                contentKey="about.how-to-join"
+                fallback={SEO_COPY.aboutHowToJoin}
+                label="How to join"
+                multiline
+              />
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href="/register"
+                className="text-sm font-semibold text-jackals-red-light hover:underline"
+              >
+                Register online →
+              </Link>
+              <Link
+                href="/contact"
+                className="text-sm font-semibold text-zinc-400 hover:text-jackals-red-light hover:underline"
+              >
+                Contact us →
+              </Link>
+            </div>
           </AboutFeatureCard>
         </StaggerIn>
 

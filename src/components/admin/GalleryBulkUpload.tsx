@@ -13,6 +13,7 @@ import {
   GALLERY_MAX_UPLOAD_BYTES,
   GALLERY_UPLOAD_BATCH_DELAY_MS,
 } from "@/lib/gallery-upload-config";
+import { isAcceptedImageFile } from "@/lib/image-upload-types";
 import { apiPostForm } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 
@@ -64,7 +65,7 @@ export function GalleryBulkUpload({
   }, [files]);
 
   const addFiles = (incoming: FileList | File[]) => {
-    const images = [...incoming].filter((file) => file.type.startsWith("image/"));
+    const images = [...incoming].filter((file) => isAcceptedImageFile(file));
     if (images.length === 0) {
       setError("Only image files can be uploaded.");
       return;

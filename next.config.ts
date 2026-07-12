@@ -8,6 +8,20 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/uploads/:path*.heic",
+          destination: "/api/internal-uploads/:path*.heic",
+        },
+        {
+          source: "/uploads/:path*.heif",
+          destination: "/api/internal-uploads/:path*.heif",
+        },
+      ],
+    };
+  },
   images: {
     remotePatterns: [
       {

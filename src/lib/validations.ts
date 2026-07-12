@@ -416,6 +416,7 @@ export const clubTeamMemberSchema = z.object({
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
   sortOrder: z.number().int().min(0).default(0),
   isCaptain: z.boolean().optional().default(false),
+  hidden: z.boolean().optional().default(false),
 });
 
 export const clubTeamMemberDisplaySchema = z.object({
@@ -425,6 +426,7 @@ export const clubTeamMemberDisplaySchema = z.object({
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
   sortOrder: z.number().int().min(0).optional(),
   isCaptain: z.boolean().optional(),
+  hidden: z.boolean().optional(),
 });
 
 import { MATCH_VENUES } from "@/lib/match-config";

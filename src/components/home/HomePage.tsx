@@ -95,27 +95,33 @@ export function HomePage({
                     multiline
                   />
                 </p>
-                <div className="mt-10 flex flex-wrap items-center justify-center gap-4 lg:justify-start">
+                <div className="mt-10 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-4 lg:justify-start">
                   <a
                     href={INSTAGRAM_PROFILE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2.5 border border-white/20 bg-transparent px-6 py-3 text-base font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 hover:scale-[1.02] active:scale-[0.96]"
+                    aria-label="Follow @jackalsvolleyball on Instagram"
+                    className="group flex h-11 min-w-0 items-center justify-center gap-1.5 border border-white/20 bg-transparent px-2 text-xs font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-auto sm:w-auto sm:gap-2.5 sm:px-6 sm:py-3 sm:text-base"
                   >
-                    <InstagramIcon className="transition-transform group-hover:scale-110" />
-                    @jackalsvolleyball
+                    <InstagramIcon className="shrink-0 transition-transform group-hover:scale-110" />
+                    <span className="hidden truncate sm:inline">@jackalsvolleyball</span>
                   </a>
                   <a
                     href={RECLUB_CLUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group inline-flex items-center justify-center gap-2 border border-white/20 bg-transparent px-6 py-3 text-base font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 hover:scale-[1.02] active:scale-[0.96]"
+                    className="group flex h-11 min-w-0 items-center justify-center gap-1.5 border border-white/20 bg-transparent px-2 text-xs font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-auto sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-base"
                   >
                     ReClub
-                    <ExternalLink className="h-4 w-4 transition-transform group-hover:scale-110" />
+                    <ExternalLink className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 sm:h-4 sm:w-4" />
                   </a>
-                  <Link href="/events">
-                    <Button size="lg">Events</Button>
+                  <Link href="/events" className="min-w-0">
+                    <Button
+                      size="lg"
+                      className="h-11 w-full px-2 text-xs sm:h-auto sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                    >
+                      Events
+                    </Button>
                   </Link>
                 </div>
               </div>

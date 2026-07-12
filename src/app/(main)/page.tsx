@@ -7,11 +7,16 @@ import { getHomepageGalleryHighlights } from "@/lib/home-gallery";
 import { isSubscribedToEventNewsletter } from "@/lib/event-newsletter-subscription";
 import { getInstagramPosts } from "@/lib/instagram";
 import { visibleFeatureItems } from "@/lib/navigation";
+import { pageMetadata, SEO_SITE_NAME } from "@/lib/seo";
 import { prisma } from "@/lib/prisma";
 
-export const metadata = {
-  title: "Home",
-};
+export const metadata = pageMetadata({
+  title: SEO_SITE_NAME,
+  absoluteTitle: "Jackals Volleyball Club | Volleyball in Dublin",
+  description:
+    "Jackals Volleyball Club — competitive league squads, training, and open sessions in Dublin. Browse events, meet our teams, and join Ireland's welcoming volleyball community.",
+  path: "/",
+});
 
 export default async function HomePageRoute() {
   const session = await auth();

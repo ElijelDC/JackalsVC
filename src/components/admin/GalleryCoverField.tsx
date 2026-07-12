@@ -99,7 +99,7 @@ export function GalleryCoverField({
             }}
           />
           <p className="text-xs text-zinc-500">
-            JPEG, PNG, WebP, or GIF up to 15 MB. Optional when creating a new album.
+            JPEG, PNG, WebP, GIF, or HEIC up to 15 MB. Optional when creating a new album.
           </p>
           <FormError message={error} />
         </div>

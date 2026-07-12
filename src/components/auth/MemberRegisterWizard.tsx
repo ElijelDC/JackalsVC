@@ -478,7 +478,7 @@ export function MemberRegisterWizard({
               {selectedFile ? selectedFile.name : "Choose VLY membership photo"}
             </span>
             <span className="mt-1 text-xs text-zinc-500">
-              JPEG, PNG, WebP, or GIF · max 5 MB
+              JPEG, PNG, WebP, GIF, or HEIC · max 5 MB
             </span>
           </button>
 

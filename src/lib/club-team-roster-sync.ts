@@ -8,16 +8,39 @@ export function rosterRoleToTeamRole(rosterRole: string) {
   return rosterRole === "COACH" ? "COACH" : "PLAYER";
 }
 
+export function parseSyncExcludedClubMemberIds(
+  value: string | null | undefined,
+): string[] {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((id): id is string => typeof id === "string");
+  } catch {
+    return [];
+  }
+}
+
+export function serializeSyncExcludedClubMemberIds(ids: string[]): string {
+  return JSON.stringify([...new Set(ids)]);
+}
+
 export async function syncClubTeamFromRoster(clubTeamId: string) {
   const team = await prisma.clubTeam.findUnique({ where: { id: clubTeamId } });
   if (!team?.trainingTeamKey) {
     return { synced: 0, removed: 0 };
   }
 
+  const excludedIds = parseSyncExcludedClubMemberIds(
+    team.syncExcludedClubMemberIds,
+  );
+
   const rosterMembers = await prisma.clubMember.findMany({
     where: {
       trainingTeamKey: team.trainingTeamKey,
       active: true,
+      ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
     },
     orderBy: [{ rosterRole: "asc" }, { name: "asc" }],
   });
@@ -73,6 +96,19 @@ export async function syncClubTeamFromRoster(clubTeamId: string) {
   }
 
   return { synced, removed };
+}
+
+export async function detachClubTeamMembersForManualMode(clubTeamId: string) {
+  await prisma.$transaction([
+    prisma.clubTeamMember.updateMany({
+      where: { teamId: clubTeamId, clubMemberId: { not: null } },
+      data: { clubMemberId: null },
+    }),
+    prisma.clubTeam.update({
+      where: { id: clubTeamId },
+      data: { syncExcludedClubMemberIds: "[]" },
+    }),
+  ]);
 }
 
 export async function syncClubTeamsForSquadKey(trainingTeamKey: string) {

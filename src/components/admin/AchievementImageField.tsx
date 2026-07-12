@@ -9,6 +9,7 @@ import {
   GALLERY_ACCEPTED_IMAGE_TYPES,
   GALLERY_MAX_UPLOAD_BYTES,
 } from "@/lib/gallery-upload-config";
+import { isAcceptedImageFile } from "@/lib/image-upload-types";
 import { apiDelete, apiPostForm } from "@/lib/client-api";
 import { normalizeAchievementUrl } from "@/lib/public-paths";
 import { cn } from "@/lib/utils";
@@ -37,7 +38,7 @@ export function AchievementImageField({
   const displayUrl = localPreview ?? (imageUrl ? normalizeAchievementUrl(imageUrl) : null);
 
   const uploadFile = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
+    if (!isAcceptedImageFile(file)) {
       setError("Only image files can be uploaded.");
       return;
     }
@@ -118,7 +119,7 @@ export function AchievementImageField({
     <div className="sm:col-span-2">
       <Label>Achievement image (optional)</Label>
       <p className="mt-1 text-xs text-zinc-500">
-        JPEG, PNG, WebP, or GIF up to 5 MB. Landscape photos work best.
+        JPEG, PNG, WebP, GIF, or HEIC up to 5 MB. Landscape photos work best.
       </p>
 
       {displayUrl ? (

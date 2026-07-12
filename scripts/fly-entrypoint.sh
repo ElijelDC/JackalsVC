@@ -23,8 +23,8 @@ fi
 
 cd /app
 
-echo "Syncing database schema..."
-npx prisma db push --accept-data-loss
+echo "Applying database migrations..."
+npx prisma migrate deploy
 
 echo "Starting Jackals VC..."
 exec npm start

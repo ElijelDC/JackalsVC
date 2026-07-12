@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import {
+  parseSyncExcludedClubMemberIds,
+  serializeSyncExcludedClubMemberIds,
+} from "@/lib/club-team-roster-sync";
 import { prisma } from "@/lib/prisma";
 import {
   clubTeamMemberDisplaySchema,
@@ -36,6 +40,7 @@ export async function PUT(
             : {}),
           ...(data.sortOrder !== undefined ? { sortOrder: data.sortOrder } : {}),
           ...(data.isCaptain !== undefined ? { isCaptain: data.isCaptain } : {}),
+          ...(data.hidden !== undefined ? { hidden: data.hidden } : {}),
         },
       });
       return NextResponse.json({ member });
@@ -56,6 +61,7 @@ export async function PUT(
         photoUrl: data.photoUrl ?? null,
         sortOrder: data.sortOrder,
         isCaptain: data.isCaptain ?? false,
+        hidden: data.hidden ?? false,
       },
     });
     return NextResponse.json({ member });
@@ -76,14 +82,26 @@ export async function DELETE(
 
   const existing = await prisma.clubTeamMember.findUnique({
     where: { id: memberId },
+    include: { team: true },
   });
   if (!existing) return jsonError("Team member not found", 404);
 
-  if (existing.clubMemberId) {
-    return jsonError(
-      "Roster members are managed on the club roster. Change their squad or role there, or deactivate them.",
-      409,
+  if (existing.clubMemberId && existing.team.trainingTeamKey) {
+    const excluded = parseSyncExcludedClubMemberIds(
+      existing.team.syncExcludedClubMemberIds,
     );
+
+    if (!excluded.includes(existing.clubMemberId)) {
+      await prisma.clubTeam.update({
+        where: { id: existing.teamId },
+        data: {
+          syncExcludedClubMemberIds: serializeSyncExcludedClubMemberIds([
+            ...excluded,
+            existing.clubMemberId,
+          ]),
+        },
+      });
+    }
   }
 
   await prisma.clubTeamMember.delete({ where: { id: memberId } });

@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { GalleryAlbumDetailView } from "@/components/gallery/GalleryAlbumDetailView";
-import { prisma } from "@/lib/prisma";
+import { getPublicGalleryAlbumById } from "@/lib/public-page-data";
+import { pageMetadata } from "@/lib/seo";
+
+export const revalidate = 3600;
 
 export async function generateMetadata({
   params,
@@ -8,8 +11,18 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const album = await prisma.galleryAlbum.findUnique({ where: { id } });
-  return { title: album?.title ?? "Gallery album" };
+  const album = await getPublicGalleryAlbumById(id);
+  if (!album) {
+    return pageMetadata({ title: "Gallery Album", path: `/gallery/${id}` });
+  }
+
+  return pageMetadata({
+    title: album.title,
+    description:
+      album.description ??
+      `${album.title} — photo album from Jackals Volleyball Club, Dublin.`,
+    path: `/gallery/${id}`,
+  });
 }
 
 export default async function GalleryAlbumPage({
@@ -18,15 +31,7 @@ export default async function GalleryAlbumPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
-  const album = await prisma.galleryAlbum.findUnique({
-    where: { id },
-    include: {
-      photos: {
-        orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
-      },
-    },
-  });
+  const album = await getPublicGalleryAlbumById(id);
 
   if (!album) {
     notFound();
