@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { useState } from "react";
-import { ArrowUpRight, ChevronDown, Mail } from "lucide-react";
+import { ChevronDown, Mail } from "lucide-react";
 import { CLUB_SLOGAN } from "@/lib/brand";
 import { Logo } from "@/components/layout/Logo";
 import { EditableText } from "@/components/site-edit/EditableText";
@@ -23,28 +23,18 @@ function FooterBrand({
   fallback: string;
   label: string;
 }) {
-  const tagline = (
-    <p className="min-w-0 text-sm leading-relaxed text-zinc-500 lg:w-full">
-      <EditableText
-        contentKey={contentKey}
-        fallback={fallback}
-        label={label}
-        multiline
-      />
-    </p>
-  );
-
   return (
-    <>
-      <div className="flex items-center gap-3 sm:gap-4 lg:hidden">
-        <Logo size="lg" href="/" className="shrink-0" />
-        {tagline}
-      </div>
-      <div className="hidden lg:flex lg:max-w-xs lg:flex-col lg:items-center lg:gap-4">
-        <Logo size="footer" href="/" className="shrink-0" />
-        {tagline}
-      </div>
-    </>
+    <div className="flex items-start gap-3">
+      <Logo size="lg" href="/" className="shrink-0" />
+      <p className="min-w-0 pt-1 text-sm leading-relaxed text-zinc-500">
+        <EditableText
+          contentKey={contentKey}
+          fallback={fallback}
+          label={label}
+          multiline
+        />
+      </p>
+    </div>
   );
 }
 
@@ -58,7 +48,7 @@ function FooterLink({
   external?: boolean;
 }) {
   const className =
-    "text-sm text-zinc-500 transition-colors hover:text-jackals-red-light";
+    "text-sm text-zinc-400 transition-colors hover:text-jackals-red-light";
 
   if (external) {
     return (
@@ -80,61 +70,32 @@ function FooterLink({
   );
 }
 
-function FooterContactLink({
-  href,
-  label,
-  value,
-  icon,
-  external = false,
-}: {
-  href: string;
-  label: string;
-  value: string;
-  icon: ReactNode;
-  external?: boolean;
-}) {
-  return (
-    <li>
-      <a
-        href={href}
-        {...(external
-          ? { target: "_blank", rel: "noopener noreferrer" }
-          : {})}
-        className="group flex items-start gap-3 rounded-sm border border-white/10 bg-white/[0.03] px-3 py-2.5 transition-colors hover:border-jackals-red/40 hover:bg-jackals-red/10"
-      >
-        <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light transition-colors group-hover:bg-jackals-red/25">
-          {icon}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1 text-xs font-semibold uppercase tracking-wide text-zinc-400 transition-colors group-hover:text-jackals-red-light">
-            {label}
-            <ArrowUpRight className="h-3 w-3 shrink-0 opacity-60 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:opacity-100" />
-          </span>
-          <span className="mt-0.5 block text-sm text-white transition-colors group-hover:text-jackals-red-light">
-            {value}
-          </span>
-        </span>
-      </a>
-    </li>
-  );
-}
-
 function FooterContactLinks() {
+  const linkClassName =
+    "group flex items-start gap-2.5 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light";
+
   return (
     <>
-      <FooterContactLink
-        href={`mailto:${CONTACT_EMAIL}`}
-        label="Email us"
-        value={CONTACT_EMAIL}
-        icon={<Mail className="h-4 w-4" aria-hidden />}
-      />
-      <FooterContactLink
-        href={INSTAGRAM_PROFILE_URL}
-        label="Instagram"
-        value="@jackalsvolleyball"
-        icon={<InstagramIcon />}
-        external
-      />
+      <li>
+        <a href={`mailto:${CONTACT_EMAIL}`} className={linkClassName}>
+          <Mail
+            className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light/70 transition-colors group-hover:text-jackals-red-light"
+            aria-hidden
+          />
+          <span className="min-w-0 break-all leading-snug">{CONTACT_EMAIL}</span>
+        </a>
+      </li>
+      <li>
+        <a
+          href={INSTAGRAM_PROFILE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClassName}
+        >
+          <InstagramIcon className="mt-0.5 shrink-0 text-jackals-red-light/70 transition-colors group-hover:text-jackals-red-light" />
+          <span className="leading-snug">@jackalsvolleyball</span>
+        </a>
+      </li>
     </>
   );
 }
@@ -149,14 +110,14 @@ function FooterColumn({
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="border-b border-white/10 sm:border-b-0">
+    <div className="min-w-0 border-b border-white/10 sm:border-b-0">
       <button
         type="button"
         className="flex w-full items-center justify-between py-4 text-left sm:pointer-events-none sm:cursor-default sm:py-0"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
       >
-        <h3 className="font-display text-xs font-semibold tracking-[0.2em] text-jackals-red-light sm:mb-4">
+        <h3 className="font-display text-xs font-semibold uppercase tracking-wider text-jackals-red-light sm:mb-3">
           {title}
         </h3>
         <ChevronDown
@@ -169,7 +130,7 @@ function FooterColumn({
       </button>
       <ul
         className={cn(
-          "space-y-3 overflow-hidden pb-4 sm:block sm:pb-0",
+          "space-y-2.5 overflow-hidden pb-4 sm:block sm:pb-0",
           open ? "block" : "hidden",
         )}
       >
@@ -187,15 +148,61 @@ function FooterNewsletter({
   eventNewsletterSubscribed?: boolean;
 }) {
   return (
-    <div className="border-b border-white/10 pb-8 sm:border-b-0 sm:pb-0">
-      <h3 className="font-display text-xs font-semibold tracking-[0.2em] text-jackals-red-light">
+    <div>
+      <h3 className="font-display text-xs font-semibold uppercase tracking-wider text-jackals-red-light">
         Event emails
       </h3>
+      <p className="mt-1.5 text-xs leading-relaxed text-zinc-600">
+        New sessions and tournaments — we&apos;ll send a quick heads-up.
+      </p>
       <NewsletterSubscribeForm
         source="footer"
         initialEmail={userEmail ?? ""}
         initialSubscribed={eventNewsletterSubscribed ?? false}
-        compact
+        minimal
+      />
+    </div>
+  );
+}
+
+function FooterMainGrid({
+  brand,
+  columns,
+}: {
+  brand: ReactNode;
+  columns: ReactNode;
+}) {
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-12 lg:px-8">
+      <div className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-x-16">
+        <div className="w-full shrink-0 lg:max-w-md">{brand}</div>
+        <div className="flex w-full min-w-0 flex-col gap-y-0 sm:flex-row sm:flex-wrap sm:justify-between lg:flex-1 lg:gap-x-12 xl:gap-x-16">
+          {columns}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FooterBrandColumn({
+  contentKey,
+  fallback,
+  label,
+  userEmail,
+  eventNewsletterSubscribed,
+}: {
+  contentKey: string;
+  fallback: string;
+  label: string;
+  userEmail?: string | null;
+  eventNewsletterSubscribed?: boolean;
+}) {
+  return (
+    <div className="space-y-6">
+      <FooterBrand contentKey={contentKey} fallback={fallback} label={label} />
+      <FooterNewsletter
+        userEmail={userEmail}
+        eventNewsletterSubscribed={eventNewsletterSubscribed}
       />
     </div>
   );
@@ -209,55 +216,51 @@ function GuestFooter({
   eventNewsletterSubscribed?: boolean;
 }) {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
-      <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-        <div className="sm:col-span-2 lg:col-span-1">
-          <FooterBrand
-            contentKey="footer.guest.tagline"
-            fallback={`${CLUB_SLOGAN} Your home for volleyball in the community.`}
-            label="Footer tagline (guests)"
-          />
-        </div>
+    <FooterMainGrid
+      brand={
+        <FooterBrandColumn
+          contentKey="footer.guest.tagline"
+          fallback={`${CLUB_SLOGAN} Your home for volleyball in the community.`}
+          label="Footer tagline (guests)"
+          userEmail={userEmail}
+          eventNewsletterSubscribed={eventNewsletterSubscribed}
+        />
+      }
+      columns={
+        <>
+          <FooterColumn title="Explore">
+            <li>
+              <FooterLink href="/events">Events</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/teams">Our teams</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/gallery">Gallery</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/achievements">Achievements</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/about">About us</FooterLink>
+            </li>
+          </FooterColumn>
 
-        <FooterColumn title="Explore">
-          <li>
-            <FooterLink href="/events">Events</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/teams">Our teams</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/gallery">Gallery</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/achievements">Achievements</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/about">About us</FooterLink>
-          </li>
-        </FooterColumn>
+          <FooterColumn title="Plan ahead">
+            <li>
+              <FooterLink href="/sponsors">For sponsors</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/contact">Contact us</FooterLink>
+            </li>
+          </FooterColumn>
 
-        <FooterColumn title="Plan ahead">
-          <li>
-            <FooterLink href="/sponsors">For sponsors</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/contact">Contact us</FooterLink>
-          </li>
-        </FooterColumn>
-
-        <FooterColumn title="Get in touch">
-          <FooterContactLinks />
-        </FooterColumn>
-
-        <div className="sm:col-span-2 lg:col-span-1">
-          <FooterNewsletter
-            userEmail={userEmail}
-            eventNewsletterSubscribed={eventNewsletterSubscribed}
-          />
-        </div>
-      </div>
-    </div>
+          <FooterColumn title="Get in touch">
+            <FooterContactLinks />
+          </FooterColumn>
+        </>
+      }
+    />
   );
 }
 
@@ -269,63 +272,59 @@ function MemberFooter({
   eventNewsletterSubscribed?: boolean;
 }) {
   return (
-    <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-14 lg:px-8">
-      <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-        <div className="sm:col-span-2 lg:col-span-1">
-          <FooterBrand
-            contentKey="footer.member.tagline"
-            fallback={`${CLUB_SLOGAN} See what's on, manage your membership, and stay match-ready.`}
-            label="Footer tagline (members)"
-          />
-        </div>
-
-        <FooterColumn title="Your club">
-          <li>
-            <FooterLink href="/dashboard">Dashboard</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/membership">Membership</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/events">Events</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/training">Trainings</FooterLink>
-          </li>
-        </FooterColumn>
-
-        <FooterColumn title="Discover">
-          <li>
-            <FooterLink href="/teams">Teams</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/gallery">Gallery</FooterLink>
-          </li>
-          <li>
-            <FooterLink href="/achievements">Achievements</FooterLink>
-          </li>
-          {SHOP_ENABLED && (
+    <FooterMainGrid
+      brand={
+        <FooterBrandColumn
+          contentKey="footer.member.tagline"
+          fallback={`${CLUB_SLOGAN} See what's on, manage your membership, and stay match-ready.`}
+          label="Footer tagline (members)"
+          userEmail={userEmail}
+          eventNewsletterSubscribed={eventNewsletterSubscribed}
+        />
+      }
+      columns={
+        <>
+          <FooterColumn title="Your club">
             <li>
-              <FooterLink href="/shop">Club shop</FooterLink>
+              <FooterLink href="/dashboard">Dashboard</FooterLink>
             </li>
-          )}
-        </FooterColumn>
+            <li>
+              <FooterLink href="/membership">Membership</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/events">Events</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/training">Trainings</FooterLink>
+            </li>
+          </FooterColumn>
 
-        <FooterColumn title="Contact">
-          <li>
-            <FooterLink href="/contact">Contact us</FooterLink>
-          </li>
-          <FooterContactLinks />
-        </FooterColumn>
+          <FooterColumn title="Discover">
+            <li>
+              <FooterLink href="/teams">Teams</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/gallery">Gallery</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/achievements">Achievements</FooterLink>
+            </li>
+            {SHOP_ENABLED && (
+              <li>
+                <FooterLink href="/shop">Club shop</FooterLink>
+              </li>
+            )}
+          </FooterColumn>
 
-        <div className="sm:col-span-2 lg:col-span-1">
-          <FooterNewsletter
-            userEmail={userEmail}
-            eventNewsletterSubscribed={eventNewsletterSubscribed}
-          />
-        </div>
-      </div>
-    </div>
+          <FooterColumn title="Contact">
+            <li>
+              <FooterLink href="/contact">Contact us</FooterLink>
+            </li>
+            <FooterContactLinks />
+          </FooterColumn>
+        </>
+      }
+    />
   );
 }
 
@@ -339,8 +338,8 @@ export function Footer({
   eventNewsletterSubscribed?: boolean;
 }) {
   return (
-    <footer className="relative mt-auto border-t border-white/10 bg-jackals-inset/65">
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/50 to-transparent" />
+    <footer className="relative mt-auto border-t border-white/10 bg-jackals-inset/50">
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-jackals-red/40 to-transparent" />
 
       {isLoggedIn ? (
         <MemberFooter
@@ -354,12 +353,13 @@ export function Footer({
         />
       )}
 
-      <div className="border-t border-white/10 bg-jackals-inset/90">
-        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-4 py-5 sm:flex-row sm:px-6 lg:px-8">
-          <p className="text-center text-xs text-zinc-600 sm:text-left">
-            © {new Date().getFullYear()} Jackals Volleyball Club
-          </p>
-          <p className="text-center text-xs text-zinc-700 sm:text-right">
+      <div className="border-t border-white/10">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <p className="text-center text-xs text-zinc-600">
+            © 2024 Jackals Volleyball Club
+            <span className="mx-2 text-zinc-700" aria-hidden>
+              ·
+            </span>
             All rights reserved
           </p>
         </div>
