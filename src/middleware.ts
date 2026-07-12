@@ -15,7 +15,7 @@ const CSP = [
   "default-src 'self'",
   "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://ui-avatars.com https://*.cdninstagram.com",
+  "img-src 'self' data: blob: https://ui-avatars.com https://*.cdninstagram.com https://assets.reclub.co https://*.cloudfront.net",
   "font-src 'self'",
   "connect-src 'self'",
   "frame-ancestors 'none'",

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { ReclubMeetParticipant } from "@/lib/reclub-payload";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { cn } from "@/lib/utils";
@@ -18,15 +21,19 @@ function ParticipantAvatar({
   name: string;
   imageUrl: string | null;
 }) {
+  const [imageError, setImageError] = useState(false);
+  const showImage = Boolean(imageUrl) && !imageError;
+
   return (
     <div className="relative h-12 w-12 overflow-hidden rounded-full border border-white/10 bg-jackals-surface">
-      {imageUrl ? (
+      {showImage ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={imageUrl}
+          src={imageUrl!}
           alt=""
           loading="lazy"
           className="h-full w-full object-cover"
+          onError={() => setImageError(true)}
         />
       ) : (
         <span className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-400">
