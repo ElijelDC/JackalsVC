@@ -1,9 +1,15 @@
 "use client";
 
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
 import type { GalleryPhotoItem } from "@/components/gallery/types";
+import { normalizePublicAssetUrl } from "@/lib/public-paths";
+
+function preloadImage(url: string) {
+  const img = new window.Image();
+  img.src = url;
+}
 
 export function GalleryLightbox({
   photos,
@@ -20,6 +26,9 @@ export function GalleryLightbox({
   const hasPrev = activeIndex > 0;
   const hasNext = activeIndex < photos.length - 1;
   const label = photo.caption ?? "Gallery photo";
+  const imageSrc = normalizePublicAssetUrl(photo.imageUrl);
+  const [loadedSrc, setLoadedSrc] = useState<string | null>(null);
+  const [imageError, setImageError] = useState(false);
 
   const goPrev = useCallback(() => {
     if (hasPrev) onChangeIndex(activeIndex - 1);
@@ -28,6 +37,20 @@ export function GalleryLightbox({
   const goNext = useCallback(() => {
     if (hasNext) onChangeIndex(activeIndex + 1);
   }, [activeIndex, hasNext, onChangeIndex]);
+
+  useEffect(() => {
+    setLoadedSrc(null);
+    setImageError(false);
+  }, [imageSrc]);
+
+  useEffect(() => {
+    if (hasPrev) {
+      preloadImage(normalizePublicAssetUrl(photos[activeIndex - 1]!.imageUrl));
+    }
+    if (hasNext) {
+      preloadImage(normalizePublicAssetUrl(photos[activeIndex + 1]!.imageUrl));
+    }
+  }, [activeIndex, hasNext, hasPrev, photos]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -99,14 +122,29 @@ export function GalleryLightbox({
           </button>
         )}
 
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={photo.imageUrl}
-          alt={label}
-          draggable={false}
-          onClick={(event) => event.stopPropagation()}
-          className="max-h-[calc(100dvh-12rem)] max-w-[calc(100dvw-6rem)] touch-manipulation object-contain sm:max-h-[calc(100dvh-11rem)] sm:max-w-[calc(100dvw-10rem)]"
-        />
+        {!imageError && loadedSrc !== imageSrc && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <Loader2 className="h-10 w-10 animate-spin text-jackals-red-light" />
+          </div>
+        )}
+
+        {imageError ? (
+          <p className="max-w-md px-4 text-center text-sm text-zinc-400">
+            This photo couldn&apos;t be loaded. Try the next one or close and
+            refresh the page.
+          </p>
+        ) : (
+          /* eslint-disable-next-line @next/next/no-img-element */
+          <img
+            src={imageSrc}
+            alt={label}
+            draggable={false}
+            onClick={(event) => event.stopPropagation()}
+            onLoad={() => setLoadedSrc(imageSrc)}
+            onError={() => setImageError(true)}
+            className="max-h-[calc(100dvh-12rem)] max-w-[calc(100dvw-6rem)] touch-manipulation object-contain sm:max-h-[calc(100dvh-11rem)] sm:max-w-[calc(100dvw-10rem)]"
+          />
+        )}
       </div>
 
       {photo.caption && (

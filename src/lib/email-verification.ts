@@ -1,5 +1,6 @@
 import { randomInt } from "node:crypto";
 import bcrypt from "bcryptjs";
+import { checkRateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
 
 const CODE_TTL_MS = 10 * 60 * 1000;
@@ -53,6 +54,17 @@ export async function verifyEmailCode(input: {
   const email = input.email.trim().toLowerCase();
   const vlyNumber = input.vlyNumber.trim().toUpperCase();
   const code = input.code.trim();
+
+  const rateLimit = checkRateLimit(`verify-email:${email}:${vlyNumber}`, {
+    limit: 8,
+    windowMs: CODE_TTL_MS,
+  });
+  if (!rateLimit.allowed) {
+    return {
+      valid: false,
+      error: "Too many verification attempts — request a new code",
+    };
+  }
 
   if (!/^\d{6}$/.test(code)) {
     return { valid: false, error: "Enter the 6-digit code from your email" };

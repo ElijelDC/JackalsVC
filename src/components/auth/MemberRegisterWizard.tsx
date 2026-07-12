@@ -19,6 +19,7 @@ import {
   type RegisterStep,
 } from "@/lib/registration-wizard-copy";
 import { sanitizeCallbackUrl } from "@/lib/safe-callback-url";
+import { withUploadAccessToken } from "@/lib/upload-access";
 
 type VlyValidationPayload = {
   vlyNumber: string;
@@ -212,7 +213,12 @@ export function MemberRegisterWizard({
       vlyNumber: payload.vlyNumber,
       registrationToken: payload.registrationToken,
     };
-    setVlyPhotoUrl(payload.vlyMembershipPhotoUrl);
+    setVlyPhotoUrl(
+      withUploadAccessToken(
+        payload.vlyMembershipPhotoUrl,
+        payload.registrationToken,
+      ),
+    );
     setPhotoSubmittedAt(payload.registrationPhotoSubmittedAt);
     resetEmailVerification();
 
@@ -302,7 +308,12 @@ export function MemberRegisterWizard({
       return;
     }
 
-    setVlyPhotoUrl(result.data.vlyMembershipPhotoUrl);
+    setVlyPhotoUrl(
+      withUploadAccessToken(
+        result.data.vlyMembershipPhotoUrl,
+        registrationToken,
+      ),
+    );
     setPhotoSubmittedAt(result.data.registrationPhotoSubmittedAt);
     setEmailLocked(true);
     setAllowEmailChange(false);
@@ -546,7 +557,7 @@ export function MemberRegisterWizard({
 
         {vlyPhotoUrl && (
           <RegistrationPendingPanel
-            photoUrl={vlyPhotoUrl}
+            photoUrl={withUploadAccessToken(vlyPhotoUrl, registrationToken) ?? vlyPhotoUrl}
             submittedAt={photoSubmittedAt}
             email={email || undefined}
           />

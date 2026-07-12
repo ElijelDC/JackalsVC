@@ -1,4 +1,5 @@
 import { describeHttpError, NETWORK_ERROR_MESSAGE } from "@/lib/http-errors";
+import { reportClientError } from "@/lib/client-error-report";
 
 const JSON_HEADERS = { "Content-Type": "application/json" };
 
@@ -9,37 +10,39 @@ type ApiResult<T> =
 async function parseResponse<T>(
   res: Response,
   fallbackError: string,
+  requestUrl: string,
 ): Promise<ApiResult<T>> {
   const text = await res.text();
   if (!text.trim()) {
-    return {
-      ok: false,
-      error: res.ok
-        ? fallbackError
-        : describeHttpError(res.status, fallbackError),
-    };
+    const error = res.ok
+      ? fallbackError
+      : describeHttpError(res.status, fallbackError);
+    if (!res.ok) {
+      reportClientError({ message: error, endpoint: requestUrl, status: res.status });
+    }
+    return { ok: false, error };
   }
 
   try {
     const data = JSON.parse(text) as T & { error?: string };
     if (!res.ok) {
-      return {
-        ok: false,
-        error:
-          typeof data === "object" &&
-          data &&
-          "error" in data &&
-          typeof data.error === "string"
-            ? data.error
-            : describeHttpError(res.status, fallbackError),
-      };
+      const error =
+        typeof data === "object" &&
+        data &&
+        "error" in data &&
+        typeof data.error === "string"
+          ? data.error
+          : describeHttpError(res.status, fallbackError);
+      reportClientError({ message: error, endpoint: requestUrl, status: res.status });
+      return { ok: false, error };
     }
     return { ok: true, data: data as T };
   } catch {
-    return {
-      ok: false,
-      error: res.ok ? fallbackError : describeHttpError(res.status, fallbackError),
-    };
+    const error = res.ok ? fallbackError : describeHttpError(res.status, fallbackError);
+    if (!res.ok) {
+      reportClientError({ message: error, endpoint: requestUrl, status: res.status });
+    }
+    return { ok: false, error };
   }
 }
 
@@ -49,8 +52,9 @@ export async function apiGet<T>(
 ): Promise<ApiResult<T>> {
   try {
     const res = await fetch(url);
-    return parseResponse<T>(res, fallbackError);
+    return parseResponse<T>(res, fallbackError, url);
   } catch {
+    reportClientError({ message: NETWORK_ERROR_MESSAGE, endpoint: url });
     return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
@@ -66,8 +70,9 @@ export async function apiPost<T>(
       headers: JSON_HEADERS,
       body: JSON.stringify(body),
     });
-    return parseResponse<T>(res, fallbackError);
+    return parseResponse<T>(res, fallbackError, url);
   } catch {
+    reportClientError({ message: NETWORK_ERROR_MESSAGE, endpoint: url });
     return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
@@ -82,8 +87,9 @@ export async function apiPostForm<T>(
       method: "POST",
       body,
     });
-    return parseResponse<T>(res, fallbackError);
+    return parseResponse<T>(res, fallbackError, url);
   } catch {
+    reportClientError({ message: NETWORK_ERROR_MESSAGE, endpoint: url });
     return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
@@ -99,8 +105,9 @@ export async function apiPut<T>(
       headers: JSON_HEADERS,
       body: JSON.stringify(body),
     });
-    return parseResponse<T>(res, fallbackError);
+    return parseResponse<T>(res, fallbackError, url);
   } catch {
+    reportClientError({ message: NETWORK_ERROR_MESSAGE, endpoint: url });
     return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
@@ -116,8 +123,9 @@ export async function apiPatch<T>(
       headers: JSON_HEADERS,
       body: JSON.stringify(body),
     });
-    return parseResponse<T>(res, fallbackError);
+    return parseResponse<T>(res, fallbackError, url);
   } catch {
+    reportClientError({ message: NETWORK_ERROR_MESSAGE, endpoint: url });
     return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }
@@ -128,8 +136,9 @@ export async function apiDelete<T = { success: boolean }>(
 ): Promise<ApiResult<T>> {
   try {
     const res = await fetch(url, { method: "DELETE" });
-    return parseResponse<T>(res, fallbackError);
+    return parseResponse<T>(res, fallbackError, url);
   } catch {
+    reportClientError({ message: NETWORK_ERROR_MESSAGE, endpoint: url });
     return { ok: false, error: NETWORK_ERROR_MESSAGE };
   }
 }

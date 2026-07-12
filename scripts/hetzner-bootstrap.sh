@@ -1,36 +1,46 @@
 #!/bin/bash
 # Paste this entire script into Hetzner Console → your server → Console tab.
+# Set secrets via environment variables before running — never commit real values.
 set -e
 
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
-grep -qF 'rost.ovtseva226@gmail.com' ~/.ssh/authorized_keys 2>/dev/null || \
-  echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILwDCm+VnjCOnnn3MA82rPy+QTMLaGCI14nJ7ZQrjnWD rost.ovtseva226@gmail.com' >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
+: "${AUTH_SECRET:?Set AUTH_SECRET before running}"
+: "${SMTP_PASS:?Set SMTP_PASS before running}"
+: "${SUMUP_API_KEY:?Set SUMUP_API_KEY before running}"
 
+SSH_PUBLIC_KEY="${SSH_PUBLIC_KEY:-}"
 APP_DIR="${APP_DIR:-/opt/jackalsvc}"
+
+if [ -n "$SSH_PUBLIC_KEY" ]; then
+  mkdir -p ~/.ssh
+  chmod 700 ~/.ssh
+  grep -qF "$SSH_PUBLIC_KEY" ~/.ssh/authorized_keys 2>/dev/null || \
+    echo "$SSH_PUBLIC_KEY" >> ~/.ssh/authorized_keys
+  chmod 600 ~/.ssh/authorized_keys
+fi
+
 mkdir -p "$APP_DIR"
 
-cat > "$APP_DIR/.env.production" <<'EOF'
+cat > "$APP_DIR/.env.production" <<EOF
 DATABASE_URL="file:/data/jackals.db"
 DATA_DIR="/data"
-AUTH_SECRET="Yjl8Dif/+RyW7kk6RGmRS+ilz/uUeN98lLH570EZTiY="
-AUTH_URL="https://jackalsvolleyball.com"
-NEXT_PUBLIC_SITE_URL="https://jackalsvolleyball.com"
-CLUB_IBAN="IE89SUMU99036511293898"
-CLUB_ACCOUNT_HOLDER="Thunder Jackals"
-SUMUP_API_KEY="sup_sk_OpzU1A51c8XsJCScwZPxiFVOQfs8pa2Xz"
-SUMUP_MERCHANT_CODE="MDFNZHPR"
-PAYMENTS_SYNC_SECRET=""
-PAYMENT_EMAIL_WEBHOOK_SECRET="jackals-email-webhook-dev"
-PAYMENT_EMAIL_ALLOWED_SENDERS="sumup.com"
-SMTP_HOST="smtp.gmail.com"
-SMTP_PORT="587"
-SMTP_USER="jackalsvolleyballclub@gmail.com"
-SMTP_PASS="cttpdmqsypbxjzaq"
-SMTP_FROM="jackalsvolleyballclub@gmail.com"
-INSTAGRAM_USER_ID="17841467391808908"
-INSTAGRAM_ACCESS_TOKEN="IGAAMSwCKNlZAtBZAGJiaXYtc1kySS02WTVFWERHeVdrMW42dF9tdXNZAQm1PVVg5WHRBZAEx6RUFzanQxMFN6UHRDc0YtUEdCcmt0Y04xd2R2Y2xyUjA3OEE3NWFBSTdVMTNIV3RqV2RaQ01wQlRKeG1iZAV9mQVc5aDNObkF4UlZAzbwZDZD"
+AUTH_SECRET="${AUTH_SECRET}"
+AUTH_URL="${AUTH_URL:-https://jackalsvolleyball.com}"
+NEXT_PUBLIC_SITE_URL="${NEXT_PUBLIC_SITE_URL:-https://jackalsvolleyball.com}"
+CLUB_IBAN="${CLUB_IBAN:-}"
+CLUB_ACCOUNT_HOLDER="${CLUB_ACCOUNT_HOLDER:-Thunder Jackals}"
+SUMUP_API_KEY="${SUMUP_API_KEY}"
+SUMUP_MERCHANT_CODE="${SUMUP_MERCHANT_CODE:-}"
+PAYMENTS_SYNC_SECRET="${PAYMENTS_SYNC_SECRET:-}"
+PAYMENT_EMAIL_WEBHOOK_SECRET="${PAYMENT_EMAIL_WEBHOOK_SECRET:-}"
+PAYMENT_EMAIL_ALLOWED_SENDERS="${PAYMENT_EMAIL_ALLOWED_SENDERS:-sumup.com}"
+CRON_SECRET="${CRON_SECRET:-}"
+SMTP_HOST="${SMTP_HOST:-smtp.gmail.com}"
+SMTP_PORT="${SMTP_PORT:-587}"
+SMTP_USER="${SMTP_USER:-}"
+SMTP_PASS="${SMTP_PASS}"
+SMTP_FROM="${SMTP_FROM:-}"
+INSTAGRAM_USER_ID="${INSTAGRAM_USER_ID:-}"
+INSTAGRAM_ACCESS_TOKEN="${INSTAGRAM_ACCESS_TOKEN:-}"
 EOF
 chmod 600 "$APP_DIR/.env.production"
 
@@ -42,4 +52,4 @@ else
   echo "Wrote $APP_DIR/.env.production — clone repo here and run: docker compose up -d --build"
 fi
 
-echo "SSH key authorized. .env.production ready."
+echo "Bootstrap complete. .env.production ready."

@@ -20,7 +20,9 @@ export type EmailReconcileResult = {
 
 function isSenderAllowed(from: string): boolean {
   const allowed = process.env.PAYMENT_EMAIL_ALLOWED_SENDERS?.trim();
-  if (!allowed) return true;
+  if (!allowed) {
+    return process.env.NODE_ENV !== "production";
+  }
 
   const fromLower = from.toLowerCase();
   return allowed

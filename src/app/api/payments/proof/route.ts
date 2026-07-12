@@ -1,4 +1,4 @@
-import { jsonError, requireSession } from "@/lib/api";
+import { jsonError, jsonServerError, requireSession } from "@/lib/api";
 import { emailSiteUrl, notifyAdmins } from "@/lib/notify";
 import {
   deletePaymentProofFile,
@@ -81,8 +81,10 @@ export async function POST(request: Request) {
         "Screenshot received. A club admin will verify your payment against the bank statement.",
     });
   } catch (error) {
-    console.error("Payment proof upload failed:", error);
-    return jsonError("Failed to upload payment screenshot", 500);
+    return jsonServerError("Failed to upload payment screenshot", {
+      route: "POST /api/payments/proof",
+      cause: error,
+    });
   }
 }
 
@@ -121,7 +123,9 @@ export async function DELETE(request: Request) {
       message: "Screenshot removed. You can upload a new one when ready.",
     });
   } catch (error) {
-    console.error("Payment proof removal failed:", error);
-    return jsonError("Failed to remove payment screenshot", 500);
+    return jsonServerError("Failed to remove payment screenshot", {
+      route: "DELETE /api/payments/proof",
+      cause: error,
+    });
   }
 }

@@ -42,9 +42,6 @@ export function isAcceptedImageFile(file: Pick<File, "type" | "name">): boolean 
   if ((IMAGE_MIME_TYPES as readonly string[]).includes(mime)) {
     return true;
   }
-  if (mime.startsWith("image/")) {
-    return true;
-  }
   return isHeicFilename(file.name);
 }
 

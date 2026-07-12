@@ -1,23 +1,18 @@
 import { auth } from "@/auth";
 import { jsonError } from "@/lib/api";
+import { authorizePrivilegedSyncRequest } from "@/lib/cron-auth";
 import { isSumUpConfigured } from "@/lib/sumup";
 import { reconcilePendingPayments } from "@/lib/sumup-reconcile";
 import { NextResponse } from "next/server";
 
-async function authorizeSync(request: Request) {
-  const syncSecret = process.env.PAYMENTS_SYNC_SECRET?.trim();
-  const headerSecret = request.headers.get("x-payments-sync-secret");
-
-  if (syncSecret && headerSecret === syncSecret) {
-    return true;
-  }
-
-  const session = await auth();
-  return session?.user?.role === "ADMIN";
-}
-
 export async function POST(request: Request) {
-  if (!(await authorizeSync(request))) {
+  if (
+    !(await authorizePrivilegedSyncRequest(
+      request,
+      "x-payments-sync-secret",
+      "PAYMENTS_SYNC_SECRET",
+    ))
+  ) {
     return jsonError("Unauthorized", 401);
   }
 

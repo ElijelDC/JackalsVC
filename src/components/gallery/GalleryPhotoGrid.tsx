@@ -1,16 +1,17 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
-import Image from "next/image";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ZoomIn } from "lucide-react";
+import { GalleryImage } from "@/components/gallery/GalleryImage";
 import { GalleryLightbox } from "@/components/gallery/GalleryLightbox";
 import type { GalleryPhotoItem } from "@/components/gallery/types";
-import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
+import { useInView } from "@/hooks/useInView";
 import { fillImageStyle } from "@/lib/fill-image-layout";
-import { normalizePublicAssetUrl } from "@/lib/public-paths";
 import { cn } from "@/lib/utils";
 
 export type { GalleryPhotoItem };
+
+const PRIORITY_TILE_COUNT = 4;
 
 function scrollPhotoTileIntoView(element: HTMLButtonElement | undefined) {
   const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
@@ -21,14 +22,16 @@ function scrollPhotoTileIntoView(element: HTMLButtonElement | undefined) {
 
 function GalleryPhotoTile({
   photo,
+  index,
   onOpen,
   tileRef,
 }: {
   photo: GalleryPhotoItem;
+  index: number;
   onOpen: () => void;
   tileRef: (element: HTMLButtonElement | null) => void;
 }) {
-  const [imageError, setImageError] = useState(false);
+  const { ref, inView } = useInView();
   const label = photo.caption ?? "Gallery photo";
 
   return (
@@ -40,20 +43,22 @@ function GalleryPhotoTile({
       aria-label={`View full size: ${label}`}
     >
       <div
+        ref={ref}
         className="relative aspect-[4/3] overflow-hidden bg-jackals-inset"
         style={fillImageStyle("4 / 3")}
       >
-        {imageError ? (
-          <ProductPlaceholder className="h-full w-full" size="md" />
-        ) : (
-          <Image
-            src={normalizePublicAssetUrl(photo.imageUrl)}
+        {inView ? (
+          <GalleryImage
+            src={photo.imageUrl}
             alt={label}
-            fill
-            unoptimized
+            priority={index < PRIORITY_TILE_COUNT}
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
             className="object-cover transition-transform duration-500 group-hover:scale-105"
-            sizes="(max-width: 768px) 100vw, 50vw"
-            onError={() => setImageError(true)}
+          />
+        ) : (
+          <div
+            aria-hidden
+            className="h-full w-full animate-pulse bg-gradient-to-br from-jackals-inset to-jackals-surface"
           />
         )}
         <div
@@ -145,6 +150,7 @@ export function GalleryPhotoGrid({ photos }: { photos: GalleryPhotoItem[] }) {
           <GalleryPhotoTile
             key={photo.id}
             photo={photo}
+            index={index}
             tileRef={registerTileRef(photo.id)}
             onOpen={() => openPhoto(index)}
           />

@@ -80,15 +80,26 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
       if (token.id) {
         try {
-          const clubMember = await prisma.clubMember.findUnique({
-            where: { userId: token.id as string },
-            select: {
-              profileImageUrl: true,
-              rosterRole: true,
-              coachPaymentType: true,
-              trainingTeamKey: true,
-            },
-          });
+          const [user, clubMember] = await Promise.all([
+            prisma.user.findUnique({
+              where: { id: token.id as string },
+              select: { role: true },
+            }),
+            prisma.clubMember.findUnique({
+              where: { userId: token.id as string },
+              select: {
+                profileImageUrl: true,
+                rosterRole: true,
+                coachPaymentType: true,
+                trainingTeamKey: true,
+              },
+            }),
+          ]);
+
+          if (user?.role) {
+            token.role = user.role;
+          }
+
           Object.assign(token, coachFieldsFromClubMember(clubMember));
         } catch (error) {
           console.error("Failed to enrich auth token from club member:", error);

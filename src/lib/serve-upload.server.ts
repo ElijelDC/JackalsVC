@@ -5,6 +5,10 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { NextResponse } from "next/server";
 import { convertHeicBufferToJpeg } from "@/lib/image-normalize.server";
+import {
+  authorizeUploadAccess,
+  isSensitiveUploadPath,
+} from "@/lib/upload-access.server";
 
 const DATA_DIR = process.env.DATA_DIR || path.join(process.cwd(), "public");
 const UPLOADS_ROOT = path.join(DATA_DIR, "uploads");
@@ -22,8 +26,14 @@ const MIME_TYPES: Record<string, string> = {
 
 export async function serveUploadFile(
   relativePath: string,
+  request: Request,
 ): Promise<NextResponse> {
   if (relativePath.includes("..") || relativePath.includes("~")) {
+    return new NextResponse("Not found", { status: 404 });
+  }
+
+  const allowed = await authorizeUploadAccess(relativePath, request);
+  if (!allowed) {
     return new NextResponse("Not found", { status: 404 });
   }
 
@@ -47,10 +57,15 @@ export async function serveUploadFile(
     contentType = "image/jpeg";
   }
 
+  const sensitive = isSensitiveUploadPath(relativePath);
+
   return new NextResponse(buffer, {
     headers: {
       "Content-Type": contentType,
-      "Cache-Control": "public, max-age=31536000, immutable",
+      "Cache-Control": sensitive
+        ? "private, no-store"
+        : "public, max-age=31536000, immutable",
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }

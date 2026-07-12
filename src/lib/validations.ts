@@ -522,3 +522,12 @@ export const coachSalaryPaymentUpdateSchema = z.object({
     .optional()
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
 });
+
+export const clientErrorReportSchema = z.object({
+  message: z.string().min(1).max(500),
+  url: z.string().max(2000).optional(),
+  endpoint: z.string().max(500).optional(),
+  status: z.number().int().min(100).max(599).optional(),
+  stack: z.string().max(2000).optional(),
+  component: z.string().max(200).optional(),
+});
