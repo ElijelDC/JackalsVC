@@ -190,20 +190,12 @@ export function AboutShowcase() {
                 multiline
               />
             </p>
-            <div className="mt-4 flex flex-wrap gap-3">
-              <Link
-                href="/register"
-                className="text-sm font-semibold text-jackals-red-light hover:underline"
-              >
-                Register online →
-              </Link>
-              <Link
-                href="/contact"
-                className="text-sm font-semibold text-zinc-400 hover:text-jackals-red-light hover:underline"
-              >
-                Contact us →
-              </Link>
-            </div>
+            <Link
+              href="/contact"
+              className="mt-4 inline-block text-sm font-semibold text-jackals-red-light hover:underline"
+            >
+              Contact us →
+            </Link>
           </AboutFeatureCard>
         </StaggerIn>
 

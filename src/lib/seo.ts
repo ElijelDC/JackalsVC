@@ -115,11 +115,11 @@ export const SEO_COPY = {
   aboutWhereWeTrain:
     "We train at venues across the Dublin area. Session locations and times are listed on our Events page — open fun sessions, league training, and skills clinics throughout the season.",
   aboutHowToJoin:
-    "New to the club? Browse upcoming events to try an open session, explore our squads on the Teams page, then register online or email us with any questions. League players typically join through membership after attending training.",
+    "New to the club? Browse upcoming events to try an open session, explore our squads on the Teams page, then get in touch with any questions. League players typically join through membership after attending training.",
   teamsIntro:
     "Jackals Volleyball Club fields competitive squads in Irish National League structures from Dublin. Browse our teams below — each squad lists coaches, players, and league level. Interested in joining? Get in touch or come along to an open session.",
   eventsIntro:
-    "Upcoming Jackals Volleyball Club sessions in Dublin — open fun volleyball, Irish National League training, tournaments, skills clinics, and social events. New players are welcome at open sessions; check details and add events to your calendar.",
+    "Upcoming Jackals Volleyball Club sessions in Dublin — open fun volleyball, tournaments, skills clinics, and social events. New players are welcome at open sessions; check details and add events to your calendar.",
   contactHero:
     "Questions about training, events, or joining Jackals Volleyball Club in Dublin? Email us or message @jackalsvolleyball on Instagram — we would love to hear from you.",
 } as const;
