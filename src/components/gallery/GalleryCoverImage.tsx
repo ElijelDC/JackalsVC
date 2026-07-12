@@ -34,6 +34,7 @@ export function GalleryCoverImage({
         src={imageSrc}
         alt={alt}
         fill
+        unoptimized
         className="object-cover transition-transform duration-500 group-hover:scale-105"
         sizes={sizes}
         onError={() => setImageError(true)}

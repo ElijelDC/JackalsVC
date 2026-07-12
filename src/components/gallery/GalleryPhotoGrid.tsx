@@ -7,6 +7,7 @@ import { GalleryLightbox } from "@/components/gallery/GalleryLightbox";
 import type { GalleryPhotoItem } from "@/components/gallery/types";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { fillImageStyle } from "@/lib/fill-image-layout";
+import { normalizePublicAssetUrl } from "@/lib/public-paths";
 import { cn } from "@/lib/utils";
 
 export type { GalleryPhotoItem };
@@ -46,9 +47,10 @@ function GalleryPhotoTile({
           <ProductPlaceholder className="h-full w-full" size="md" />
         ) : (
           <Image
-            src={photo.imageUrl}
+            src={normalizePublicAssetUrl(photo.imageUrl)}
             alt={label}
             fill
+            unoptimized
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 768px) 100vw, 50vw"
             onError={() => setImageError(true)}

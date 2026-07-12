@@ -244,6 +244,7 @@ export function HomePage({
                     alt={album.title}
                     width={400}
                     height={400}
+                    unoptimized
                     className="aspect-square w-full object-cover transition-transform duration-500 group-hover:scale-105"
                     sizes="(max-width: 768px) 50vw, 25vw"
                   />
