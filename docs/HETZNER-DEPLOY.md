@@ -148,6 +148,25 @@ Membership "payment due" reminders (a week ahead, then the day before) are sent 
 
 (Replace `$CRON_SECRET` with the value you set in `.env.production`.)
 
+### Reclub event sync
+
+Fun sessions and other Reclub meets are stored in the site database by `POST /api/cron/reclub-sync`. Without this, production only updates when someone visits `/events` (and only after the sync finishes).
+
+On the VPS, install a cron job (every 15 minutes is a good default):
+
+```bash
+chmod +x /opt/app/scripts/trigger-reclub-sync.sh   # adjust path
+
+# crontab -e
+*/15 * * * * /opt/app/scripts/trigger-reclub-sync.sh >> /var/log/jackals-reclub-sync.log 2>&1
+```
+
+To run a one-off sync immediately:
+
+```bash
+./scripts/trigger-reclub-sync.sh
+```
+
 ## Day-to-day commands
 
 | Command | Purpose |

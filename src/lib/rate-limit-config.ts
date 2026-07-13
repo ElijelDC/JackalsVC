@@ -10,6 +10,7 @@ export type RateLimitRule = {
 export const RATE_LIMIT_RULES: RateLimitRule[] = [
   { prefix: "/api/client-errors", limit: 5, windowMs: 300_000 },
   { prefix: "/api/contact", limit: 5, windowMs: 60_000 },
+  { prefix: "/api/coaching-application", limit: 5, windowMs: 60_000 },
   { prefix: "/api/auth/verify-email-code", limit: 10, windowMs: 60_000 },
   { prefix: "/api/auth/send-email-code", limit: 8, windowMs: 60_000 },
   { prefix: "/api/auth/forgot-password", limit: 8, windowMs: 60_000 },

@@ -19,6 +19,7 @@ const STATIC_ROUTES: Array<{
   { path: "/achievements", changeFrequency: "monthly", priority: 0.7 },
   { path: "/register", changeFrequency: "monthly", priority: 0.7 },
   { path: "/sponsors", changeFrequency: "monthly", priority: 0.6 },
+  { path: "/coaching", changeFrequency: "monthly", priority: 0.7 },
 ];
 
 function staticEntries(): MetadataRoute.Sitemap {

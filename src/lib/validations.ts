@@ -375,6 +375,35 @@ export const contactSchema = z.object({
   message: z.string().min(10, "Message must be at least 10 characters"),
 });
 
+export const coachingApplicationSchema = z.object({
+  fullName: z.string().min(2, "Enter your full name"),
+  age: z.coerce
+    .number({ message: "Enter your age" })
+    .int("Age must be a whole number")
+    .min(16, "You must be at least 16")
+    .max(99, "Enter a valid age"),
+  contactNumber: z
+    .string()
+    .min(7, "Enter a valid contact number")
+    .max(30, "Contact number is too long"),
+  contactEmail: z.string().email("Enter a valid email address"),
+  qualificationLevel: z.enum(["NONE", "FOUNDATION", "LEVEL_1", "LEVEL_2"], {
+    message: "Select your VLY Ireland coach level",
+  }),
+  yearsExperience: z.coerce
+    .number({ message: "Enter years of experience" })
+    .int("Years of experience must be a whole number")
+    .min(0, "Years of experience cannot be negative")
+    .max(60, "Enter a valid number of years"),
+  canCommuteToBothVenues: z.enum(["YES", "NO", "ONE_VENUE"], {
+    message: "Please answer the commute question",
+  }),
+  whyInterested: z
+    .string()
+    .min(20, "Tell us a little more about why you want to coach (at least 20 characters)")
+    .max(2000, "Please keep your answer under 2000 characters"),
+});
+
 export const achievementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   season: z.string().min(1, "Season is required"),

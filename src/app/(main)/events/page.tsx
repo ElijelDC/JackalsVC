@@ -21,9 +21,11 @@ export default async function EventsRoute({
   const isLoggedIn = Boolean(session?.user);
   const { view } = await searchParams;
 
-  void syncReclubClubUpcomingActivitiesForBrowse().catch((error) => {
+  try {
+    await syncReclubClubUpcomingActivitiesForBrowse();
+  } catch (error) {
     console.error("Reclub club sync failed:", error);
-  });
+  }
 
   const [eventsData, calendarEvents] = await Promise.all([
     getEventsPageData(),

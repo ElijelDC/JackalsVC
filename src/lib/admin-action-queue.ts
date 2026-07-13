@@ -8,7 +8,7 @@ import {
 import { prisma } from "@/lib/prisma";
 
 export type AdminActionQueueEntry = {
-  kind: "registration" | "payment" | "coach-payment";
+  kind: "registration" | "payment" | "coach-payment" | "coaching-application";
   href: string;
   title: string;
   summary: string;
@@ -54,6 +54,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     paymentCount,
     coachOverduePayments,
     coachOverdueCount,
+    coachingApplications,
+    coachingApplicationCount,
   ] = await Promise.all([
     prisma.clubMember.findMany({
       where: REGISTRATION_REVIEW_WHERE,
@@ -86,6 +88,13 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     prisma.coachSalaryPayment.count({
       where: coachPaymentOverdueWhere(now),
     }),
+    prisma.coachingApplication.findMany({
+      where: { status: "NEW" },
+      orderBy: { createdAt: "asc" },
+      take: 4,
+      select: { fullName: true, qualificationLevel: true },
+    }),
+    prisma.coachingApplication.count({ where: { status: "NEW" } }),
   ]);
 
   const pendingPaymentDueDates = await prisma.payment.findMany({
@@ -149,6 +158,20 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     });
   }
 
+  if (coachingApplicationCount > 0) {
+    entries.push({
+      kind: "coaching-application",
+      href: "/admin/coaching-applications",
+      title: "Coaching applications",
+      summary:
+        coachingApplicationCount === 1
+          ? "1 new coaching application"
+          : `${coachingApplicationCount} new coaching applications`,
+      count: coachingApplicationCount,
+      previews: coachingApplications.map((application) => application.fullName),
+    });
+  }
+
   const badgeCounts: Record<string, number> = {};
   if (registrationCount > 0) {
     badgeCounts["/admin/registration-reviews"] = registrationCount;
@@ -159,10 +182,17 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
   if (coachOverdueCount > 0) {
     badgeCounts["/admin/coach-payments"] = coachOverdueCount;
   }
+  if (coachingApplicationCount > 0) {
+    badgeCounts["/admin/coaching-applications"] = coachingApplicationCount;
+  }
 
   return {
     entries,
-    totalCount: registrationCount + paymentCount + coachOverdueCount,
+    totalCount:
+      registrationCount +
+      paymentCount +
+      coachOverdueCount +
+      coachingApplicationCount,
     badgeCounts,
   };
 });

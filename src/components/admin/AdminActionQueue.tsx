@@ -4,6 +4,7 @@ import {
   ArrowRight,
   Banknote,
   CheckCircle2,
+  GraduationCap,
   UserPlus,
   Wallet,
 } from "lucide-react";
@@ -14,6 +15,7 @@ const ENTRY_ICONS = {
   registration: UserPlus,
   payment: Banknote,
   "coach-payment": Wallet,
+  "coaching-application": GraduationCap,
 } as const;
 
 function ActionQueueCard({ entry }: { entry: AdminActionQueueEntry }) {

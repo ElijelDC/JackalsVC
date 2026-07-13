@@ -77,9 +77,15 @@ export const Select = forwardRef<
   const fallbackId = useId();
   const selectId = id ?? fallbackId;
   const options = collectOptions(children);
-  const selectedValue = String(value ?? defaultValue ?? options[0]?.value ?? "");
+  const selectedValue = String(value ?? defaultValue ?? "");
+  const placeholderOption = options.find(
+    (option) => option.value === "" || option.disabled,
+  );
   const selectedOption =
-    options.find((option) => option.value === selectedValue) ?? options[0];
+    options.find((option) => option.value === selectedValue && option.value !== "") ??
+    (selectedValue === "" ? placeholderOption : undefined) ??
+    options.find((option) => option.value === selectedValue) ??
+    placeholderOption;
 
   return (
     <PortalSelect
@@ -87,7 +93,7 @@ export const Select = forwardRef<
       className={className}
       options={options}
       value={selectedValue}
-      selectedLabel={selectedOption?.label ?? "Select"}
+      selectedLabel={selectedOption?.label ?? "Select an option"}
       onChange={onChange}
       disabled={disabled}
       aria-label={props["aria-label"]}
@@ -174,6 +180,9 @@ function PortalSelect({
   }, [open]);
 
   const handleSelect = (nextValue: string) => {
+    const option = options.find((item) => item.value === nextValue);
+    if (option?.disabled) return;
+
     if (nextValue === value) {
       setOpen(false);
       return;
@@ -194,13 +203,13 @@ function PortalSelect({
         <button
           type="button"
           aria-label="Close menu"
-          className="fixed inset-0 z-[200] bg-transparent"
+          className="fixed inset-0 z-[10000] bg-transparent"
           onClick={() => setOpen(false)}
         />
         <ul
           role="listbox"
           aria-label={ariaLabel}
-          className="fixed z-[201] max-h-60 overflow-y-auto overscroll-contain border border-white/10 bg-zinc-950 py-1 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+          className="fixed z-[10001] max-h-60 overflow-y-auto overscroll-contain border border-white/10 bg-zinc-950 py-1 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
           style={{
             top: menuPosition.top,
             left: menuPosition.left,
@@ -256,7 +265,8 @@ function PortalSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-required={required}
-        onClick={() => {
+        onClick={(event) => {
+          event.stopPropagation();
           if (disabled) return;
           setOpen((current) => !current);
         }}

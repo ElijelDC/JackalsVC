@@ -4,6 +4,7 @@ import {
   BookOpen,
   CalendarDays,
   Camera,
+  ClipboardList,
   Dumbbell,
   Handshake,
   Home,
@@ -262,6 +263,13 @@ export const INFO_NAV_ITEMS: NavItem[] = [
     icon: Handshake,
     description:
       "Partner with Jackals VC — visibility, partnership opportunities, and club presentation download.",
+  },
+  {
+    href: "/coaching",
+    label: "Coach With Us",
+    icon: ClipboardList,
+    description:
+      "Join our coaching staff — paid roles, National League squads, and applications opening soon.",
   },
 ];
 

@@ -19,6 +19,8 @@ export function Modal({
   children,
   className,
   variant = "panel",
+  closeOnBackdrop = true,
+  closeOnEscape = true,
 }: {
   open: boolean;
   onClose: () => void;
@@ -27,6 +29,8 @@ export function Modal({
   children: React.ReactNode;
   className?: string;
   variant?: "panel" | "fullscreen";
+  closeOnBackdrop?: boolean;
+  closeOnEscape?: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = "modal-title";
@@ -43,7 +47,7 @@ export function Modal({
     document.body.style.overflow = "hidden";
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape" && closeOnEscape) onClose();
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -52,7 +56,7 @@ export function Modal({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [open, onClose]);
+  }, [open, onClose, closeOnEscape]);
 
   useEffect(() => {
     if (!open) return;
@@ -105,12 +109,12 @@ export function Modal({
     <div className="fixed inset-0 z-999">
       <div
         className="fixed inset-0 bg-black/70 backdrop-blur-sm"
-        onClick={onClose}
+        onClick={closeOnBackdrop ? onClose : undefined}
         aria-hidden="true"
       />
       <div
         className="fixed inset-0 overflow-y-auto overscroll-y-contain"
-        onClick={onClose}
+        onClick={closeOnBackdrop ? onClose : undefined}
       >
         <div
           className={cn(

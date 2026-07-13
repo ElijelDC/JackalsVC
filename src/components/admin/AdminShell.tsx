@@ -14,6 +14,7 @@ import {
   CreditCard,
   Dumbbell,
   Flag,
+  GraduationCap,
   LayoutDashboard,
   Menu,
   Package,
@@ -49,6 +50,7 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     links: [
       { href: "/admin/users", label: "Users", icon: Users },
       { href: "/admin/registration-reviews", label: "Registration review", icon: UserPlus },
+      { href: "/admin/coaching-applications", label: "Coaching applications", icon: GraduationCap },
       { href: "/admin/roster", label: "Roster", icon: ClipboardList },
       { href: "/admin/subscriptions", label: "Subscriptions", icon: UserCheck },
     ],
