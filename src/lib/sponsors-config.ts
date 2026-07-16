@@ -30,7 +30,7 @@ export const SPONSOR_HERO_STATS: {
   {
     icon: Volleyball,
     value: "150+",
-    label: "training and social volleyball sessions",
+    label: "training and social volleyball sessions year round",
   },
   { icon: TrendingUp, value: "15K+", label: "monthly reach" },
   { icon: Trophy, value: "40+", label: "league matches per year" },
