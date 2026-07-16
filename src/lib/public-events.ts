@@ -19,12 +19,14 @@ export async function getPublicEvents(
   isLoggedIn: boolean,
   userId?: string,
 ): Promise<EventListItem[]> {
-  const now = startOfDay(new Date());
+  const now = new Date();
+  // Keep undated-end events for their start calendar day; drop timed events once they end.
+  const today = startOfDay(now);
   const events = await prisma.event.findMany({
     where: {
       OR: [
         { endDate: { gte: now } },
-        { endDate: null, startDate: { gte: now } },
+        { endDate: null, startDate: { gte: today } },
       ],
     },
     orderBy: { startDate: "asc" },

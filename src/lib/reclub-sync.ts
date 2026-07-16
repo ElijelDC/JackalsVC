@@ -312,12 +312,16 @@ export async function syncReclubClubUpcomingActivities(
     );
   }
 
-  const now = startOfDay(new Date());
+  const now = new Date();
+  const today = startOfDay(now);
   const stored = await prisma.event.findMany({
     where: {
       reclubReferenceCode: { not: null },
       trainingSessionId: null,
-      OR: [{ endDate: { gte: now } }, { endDate: null, startDate: { gte: now } }],
+      OR: [
+        { endDate: { gte: now } },
+        { endDate: null, startDate: { gte: today } },
+      ],
     },
     select: { reclubReferenceCode: true },
   });

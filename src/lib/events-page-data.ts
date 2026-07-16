@@ -16,13 +16,18 @@ export {
 } from "@/lib/events-config";
 
 export async function getEventsCalendarRows(): Promise<EventsCalendarEvent[]> {
-  const now = startOfDay(new Date());
+  const now = new Date();
+  // Keep undated-end events for their start calendar day; drop timed events once they end.
+  const today = startOfDay(now);
 
   return prisma.event.findMany({
     where: {
       trainingSessionId: null,
       type: { in: ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL", "FUN"] },
-      OR: [{ endDate: { gte: now } }, { endDate: null, startDate: { gte: now } }],
+      OR: [
+        { endDate: { gte: now } },
+        { endDate: null, startDate: { gte: today } },
+      ],
     },
     orderBy: { startDate: "asc" },
   });
