@@ -26,7 +26,11 @@ export const PRESENTATION_PARTNER_BENEFITS = [
 ];
 
 export const PRESENTATION_WHY_SPONSOR = [
-  { label: "Social media & website", detail: "Logo placement, features, and promotion on jackalsvolleyball.com and @jackalsvolleyball" },
+  {
+    label: "Social media & website",
+    detail:
+      "Logo placement, features, and promotion on jackalsvolleyball.com, @jackalsvolleyball, and facebook.com/JackalsVC",
+  },
   { label: "Kit sponsorship", detail: "Your logo on match or training kit for regular visibility in league play" },
   { label: "Matchday opportunities", detail: "Banners, announcements, and branded presence at home fixtures" },
   { label: "Player ambassadors", detail: "Long-term partners can work with players to extend reach through personal channels" },
@@ -69,6 +73,7 @@ export const PRESENTATION_CLOSING = {
   slogan: CLUB_SLOGAN,
   links: [
     "@jackalsvolleyball on Instagram",
+    "facebook.com/JackalsVC",
     "jackalsvolleyball.com",
   ],
 };

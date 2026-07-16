@@ -113,8 +113,8 @@ export function SponsorsShowcase() {
             Where your brand appears
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400">
-            Multiple touchpoints across the season — from the court to Instagram to
-            our club website.
+            Multiple touchpoints across the season — from the court to Instagram
+            and Facebook to our club website.
           </p>
         </AnimateIn>
 

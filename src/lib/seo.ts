@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { resolveSiteUrl } from "@/lib/site-config";
 import { PUBLIC_PATHS } from "@/lib/public-paths";
-import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import { FACEBOOK_PAGE_URL, INSTAGRAM_PROFILE_URL } from "@/lib/social";
 
 export const SEO_SITE_NAME = "Jackals Volleyball Club";
 
@@ -97,7 +97,7 @@ export function organizationJsonLd() {
       addressLocality: CLUB_LOCATION.locality,
       addressCountry: CLUB_LOCATION.countryCode,
     },
-    sameAs: [INSTAGRAM_PROFILE_URL],
+    sameAs: [INSTAGRAM_PROFILE_URL, FACEBOOK_PAGE_URL],
   };
 }
 
@@ -121,5 +121,5 @@ export const SEO_COPY = {
   eventsIntro:
     "Upcoming Jackals Volleyball Club sessions in Dublin — open fun volleyball, tournaments, skills clinics, and social events. New players are welcome at open sessions; check details and add events to your calendar.",
   contactHero:
-    "Questions about training, events, or joining Jackals Volleyball Club in Dublin? Email us or message @jackalsvolleyball on Instagram — we would love to hear from you.",
+    "Questions about training, events, or joining Jackals Volleyball Club in Dublin? Email us, message @jackalsvolleyball on Instagram, or follow us on Facebook — we would love to hear from you.",
 } as const;

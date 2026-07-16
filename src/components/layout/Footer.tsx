@@ -9,7 +9,13 @@ import { Logo } from "@/components/layout/Logo";
 import { EditableText } from "@/components/site-edit/EditableText";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { SHOP_ENABLED } from "@/lib/features";
-import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import {
+  FACEBOOK_HANDLE,
+  FACEBOOK_PAGE_URL,
+  INSTAGRAM_HANDLE,
+  INSTAGRAM_PROFILE_URL,
+} from "@/lib/social";
+import { FacebookIcon } from "@/components/ui/FacebookIcon";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 import { NewsletterSubscribeForm } from "@/components/newsletter/NewsletterSubscribeForm";
 import { cn } from "@/lib/utils";
@@ -93,7 +99,18 @@ function FooterContactLinks() {
           className={linkClassName}
         >
           <InstagramIcon className="mt-0.5 shrink-0 text-jackals-red-light/70 transition-colors group-hover:text-jackals-red-light" />
-          <span className="leading-snug">@jackalsvolleyball</span>
+          <span className="leading-snug">{INSTAGRAM_HANDLE}</span>
+        </a>
+      </li>
+      <li>
+        <a
+          href={FACEBOOK_PAGE_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={linkClassName}
+        >
+          <FacebookIcon className="mt-0.5 shrink-0 text-jackals-red-light/70 transition-colors group-hover:text-jackals-red-light" />
+          <span className="leading-snug">facebook.com/{FACEBOOK_HANDLE}</span>
         </a>
       </li>
     </>

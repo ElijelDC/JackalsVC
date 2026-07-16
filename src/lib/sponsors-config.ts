@@ -77,7 +77,8 @@ export const SPONSOR_VISIBILITY_CHANNELS: {
   {
     icon: Megaphone,
     title: "Social media",
-    description: "@jackalsvolleyball — highlights, sign-ups, celebrations, and sponsor tags.",
+    description:
+      "@jackalsvolleyball and facebook.com/JackalsVC — highlights, sign-ups, celebrations, and sponsor tags.",
   },
   {
     icon: Globe,

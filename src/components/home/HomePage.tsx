@@ -12,12 +12,18 @@ import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { Logo } from "@/components/layout/Logo";
+import { FacebookIcon } from "@/components/ui/FacebookIcon";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 import { formatPrice } from "@/lib/utils";
 import { CLUB_SLOGAN } from "@/lib/brand";
 import { EditableText } from "@/components/site-edit/EditableText";
 import type { InstagramPost } from "@/lib/instagram";
-import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import {
+  FACEBOOK_HANDLE,
+  FACEBOOK_PAGE_URL,
+  INSTAGRAM_HANDLE,
+  INSTAGRAM_PROFILE_URL,
+} from "@/lib/social";
 import { RECLUB_CLUB_URL } from "@/lib/reclub-config";
 import { InstagramFeed } from "@/components/home/InstagramFeed";
 import { FeatureCarousel } from "@/components/home/FeatureCarousel";
@@ -95,22 +101,30 @@ export function HomePage({
                     multiline
                   />
                 </p>
-                <div className="mt-10 grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-4 lg:justify-start">
+                <div className="mt-10 flex flex-wrap items-center justify-center gap-2 sm:gap-4 lg:justify-start">
                   <a
                     href={INSTAGRAM_PROFILE_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    aria-label="Follow @jackalsvolleyball on Instagram"
-                    className="group flex h-11 min-w-0 items-center justify-center gap-1.5 border border-white/20 bg-transparent px-2 text-xs font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-auto sm:w-auto sm:gap-2.5 sm:px-6 sm:py-3 sm:text-base"
+                    aria-label={`Follow ${INSTAGRAM_HANDLE} on Instagram`}
+                    className="group flex h-11 w-11 items-center justify-center border border-white/20 bg-transparent text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-12 sm:w-12"
                   >
-                    <InstagramIcon className="shrink-0 transition-transform group-hover:scale-110" />
-                    <span className="hidden truncate sm:inline">@jackalsvolleyball</span>
+                    <InstagramIcon className="h-5 w-5 transition-transform group-hover:scale-110" />
+                  </a>
+                  <a
+                    href={FACEBOOK_PAGE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`Follow ${FACEBOOK_HANDLE} on Facebook`}
+                    className="group flex h-11 w-11 items-center justify-center border border-white/20 bg-transparent text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-12 sm:w-12"
+                  >
+                    <FacebookIcon className="h-5 w-5 transition-transform group-hover:scale-110" />
                   </a>
                   <a
                     href={RECLUB_CLUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex h-11 min-w-0 items-center justify-center gap-1.5 border border-white/20 bg-transparent px-2 text-xs font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-auto sm:w-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-base"
+                    className="group flex h-11 min-w-0 items-center justify-center gap-1.5 border border-white/20 bg-transparent px-3 text-xs font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-base"
                   >
                     ReClub
                     <ExternalLink className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 sm:h-4 sm:w-4" />
@@ -118,7 +132,7 @@ export function HomePage({
                   <Link href="/events" className="min-w-0">
                     <Button
                       size="lg"
-                      className="h-11 w-full px-2 text-xs sm:h-auto sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                      className="h-11 w-full px-4 text-xs sm:h-auto sm:w-auto sm:px-6 sm:py-3 sm:text-base"
                     >
                       Events
                     </Button>
@@ -232,7 +246,7 @@ export function HomePage({
                 linkLabel="View gallery"
               />
             </AnimateIn>
-            <StaggerIn className="grid grid-cols-2 gap-4 md:grid-cols-3" stagger={80}>
+            <StaggerIn className="grid grid-cols-2 gap-4 lg:grid-cols-4" stagger={80}>
               {featuredAlbums.map((album) => (
                 <Link
                   key={album.id}

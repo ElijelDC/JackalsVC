@@ -8,7 +8,12 @@ import { ContactForm } from "@/components/contact/ContactForm";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { CLUB_LOCATION, SEO_COPY } from "@/lib/seo";
 import { EditableText } from "@/components/site-edit/EditableText";
-import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import {
+  FACEBOOK_HANDLE,
+  FACEBOOK_PAGE_URL,
+  INSTAGRAM_HANDLE,
+  INSTAGRAM_PROFILE_URL,
+} from "@/lib/social";
 
 function ContactLink({
   href,
@@ -76,8 +81,15 @@ export function ContactShowcase() {
                 <ContactLink
                   href={INSTAGRAM_PROFILE_URL}
                   label="Instagram"
-                  value="@jackalsvolleyball"
+                  value={INSTAGRAM_HANDLE}
                   description="Session updates, match highlights, and club news."
+                  external
+                />
+                <ContactLink
+                  href={FACEBOOK_PAGE_URL}
+                  label="Facebook"
+                  value={`facebook.com/${FACEBOOK_HANDLE}`}
+                  description="Club updates, events, and community posts."
                   external
                 />
               </div>
@@ -86,8 +98,8 @@ export function ContactShowcase() {
             <ShowcaseCard title="What to expect" interactive={false}>
               <p>
                 We read every message and aim to reply within a few days. For
-                urgent session or event questions, Instagram is often the fastest
-                way to reach us.
+                urgent session or event questions, Instagram or Facebook is often
+                the fastest way to reach us.
               </p>
             </ShowcaseCard>
           </StaggerIn>

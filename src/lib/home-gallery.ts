@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 const HOMEPAGE_GALLERY_MIN = 2;
-const HOMEPAGE_GALLERY_MAX = 3;
+const HOMEPAGE_GALLERY_MAX = 4;
 
 export async function getHomepageGalleryHighlights() {
   const featured = await prisma.galleryAlbum.findMany({

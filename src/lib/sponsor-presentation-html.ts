@@ -61,6 +61,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
 <html lang="en">
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Jackals VC Sponsor Presentation ${esc(PRESENTATION_SEASON)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -179,7 +180,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       grid-template-columns: repeat(2, 1fr);
       gap: 3.5mm;
     }
-    @media (min-width: 480px) {
+    @media print {
       .stat-grid { grid-template-columns: repeat(3, 1fr); }
     }
     .stat-card, .opp-card, .invest-card, .panel {
@@ -376,6 +377,75 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
     .cta-links span + span::before { content: " · "; }
     .stack-sm > * + * { margin-top: 4mm; }
     .stack-md > * + * { margin-top: 7mm; }
+
+    /* Screen preview: fluid layout for phones (print/PDF keeps A4) */
+    @media screen {
+      html, body {
+        background: #151515;
+        overflow-x: hidden;
+      }
+      .page {
+        width: 100%;
+        max-width: 210mm;
+        height: auto;
+        min-height: 0;
+        margin: 0 auto 12px;
+        page-break-after: auto;
+        overflow: visible;
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+      }
+      .page__inner {
+        height: auto;
+        min-height: 0;
+        padding: 20px 18px 24px;
+      }
+      .page__body { min-height: 0; }
+      .cover {
+        min-height: min(100dvh, 640px);
+      }
+      .cover__main { padding: 48px 24px; }
+      .cover__logo { width: 96px; height: 96px; margin-bottom: 20px; }
+      .cover__club { font-size: clamp(28px, 10vw, 44px); }
+      .cover__subtitle {
+        font-size: clamp(14px, 4.2vw, 18px);
+        max-width: 100%;
+        padding: 0 8px;
+      }
+      .cover__slogan {
+        white-space: normal;
+        font-size: clamp(11px, 3.2vw, 14px);
+        line-height: 1.35;
+      }
+      .section-title { font-size: clamp(18px, 5vw, 22px); }
+      .two-col,
+      .opp-grid,
+      .stat-grid {
+        grid-template-columns: 1fr;
+      }
+      .digital-bar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+      }
+      .page-header {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .cta-box .email {
+        display: block;
+        word-break: break-word;
+      }
+    }
+
+    @media screen and (min-width: 640px) {
+      .two-col,
+      .opp-grid { grid-template-columns: 1fr 1fr; }
+      .stat-grid { grid-template-columns: repeat(3, 1fr); }
+      .digital-bar {
+        flex-direction: row;
+        align-items: center;
+      }
+    }
   </style>
 </head>
 <body>
@@ -419,7 +489,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
           ${statGrid()}
           <div class="digital-bar">
             <strong>Digital presence</strong>
-            <span>@jackalsvolleyball · jackalsvolleyball.com</span>
+            <span>@jackalsvolleyball · facebook.com/JackalsVC · jackalsvolleyball.com</span>
           </div>
         </div>
       </div>

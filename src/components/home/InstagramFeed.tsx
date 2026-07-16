@@ -1,8 +1,13 @@
 import type { InstagramPost } from "@/lib/instagram";
-import { INSTAGRAM_PROFILE_URL } from "@/lib/instagram";
+import {
+  FACEBOOK_PAGE_URL,
+  INSTAGRAM_HANDLE,
+  INSTAGRAM_PROFILE_URL,
+} from "@/lib/social";
 import { PageContainer } from "@/components/layout/PageShell";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { FacebookIcon } from "@/components/ui/FacebookIcon";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 
 function InstagramPostCard({ post }: { post: InstagramPost }) {
@@ -61,21 +66,32 @@ export function InstagramFeed({ posts }: { posts: InstagramPost[] }) {
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-jackals-red-light">
-                @jackalsvolleyball
+                {INSTAGRAM_HANDLE}
               </p>
               <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
                 Latest on Instagram
               </h2>
             </div>
-            <a
-              href={INSTAGRAM_PROFILE_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-jackals-red-light transition-colors hover:text-jackals-red"
-            >
-              Follow us
-              <InstagramIcon className="h-4 w-4 transition-transform group-hover:scale-110" />
-            </a>
+            <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center sm:gap-4">
+              <a
+                href={INSTAGRAM_PROFILE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-jackals-red-light transition-colors hover:text-jackals-red"
+              >
+                Instagram
+                <InstagramIcon className="h-4 w-4 transition-transform group-hover:scale-110" />
+              </a>
+              <a
+                href={FACEBOOK_PAGE_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group inline-flex items-center gap-1.5 text-sm font-medium text-jackals-red-light transition-colors hover:text-jackals-red"
+              >
+                Facebook
+                <FacebookIcon className="h-4 w-4 transition-transform group-hover:scale-110" />
+              </a>
+            </div>
           </div>
         </AnimateIn>
         <StaggerIn
