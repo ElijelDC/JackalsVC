@@ -180,6 +180,7 @@ model Event {
   reclubUsername         String?
   reclubReferenceCode    String?          @unique
   clubIban               String?
+  rulesPdfUrl            String?
   trainingSessionId      String?
   trainingSession        TrainingSession? @relation(fields: [trainingSessionId], references: [id], onDelete: Cascade)
   trainingOccurrenceDate DateTime?

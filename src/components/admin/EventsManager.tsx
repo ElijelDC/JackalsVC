@@ -33,6 +33,11 @@ import {
   savesTournamentPaymentFields,
 } from "@/lib/event-reclub";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
+import { TournamentRulesPdfField } from "@/components/admin/TournamentRulesPdfField";
+import {
+  getTournamentHubForEvent,
+  tournamentHubPath,
+} from "@/lib/tournament-hub-config";
 
 type EventItem = {
   id: string;
@@ -52,6 +57,8 @@ type EventItem = {
   sessionFee?: number | null;
   reclubUsername?: string | null;
   clubIban?: string | null;
+  rulesPdfUrl?: string | null;
+  reclubReferenceCode?: string | null;
   seriesAttendanceUrl?: string | null;
   seriesPaymentUrl?: string | null;
   sessionDescription?: string | null;
@@ -476,6 +483,49 @@ export function EventsManager({
                     required
                   />
                 </div>
+                {editingId ? (
+                  <>
+                    <TournamentRulesPdfField
+                      eventId={editingId}
+                      rulesPdfUrl={
+                        events.find((item) => item.id === editingId)
+                          ?.rulesPdfUrl ?? null
+                      }
+                      disabled={loading}
+                      onChange={(url) => {
+                        setEvents((current) =>
+                          current.map((item) =>
+                            item.id === editingId
+                              ? { ...item, rulesPdfUrl: url }
+                              : item,
+                          ),
+                        );
+                      }}
+                    />
+                    {(() => {
+                      const editingEvent = events.find(
+                        (item) => item.id === editingId,
+                      );
+                      const hub = editingEvent
+                        ? getTournamentHubForEvent(editingEvent)
+                        : null;
+                      if (!hub) return null;
+                      return (
+                        <p className="sm:col-span-2 text-xs text-zinc-500">
+                          Public schedule page:{" "}
+                          <a
+                            href={tournamentHubPath(hub.slug)}
+                            className="text-jackals-gold hover:underline"
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {tournamentHubPath(hub.slug)}
+                          </a>
+                        </p>
+                      );
+                    })()}
+                  </>
+                ) : null}
               </>
             )}
           {editingTrainingOccurrence && (

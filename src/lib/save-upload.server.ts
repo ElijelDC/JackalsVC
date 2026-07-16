@@ -79,3 +79,38 @@ export async function deleteManagedUploadFile(
 export function randomUploadFilename(extension: string) {
   return `${Date.now()}-${randomBytes(4).toString("hex")}.${extension}`;
 }
+
+export async function saveManagedPdfFile({
+  file,
+  relativeDir,
+  urlPrefix,
+  buildFilename,
+  maxBytes,
+  sizeError,
+}: {
+  file: File;
+  relativeDir: string[];
+  urlPrefix: string;
+  buildFilename: (extension: string) => string;
+  maxBytes: number;
+  sizeError: string;
+}): Promise<string> {
+  const mime = file.type.toLowerCase();
+  const name = file.name.toLowerCase();
+  const isPdf = mime === "application/pdf" || name.endsWith(".pdf");
+  if (!isPdf) {
+    throw new Error(`"${file.name}" must be a PDF file.`);
+  }
+  if (file.size > maxBytes) {
+    throw new Error(`"${file.name}" ${sizeError}`);
+  }
+
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const filename = buildFilename("pdf");
+  const directory = managedUploadDir(...relativeDir);
+
+  await mkdir(directory, { recursive: true });
+  await writeFile(path.join(directory, filename), buffer);
+
+  return `${urlPrefix}/${filename}`;
+}

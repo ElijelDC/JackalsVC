@@ -123,6 +123,7 @@ export function serializeEnrichedEvent(event: EnrichedEvent) {
     reclubUsername: event.reclubUsername,
     sessionFee: event.sessionFee,
     clubIban: event.clubIban,
+    rulesPdfUrl: event.rulesPdfUrl,
     sessionDescription: event.sessionDescription,
     sessionCategory: event.sessionCategory,
     trainingTeamKey: event.trainingTeamKey,

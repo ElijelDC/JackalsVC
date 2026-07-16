@@ -12,9 +12,12 @@ export const PUBLIC_PATHS = {
     profileImages: "/uploads/profile-images",
     vlyMembershipPhotos: "/uploads/vly-membership-photos",
     coachInvoices: "/uploads/coach-invoices",
+    tournamentDocs: "/uploads/tournament-docs",
   },
   downloads: {
     sponsorPresentation: "/downloads/jackals-vc-sponsor-presentation.pdf",
+    beachTournamentRules:
+      "/downloads/jvc-mixed-beach-2v2-tournament-rules.pdf",
   },
 } as const;
 
