@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, ExternalLink } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { NavItem } from "@/lib/navigation";
 import type { EventListItem } from "@/lib/event-filters";
 import { Button } from "@/components/ui/Button";
@@ -14,6 +14,7 @@ import { ProductPlaceholder } from "@/components/shop/ProductPlaceholder";
 import { Logo } from "@/components/layout/Logo";
 import { FacebookIcon } from "@/components/ui/FacebookIcon";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
+import { ReclubIcon } from "@/components/ui/ReclubIcon";
 import { formatPrice } from "@/lib/utils";
 import { CLUB_SLOGAN } from "@/lib/brand";
 import { EditableText } from "@/components/site-edit/EditableText";
@@ -124,10 +125,10 @@ export function HomePage({
                     href={RECLUB_CLUB_URL}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="group flex h-11 min-w-0 items-center justify-center gap-1.5 border border-white/20 bg-transparent px-3 text-xs font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-auto sm:gap-2 sm:px-6 sm:py-3 sm:text-base"
+                    aria-label="Open Jackals VC on ReClub"
+                    className="group flex h-11 w-11 items-center justify-center border border-white/20 bg-transparent text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10 active:scale-[0.96] sm:h-12 sm:w-12"
                   >
-                    ReClub
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 transition-transform group-hover:scale-110 sm:h-4 sm:w-4" />
+                    <ReclubIcon />
                   </a>
                   <Link href="/events" className="min-w-0">
                     <Button

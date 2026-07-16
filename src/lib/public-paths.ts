@@ -4,6 +4,8 @@ export const PUBLIC_PATHS = {
     logo: "/brand/logo.png",
     logoTransparent: "/brand/logo-transparent.png",
     favicon: "/brand/favicon.png",
+    reclubMark: "/brand/reclub-mark.png",
+    reclubLogo: "/brand/reclub-logo.png",
   },
   uploads: {
     paymentProofs: "/uploads/payment-proofs",
