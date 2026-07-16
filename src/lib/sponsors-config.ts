@@ -25,7 +25,7 @@ export const SPONSOR_HERO_STATS: {
   label: string;
 }[] = [
   { icon: Shield, value: "3", label: "competitive teams" },
-  { icon: Users, value: "500+", label: "social members" },
+  { icon: Users, value: "550+", label: "social members" },
   { icon: UserCheck, value: "40+", label: "club members" },
   {
     icon: Volleyball,
