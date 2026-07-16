@@ -57,24 +57,14 @@ export function AchievementCard({
               className="object-cover object-center transition-transform duration-500 group-hover:scale-[1.03]"
               sizes="(max-width: 1024px) 100vw, 50vw"
             />
-            <div
-              aria-hidden
-              className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
-            />
-            <div className="absolute left-4 top-4 inline-flex items-center gap-2 border border-jackals-red/40 bg-black/60 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-jackals-red-light backdrop-blur-sm">
-              <Award className="h-4 w-4" />
-              {getTypeLabel(achievement)}
-            </div>
           </div>
         )}
 
         <div className="relative flex flex-col justify-center p-6 sm:p-8 lg:p-10">
-          {!imageUrl && (
-            <div className="mb-4 inline-flex w-fit items-center gap-2 border border-jackals-red/30 bg-jackals-red/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-              <Award className="h-4 w-4" />
-              {getTypeLabel(achievement)}
-            </div>
-          )}
+          <div className="mb-4 inline-flex w-fit items-center gap-2 border border-jackals-red/30 bg-jackals-red/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+            <Award className="h-4 w-4" />
+            {getTypeLabel(achievement)}
+          </div>
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-jackals-red-light">
             {achievement.season}
           </p>
