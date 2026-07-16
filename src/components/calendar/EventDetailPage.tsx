@@ -5,6 +5,10 @@ import { getBrowseEventTypeLabel } from "@/lib/events-config";
 import { getEventDisplayStyle, formatEventDateTime } from "@/lib/event-display";
 import { isOpenReclubEvent, usesPaidJoinFlow, usesTournamentJoinFlow } from "@/lib/event-reclub";
 import { isExternalAttendanceUrl } from "@/lib/reclub-config";
+import {
+  getTournamentHubForEvent,
+  tournamentHubPath,
+} from "@/lib/tournament-hub-config";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
@@ -72,6 +76,7 @@ export function EventDetailPage({
     (Boolean(paymentUrl) || event.sessionFee != null || Boolean(attendanceUrl));
   const showTournamentJoinFlow = usesTournamentJoinFlow(event);
   const showStructuredJoinFlow = showFunJoinFlow || showTournamentJoinFlow;
+  const tournamentHub = getTournamentHubForEvent(event);
 
   const funJoinFlow = showFunJoinFlow ? (
     <FunSessionJoinFlow
@@ -214,6 +219,24 @@ export function EventDetailPage({
                 <Link href={`/training/session/${event.id}`}>
                   <Button>
                     View session
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          )}
+
+          {tournamentHub && (
+            <Card>
+              <CardTitle>Schedule & rules</CardTitle>
+              <CardDescription className="mt-2">
+                Pool play times, court assignments, refereeing duties, and the
+                tournament rules document.
+              </CardDescription>
+              <div className="mt-4">
+                <Link href={tournamentHubPath(tournamentHub.slug)}>
+                  <Button>
+                    View schedule & rules
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </Link>

@@ -8,6 +8,10 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: projectRoot,
   },
+  // Helps Turbopack resolve date-fns subpath exports reliably.
+  experimental: {
+    optimizePackageImports: ["date-fns"],
+  },
   async rewrites() {
     return {
       beforeFiles: [

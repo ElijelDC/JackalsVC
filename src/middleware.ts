@@ -11,23 +11,43 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-DNS-Prefetch-Control": "off",
 };
 
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob: https://ui-avatars.com https://*.cdninstagram.com https://assets.reclub.co https://*.cloudfront.net",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
+function buildCsp(frameAncestors: "'none'" | "'self'") {
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob: https://ui-avatars.com https://*.cdninstagram.com https://assets.reclub.co https://*.cloudfront.net",
+    "font-src 'self'",
+    "connect-src 'self'",
+    `frame-ancestors ${frameAncestors}`,
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join("; ");
+}
 
-function applySecurityHeaders(response: NextResponse) {
+/** Public docs that can be embedded in same-origin preview pages (like sponsors). */
+function isEmbeddablePublicDoc(pathname: string) {
+  return (
+    pathname.startsWith("/downloads/") ||
+    pathname.startsWith("/uploads/tournament-docs/")
+  );
+}
+
+function applySecurityHeaders(response: NextResponse, pathname = "") {
+  const embeddable = isEmbeddablePublicDoc(pathname);
+
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
+    if (embeddable && key === "X-Frame-Options") {
+      response.headers.set("X-Frame-Options", "SAMEORIGIN");
+      continue;
+    }
     response.headers.set(key, value);
   }
-  response.headers.set("Content-Security-Policy", CSP);
+
+  response.headers.set(
+    "Content-Security-Policy",
+    buildCsp(embeddable ? "'self'" : "'none'"),
+  );
 }
 
 function rateLimitResponse(retryAfterSec: number) {
@@ -71,12 +91,12 @@ export function middleware(request: NextRequest) {
 
   const limited = checkPathRateLimit(pathname, request);
   if (limited) {
-    applySecurityHeaders(limited);
+    applySecurityHeaders(limited, pathname);
     return limited;
   }
 
   const response = NextResponse.next();
-  applySecurityHeaders(response);
+  applySecurityHeaders(response, pathname);
   return response;
 }
 
