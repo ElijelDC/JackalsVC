@@ -3,12 +3,12 @@ import {
   PRESENTATION_CLOSING,
   PRESENTATION_INVESTMENT_AREAS,
   PRESENTATION_MISSION,
+  PRESENTATION_PACKAGES,
   PRESENTATION_PARTNER_BENEFITS,
   PRESENTATION_SEASON,
   PRESENTATION_STATS,
   PRESENTATION_SUPPORT_POINTS,
   PRESENTATION_VISION,
-  PRESENTATION_WHY_SPONSOR,
 } from "./sponsor-presentation";
 
 function esc(text: string) {
@@ -30,6 +30,10 @@ function pageHeader(title: string) {
   </header>`;
 }
 
+function footer(page: number, total: number) {
+  return `<footer class="page-footer"><span>jackalsvolleyball.com</span><span>${page} / ${total}</span></footer>`;
+}
+
 function statGrid() {
   return `<div class="stat-grid">${PRESENTATION_STATS.map(
     (stat) => `<article class="stat-card">
@@ -39,14 +43,24 @@ function statGrid() {
   ).join("")}</div>`;
 }
 
+function packageCards() {
+  return `<div class="pkg-grid">${PRESENTATION_PACKAGES.map((pack, index) => {
+    const featured = index === PRESENTATION_PACKAGES.length - 1;
+    return `<article class="pkg-card${featured ? " pkg-card--featured" : ""}">
+      <p class="pkg-card__eyebrow">Investment</p>
+      <p class="pkg-card__price">${esc(pack.priceLabel)}</p>
+      <h3 class="pkg-card__name">${esc(pack.name)}</h3>
+      <p class="pkg-card__summary">${esc(pack.summary)}</p>
+      <ul class="pkg-card__list">
+        ${pack.highlights.map((item) => `<li>${esc(item)}</li>`).join("")}
+      </ul>
+    </article>`;
+  }).join("")}</div>`;
+}
+
 export function buildSponsorPresentationHtml(logoDataUri: string) {
+  const totalPages = 6;
   const about = PRESENTATION_ABOUT.map((p) => `<p>${esc(p)}</p>`).join("");
-  const opportunities = PRESENTATION_WHY_SPONSOR.map(
-    (item) => `<article class="opp-card">
-      <h3>${esc(item.label)}</h3>
-      <p>${esc(item.detail)}</p>
-    </article>`,
-  ).join("");
   const investments = PRESENTATION_INVESTMENT_AREAS.map(
     (item, i) => `<article class="invest-card">
       <span class="invest-card__num">${i + 1}</span>
@@ -217,6 +231,88 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       margin-bottom: 1.5mm;
     }
     .opp-card p { font-size: 8.5pt; color: #a3a3a3; line-height: 1.35; }
+    .pkg-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 3.5mm;
+      align-items: stretch;
+      flex: 1;
+    }
+    .pkg-card {
+      display: flex;
+      flex-direction: column;
+      padding: 4.5mm 4mm;
+      background: #2a2b2b;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      position: relative;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .pkg-card::before {
+      content: "";
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: #e8222a;
+    }
+    .pkg-card--featured {
+      background: rgba(232, 34, 42, 0.1);
+      border-color: rgba(232, 34, 42, 0.4);
+    }
+    .pkg-card__eyebrow {
+      font-family: Oswald, sans-serif;
+      font-size: 7pt;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #ff4d54;
+    }
+    .pkg-card__price {
+      margin-top: 2mm;
+      font-family: Oswald, sans-serif;
+      font-size: 22pt;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1;
+    }
+    .pkg-card__name {
+      margin-top: 2.5mm;
+      font-family: Oswald, sans-serif;
+      font-size: 11pt;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #fff;
+    }
+    .pkg-card__summary {
+      margin-top: 2mm;
+      font-size: 8pt;
+      color: #a3a3a3;
+      line-height: 1.35;
+      min-height: 12mm;
+    }
+    .pkg-card__list {
+      list-style: none;
+      margin-top: 3.5mm;
+      display: grid;
+      gap: 1.8mm;
+      flex: 1;
+    }
+    .pkg-card__list li {
+      position: relative;
+      padding-left: 4mm;
+      font-size: 7.8pt;
+      color: #d4d4d4;
+      line-height: 1.35;
+    }
+    .pkg-card__list li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.55em;
+      width: 1.8mm;
+      height: 1.8mm;
+      background: #e8222a;
+    }
     .invest-list { display: grid; gap: 2.5mm; }
     .invest-card {
       display: flex;
@@ -441,10 +537,16 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       .two-col,
       .opp-grid { grid-template-columns: 1fr 1fr; }
       .stat-grid { grid-template-columns: repeat(3, 1fr); }
+      .pkg-grid { grid-template-columns: repeat(3, 1fr); }
       .digital-bar {
         flex-direction: row;
         align-items: center;
       }
+    }
+
+    @media screen and (max-width: 639px) {
+      .pkg-grid { grid-template-columns: 1fr; }
+      .pkg-card__summary { min-height: 0; }
     }
   </style>
 </head>
@@ -493,7 +595,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
           </div>
         </div>
       </div>
-      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>2 / 5</span></footer>
+      ${footer(2, totalPages)}
     </div>
   </section>
 
@@ -508,12 +610,27 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
         </div>
         <div class="divider"></div>
         <div>
-          <p class="eyebrow">Opportunities</p>
-          <h2 class="section-title display">Sponsorship opportunities</h2>
-          <div class="opp-grid">${opportunities}</div>
+          <p class="eyebrow">Your impact</p>
+          <h2 class="section-title display">Support through Jackals VC</h2>
+          ${bullets(PRESENTATION_SUPPORT_POINTS)}
         </div>
       </div>
-      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>3 / 5</span></footer>
+      ${footer(3, totalPages)}
+    </div>
+  </section>
+
+  <section class="page">
+    <div class="page__inner">
+      ${pageHeader("Packages")}
+      <div class="page__body" style="display:flex;flex-direction:column;gap:5mm">
+        <div>
+          <p class="eyebrow">2026/27 season</p>
+          <h2 class="section-title display">Sponsorship packages</h2>
+          <p class="prose prose--sm">Three clear options — pick the fit for your brand, or ask us about a custom partnership.</p>
+        </div>
+        ${packageCards()}
+      </div>
+      ${footer(4, totalPages)}
     </div>
   </section>
 
@@ -527,14 +644,8 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
           <p class="prose prose--sm">Jackals VC is a community-based club run by volunteers. Sponsorship helps us grow our squads and keep volleyball accessible in Dublin. Your support can target:</p>
         </div>
         <div class="invest-list">${investments}</div>
-        <div class="divider"></div>
-        <div>
-          <p class="eyebrow">Your impact</p>
-          <h2 class="section-title display">Support through Jackals VC</h2>
-          ${bullets(PRESENTATION_SUPPORT_POINTS)}
-        </div>
       </div>
-      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>4 / 5</span></footer>
+      ${footer(5, totalPages)}
     </div>
   </section>
 
@@ -560,7 +671,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
         </div>
         <p class="display" style="text-align:center;font-size:9pt;color:#ff4d54;margin-top:auto;padding-top:6mm">${esc(PRESENTATION_CLOSING.slogan)}</p>
       </div>
-      <footer class="page-footer"><span>jackalsvolleyball.com</span><span>5 / 5</span></footer>
+      ${footer(6, totalPages)}
     </div>
   </section>
 </body>

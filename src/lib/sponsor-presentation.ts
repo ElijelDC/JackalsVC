@@ -1,11 +1,12 @@
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { CLUB_SLOGAN } from "@/lib/brand";
-import { SPONSOR_HERO_STATS } from "@/lib/sponsors-config";
+import { SPONSOR_HERO_STATS, SPONSOR_PACKAGES } from "@/lib/sponsors-config";
 
 export const PRESENTATION_SEASON = "2026/27";
+export { SPONSOR_PACKAGES as PRESENTATION_PACKAGES };
 
 export const PRESENTATION_ABOUT = [
-  "Jackals Volleyball Club is a community-driven club based in Dublin, fielding competitive squads in Irish National League structures while welcoming players of all levels through training, fun sessions, and club events.",
+  "Jackals Volleyball Club is a community-driven club based in Dublin, fielding competitive squads in Irish National League structures while welcoming players of all levels through training, fun sessions, and club events. Proud Division 3 Irish National League winners in 2024/25.",
   "We work with Volleyball Ireland to promote and develop volleyball in our community. Our coaches, volunteers, and members support league teams, weekly training, and a welcoming club culture on and off the court.",
   "Our club has ambitious goals to keep growing our squads, strengthen our development pathway, and compete at a high standard while staying open and accessible to new players.",
 ];
@@ -23,17 +24,6 @@ export const PRESENTATION_PARTNER_BENEFITS = [
   "Nationwide reach as our squads travel for league fixtures across Dublin and nationally",
   "An affiliation with a growing, reputable club that shows your commitment to community sport",
   "Association with health, teamwork, and an engaged local audience of players and families",
-];
-
-export const PRESENTATION_WHY_SPONSOR = [
-  {
-    label: "Social media & website",
-    detail:
-      "Logo placement, features, and promotion on jackalsvolleyball.com, @jackalsvolleyball, and facebook.com/JackalsVC",
-  },
-  { label: "Kit sponsorship", detail: "Your logo on match or training kit for regular visibility in league play" },
-  { label: "Matchday opportunities", detail: "Banners, announcements, and branded presence at home fixtures" },
-  { label: "Player ambassadors", detail: "Long-term partners can work with players to extend reach through personal channels" },
 ];
 
 export const PRESENTATION_INVESTMENT_AREAS = [
@@ -67,7 +57,7 @@ export const PRESENTATION_CLOSING = {
   thanks:
     "Jackals Volleyball Club would like to thank you for taking the time to view our sponsorship proposal.",
   cta:
-    "Please get in touch if you are interested in becoming a sponsor. We can share sponsorship options or create a custom partnership for the season.",
+    "Please get in touch if you are interested in becoming a sponsor. We can share package deals for the 2026/27 season or create a custom partnership.",
   email: CONTACT_EMAIL,
   subject: "Sponsorship enquiry",
   slogan: CLUB_SLOGAN,

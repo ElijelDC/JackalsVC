@@ -9,7 +9,10 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 import {
+  SPONSOR_CHAMPIONSHIP_NOTE,
   SPONSOR_HERO_STATS,
+  SPONSOR_PACKAGES,
+  SPONSOR_PACKAGES_NOTE,
   SPONSOR_PRESENTATION_FILENAME,
   SPONSOR_PRESENTATION_URL,
   SPONSOR_VISIBILITY_CHANNELS,
@@ -44,7 +47,14 @@ export function SponsorsShowcase() {
       <ShowcaseHero
         title="Partner with"
         highlight="Jackals VC"
-        description="Put your brand in front of a passionate volleyball community — league matchdays, training nights, tournaments, and digital channels across the 2026/27 season."
+        description={
+          <>
+            Put your brand in front of a passionate volleyball community — league
+            matchdays, training nights, tournaments, and digital channels across
+            the 2026/27 season.{" "}
+            <span className="text-zinc-500">{SPONSOR_CHAMPIONSHIP_NOTE}</span>
+          </>
+        }
         stats={SPONSOR_HERO_STATS}
       />
 
@@ -107,6 +117,72 @@ export function SponsorsShowcase() {
 
         <AnimateIn variant="pop-in" className="mt-20 mb-12 text-center sm:mt-24 sm:mb-14">
           <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+            Packages
+          </p>
+          <h2 className="mt-3 font-display text-3xl font-bold text-white">
+            Sponsorship package deals
+          </h2>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400">
+            {SPONSOR_PACKAGES_NOTE}
+          </p>
+        </AnimateIn>
+
+        <StaggerIn
+          className="grid auto-rows-fr items-stretch gap-4 sm:grid-cols-3 sm:gap-5"
+          stagger={70}
+          variant="pop"
+        >
+          {SPONSOR_PACKAGES.map((pack, index) => (
+            <article
+              key={pack.name}
+              className={cn(
+                "flex h-full min-h-0 flex-col border border-white/10 bg-white/[0.02] p-5 sm:p-6",
+                index === 2 &&
+                  "border-jackals-red/45 bg-jackals-red/[0.08] shadow-[0_0_40px_rgba(232,34,42,0.12)]",
+              )}
+            >
+              <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+                Investment
+              </p>
+              <p className="mt-2 font-display text-3xl font-bold text-white">
+                {pack.priceLabel}
+              </p>
+              <h3 className="mt-3 font-display text-xl font-bold text-white">
+                {pack.name}
+              </h3>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">
+                {pack.summary}
+              </p>
+              <ul className="mt-5 flex-1 space-y-2.5 text-sm text-zinc-300">
+                {pack.highlights.map((item) => (
+                  <li key={item} className="flex gap-2">
+                    <span
+                      aria-hidden
+                      className="mt-1.5 h-1.5 w-1.5 shrink-0 bg-jackals-red"
+                    />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+              <a
+                href={sponsorInquiryMailto(`${pack.name} sponsorship enquiry`)}
+                className="mt-auto block pt-6"
+              >
+                <Button
+                  variant={index === 2 ? "primary" : "outline"}
+                  size="sm"
+                  className="w-full gap-2"
+                >
+                  <Mail className="h-4 w-4" />
+                  Enquire
+                </Button>
+              </a>
+            </article>
+          ))}
+        </StaggerIn>
+
+        <AnimateIn variant="pop-in" className="mt-20 mb-12 text-center sm:mt-24 sm:mb-14">
+          <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
             Visibility
           </p>
           <h2 className="mt-3 font-display text-3xl font-bold text-white">
@@ -145,7 +221,7 @@ export function SponsorsShowcase() {
           <ShowcaseCtaBand
             className="motion-cta-glow"
             title="Ready to become a sponsor?"
-            description="Download the presentation or email us to discuss a partnership for the 2026/27 season."
+            description="Ask about a 2026/27 package deal, download the presentation, or email us to build a custom partnership."
           >
             <DownloadPresentationButton className="w-full sm:w-auto" />
             <a href={sponsorInquiryMailto()} className="w-full sm:w-auto">

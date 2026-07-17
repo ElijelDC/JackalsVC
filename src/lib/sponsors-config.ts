@@ -2,13 +2,13 @@ import type { LucideIcon } from "lucide-react";
 import {
   Globe,
   Megaphone,
-  Shield,
   Shirt,
   TrendingUp,
   Trophy,
   UserCheck,
   Users,
   Volleyball,
+  Shield,
 } from "lucide-react";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { PUBLIC_PATHS } from "@/lib/public-paths";
@@ -18,6 +18,10 @@ export const SPONSOR_PRESENTATION_URL =
   PUBLIC_PATHS.downloads.sponsorPresentation;
 export const SPONSOR_PRESENTATION_FILENAME =
   "Jackals-VC-Sponsor-Presentation-2026-27.pdf";
+
+/** One short mention for the sponsors page — keep usage minimal. */
+export const SPONSOR_CHAMPIONSHIP_NOTE =
+  "Proud Division 3 Irish National League winners in 2024/25.";
 
 export const SPONSOR_HERO_STATS: {
   icon: LucideIcon;
@@ -33,7 +37,7 @@ export const SPONSOR_HERO_STATS: {
     label: "training and social volleyball sessions year round",
   },
   { icon: TrendingUp, value: "15K+", label: "monthly reach" },
-  { icon: Trophy, value: "40+", label: "league matches per year" },
+  { icon: Trophy, value: "40+", label: "league matches per season" },
 ];
 
 export const SPONSOR_WHY_POINTS = [
@@ -96,6 +100,58 @@ export const SPONSOR_VISIBILITY_CHANNELS: {
     description: "Families, students, professionals, and local businesses connected through the club.",
   },
 ];
+
+/** Package deals for the 2026/27 season. */
+export const SPONSOR_PACKAGES: {
+  name: string;
+  priceLabel: string;
+  summary: string;
+  highlights: string[];
+}[] = [
+  {
+    name: "Club Partner",
+    priceLabel: "€150",
+    summary: "Digital and community visibility across the season.",
+    highlights: [
+      "Sponsor listing on jackalsvolleyball.com with link to your business",
+      "Recognition on Instagram (@jackalsvolleyball) and Facebook",
+      "Thank-you acknowledgement to our club community",
+      "Mention in relevant club communications through the season",
+      "Association with a growing competitive Dublin volleyball club",
+    ],
+  },
+  {
+    name: "Spotlight Partner",
+    priceLabel: "€350",
+    summary:
+      "Stronger season-long promotion across our digital channels and club events.",
+    highlights: [
+      "All Club Partner benefits",
+      "Dedicated sponsor spotlight across Instagram and Facebook",
+      "Website promotion beyond a standard listing",
+      "Recognition at club events and fun sessions",
+      "Multiple social media mentions through the season",
+    ],
+  },
+  {
+    name: "Matchday Partner",
+    priceLabel: "€750",
+    summary:
+      "Our highest-visibility package — kit on court plus standout matchday presence.",
+    highlights: [
+      "All Spotlight Partner benefits",
+      "Logo on match or training kit for season-long court visibility",
+      "Photos and stories featuring your brand in club content where kit is worn",
+      "Matchday banners and/or announcements at home fixtures",
+      "Featured recognition as a Matchday Partner",
+      "Priority placement at club events and tournaments",
+      "Opportunities to collaborate on activations with our growing community",
+    ],
+  },
+];
+
+export const SPONSOR_PACKAGES_NOTE =
+  "Package deals for the 2026/27 season — from digital presence to full matchday and kit visibility. Custom arrangements are welcome.";
 
 export function sponsorInquiryMailto(subject = "Sponsorship enquiry") {
   return `mailto:${SPONSORSHIP_EMAIL}?subject=${encodeURIComponent(subject)}`;
