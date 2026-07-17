@@ -7,6 +7,7 @@ import {
   ClipboardList,
   Dumbbell,
   Handshake,
+  HeartHandshake,
   Home,
   LayoutDashboard,
   Mail,
@@ -263,6 +264,13 @@ export const INFO_NAV_ITEMS: NavItem[] = [
     icon: Handshake,
     description:
       "Partner with Jackals VC — visibility, partnership opportunities, and club presentation download.",
+  },
+  {
+    href: "/sponsors/partners",
+    label: "Our Sponsors",
+    icon: HeartHandshake,
+    description:
+      "Meet the businesses and organisations who support Jackals VC.",
   },
   {
     href: "/coaching",

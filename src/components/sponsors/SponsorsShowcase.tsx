@@ -21,6 +21,7 @@ import {
   sponsorInquiryMailto,
 } from "@/lib/sponsors-config";
 
+
 function DownloadPresentationButton({
   size = "lg",
   className,

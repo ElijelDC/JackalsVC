@@ -87,7 +87,8 @@ export const SPONSOR_VISIBILITY_CHANNELS: {
   {
     icon: Globe,
     title: "Website",
-    description: "Dedicated sponsors section on jackalsvolleyball.com with logo and link to your business.",
+    description:
+      "Logo and link on the Our Sponsors page at jackalsvolleyball.com/sponsors/partners.",
   },
   {
     icon: Trophy,
@@ -113,7 +114,7 @@ export const SPONSOR_PACKAGES: {
     priceLabel: "€150",
     summary: "For local businesses supporting grassroots volleyball.",
     highlights: [
-      "Logo and link on the Jackals website sponsor page",
+      "Logo and link on the Our Sponsors page",
       "Recognition on Instagram and Facebook",
       "Sponsor thank-you post",
       "Association with a growing Dublin volleyball club",
@@ -151,6 +152,46 @@ export const SPONSOR_PACKAGES_NOTE =
 
 export const SPONSOR_IMPACT_LINE =
   "Your sponsorship directly supports court hire, player development, competitive volleyball, and affordable access to the sport in our local community.";
+
+/** Partner listing on /sponsors/partners. Logos live under public/sponsors/. */
+export type ClubSponsorTier = "club" | "spotlight" | "matchday";
+
+export type ClubSponsor = {
+  name: string;
+  blurb: string;
+  href: string;
+  logoSrc: string;
+  tier: ClubSponsorTier;
+};
+
+export const SPONSOR_TIER_LABELS: Record<ClubSponsorTier, string> = {
+  club: "Club Partners",
+  spotlight: "Spotlight Partners",
+  matchday: "Matchday & Kit Partners",
+};
+
+/** Display order for tier sections (premium first). */
+export const SPONSOR_TIER_ORDER: ClubSponsorTier[] = [
+  "matchday",
+  "spotlight",
+  "club",
+];
+
+/**
+ * Active club partners featured on the Our Sponsors page.
+ * Add entries here and drop logo files into public/sponsors/.
+ */
+export const CLUB_SPONSORS: ClubSponsor[] = [];
+
+export function sponsorsByTier(
+  sponsors: readonly ClubSponsor[] = CLUB_SPONSORS,
+): { tier: ClubSponsorTier; label: string; sponsors: ClubSponsor[] }[] {
+  return SPONSOR_TIER_ORDER.map((tier) => ({
+    tier,
+    label: SPONSOR_TIER_LABELS[tier],
+    sponsors: sponsors.filter((s) => s.tier === tier),
+  })).filter((group) => group.sponsors.length > 0);
+}
 
 export function sponsorInquiryMailto(subject = "Sponsorship enquiry") {
   return `mailto:${SPONSORSHIP_EMAIL}?subject=${encodeURIComponent(subject)}`;

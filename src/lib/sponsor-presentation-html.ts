@@ -58,8 +58,79 @@ function packageCards() {
   }).join("")}</div>`;
 }
 
-export function buildSponsorPresentationHtml(logoDataUri: string) {
-  const totalPages = 6;
+export type SponsorPackageExampleImages = {
+  club?: string;
+  spotlight?: string;
+  matchday?: string;
+};
+
+function packageExamplePage(opts: {
+  title: string;
+  priceLabel: string;
+  blurb: string;
+  imageDataUri: string;
+  page: number;
+  total: number;
+}) {
+  return `<section class="page">
+    <div class="page__inner">
+      ${pageHeader("Package example")}
+      <div class="page__body example-slide">
+        <div>
+          <p class="eyebrow">${esc(opts.title)} · ${esc(opts.priceLabel)}</p>
+          <h2 class="section-title display">What it looks like</h2>
+          <p class="prose prose--sm">${esc(opts.blurb)}</p>
+          <p class="example-note">ACME is a placeholder brand for illustration only.</p>
+        </div>
+        <div class="example-frame">
+          <img src="${opts.imageDataUri}" alt="${esc(opts.title)} example" />
+        </div>
+      </div>
+      ${footer(opts.page, opts.total)}
+    </div>
+  </section>`;
+}
+
+export function buildSponsorPresentationHtml(
+  logoDataUri: string,
+  packageExamples: SponsorPackageExampleImages = {},
+) {
+  const exampleSlides = [
+    packageExamples.club
+      ? {
+          title: "Club Partner",
+          priceLabel: "€150",
+          blurb:
+            "Website listing on Our Sponsors, plus Instagram and Facebook recognition with a thank-you post.",
+          imageDataUri: packageExamples.club,
+        }
+      : null,
+    packageExamples.spotlight
+      ? {
+          title: "Spotlight Partner",
+          priceLabel: "€350",
+          blurb:
+            "Dedicated spotlight post, season-long Instagram and Facebook mentions, and recognition on fun session pages — plus all Club Partner benefits.",
+          imageDataUri: packageExamples.spotlight,
+        }
+      : null,
+    packageExamples.matchday
+      ? {
+          title: "Matchday & Kit Partner",
+          priceLabel: "€750",
+          blurb:
+            "Kit sleeve, training quarter-zip, courtside banner, matchday recognition, and branded content — plus all Spotlight Partner benefits.",
+          imageDataUri: packageExamples.matchday,
+        }
+      : null,
+  ].filter(Boolean) as {
+    title: string;
+    priceLabel: string;
+    blurb: string;
+    imageDataUri: string;
+  }[];
+
+  const totalPages = 6 + exampleSlides.length;
   const about = PRESENTATION_ABOUT.map((p) => `<p>${esc(p)}</p>`).join("");
   const investments = PRESENTATION_INVESTMENT_AREAS.map(
     (item, i) => `<article class="invest-card">
@@ -474,6 +545,36 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
     .stack-sm > * + * { margin-top: 4mm; }
     .stack-md > * + * { margin-top: 7mm; }
 
+    /* Package example slides */
+    .example-slide {
+      display: flex;
+      flex-direction: column;
+      gap: 4mm;
+      min-height: 0;
+    }
+    .example-note {
+      margin-top: 2mm;
+      font-size: 9pt;
+      font-weight: 700;
+      color: #eab308;
+    }
+    .example-frame {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #151515;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+    .example-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
     /* Screen preview: fluid layout for phones (print/PDF keeps A4) */
     @media screen {
       html, body {
@@ -530,6 +631,10 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       .cta-box .email {
         display: block;
         word-break: break-word;
+      }
+      .example-frame {
+        min-height: 220px;
+        aspect-ratio: 16 / 10;
       }
     }
 
@@ -626,7 +731,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
         <div>
           <p class="eyebrow">2026/27 season</p>
           <h2 class="section-title display">Sponsorship packages</h2>
-          <p class="prose prose--sm">Three clear options — pick the fit for your brand, or ask us about a custom partnership.</p>
+          <p class="prose prose--sm">Three clear options — pick the fit for your brand, or ask us about a custom partnership. Example visuals for each package follow.</p>
           <p class="prose prose--sm" style="margin-top:2.5mm">Your sponsorship directly supports court hire, player development, competitive volleyball, and affordable access to the sport in our local community.</p>
         </div>
         ${packageCards()}
@@ -634,6 +739,16 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
       ${footer(4, totalPages)}
     </div>
   </section>
+
+  ${exampleSlides
+    .map((slide, index) =>
+      packageExamplePage({
+        ...slide,
+        page: 5 + index,
+        total: totalPages,
+      }),
+    )
+    .join("\n")}
 
   <section class="page">
     <div class="page__inner">
@@ -646,7 +761,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
         </div>
         <div class="invest-list">${investments}</div>
       </div>
-      ${footer(5, totalPages)}
+      ${footer(5 + exampleSlides.length, totalPages)}
     </div>
   </section>
 
@@ -672,7 +787,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
         </div>
         <p class="display" style="text-align:center;font-size:9pt;color:#ff4d54;margin-top:auto;padding-top:6mm">${esc(PRESENTATION_CLOSING.slogan)}</p>
       </div>
-      ${footer(6, totalPages)}
+      ${footer(6 + exampleSlides.length, totalPages)}
     </div>
   </section>
 </body>

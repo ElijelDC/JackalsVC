@@ -1,24 +1,19 @@
-import { readFile } from "node:fs/promises";
-import path from "node:path";
 import Link from "next/link";
 import { ArrowLeft, Download } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { PUBLIC_PATHS } from "@/lib/public-paths";
+import {
+  loadSponsorPackageExampleImages,
+  loadSponsorPresentationLogo,
+} from "@/lib/sponsor-presentation-assets";
 import { buildSponsorPresentationHtml } from "@/lib/sponsor-presentation-html";
 
-async function logoDataUri() {
-  try {
-    const bytes = await readFile(
-      path.join(process.cwd(), "public/brand/logo-transparent.png"),
-    );
-    return `data:image/png;base64,${bytes.toString("base64")}`;
-  } catch {
-    return "";
-  }
-}
-
 export async function SponsorPresentationPreview() {
-  const html = buildSponsorPresentationHtml(await logoDataUri());
+  const [logo, packageExamples] = await Promise.all([
+    loadSponsorPresentationLogo(),
+    loadSponsorPackageExampleImages(),
+  ]);
+  const html = buildSponsorPresentationHtml(logo, packageExamples);
 
   return (
     <div className="flex min-h-[calc(100dvh-4.25rem)] flex-col bg-black">

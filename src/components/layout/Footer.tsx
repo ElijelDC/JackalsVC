@@ -268,6 +268,9 @@ function GuestFooter({
               <FooterLink href="/sponsors">For sponsors</FooterLink>
             </li>
             <li>
+              <FooterLink href="/sponsors/partners">Our sponsors</FooterLink>
+            </li>
+            <li>
               <FooterLink href="/contact">Contact us</FooterLink>
             </li>
           </FooterColumn>

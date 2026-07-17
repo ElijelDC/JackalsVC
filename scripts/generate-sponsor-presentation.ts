@@ -2,24 +2,21 @@
  * Generates the club sponsor presentation PDF from branded HTML (Playwright).
  * Run: npm run generate:sponsor-pdf
  */
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { chromium } from "playwright";
+import {
+  loadSponsorPackageExampleImages,
+  loadSponsorPresentationLogo,
+} from "../src/lib/sponsor-presentation-assets";
 import { buildSponsorPresentationHtml } from "../src/lib/sponsor-presentation-html";
 
-async function logoDataUri() {
-  try {
-    const bytes = await readFile(
-      path.join(process.cwd(), "public/brand/logo-transparent.png"),
-    );
-    return `data:image/png;base64,${bytes.toString("base64")}`;
-  } catch {
-    return "";
-  }
-}
-
 async function main() {
-  const html = buildSponsorPresentationHtml(await logoDataUri());
+  const [logo, packageExamples] = await Promise.all([
+    loadSponsorPresentationLogo(),
+    loadSponsorPackageExampleImages(),
+  ]);
+  const html = buildSponsorPresentationHtml(logo, packageExamples);
   const tmpDir = path.join(process.cwd(), ".tmp");
   await mkdir(tmpDir, { recursive: true });
   const htmlPath = path.join(tmpDir, "sponsor-presentation.html");
