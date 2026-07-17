@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import {
   SPONSOR_CHAMPIONSHIP_NOTE,
   SPONSOR_HERO_STATS,
+  SPONSOR_IMPACT_LINE,
   SPONSOR_PACKAGES,
   SPONSOR_PACKAGES_NOTE,
   SPONSOR_PRESENTATION_FILENAME,
@@ -124,6 +125,9 @@ export function SponsorsShowcase() {
           </h2>
           <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400">
             {SPONSOR_PACKAGES_NOTE}
+          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-300">
+            {SPONSOR_IMPACT_LINE}
           </p>
         </AnimateIn>
 

@@ -627,6 +627,7 @@ export function buildSponsorPresentationHtml(logoDataUri: string) {
           <p class="eyebrow">2026/27 season</p>
           <h2 class="section-title display">Sponsorship packages</h2>
           <p class="prose prose--sm">Three clear options — pick the fit for your brand, or ask us about a custom partnership.</p>
+          <p class="prose prose--sm" style="margin-top:2.5mm">Your sponsorship directly supports court hire, player development, competitive volleyball, and affordable access to the sport in our local community.</p>
         </div>
         ${packageCards()}
       </div>

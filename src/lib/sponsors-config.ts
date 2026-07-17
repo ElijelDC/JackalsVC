@@ -111,47 +111,46 @@ export const SPONSOR_PACKAGES: {
   {
     name: "Club Partner",
     priceLabel: "€150",
-    summary: "Digital and community visibility across the season.",
+    summary: "For local businesses supporting grassroots volleyball.",
     highlights: [
-      "Sponsor listing on jackalsvolleyball.com with link to your business",
-      "Recognition on Instagram (@jackalsvolleyball) and Facebook",
-      "Thank-you acknowledgement to our club community",
-      "Mention in relevant club communications through the season",
-      "Association with a growing competitive Dublin volleyball club",
+      "Logo and link on the Jackals website sponsor page",
+      "Recognition on Instagram and Facebook",
+      "Sponsor thank-you post",
+      "Association with a growing Dublin volleyball club",
     ],
   },
   {
     name: "Spotlight Partner",
     priceLabel: "€350",
-    summary:
-      "Stronger season-long promotion across our digital channels and club events.",
+    summary: "For businesses looking for more visibility.",
     highlights: [
       "All Club Partner benefits",
-      "Dedicated sponsor spotlight across Instagram and Facebook",
-      "Website promotion beyond a standard listing",
-      "Recognition at club events and fun sessions",
-      "Multiple social media mentions through the season",
+      "Dedicated sponsor spotlight post",
+      "Multiple social media mentions throughout the season",
+      "Recognition at club events and social sessions",
+      "Increased visibility across our online community",
     ],
   },
   {
-    name: "Matchday Partner",
+    name: "Matchday & Kit Partner",
     priceLabel: "€750",
-    summary:
-      "Our highest-visibility package — kit on court plus standout matchday presence.",
+    summary: "Our premium partnership opportunity.",
     highlights: [
       "All Spotlight Partner benefits",
-      "Logo on match or training kit for season-long court visibility",
-      "Photos and stories featuring your brand in club content where kit is worn",
-      "Matchday banners and/or announcements at home fixtures",
-      "Featured recognition as a Matchday Partner",
-      "Priority placement at club events and tournaments",
-      "Opportunities to collaborate on activations with our growing community",
+      "Logo placement on match/training kit",
+      "Brand visibility during league matches and tournaments",
+      "Matchday recognition and announcements",
+      "Photos and content featuring your brand",
+      "Opportunity for collaboration with the Jackals community",
     ],
   },
 ];
 
 export const SPONSOR_PACKAGES_NOTE =
-  "Package deals for the 2026/27 season — from digital presence to full matchday and kit visibility. Custom arrangements are welcome.";
+  "Package deals for the 2026/27 season — from grassroots support to kit and matchday visibility. Custom arrangements are welcome.";
+
+export const SPONSOR_IMPACT_LINE =
+  "Your sponsorship directly supports court hire, player development, competitive volleyball, and affordable access to the sport in our local community.";
 
 export function sponsorInquiryMailto(subject = "Sponsorship enquiry") {
   return `mailto:${SPONSORSHIP_EMAIL}?subject=${encodeURIComponent(subject)}`;
