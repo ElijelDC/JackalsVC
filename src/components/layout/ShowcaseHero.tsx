@@ -27,6 +27,7 @@ export function ShowcaseHero({
   stats,
   statsGridClassName,
   action,
+  cta,
   className,
   contentClassName,
 }: {
@@ -36,6 +37,8 @@ export function ShowcaseHero({
   stats?: ShowcaseStat[];
   statsGridClassName?: string;
   action?: React.ReactNode;
+  /** Optional CTA row under the description (e.g. primary + secondary buttons). */
+  cta?: React.ReactNode;
   className?: string;
   contentClassName?: string;
 }) {
@@ -79,6 +82,12 @@ export function ShowcaseHero({
               {description}
             </p>
           </AnimateIn>
+
+          {cta ? (
+            <AnimateIn immediate variant="pop-in" delay={200} className="mt-8">
+              {cta}
+            </AnimateIn>
+          ) : null}
 
           {stats && stats.length > 0 && (
             <StaggerIn

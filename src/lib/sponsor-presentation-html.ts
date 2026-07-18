@@ -72,11 +72,11 @@ function packageExamplePage(opts: {
   page: number;
   total: number;
 }) {
-  return `<section class="page">
+  return `<section class="page page--example">
     <div class="page__inner">
       ${pageHeader("Package example")}
       <div class="page__body example-slide">
-        <div>
+        <div class="example-copy">
           <p class="eyebrow">${esc(opts.title)} · ${esc(opts.priceLabel)}</p>
           <h2 class="section-title display">What it looks like</h2>
           <p class="prose prose--sm">${esc(opts.blurb)}</p>
@@ -108,16 +108,16 @@ export function buildSponsorPresentationHtml(
     packageExamples.spotlight
       ? {
           title: "Spotlight Partner",
-          priceLabel: "€350",
+          priceLabel: "€500",
           blurb:
-            "Dedicated spotlight post, season-long Instagram and Facebook mentions, and recognition on fun session pages — plus all Club Partner benefits.",
+            "Logo on Match Week and Match Results posts across Instagram and Facebook, plus recognition on club event pages — and all Club Partner benefits.",
           imageDataUri: packageExamples.spotlight,
         }
       : null,
     packageExamples.matchday
       ? {
           title: "Matchday & Kit Partner",
-          priceLabel: "€750",
+          priceLabel: "€1,000",
           blurb:
             "Kit sleeve, training quarter-zip, courtside banner, matchday recognition, and branded content — plus all Spotlight Partner benefits.",
           imageDataUri: packageExamples.matchday,
@@ -632,9 +632,38 @@ export function buildSponsorPresentationHtml(
         display: block;
         word-break: break-word;
       }
+      /* Example slides: give the mockup almost the full screen width/height */
+      .page--example {
+        max-width: min(100%, 1100px);
+      }
+      .page--example .page__inner {
+        padding: 14px 12px 18px;
+      }
+      .page--example .example-copy .section-title {
+        font-size: clamp(16px, 4.5vw, 20px);
+      }
+      .page--example .example-copy .prose {
+        font-size: 12px;
+        line-height: 1.4;
+      }
+      .page--example .example-note {
+        font-size: 11px;
+        margin-top: 6px;
+      }
+      .page--example .example-slide {
+        gap: 10px;
+      }
       .example-frame {
-        min-height: 220px;
-        aspect-ratio: 16 / 10;
+        min-height: 0;
+        aspect-ratio: auto;
+        border: none;
+        background: transparent;
+      }
+      .example-frame img {
+        width: 100%;
+        height: auto;
+        max-height: none;
+        object-fit: contain;
       }
     }
 
@@ -647,11 +676,18 @@ export function buildSponsorPresentationHtml(
         flex-direction: row;
         align-items: center;
       }
+      .page--example .page__inner {
+        padding: 18px 20px 24px;
+      }
     }
 
     @media screen and (max-width: 639px) {
       .pkg-grid { grid-template-columns: 1fr; }
       .pkg-card__summary { min-height: 0; }
+      .page--example .page-header .brand-text,
+      .page--example .page-footer {
+        font-size: 9px;
+      }
     }
   </style>
 </head>

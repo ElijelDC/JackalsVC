@@ -1,8 +1,5 @@
 import type { LucideIcon } from "lucide-react";
 import {
-  Globe,
-  Megaphone,
-  Shirt,
   TrendingUp,
   Trophy,
   UserCheck,
@@ -63,44 +60,7 @@ export const SPONSOR_WHY_POINTS = [
   },
 ] as const;
 
-export const SPONSOR_VISIBILITY_CHANNELS: {
-  icon: LucideIcon;
-  title: string;
-  description: string;
-}[] = [
-  {
-    icon: Shirt,
-    title: "Kit & equipment",
-    description: "Match and training kit seen every week in league and tournament play.",
-  },
-  {
-    icon: Volleyball,
-    title: "Matchdays",
-    description: "Home and away fixtures across Dublin and nationally — banners, PA, programmes.",
-  },
-  {
-    icon: Megaphone,
-    title: "Social media",
-    description:
-      "@jackalsvolleyball and facebook.com/JackalsVC — highlights, sign-ups, celebrations, and sponsor tags.",
-  },
-  {
-    icon: Globe,
-    title: "Website",
-    description:
-      "Logo and link on the Our Sponsors page at jackalsvolleyball.com/sponsors/partners.",
-  },
-  {
-    icon: Trophy,
-    title: "Events & tournaments",
-    description: "Club-run competitions, fun sessions, and socials with hundreds of touchpoints.",
-  },
-  {
-    icon: Users,
-    title: "Community network",
-    description: "Families, students, professionals, and local businesses connected through the club.",
-  },
-];
+const SPONSOR_EXAMPLE_BASE = "/downloads/sponsor-examples";
 
 /** Package deals for the 2026/27 season. */
 export const SPONSOR_PACKAGES: {
@@ -108,6 +68,10 @@ export const SPONSOR_PACKAGES: {
   priceLabel: string;
   summary: string;
   highlights: string[];
+  exampleImage: string;
+  /** Full example opened in the lightbox (defaults to exampleImage). */
+  exampleFullImage?: string;
+  exampleAlt: string;
 }[] = [
   {
     name: "Club Partner",
@@ -117,24 +81,26 @@ export const SPONSOR_PACKAGES: {
       "Logo and link on the Our Sponsors page",
       "Recognition on Instagram and Facebook",
       "Sponsor thank-you post",
-      "Association with a growing Dublin volleyball club",
     ],
+    exampleImage: `${SPONSOR_EXAMPLE_BASE}/sponsor-package-club-partner.png`,
+    exampleAlt: "Club Partner example — website listing and thank-you post",
   },
   {
     name: "Spotlight Partner",
-    priceLabel: "€350",
+    priceLabel: "€500",
     summary: "For businesses looking for more visibility.",
     highlights: [
       "All Club Partner benefits",
-      "Dedicated sponsor spotlight post",
+      "Logo on Match Week & Match Results posts (Instagram & Facebook)",
       "Multiple social media mentions throughout the season",
-      "Recognition at club events and social sessions",
-      "Increased visibility across our online community",
+      "Recognition on club event and session pages",
     ],
+    exampleImage: `${SPONSOR_EXAMPLE_BASE}/sponsor-package-spotlight-partner.png`,
+    exampleAlt: "Spotlight Partner example — Match Week, Results, and session recognition",
   },
   {
     name: "Matchday & Kit Partner",
-    priceLabel: "€750",
+    priceLabel: "€1,000",
     summary: "Our premium partnership opportunity.",
     highlights: [
       "All Spotlight Partner benefits",
@@ -142,13 +108,14 @@ export const SPONSOR_PACKAGES: {
       "Brand visibility during league matches and tournaments",
       "Matchday recognition and announcements",
       "Photos and content featuring your brand",
-      "Opportunity for collaboration with the Jackals community",
     ],
+    exampleImage: `${SPONSOR_EXAMPLE_BASE}/sponsor-package-matchday-kit-partner.png`,
+    exampleAlt: "Matchday & Kit Partner example — kit, banner, and matchday recognition",
   },
 ];
 
 export const SPONSOR_PACKAGES_NOTE =
-  "Package deals for the 2026/27 season — from grassroots support to kit and matchday visibility. Custom arrangements are welcome.";
+  "Three options for the 2026/27 season — custom arrangements welcome.";
 
 export const SPONSOR_IMPACT_LINE =
   "Your sponsorship directly supports court hire, player development, competitive volleyball, and affordable access to the sport in our local community.";
