@@ -35,6 +35,7 @@ export async function POST(request: Request) {
       category: data.category,
       featured: data.featured,
       sortOrder: data.sortOrder,
+      tournamentSlug: data.tournamentSlug ?? null,
     },
   });
   return NextResponse.json({ album }, { status: 201 });

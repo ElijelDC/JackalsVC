@@ -1,13 +1,6 @@
-import { OurSponsorsPage } from "@/components/sponsors/OurSponsorsPage";
-import { pageMetadata } from "@/lib/seo";
+import { redirect } from "next/navigation";
 
-export const metadata = pageMetadata({
-  title: "Our Sponsors",
-  description:
-    "Meet the businesses and organisations who support Jackals Volleyball Club in Dublin — and learn how to become a partner.",
-  path: "/sponsors/partners",
-});
-
+/** Partners listing is paused until we have sponsors — send people to packages. */
 export default function OurSponsorsRoute() {
-  return <OurSponsorsPage />;
+  redirect("/sponsors");
 }

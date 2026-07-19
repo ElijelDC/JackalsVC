@@ -15,6 +15,7 @@ export const PUBLIC_PATHS = {
     vlyMembershipPhotos: "/uploads/vly-membership-photos",
     coachInvoices: "/uploads/coach-invoices",
     tournamentDocs: "/uploads/tournament-docs",
+    tournamentWinners: "/uploads/tournament-winners",
   },
   downloads: {
     sponsorPresentation: "/downloads/jackals-vc-sponsor-presentation.pdf",

@@ -52,10 +52,22 @@ export async function PUT(
         category: data.category,
         featured: data.featured,
         sortOrder: data.sortOrder,
+        tournamentSlug: data.tournamentSlug ?? null,
       },
     });
     return NextResponse.json({ album });
-  } catch {
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      error.code === "P2002"
+    ) {
+      return jsonError(
+        "That tournament already has a linked gallery album.",
+        409,
+      );
+    }
     return jsonError("Album not found", 404);
   }
 }

@@ -259,6 +259,9 @@ function GuestFooter({
               <FooterLink href="/achievements">Achievements</FooterLink>
             </li>
             <li>
+              <FooterLink href="/tournaments">Our tournaments</FooterLink>
+            </li>
+            <li>
               <FooterLink href="/about">About us</FooterLink>
             </li>
           </FooterColumn>
@@ -266,9 +269,6 @@ function GuestFooter({
           <FooterColumn title="Plan ahead">
             <li>
               <FooterLink href="/sponsors">For sponsors</FooterLink>
-            </li>
-            <li>
-              <FooterLink href="/sponsors/partners">Our sponsors</FooterLink>
             </li>
             <li>
               <FooterLink href="/contact">Contact us</FooterLink>

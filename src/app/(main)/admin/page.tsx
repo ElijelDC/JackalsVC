@@ -14,6 +14,7 @@ import {
   ClipboardList,
   CreditCard,
   Dumbbell,
+  Images,
   PartyPopper,
   Trophy,
   Package,
@@ -111,6 +112,13 @@ const SECTIONS = [
     countKey: "gallery" as const,
   },
   {
+    href: "/admin/tournament-photos",
+    title: "Tournament photos",
+    description: "Winner shots and linked tournament albums",
+    icon: Images,
+    countKey: "tournamentPhotos" as const,
+  },
+  {
     href: "/admin/achievements",
     title: "Achievements",
     description: "Club milestones and titles",
@@ -142,6 +150,7 @@ export default async function AdminPage() {
     products,
     orders,
     gallery,
+    tournamentPhotos,
     achievements,
     teams,
   ] = await Promise.all([
@@ -161,6 +170,7 @@ export default async function AdminPage() {
     prisma.product.count(),
     prisma.order.count(),
     prisma.galleryAlbum.count(),
+    prisma.tournamentWinnerPhoto.count(),
     prisma.achievement.count(),
     prisma.clubTeam.count(),
   ]);
@@ -178,6 +188,7 @@ export default async function AdminPage() {
     products,
     orders,
     gallery,
+    tournamentPhotos,
     achievements,
     teams,
   };

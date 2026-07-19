@@ -222,9 +222,18 @@ export const galleryAlbumSchema = z.object({
     .string()
     .optional()
     .transform((val) => (val?.trim() ? val.trim() : undefined)),
-  category: z.enum(["MATCH", "TRAINING", "SOCIAL", "EVENT"]),
+  category: z.enum(["MATCH", "TRAINING", "SOCIAL", "EVENT", "TOURNAMENT"]),
   featured: z.boolean(),
   sortOrder: z.number().int().min(0).default(0),
+  tournamentSlug: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => {
+      if (val == null) return null;
+      const trimmed = val.trim();
+      return trimmed ? trimmed : null;
+    }),
 });
 
 export const galleryPhotoSchema = z.object({

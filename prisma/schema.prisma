@@ -351,15 +351,17 @@ model PaymentImportRecord {
 }
 
 model GalleryAlbum {
-  id            String         @id @default(cuid())
-  title         String
-  description   String?
-  coverImageUrl String
-  category      String
-  featured      Boolean        @default(false)
-  sortOrder     Int            @default(0)
-  createdAt     DateTime       @default(now())
-  photos        GalleryPhoto[]
+  id             String         @id @default(cuid())
+  title          String
+  description    String?
+  coverImageUrl  String
+  category       String
+  featured       Boolean        @default(false)
+  sortOrder      Int            @default(0)
+  /** Optional link to a hosted tournament archive slug (e.g. jvc-mixed-2v2-beach). */
+  tournamentSlug String?        @unique
+  createdAt      DateTime       @default(now())
+  photos         GalleryPhoto[]
 }
 
 model GalleryPhoto {
@@ -382,6 +384,28 @@ model Achievement {
   type        String   @default("TOURNAMENT")
   sortOrder   Int      @default(0)
   createdAt   DateTime @default(now())
+}
+
+/** Winner / podium photos for hosted tournament archive pages (keyed by hub slug). */
+model TournamentWinnerPhoto {
+  id             String   @id @default(cuid())
+  tournamentSlug String
+  /** PODIUM | FIRST | SECOND | THIRD | OTHER */
+  kind           String   @default("OTHER")
+  imageUrl       String
+  alt            String?
+  sortOrder      Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([tournamentSlug, sortOrder])
+}
+
+/** Cover image for the Our Tournaments overview card (keyed by hub slug). */
+model TournamentCover {
+  tournamentSlug String   @id
+  imageUrl       String
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
 }
 
 model ClubTeam {

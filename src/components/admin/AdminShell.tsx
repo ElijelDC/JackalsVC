@@ -80,6 +80,11 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     links: [
       { href: "/admin/gallery", label: "Gallery", icon: Camera },
       { href: "/admin/achievements", label: "Achievements", icon: Award },
+      {
+        href: "/admin/tournament-photos",
+        label: "Tournament photos",
+        icon: Trophy,
+      },
     ],
   },
   {

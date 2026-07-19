@@ -17,13 +17,18 @@ const STATIC_ROUTES: Array<{
   { path: "/contact", changeFrequency: "monthly", priority: 0.8 },
   { path: "/gallery", changeFrequency: "weekly", priority: 0.8 },
   { path: "/achievements", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/tournaments", changeFrequency: "monthly", priority: 0.7 },
   { path: "/register", changeFrequency: "monthly", priority: 0.7 },
   { path: "/sponsors", changeFrequency: "monthly", priority: 0.6 },
-  { path: "/sponsors/partners", changeFrequency: "monthly", priority: 0.6 },
   { path: "/coaching", changeFrequency: "monthly", priority: 0.7 },
   {
     path: "/tournaments/jvc-mixed-2v2-beach",
-    changeFrequency: "weekly",
+    changeFrequency: "monthly",
+    priority: 0.7,
+  },
+  {
+    path: "/tournaments/jvc-rose-cup-shield",
+    changeFrequency: "monthly",
     priority: 0.7,
   },
 ];

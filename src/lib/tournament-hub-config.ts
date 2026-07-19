@@ -109,6 +109,61 @@ export const TOURNAMENT_HUBS: TournamentHubConfig[] = [
     ],
     defaultRulesPdfUrl: PUBLIC_PATHS.downloads.beachTournamentRules,
   },
+  {
+    slug: "jvc-rose-cup-shield",
+    eventIds: [],
+    reclubReferenceCodes: [],
+    title: "JVC Rose Cup & Shield — Mixed Tournament",
+    subtitle: "Cup & Shield play-offs from pool standings",
+    location: "Dublin",
+    dateLabel: "Sunday, 16 February 2025",
+    scheduleNote:
+      "Pool A on Court 1. Pool B on Court 2. Listed teams referee the other pool.",
+    schedule: [
+      {
+        time: "10:00",
+        court1: "ADLERS vs I.V.I SET FIGHTERS",
+        refereePoolB: "WALRUS",
+        court2: "Athenas vs Labubus",
+        refereePoolA: "IADT Geckos",
+      },
+      {
+        time: "10:25",
+        court1: "ADLERS vs IADT Geckos",
+        refereePoolB: "Labubus",
+        court2: "Athenas vs NoMercy",
+        refereePoolA: "IADT Turtles",
+      },
+      {
+        time: "10:50",
+        court1: "I.V.I SET FIGHTERS vs IADT Turtles",
+        refereePoolB: "NoMercy",
+        court2: "Labubus vs WALRUS",
+        refereePoolA: "IADT Geckos",
+      },
+      {
+        time: "11:15",
+        court1: "IADT Geckos vs IADT Turtles",
+        refereePoolB: "Athenas",
+        court2: "NoMercy vs WALRUS",
+        refereePoolA: "I.V.I SET FIGHTERS",
+      },
+      {
+        time: "11:40",
+        court1: "I.V.I SET FIGHTERS vs IADT Geckos",
+        refereePoolB: "WALRUS",
+        court2: "Labubus vs NoMercy",
+        refereePoolA: "ADLERS",
+      },
+      {
+        time: "12:05",
+        court1: "ADLERS vs IADT Turtles",
+        refereePoolB: "Labubus",
+        court2: "Athenas vs WALRUS",
+        refereePoolA: "IADT Turtles",
+      },
+    ],
+  },
 ];
 
 export function getTournamentHubBySlug(slug: string) {

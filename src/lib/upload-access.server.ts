@@ -9,6 +9,7 @@ const PUBLIC_UPLOAD_PREFIXES = [
   "achievements/",
   "profile-images/",
   "tournament-docs/",
+  "tournament-winners/",
 ] as const;
 
 function isPublicUploadPath(relativePath: string): boolean {
