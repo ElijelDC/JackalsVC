@@ -2,10 +2,10 @@ import { ACCEPTED_IMAGE_INPUT } from "@/lib/image-upload-types";
 
 export const GALLERY_MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 /**
- * Max images per upload HTTP request. One file per request avoids Next.js
- * middleware body-clone truncation and keeps large album uploads reliable.
+ * Max images per upload HTTP request. Middleware no longer clones these
+ * routes, so modest batches are safe; the client still chunks to this size.
  */
-export const GALLERY_MAX_BULK_FILES = 1;
+export const GALLERY_MAX_BULK_FILES = 12;
 /** Max images a user can queue in the uploader UI (uploaded in batched requests). */
 export const GALLERY_MAX_SELECTION = 200;
 /** Thumbnail previews shown in the queue (rest are listed by count only). */

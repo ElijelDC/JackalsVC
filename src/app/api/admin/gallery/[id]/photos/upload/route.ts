@@ -43,7 +43,7 @@ export async function POST(
 
   if (files.length > GALLERY_MAX_BULK_FILES) {
     return jsonError(
-      `You can upload up to ${GALLERY_MAX_BULK_FILES} images at once.`,
+      `You can upload up to ${GALLERY_MAX_BULK_FILES} image${GALLERY_MAX_BULK_FILES === 1 ? "" : "s"} at once.`,
       400,
     );
   }
