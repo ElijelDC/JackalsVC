@@ -1,5 +1,13 @@
 /** Client-safe tournament winner photo kinds / labels (no server imports). */
 
+/** Matches public Winner photos gallery tiles (aspect-[4/3]). */
+export const TOURNAMENT_WINNER_PHOTO_ASPECT = 4 / 3;
+
+/** Output width for cropped winner photos (height follows aspect). */
+export const TOURNAMENT_WINNER_PHOTO_OUTPUT_WIDTH = 1600;
+
+export const TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL = "4∶3";
+
 export const TOURNAMENT_WINNER_PHOTO_KINDS = [
   "PODIUM",
   "FIRST",

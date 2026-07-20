@@ -13,6 +13,8 @@ export function ImageCropDialog({
   aspectLabel,
   title = "Crop image",
   confirmLabel = "Use crop",
+  description,
+  fileNamePrefix = "crop",
   outputWidth,
   onCancel,
   onConfirm,
@@ -23,6 +25,8 @@ export function ImageCropDialog({
   aspectLabel: string;
   title?: string;
   confirmLabel?: string;
+  description?: string;
+  fileNamePrefix?: string;
   outputWidth?: number;
   onCancel: () => void;
   onConfirm: (file: File) => void | Promise<void>;
@@ -43,7 +47,7 @@ export function ImageCropDialog({
     setError(null);
     try {
       const file = await getCroppedImageFile(imageSrc, croppedAreaPixels, {
-        fileName: `tournament-cover-${Date.now()}.jpg`,
+        fileName: `${fileNamePrefix}-${Date.now()}.jpg`,
         outputWidth,
       });
       await onConfirm(file);
@@ -65,9 +69,13 @@ export function ImageCropDialog({
       title={title}
       description={
         <p className="text-sm text-zinc-400">
-          Drag to position, pinch or use the slider to zoom. Frame is locked to{" "}
-          <span className="text-zinc-200">{aspectLabel}</span> so it matches the
-          Our Tournaments card exactly.
+          {description ?? (
+            <>
+              Drag to position, pinch or use the slider to zoom. Frame is locked
+              to <span className="text-zinc-200">{aspectLabel}</span> so it
+              matches the public display.
+            </>
+          )}
         </p>
       }
       className="max-w-3xl"

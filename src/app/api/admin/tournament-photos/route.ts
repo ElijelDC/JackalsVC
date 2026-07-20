@@ -23,6 +23,7 @@ const updateSchema = z.object({
   id: z.string().min(1),
   kind: z.enum(TOURNAMENT_WINNER_PHOTO_KINDS).optional(),
   alt: z.string().nullable().optional(),
+  imageUrl: z.string().min(1).optional(),
 });
 
 export async function GET(request: Request) {
@@ -119,13 +120,21 @@ export async function PATCH(request: Request) {
     nextAlt = trimmed || defaultAltForWinnerPhoto(nextKind, title);
   }
 
+  const nextImageUrl = data.imageUrl ?? existing.imageUrl;
+  const imageChanged = nextImageUrl !== existing.imageUrl;
+
   const photo = await prisma.tournamentWinnerPhoto.update({
     where: { id: data.id },
     data: {
       kind: nextKind,
       alt: nextAlt,
+      imageUrl: nextImageUrl,
     },
   });
+
+  if (imageChanged) {
+    await deleteTournamentWinnerImageFile(existing.imageUrl);
+  }
 
   return NextResponse.json({ photo });
 }

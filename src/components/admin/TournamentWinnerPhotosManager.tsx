@@ -28,7 +28,10 @@ import {
 } from "@/lib/tournament-cover";
 import {
   TOURNAMENT_WINNER_KIND_LABELS,
+  TOURNAMENT_WINNER_PHOTO_ASPECT,
+  TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL,
   TOURNAMENT_WINNER_PHOTO_KINDS,
+  TOURNAMENT_WINNER_PHOTO_OUTPUT_WIDTH,
   type TournamentWinnerPhotoKind,
 } from "@/lib/tournament-winner-photo";
 import { cn } from "@/lib/utils";
@@ -40,6 +43,8 @@ const ImageCropDialog = dynamic(
     ),
   { ssr: false },
 );
+
+type CropTarget = "cover" | "winner";
 
 export type TournamentPhotoOption = {
   slug: string;
@@ -105,6 +110,7 @@ export function TournamentWinnerPhotosManager({
   const [message, setMessage] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const [cropTarget, setCropTarget] = useState<CropTarget | null>(null);
 
   useEffect(() => {
     setAlbums(initialAlbums);
@@ -177,7 +183,15 @@ export function TournamentWinnerPhotosManager({
   const selectedTitle =
     tournaments.find((t) => t.slug === slug)?.title ?? slug;
 
-  const openCoverCrop = (file: File) => {
+  const clearCrop = () => {
+    setCropSrc((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return null;
+    });
+    setCropTarget(null);
+  };
+
+  const openCrop = (file: File, target: CropTarget) => {
     if (!slug) {
       setError("Choose a tournament first.");
       return;
@@ -191,11 +205,15 @@ export function TournamentWinnerPhotosManager({
       return;
     }
     setError(null);
+    setCropTarget(target);
     setCropSrc((current) => {
       if (current) URL.revokeObjectURL(current);
       return URL.createObjectURL(file);
     });
   };
+
+  const openCoverCrop = (file: File) => openCrop(file, "cover");
+  const openWinnerCrop = (file: File) => openCrop(file, "winner");
 
   const uploadCover = async (file: File) => {
     setCoverLoading(true);
@@ -218,10 +236,7 @@ export function TournamentWinnerPhotosManager({
       const without = current.filter((c) => c.tournamentSlug !== slug);
       return [...without, result.data.cover];
     });
-    setCropSrc((current) => {
-      if (current) URL.revokeObjectURL(current);
-      return null;
-    });
+    clearCrop();
     setMessage("Tournament cover updated.");
     router.refresh();
   };
@@ -350,21 +365,9 @@ export function TournamentWinnerPhotosManager({
     router.refresh();
   };
 
-  const uploadFile = async (file: File) => {
-    if (editingId) {
-      setError("Finish or cancel editing before uploading a new photo.");
-      return;
-    }
+  const uploadWinnerFile = async (file: File) => {
     if (!slug) {
       setError("Choose a tournament first.");
-      return;
-    }
-    if (!isAcceptedImageFile(file)) {
-      setError("Only image files can be uploaded.");
-      return;
-    }
-    if (file.size > GALLERY_MAX_UPLOAD_BYTES) {
-      setError("Image must be smaller than 15 MB.");
       return;
     }
 
@@ -388,6 +391,33 @@ export function TournamentWinnerPhotosManager({
       return;
     }
 
+    if (editingId) {
+      const update = await apiPatch<{ photo: TournamentWinnerPhotoItem }>(
+        "/api/admin/tournament-photos",
+        {
+          id: editingId,
+          kind,
+          alt: alt.trim() || null,
+          imageUrl: upload.data.imageUrl,
+        },
+        "Could not update photo.",
+      );
+      setLoading(false);
+      if (!update.ok) {
+        setError(update.error);
+        return;
+      }
+      setPhotos((current) =>
+        current.map((photo) =>
+          photo.id === update.data.photo.id ? update.data.photo : photo,
+        ),
+      );
+      clearCrop();
+      setMessage("Photo image updated.");
+      router.refresh();
+      return;
+    }
+
     const create = await apiPost<{ photo: TournamentWinnerPhotoItem }>(
       "/api/admin/tournament-photos",
       {
@@ -407,6 +437,7 @@ export function TournamentWinnerPhotosManager({
     }
 
     setAlt("");
+    clearCrop();
     setMessage("Photo added.");
     setPhotos((current) => [...current, create.data.photo]);
     router.refresh();
@@ -433,6 +464,7 @@ export function TournamentWinnerPhotosManager({
     setAlt("");
     setError(null);
     setMessage(null);
+    if (cropTarget === "winner") clearCrop();
   };
 
   const saveEdit = async () => {
@@ -486,7 +518,7 @@ export function TournamentWinnerPhotosManager({
   return (
     <AdminSection
       title="Tournament photos"
-      description="Set the Our Tournaments cover (with crop), upload podium / winner shots, and link a gallery album for the full day."
+      description="Set the Our Tournaments cover (with crop), upload podium / winner shots (cropped to 4∶3), and link a gallery album for the full day."
     >
       <div className="mb-6 border border-white/10 bg-white/[0.02] px-4 py-4 sm:px-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-stretch">
@@ -698,6 +730,10 @@ export function TournamentWinnerPhotosManager({
             inputRef.current?.click();
           }}
         >
+          <p className="-mt-1 text-sm text-zinc-500">
+            Winner shots are cropped to {TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL} to
+            match the public gallery tiles.
+          </p>
           <div>
             <Label htmlFor="tournament-slug">Tournament</Label>
             <Select
@@ -748,61 +784,74 @@ export function TournamentWinnerPhotosManager({
           </div>
 
           {editingId ? (
-            <p className="text-sm text-zinc-400">
-              Update the photo type or caption, then save. The image itself stays
-              the same — delete and re-upload to replace it.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-zinc-400">
+                Update the photo type or caption, then save. To reframe heads and
+                feet, replace the image — you&apos;ll crop to{" "}
+                {TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL} before it uploads.
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={loading || !slug}
+                onClick={() => inputRef.current?.click()}
+              >
+                Replace &amp; crop image
+              </Button>
+            </div>
           ) : (
-          <div
-            className={cn(
-              "relative flex flex-col items-center justify-center gap-3 border border-dashed border-white/20 bg-white/[0.02] px-4 py-8 text-center transition-colors",
-              dragging && "border-jackals-red/50 bg-jackals-red/5",
-              loading && "opacity-60",
-            )}
-            onDragEnter={(e) => {
-              e.preventDefault();
-              setDragging(true);
-            }}
-            onDragOver={(e) => e.preventDefault()}
-            onDragLeave={() => setDragging(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDragging(false);
-              const file = e.dataTransfer.files?.[0];
-              if (file) void uploadFile(file);
-            }}
-          >
-            <input
-              ref={inputRef}
-              type="file"
-              accept={GALLERY_ACCEPTED_IMAGE_TYPES}
-              className="hidden"
-              disabled={loading || !slug}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void uploadFile(file);
-                e.target.value = "";
+            <div
+              className={cn(
+                "relative flex flex-col items-center justify-center gap-3 border border-dashed border-white/20 bg-white/[0.02] px-4 py-8 text-center transition-colors",
+                dragging && "border-jackals-red/50 bg-jackals-red/5",
+                loading && "opacity-60",
+              )}
+              onDragEnter={(e) => {
+                e.preventDefault();
+                setDragging(true);
               }}
-            />
-            {loading ? (
-              <Loader2 className="h-6 w-6 animate-spin text-jackals-red-light" />
-            ) : (
-              <Upload className="h-6 w-6 text-jackals-red-light" />
-            )}
-            <p className="text-sm text-zinc-400">
-              Drop an image here, or use the button below
-            </p>
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              disabled={loading || !slug}
-              onClick={() => inputRef.current?.click()}
+              onDragOver={(e) => e.preventDefault()}
+              onDragLeave={() => setDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragging(false);
+                const file = e.dataTransfer.files?.[0];
+                if (file) openWinnerCrop(file);
+              }}
             >
-              Browse files
-            </Button>
-          </div>
+              {loading ? (
+                <Loader2 className="h-6 w-6 animate-spin text-jackals-red-light" />
+              ) : (
+                <Upload className="h-6 w-6 text-jackals-red-light" />
+              )}
+              <p className="text-sm text-zinc-400">
+                Drop an image here to crop to {TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL}
+                , or browse below
+              </p>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={loading || !slug}
+                onClick={() => inputRef.current?.click()}
+              >
+                Browse files
+              </Button>
+            </div>
           )}
+          <input
+            ref={inputRef}
+            type="file"
+            accept={GALLERY_ACCEPTED_IMAGE_TYPES}
+            className="hidden"
+            disabled={loading || !slug}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) openWinnerCrop(file);
+              e.target.value = "";
+            }}
+          />
         </AdminFormCard>
 
         <div className="space-y-3">
@@ -870,21 +919,45 @@ export function TournamentWinnerPhotosManager({
       </div>
 
       <ImageCropDialog
-        open={Boolean(cropSrc)}
+        key={cropTarget === "cover" ? cropSrc ?? "cover-closed" : "cover-idle"}
+        open={Boolean(cropSrc) && cropTarget === "cover"}
         imageSrc={cropSrc}
         aspect={TOURNAMENT_COVER_ASPECT}
         aspectLabel={TOURNAMENT_COVER_ASPECT_LABEL}
         title="Crop tournament cover"
         confirmLabel={coverLoading ? "Saving…" : "Save cover"}
+        fileNamePrefix="tournament-cover"
         outputWidth={TOURNAMENT_COVER_OUTPUT_WIDTH}
+        description={`Drag to position, pinch or use the slider to zoom. Frame is locked to ${TOURNAMENT_COVER_ASPECT_LABEL} so it matches the Our Tournaments card exactly.`}
         onCancel={() => {
           if (coverLoading) return;
-          setCropSrc((current) => {
-            if (current) URL.revokeObjectURL(current);
-            return null;
-          });
+          clearCrop();
         }}
         onConfirm={(file) => uploadCover(file)}
+      />
+
+      <ImageCropDialog
+        key={cropTarget === "winner" ? cropSrc ?? "winner-closed" : "winner-idle"}
+        open={Boolean(cropSrc) && cropTarget === "winner"}
+        imageSrc={cropSrc}
+        aspect={TOURNAMENT_WINNER_PHOTO_ASPECT}
+        aspectLabel={TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL}
+        title={editingId ? "Recrop winner photo" : "Crop winner photo"}
+        confirmLabel={
+          loading
+            ? "Saving…"
+            : editingId
+              ? "Save cropped image"
+              : "Upload cropped photo"
+        }
+        fileNamePrefix="tournament-winner"
+        outputWidth={TOURNAMENT_WINNER_PHOTO_OUTPUT_WIDTH}
+        description={`Drag to position, pinch or use the slider to zoom. Frame is locked to ${TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL} so heads and feet stay in frame on the public gallery.`}
+        onCancel={() => {
+          if (loading) return;
+          clearCrop();
+        }}
+        onConfirm={(file) => uploadWinnerFile(file)}
       />
     </AdminSection>
   );

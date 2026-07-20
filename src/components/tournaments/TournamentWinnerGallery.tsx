@@ -7,8 +7,6 @@ import type { TournamentArchiveEntry } from "@/lib/tournament-archive";
 import { cn } from "@/lib/utils";
 
 const SWIPE_THRESHOLD_PX = 48;
-/** One desktop row fits this many before we switch to a carousel. */
-const DESKTOP_ROW_CAPACITY = 3;
 
 function WinnerPhotoSlide({
   photo,
@@ -145,14 +143,20 @@ function WinnerPhotoCarousel({
   );
 }
 
+function desktopGridClass(count: number) {
+  if (count === 1) return "lg:mx-auto lg:max-w-xl lg:grid-cols-1";
+  if (count === 2) return "lg:grid-cols-2";
+  if (count === 3) return "lg:grid-cols-3";
+  if (count === 4) return "lg:grid-cols-2 xl:grid-cols-4";
+  return "lg:grid-cols-3";
+}
+
 export function TournamentWinnerGallery({
   photos,
 }: {
   photos: TournamentArchiveEntry["winnerPhotos"];
 }) {
   if (photos.length === 0) return null;
-
-  const fitsDesktopRow = photos.length <= DESKTOP_ROW_CAPACITY;
 
   return (
     <section className="border-b border-white/10 bg-jackals-surface/20 py-14 sm:py-16">
@@ -165,34 +169,30 @@ export function TournamentWinnerGallery({
             Winner photos
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Podium moments from the day — swipe to browse.
+            Podium moments from the day.
           </p>
         </AnimateIn>
 
-        {/* Mobile: always carousel */}
-        <div className={cn(fitsDesktopRow ? "lg:hidden" : undefined)}>
+        {/* Mobile: carousel */}
+        <div className="lg:hidden">
           <WinnerPhotoCarousel photos={photos} />
         </div>
 
-        {/* Desktop: single row when it fits */}
-        {fitsDesktopRow ? (
-          <div
-            className={cn(
-              "hidden gap-4 lg:grid",
-              photos.length === 1 && "lg:mx-auto lg:max-w-xl lg:grid-cols-1",
-              photos.length === 2 && "lg:grid-cols-2",
-              photos.length >= 3 && "lg:grid-cols-3",
-            )}
-          >
-            {photos.map((photo, photoIndex) => (
-              <WinnerPhotoSlide
-                key={`${photo.src}-row-${photoIndex}`}
-                photo={photo}
-                priority={photoIndex === 0}
-              />
-            ))}
-          </div>
-        ) : null}
+        {/* Desktop: always static grid (never a carousel) */}
+        <div
+          className={cn(
+            "hidden gap-4 lg:grid",
+            desktopGridClass(photos.length),
+          )}
+        >
+          {photos.map((photo, photoIndex) => (
+            <WinnerPhotoSlide
+              key={`${photo.src}-row-${photoIndex}`}
+              photo={photo}
+              priority={photoIndex === 0}
+            />
+          ))}
+        </div>
       </div>
     </section>
   );
