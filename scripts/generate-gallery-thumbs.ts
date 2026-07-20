@@ -9,8 +9,11 @@ import { existsSync } from "node:fs";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
-import { compressRasterImage } from "../src/lib/image-compress";
+import sharp from "sharp";
 import { PrismaClient } from "../src/generated/prisma/client";
+
+const THUMB_MAX_EDGE = 900;
+const THUMB_JPEG_QUALITY = 78;
 
 const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
@@ -23,17 +26,15 @@ function getUploadsRoot() {
   return path.join(process.cwd(), "public", "uploads");
 }
 
-function mimeFromExt(ext: string) {
-  switch (ext.toLowerCase()) {
-    case ".webp":
-      return "image/webp";
-    case ".png":
-      return "image/png";
-    case ".gif":
-      return "image/gif";
-    default:
-      return "image/jpeg";
-  }
+async function makeThumb(input: Buffer): Promise<Buffer> {
+  return sharp(input, { failOn: "none", unlimited: true })
+    .rotate()
+    .resize(THUMB_MAX_EDGE, THUMB_MAX_EDGE, {
+      fit: "inside",
+      withoutEnlargement: true,
+    })
+    .jpeg({ quality: THUMB_JPEG_QUALITY, mozjpeg: true })
+    .toBuffer();
 }
 
 async function main() {
@@ -78,31 +79,30 @@ async function main() {
     }
 
     const original = await readFile(filePath);
-    const thumb = await compressRasterImage(
-      original,
-      mimeFromExt(ext),
-      "galleryThumb",
-    );
+    const thumbBuffer = await makeThumb(original);
 
     const dir = path.dirname(relativePath);
     const base = path.basename(relativePath, ext);
-    const thumbRelative = path.join(dir, `${base}.thumb.${thumb.extension}`);
+    const thumbRelative = path.join(dir, `${base}.thumb.jpg`);
     const thumbPath = path.join(uploadsRoot, thumbRelative);
     const thumbUrl = `/uploads/${thumbRelative.replace(/\\/g, "/")}`;
 
     if (dryRun) {
-      console.log(`would create ${thumbUrl} (${thumb.buffer.length} bytes)`);
+      console.log(`would create ${thumbUrl} (${thumbBuffer.length} bytes)`);
       created += 1;
       continue;
     }
 
     await mkdir(path.dirname(thumbPath), { recursive: true });
-    await writeFile(thumbPath, thumb.buffer);
+    await writeFile(thumbPath, thumbBuffer);
     await prisma.galleryPhoto.update({
       where: { id: photo.id },
       data: { thumbUrl },
     });
     created += 1;
+    if (created % 25 === 0) {
+      console.log(`… ${created}/${photos.length}`);
+    }
   }
 
   console.log(`Done. thumbs=${created} skipped=${skipped}`);
