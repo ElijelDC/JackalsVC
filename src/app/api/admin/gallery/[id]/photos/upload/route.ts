@@ -23,11 +23,14 @@ export async function POST(
     return jsonError("Album not found", 404);
   }
 
-  const formData = await request.formData().catch(() => null);
-  if (!formData) {
+  let formData: FormData;
+  try {
+    formData = await request.formData();
+  } catch (error) {
+    console.error("[gallery-upload] formData parse failed", error);
     return jsonError(
-      "Upload was too large for the server to read. Try fewer photos at once, or wait a moment and try again.",
-      413,
+      "Could not read the upload. Try again — photos are sent one at a time.",
+      400,
     );
   }
   const files = formData

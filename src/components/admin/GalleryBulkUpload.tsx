@@ -173,7 +173,7 @@ export function GalleryBulkUpload({
     for (let index = 0; index < batches.length; index += 1) {
       const batch = batches[index]!;
       setUploadProgress(
-        `Uploading ${Math.min(uploadedTotal + batch.length, prepared.length)} of ${prepared.length}… (batch ${index + 1}/${batches.length})`,
+        `Uploading ${Math.min(uploadedTotal + batch.length, prepared.length)} of ${prepared.length}…`,
       );
 
       const formData = new FormData();
@@ -245,8 +245,8 @@ export function GalleryBulkUpload({
       </h3>
       <p className="mb-4 text-sm text-zinc-400">
         Drag images here or browse your device. Up to {GALLERY_MAX_SELECTION}{" "}
-        images per session — compressed in your browser first, then sent in
-        batches of {GALLERY_MAX_BULK_FILES} (15 MB max per original).
+        images per session — compressed in your browser, then uploaded one at a
+        time (15 MB max per original).
       </p>
 
       <SuccessBanner message={message} />

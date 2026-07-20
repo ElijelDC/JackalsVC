@@ -13,7 +13,10 @@ const nextConfig: NextConfig = {
   // default 10MB proxy buffer truncates the body and FormData parsing fails.
   experimental: {
     optimizePackageImports: ["date-fns"],
-    proxyClientMaxBodySize: "300mb",
+    // Number form avoids any string-parse ambiguity at runtime. Middleware
+    // still clones matched request bodies; upload routes are excluded from the
+    // matcher so large gallery batches are not truncated.
+    proxyClientMaxBodySize: 300 * 1024 * 1024,
   },
   async rewrites() {
     return {

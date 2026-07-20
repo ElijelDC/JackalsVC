@@ -101,5 +101,9 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|brand/).*)"],
+  // Exclude multipart upload routes so Next does not clone/truncate the body
+  // through middleware (default 10MB clone limit breaks gallery bulk uploads).
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|brand/|api/admin/gallery/.+/photos/upload|api/admin/gallery/.+/cover|api/admin/tournament-photos/upload|api/admin/tournament-photos/cover|api/admin/achievements/upload|api/admin/bulk-import|api/admin/events/.+/rules|api/admin/payments/import-csv|api/admin/coach-payments/.+/invoice|api/admin/club-members/.+/profile-image|api/admin/club-members/.+/vly-photo).*)",
+  ],
 };
