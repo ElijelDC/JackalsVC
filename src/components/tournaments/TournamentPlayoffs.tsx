@@ -103,10 +103,12 @@ function BracketMatches({
   matches,
   title,
   blurb,
+  hideIntro = false,
 }: {
   matches: PlayoffMatch[];
   title: string;
   blurb?: string;
+  hideIntro?: boolean;
 }) {
   const final = matches.find((m) => m.round === "final");
   const semis = matches.filter((m) => m.round === "semi");
@@ -114,19 +116,34 @@ function BracketMatches({
 
   return (
     <div>
-      <AnimateIn variant="blur-in" className="mb-8 text-center sm:mb-10">
-        <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-          Knockout stage
-        </p>
-        <h2 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-          {title}
-        </h2>
-        {blurb ? (
-          <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-            {blurb}
+      {hideIntro ? (
+        title ? (
+          <div className="mb-8 text-center sm:mb-10">
+            <h3 className="font-display text-xl font-bold uppercase tracking-wide text-white sm:text-2xl">
+              {title}
+            </h3>
+            {blurb ? (
+              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
+                {blurb}
+              </p>
+            ) : null}
+          </div>
+        ) : null
+      ) : (
+        <AnimateIn variant="blur-in" className="mb-8 text-center sm:mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+            Knockout stage
           </p>
-        ) : null}
-      </AnimateIn>
+          <h2 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
+            {title}
+          </h2>
+          {blurb ? (
+            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
+              {blurb}
+            </p>
+          ) : null}
+        </AnimateIn>
+      )}
 
       <div className="space-y-4">
         <StaggerIn className="grid gap-4 sm:grid-cols-2" stagger={80} variant="pop">
@@ -155,33 +172,52 @@ export function TournamentPlayoffs({
   playoffs,
   brackets,
   description = "Top two from each pool advanced — here's how the finals unfolded.",
+  hideIntro = false,
 }: {
   playoffs: PlayoffMatch[];
   brackets?: PlayoffBracket[];
   description?: string;
+  /** When true, skip the outer section chrome (used inside a collapsible). */
+  hideIntro?: boolean;
 }) {
   if (brackets && brackets.length > 0) {
-    return (
-      <section className="mx-auto max-w-4xl space-y-16 px-4 py-16 sm:space-y-20 sm:px-6 sm:py-20">
+    const body = (
+      <div className="space-y-16 sm:space-y-20">
         {brackets.map((bracket) => (
           <BracketMatches
             key={bracket.key}
             matches={bracket.matches}
             title={bracket.name}
             blurb={bracket.blurb}
+            hideIntro={hideIntro}
           />
         ))}
+      </div>
+    );
+
+    if (hideIntro) return body;
+
+    return (
+      <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
+        {body}
       </section>
     );
   }
 
+  const single = (
+    <BracketMatches
+      matches={playoffs}
+      title={hideIntro ? "" : "Play-off results"}
+      blurb={hideIntro ? undefined : description}
+      hideIntro={hideIntro}
+    />
+  );
+
+  if (hideIntro) return single;
+
   return (
     <section className="mx-auto max-w-4xl px-4 py-16 sm:px-6 sm:py-20">
-      <BracketMatches
-        matches={playoffs}
-        title="Play-off results"
-        blurb={description}
-      />
+      {single}
     </section>
   );
 }

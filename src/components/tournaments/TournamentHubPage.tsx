@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { TournamentCollapsibleSection } from "@/components/tournaments/TournamentCollapsibleSection";
 import { TournamentGalleryLink } from "@/components/tournaments/TournamentGalleryLink";
 import type { TournamentGalleryAlbumTeaser } from "@/components/tournaments/TournamentGalleryLink";
 import { TournamentPlayoffs } from "@/components/tournaments/TournamentPlayoffs";
@@ -53,6 +54,11 @@ export function TournamentHubPage({
   const heroHighlight =
     archive?.heroHighlight ?? (completed ? "Champions" : "Beach");
 
+  const standingsDescription =
+    archive?.poolHighlight === "cup-and-shield"
+      ? "Round-robin results — top two from each pool into the Rose Cup, bottom two into the Rose Shield."
+      : "Round-robin results from both courts — points, wins, and the tie-breakers that decided who advanced.";
+
   return (
     <>
       <ShowcaseHero
@@ -86,7 +92,7 @@ export function TournamentHubPage({
                     .
                   </>
                 ) : null}{" "}
-                Full podium, play-off scores, and pool standings below.
+                Open the sections below for full results when you want them.
               </>
             ) : (
               <>
@@ -154,144 +160,87 @@ export function TournamentHubPage({
           {archive.winnerPhotos.length > 0 ? (
             <TournamentWinnerGallery photos={archive.winnerPhotos} />
           ) : null}
-          <TournamentPlayoffs
-            playoffs={archive.playoffs}
-            brackets={archive.brackets}
-          />
-          <TournamentStandingsTables
-            pools={archive.pools}
-            advanceNote={archive.poolAdvanceNote}
-            highlight={archive.poolHighlight}
-            description={
-              archive.poolHighlight === "cup-and-shield"
-                ? "Round-robin results — top two from each pool into the Rose Cup, bottom two into the Rose Shield."
-                : undefined
-            }
-          />
           {galleryAlbum ? (
             <TournamentGalleryLink album={galleryAlbum} />
           ) : null}
+
+          <TournamentCollapsibleSection
+            eyebrow="Knockout stage"
+            title="Play-off results"
+            description="Top two from each pool advanced — here's how the finals unfolded."
+            toggleLabel="play-off results"
+            contentClassName="mx-auto max-w-4xl"
+          >
+            <TournamentPlayoffs
+              playoffs={archive.playoffs}
+              brackets={archive.brackets}
+              hideIntro
+            />
+          </TournamentCollapsibleSection>
+
+          <TournamentCollapsibleSection
+            eyebrow="Pool stage"
+            title="Overall standings"
+            description={standingsDescription}
+            toggleLabel="standings"
+            className="bg-background"
+          >
+            <TournamentStandingsTables
+              pools={archive.pools}
+              advanceNote={archive.poolAdvanceNote}
+              highlight={archive.poolHighlight}
+              hideIntro
+            />
+          </TournamentCollapsibleSection>
+
           {archive.poolMatches?.length ? (
-            <TournamentPoolMatches matches={archive.poolMatches} />
-          ) : null}
-        </>
-      ) : (
-        <section className="relative overflow-hidden border-b border-white/10 bg-jackals-red/5 py-12 sm:py-14">
-          <div
-            aria-hidden
-            className="motion-ambient-orb pointer-events-none absolute right-1/4 top-0 h-40 w-40 rounded-full bg-jackals-red/10 blur-3xl"
-          />
-          <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
-            <AnimateIn variant="pop-in">
-              <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-                Tournament rules
-              </p>
-              <h2 className="mt-3 font-display text-2xl font-bold text-white sm:text-3xl">
-                Rules &amp; format
-              </h2>
-              <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-                Preview the official rules online, or download a PDF for your
-                team.
-              </p>
-              <p className="mt-3 text-sm text-zinc-500">{hub.location}</p>
-            </AnimateIn>
-
-            {rulesPdfUrl ? (
-              <StaggerIn
-                className="mx-auto mt-8"
-                stagger={80}
-                variant="pop"
-              >
-                <TournamentRulesCta
-                  rulesPdfUrl={rulesPdfUrl}
-                  rulesPreviewPath={rulesPreviewPath}
-                />
-              </StaggerIn>
-            ) : (
-              <p className="mt-8 text-sm text-zinc-500">
-                Rules document coming soon.
-              </p>
-            )}
-
-            <Link
-              href={backHref}
-              className="mt-6 inline-block text-sm text-zinc-500 transition-colors hover:text-jackals-red-light"
+            <TournamentCollapsibleSection
+              eyebrow="Pool stage"
+              title="Match results"
+              description="Every pool fixture with set scores — Court 1 for Pool A, Court 2 for Pool B."
+              toggleLabel="match results"
+              className="bg-jackals-surface/30"
             >
-              {backLabel}
-            </Link>
-          </div>
-        </section>
-      )}
-
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <AnimateIn variant="blur-in" className="mb-10 text-center sm:mb-12">
-          <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-            {completed ? "How the day ran" : "Match day"}
-          </p>
-          <h2 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
-            Pool play schedule
-          </h2>
-          {hub.scheduleNote ? (
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-              {hub.scheduleNote}
-            </p>
-          ) : null}
-        </AnimateIn>
-
-        <AnimateIn variant="spring-up">
-          <TournamentScheduleTable schedule={hub.schedule} />
-        </AnimateIn>
-
-        {completed && rulesPdfUrl ? (
-          <AnimateIn variant="spring-up" className="mt-12 sm:mt-14">
-            <div className="border border-white/10 bg-white/[0.02] px-5 py-6 text-center sm:px-8 sm:py-8">
-              <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-                Tournament rules
-              </p>
-              <h3 className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">
-                Rules &amp; format
-              </h3>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-                Preview the official rules online, or download a PDF.
-              </p>
-              <TournamentRulesCta
-                rulesPdfUrl={rulesPdfUrl}
-                rulesPreviewPath={rulesPreviewPath}
-                layout="stacked"
+              <TournamentPoolMatches
+                matches={archive.poolMatches}
+                hideIntro
               />
-            </div>
-          </AnimateIn>
-        ) : null}
+            </TournamentCollapsibleSection>
+          ) : null}
 
-        {!completed && standingsUrl ? (
-          <AnimateIn variant="spring-up" className="mt-12 sm:mt-14">
-            <div className="border border-white/10 bg-white/[0.02] px-5 py-6 text-center sm:px-8 sm:py-8">
-              <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-                Live standings
-              </p>
-              <h3 className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">
-                Pool standings on Reclub
-              </h3>
-              <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
-                Results and live standings are updated on Reclub as matches are
-                finalized. Open the competition there to follow the table.
-              </p>
-              <a
-                href={standingsUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-6 inline-flex"
-              >
-                <Button size="lg" variant="outline">
-                  View standings on Reclub
-                </Button>
-              </a>
-            </div>
-          </AnimateIn>
-        ) : null}
+          <TournamentCollapsibleSection
+            eyebrow="How the day ran"
+            title="Pool play schedule"
+            description={hub.scheduleNote}
+            toggleLabel="schedule"
+          >
+            <TournamentScheduleTable schedule={hub.schedule} />
+          </TournamentCollapsibleSection>
 
-        {completed ? (
-          <div className="mt-10 text-center">
+          {rulesPdfUrl ? (
+            <section className="border-t border-white/10 py-12 sm:py-14">
+              <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+                <div className="border border-white/10 bg-white/[0.02] px-5 py-6 text-center sm:px-8 sm:py-8">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+                    Tournament rules
+                  </p>
+                  <h3 className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">
+                    Rules &amp; format
+                  </h3>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
+                    Preview the official rules online, or download a PDF.
+                  </p>
+                  <TournamentRulesCta
+                    rulesPdfUrl={rulesPdfUrl}
+                    rulesPreviewPath={rulesPreviewPath}
+                    layout="stacked"
+                  />
+                </div>
+              </div>
+            </section>
+          ) : null}
+
+          <div className="border-t border-white/10 py-10 text-center">
             <Link
               href="/tournaments"
               className="text-sm text-zinc-500 transition-colors hover:text-jackals-red-light"
@@ -299,8 +248,104 @@ export function TournamentHubPage({
               ← Back to Our Tournaments
             </Link>
           </div>
-        ) : null}
-      </div>
+        </>
+      ) : (
+        <>
+          <section className="relative overflow-hidden border-b border-white/10 bg-jackals-red/5 py-12 sm:py-14">
+            <div
+              aria-hidden
+              className="motion-ambient-orb pointer-events-none absolute right-1/4 top-0 h-40 w-40 rounded-full bg-jackals-red/10 blur-3xl"
+            />
+            <div className="relative mx-auto max-w-3xl px-4 text-center sm:px-6">
+              <AnimateIn variant="pop-in">
+                <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+                  Tournament rules
+                </p>
+                <h2 className="mt-3 font-display text-2xl font-bold text-white sm:text-3xl">
+                  Rules &amp; format
+                </h2>
+                <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
+                  Preview the official rules online, or download a PDF for your
+                  team.
+                </p>
+                <p className="mt-3 text-sm text-zinc-500">{hub.location}</p>
+              </AnimateIn>
+
+              {rulesPdfUrl ? (
+                <StaggerIn
+                  className="mx-auto mt-8"
+                  stagger={80}
+                  variant="pop"
+                >
+                  <TournamentRulesCta
+                    rulesPdfUrl={rulesPdfUrl}
+                    rulesPreviewPath={rulesPreviewPath}
+                  />
+                </StaggerIn>
+              ) : (
+                <p className="mt-8 text-sm text-zinc-500">
+                  Rules document coming soon.
+                </p>
+              )}
+
+              <Link
+                href={backHref}
+                className="mt-6 inline-block text-sm text-zinc-500 transition-colors hover:text-jackals-red-light"
+              >
+                {backLabel}
+              </Link>
+            </div>
+          </section>
+
+          <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+            <AnimateIn variant="blur-in" className="mb-10 text-center sm:mb-12">
+              <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+                Match day
+              </p>
+              <h2 className="mt-3 font-display text-3xl font-bold text-white sm:text-4xl">
+                Pool play schedule
+              </h2>
+              {hub.scheduleNote ? (
+                <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-zinc-400 sm:text-base">
+                  {hub.scheduleNote}
+                </p>
+              ) : null}
+            </AnimateIn>
+
+            <AnimateIn variant="spring-up">
+              <TournamentScheduleTable schedule={hub.schedule} />
+            </AnimateIn>
+
+            {standingsUrl ? (
+              <AnimateIn variant="spring-up" className="mt-12 sm:mt-14">
+                <div className="border border-white/10 bg-white/[0.02] px-5 py-6 text-center sm:px-8 sm:py-8">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+                    Live standings
+                  </p>
+                  <h3 className="mt-3 font-display text-xl font-bold text-white sm:text-2xl">
+                    Pool standings on Reclub
+                  </h3>
+                  <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
+                    Results and live standings are updated on Reclub as matches
+                    are finalized. Open the competition there to follow the
+                    table.
+                  </p>
+                  <a
+                    href={standingsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-6 inline-flex"
+                  >
+                    <Button size="lg" variant="outline">
+                      View standings on Reclub
+                    </Button>
+                  </a>
+                </div>
+              </AnimateIn>
+            ) : null}
+          </div>
+        </>
+      )}
     </>
   );
 }

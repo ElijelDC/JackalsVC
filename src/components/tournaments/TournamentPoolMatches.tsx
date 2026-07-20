@@ -97,13 +97,41 @@ function PoolMatchCard({
 
 export function TournamentPoolMatches({
   matches,
+  hideIntro = false,
 }: {
   matches: PoolMatchResult[];
+  hideIntro?: boolean;
 }) {
   if (matches.length === 0) return null;
 
   const pools = [...new Set(matches.map((m) => m.pool))];
   const scoreSlots = Math.max(1, ...matches.map((m) => m.sets.length));
+
+  const body = (
+    <div className="grid items-stretch gap-10 lg:grid-cols-2 lg:gap-8">
+      {pools.map((poolName) => {
+        const poolMatches = matches.filter((m) => m.pool === poolName);
+        return (
+          <div key={poolName} className="flex h-full min-w-0 flex-col">
+            <h3 className="mb-4 font-display text-lg font-bold uppercase tracking-wide text-white">
+              {poolName}
+            </h3>
+            <StaggerIn className="flex flex-1 flex-col gap-3" stagger={50} variant="pop">
+              {poolMatches.map((match) => (
+                <PoolMatchCard
+                  key={`${match.pool}-${match.time}-${match.teamA}`}
+                  match={match}
+                  scoreSlots={scoreSlots}
+                />
+              ))}
+            </StaggerIn>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  if (hideIntro) return body;
 
   return (
     <section className="border-t border-white/10 bg-jackals-surface/30 py-16 sm:py-20">
@@ -121,27 +149,7 @@ export function TournamentPoolMatches({
           </p>
         </AnimateIn>
 
-        <div className="grid items-stretch gap-10 lg:grid-cols-2 lg:gap-8">
-          {pools.map((poolName) => {
-            const poolMatches = matches.filter((m) => m.pool === poolName);
-            return (
-              <div key={poolName} className="flex h-full min-w-0 flex-col">
-                <h3 className="mb-4 font-display text-lg font-bold uppercase tracking-wide text-white">
-                  {poolName}
-                </h3>
-                <StaggerIn className="flex flex-1 flex-col gap-3" stagger={50} variant="pop">
-                  {poolMatches.map((match) => (
-                    <PoolMatchCard
-                      key={`${match.pool}-${match.time}-${match.teamA}`}
-                      match={match}
-                      scoreSlots={scoreSlots}
-                    />
-                  ))}
-                </StaggerIn>
-              </div>
-            );
-          })}
-        </div>
+        {body}
       </div>
     </section>
   );

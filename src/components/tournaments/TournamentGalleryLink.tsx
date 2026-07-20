@@ -17,7 +17,7 @@ export function TournamentGalleryLink({
   album: TournamentGalleryAlbumTeaser;
 }) {
   return (
-    <section className="border-t border-white/10 py-16 sm:py-20">
+    <section className="border-t border-white/10 py-12 sm:py-14">
       <div className="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
         <AnimateIn variant="blur-in" className="mb-8 text-center sm:mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
