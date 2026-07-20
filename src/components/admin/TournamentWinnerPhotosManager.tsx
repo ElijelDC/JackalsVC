@@ -1,18 +1,17 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Images, Loader2, Upload } from "lucide-react";
 import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
-import { ImageCropDialog } from "@/components/admin/ImageCropDialog";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
 import {
   apiDelete,
-  apiGet,
   apiPatch,
   apiPost,
   apiPostForm,
@@ -33,6 +32,14 @@ import {
   type TournamentWinnerPhotoKind,
 } from "@/lib/tournament-winner-photo";
 import { cn } from "@/lib/utils";
+
+const ImageCropDialog = dynamic(
+  () =>
+    import("@/components/admin/ImageCropDialog").then(
+      (mod) => mod.ImageCropDialog,
+    ),
+  { ssr: false },
+);
 
 export type TournamentPhotoOption = {
   slug: string;
@@ -203,13 +210,6 @@ export function TournamentWinnerPhotosManager({
     router.refresh();
   };
 
-  const reload = useCallback(async () => {
-    const result = await apiGet<{ photos: TournamentWinnerPhotoItem[] }>(
-      "/api/admin/tournament-photos",
-    );
-    if (result.ok) setPhotos(result.data.photos);
-  }, []);
-
   const ensureAlbum = async () => {
     if (!slug) {
       setError("Choose a tournament first.");
@@ -369,7 +369,7 @@ export function TournamentWinnerPhotosManager({
 
     setAlt("");
     setMessage("Photo added.");
-    await reload();
+    setPhotos((current) => [...current, create.data.photo]);
     router.refresh();
   };
 
@@ -387,7 +387,7 @@ export function TournamentWinnerPhotosManager({
       return;
     }
     setMessage("Photo removed.");
-    await reload();
+    setPhotos((current) => current.filter((photo) => photo.id !== id));
     router.refresh();
   };
 

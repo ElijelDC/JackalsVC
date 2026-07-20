@@ -1,48 +1,8 @@
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { TournamentSetScores } from "@/components/tournaments/TournamentSetScores";
 import { cn } from "@/lib/utils";
 import type { PlayoffBracket, PlayoffMatch } from "@/lib/tournament-archive";
-
-function SetScores({
-  sets,
-  winnerIsA,
-}: {
-  sets: [number, number][];
-  winnerIsA: boolean;
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
-      {sets.map(([a, b], i) => {
-        const aWon = a > b;
-        const bWon = b > a;
-        return (
-          <span
-            key={i}
-            className="inline-flex min-w-[3.25rem] items-center justify-center gap-1 border border-white/10 bg-black/30 px-2 py-1 font-display text-sm tabular-nums"
-          >
-            <span
-              className={cn(
-                aWon && winnerIsA ? "text-white" : "text-zinc-500",
-                aWon && "font-bold text-white",
-              )}
-            >
-              {a}
-            </span>
-            <span className="text-zinc-600">–</span>
-            <span
-              className={cn(
-                bWon && !winnerIsA ? "text-white" : "text-zinc-500",
-                bWon && "font-bold text-white",
-              )}
-            >
-              {b}
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
 
 function MatchCard({ match, featured }: { match: PlayoffMatch; featured?: boolean }) {
   const winnerIsA = match.winner === match.teamA;
@@ -128,7 +88,11 @@ function MatchCard({ match, featured }: { match: PlayoffMatch; featured?: boolea
             </div>
           </div>
 
-          <SetScores sets={match.sets} winnerIsA={winnerIsA} />
+          <TournamentSetScores
+            sets={match.sets}
+            slotCount={Math.max(match.sets.length, 2)}
+            winnerIsA={winnerIsA}
+          />
         </div>
       </div>
     </article>

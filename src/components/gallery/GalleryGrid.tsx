@@ -73,8 +73,12 @@ export function GalleryGrid({ albums }: { albums: GalleryAlbumItem[] }) {
           className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-3"
           stagger={80}
         >
-          {filtered.map((album) => (
-            <GalleryAlbumCard key={album.id} album={album} />
+          {filtered.map((album, index) => (
+            <GalleryAlbumCard
+              key={album.id}
+              album={album}
+              priority={index < 2}
+            />
           ))}
         </StaggerIn>
       )}

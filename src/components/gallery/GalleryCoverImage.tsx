@@ -1,6 +1,3 @@
-"use client";
-
-import { useState } from "react";
 import { GalleryImage } from "@/components/gallery/GalleryImage";
 import { fillImageStyle } from "@/lib/fill-image-layout";
 import { cn } from "@/lib/utils";
@@ -10,7 +7,7 @@ export function GalleryCoverImage({
   alt,
   className,
   sizes = "(max-width: 768px) 100vw, 33vw",
-  priority = true,
+  priority = false,
 }: {
   src: string;
   alt: string;

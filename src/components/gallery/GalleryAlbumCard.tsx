@@ -12,7 +12,13 @@ export type GalleryAlbumItem = {
   photoCount: number;
 };
 
-export function GalleryAlbumCard({ album }: { album: GalleryAlbumItem }) {
+export function GalleryAlbumCard({
+  album,
+  priority = false,
+}: {
+  album: GalleryAlbumItem;
+  priority?: boolean;
+}) {
   return (
     <Link href={`/gallery/${album.id}`} className="group block h-full">
       <article className="motion-hover-lift relative flex h-full flex-col overflow-hidden border border-white/10 bg-jackals-surface/90 shadow-[0_20px_60px_rgba(0,0,0,0.35)] transition-all duration-300 hover:border-jackals-red/40 hover:shadow-[0_24px_70px_rgba(232,34,42,0.12)]">
@@ -33,6 +39,7 @@ export function GalleryAlbumCard({ album }: { album: GalleryAlbumItem }) {
             src={album.coverImageUrl}
             alt={album.title}
             className="h-full w-full"
+            priority={priority}
           />
           <div className="absolute left-2 top-2 z-10 inline-flex items-center gap-1 border border-white/20 bg-black/60 px-2 py-1 text-[10px] font-semibold text-white backdrop-blur-sm sm:left-3 sm:top-3 sm:gap-1.5 sm:px-3 sm:py-1.5 sm:text-xs">
             <Images className="h-3 w-3 text-jackals-red-light sm:h-3.5 sm:w-3.5" />

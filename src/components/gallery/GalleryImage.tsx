@@ -38,7 +38,6 @@ export function GalleryImage({
       src={imageSrc}
       alt={alt}
       fill
-      unoptimized
       priority={priority}
       loading={priority ? undefined : "lazy"}
       className={className}

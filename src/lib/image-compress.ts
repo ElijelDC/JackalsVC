@@ -1,3 +1,5 @@
+import "server-only";
+
 import convert from "heic-convert";
 import path from "node:path";
 import sharp from "sharp";

@@ -1,72 +1,8 @@
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { TournamentSetScores } from "@/components/tournaments/TournamentSetScores";
 import { cn } from "@/lib/utils";
 import type { PoolMatchResult } from "@/lib/tournament-archive";
-
-function SetScores({
-  sets,
-  slotCount,
-}: {
-  sets: [number, number][];
-  slotCount: number;
-}) {
-  const slots: ([number, number] | null)[] = Array.from(
-    { length: slotCount },
-    (_, i) => sets[i] ?? null,
-  );
-
-  return (
-    <div
-      className={cn(
-        "grid shrink-0 gap-1.5",
-        slotCount === 1 && "w-[3.5rem] grid-cols-1",
-        slotCount === 2 && "w-[7rem] grid-cols-2",
-        slotCount >= 3 && "w-[10.5rem] grid-cols-3",
-      )}
-    >
-      {slots.map((set, i) => {
-        if (!set) {
-          return (
-            <span
-              key={i}
-              className="inline-flex h-8 items-center justify-center border border-transparent px-1 font-display text-sm tabular-nums text-transparent"
-              aria-hidden
-            >
-              00–00
-            </span>
-          );
-        }
-        const [a, b] = set;
-        const aWon = a > b;
-        const bWon = b > a;
-        return (
-          <span
-            key={i}
-            className="inline-flex h-8 w-full items-center justify-center gap-0.5 border border-white/10 bg-black/30 px-1 font-display text-sm tabular-nums"
-          >
-            <span
-              className={cn(
-                "inline-block w-[1.25rem] text-right",
-                aWon ? "font-bold text-white" : "text-zinc-500",
-              )}
-            >
-              {a}
-            </span>
-            <span className="text-zinc-600">–</span>
-            <span
-              className={cn(
-                "inline-block w-[1.25rem] text-left",
-                bWon ? "font-bold text-white" : "text-zinc-500",
-              )}
-            >
-              {b}
-            </span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
 
 function PoolMatchCard({
   match,
@@ -137,7 +73,12 @@ function PoolMatchCard({
             </div>
           </div>
 
-          <SetScores sets={match.sets} slotCount={scoreSlots} />
+          <TournamentSetScores
+            sets={match.sets}
+            slotCount={scoreSlots}
+            isDraw={isDraw}
+            winnerIsA={winnerIsA}
+          />
         </div>
 
         <p className="mt-3 min-h-4 text-[11px] text-zinc-500">

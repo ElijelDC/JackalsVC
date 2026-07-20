@@ -101,7 +101,7 @@ export function buildSponsorPresentationHtml(
           title: "Club Partner",
           priceLabel: "€150",
           blurb:
-            "Website listing on Our Sponsors, plus Instagram and Facebook recognition with a thank-you post.",
+            "Website listing, plus Instagram and Facebook recognition with a thank-you post.",
           imageDataUri: packageExamples.club,
         }
       : null,

@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
@@ -10,6 +8,7 @@ import type { TournamentGalleryAlbumTeaser } from "@/components/tournaments/Tour
 import { TournamentPlayoffs } from "@/components/tournaments/TournamentPlayoffs";
 import { TournamentPodium } from "@/components/tournaments/TournamentPodium";
 import { TournamentPoolMatches } from "@/components/tournaments/TournamentPoolMatches";
+import { TournamentRulesCta } from "@/components/tournaments/TournamentRulesCta";
 import { TournamentScheduleTable } from "@/components/tournaments/TournamentScheduleTable";
 import { TournamentStandingsTables } from "@/components/tournaments/TournamentStandingsTables";
 import { TournamentWinnerGallery } from "@/components/tournaments/TournamentWinnerGallery";
@@ -199,28 +198,14 @@ export function TournamentHubPage({
 
             {rulesPdfUrl ? (
               <StaggerIn
-                className="mx-auto mt-8 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:flex-wrap sm:justify-center"
+                className="mx-auto mt-8"
                 stagger={80}
                 variant="pop"
               >
-                <a
-                  href={rulesPdfUrl}
-                  download="jvc-mixed-beach-2v2-tournament-rules.pdf"
-                  className="block w-full sm:w-auto"
-                >
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Download rules PDF
-                  </Button>
-                </a>
-                <Link href={rulesPreviewPath} className="block w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                  >
-                    Preview rules
-                  </Button>
-                </Link>
+                <TournamentRulesCta
+                  rulesPdfUrl={rulesPdfUrl}
+                  rulesPreviewPath={rulesPreviewPath}
+                />
               </StaggerIn>
             ) : (
               <p className="mt-8 text-sm text-zinc-500">
@@ -269,26 +254,11 @@ export function TournamentHubPage({
               <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-zinc-400">
                 Preview the official rules online, or download a PDF.
               </p>
-              <div className="mx-auto mt-6 flex w-full max-w-md flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-                <a
-                  href={rulesPdfUrl}
-                  download="jvc-mixed-beach-2v2-tournament-rules.pdf"
-                  className="block w-full sm:w-auto"
-                >
-                  <Button size="lg" className="w-full sm:w-auto">
-                    Download rules PDF
-                  </Button>
-                </a>
-                <Link href={rulesPreviewPath} className="block w-full sm:w-auto">
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    className="w-full sm:w-auto"
-                  >
-                    Preview rules
-                  </Button>
-                </Link>
-              </div>
+              <TournamentRulesCta
+                rulesPdfUrl={rulesPdfUrl}
+                rulesPreviewPath={rulesPreviewPath}
+                layout="stacked"
+              />
             </div>
           </AnimateIn>
         ) : null}

@@ -55,6 +55,7 @@ export function GalleryAlbumDetailView({ album }: { album: GalleryAlbumDetail })
                   alt={album.title}
                   className="h-full w-full"
                   sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
                 />
               </div>
             </AnimateIn>
