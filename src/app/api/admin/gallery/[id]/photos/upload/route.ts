@@ -23,7 +23,13 @@ export async function POST(
     return jsonError("Album not found", 404);
   }
 
-  const formData = await request.formData();
+  const formData = await request.formData().catch(() => null);
+  if (!formData) {
+    return jsonError(
+      "Upload was too large for the server to read. Try fewer photos at once, or wait a moment and try again.",
+      413,
+    );
+  }
   const files = formData
     .getAll("files")
     .filter((entry): entry is File => entry instanceof File && entry.size > 0);

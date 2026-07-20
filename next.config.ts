@@ -9,8 +9,11 @@ const nextConfig: NextConfig = {
     root: projectRoot,
   },
   // Helps Turbopack resolve date-fns subpath exports reliably.
+  // Gallery bulk uploads send multiple compressed images per request; the
+  // default 10MB proxy buffer truncates the body and FormData parsing fails.
   experimental: {
     optimizePackageImports: ["date-fns"],
+    proxyClientMaxBodySize: "50mb",
   },
   async rewrites() {
     return {
