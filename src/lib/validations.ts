@@ -226,11 +226,13 @@ export const galleryAlbumSchema = z.object({
   featured: z.boolean(),
   sortOrder: z.number().int().min(0).default(0),
   tournamentSlug: z
-    .string()
+    .union([z.string(), z.null()])
     .optional()
-    .nullable()
     .transform((val) => {
-      if (val == null) return null;
+      // Keep "omitted" distinct from explicit null (unlink), so gallery edits
+      // don't wipe an existing tournament link.
+      if (val === undefined) return undefined;
+      if (val === null) return null;
       const trimmed = val.trim();
       return trimmed ? trimmed : null;
     }),

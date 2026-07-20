@@ -43,6 +43,9 @@ export async function PUT(
   if (parseError || !data) return parseError!;
 
   try {
+    const existing = await prisma.galleryAlbum.findUnique({ where: { id } });
+    if (!existing) return jsonError("Album not found", 404);
+
     const album = await prisma.galleryAlbum.update({
       where: { id },
       data: {
@@ -52,7 +55,11 @@ export async function PUT(
         category: data.category,
         featured: data.featured,
         sortOrder: data.sortOrder,
-        tournamentSlug: data.tournamentSlug ?? null,
+        // Keep the tournament link unless the client explicitly sends a new value
+        // (including null to unlink). Omitting the field must not wipe it.
+        ...(data.tournamentSlug !== undefined
+          ? { tournamentSlug: data.tournamentSlug }
+          : {}),
       },
     });
     return NextResponse.json({ album });

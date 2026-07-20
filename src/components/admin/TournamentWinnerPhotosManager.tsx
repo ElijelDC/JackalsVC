@@ -4,9 +4,9 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Images, Loader2, Upload } from "lucide-react";
-import { AdminFormCard, AdminListItem } from "@/components/admin/AdminForm";
+import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
@@ -79,14 +79,23 @@ export function TournamentWinnerPhotosManager({
   initialCovers: TournamentCoverItem[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const inputRef = useRef<HTMLInputElement>(null);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState(initialPhotos);
   const [albums, setAlbums] = useState(initialAlbums);
   const [covers, setCovers] = useState(initialCovers);
-  const [slug, setSlug] = useState(tournaments[0]?.slug ?? "");
+  const tournamentParam = searchParams.get("tournament")?.trim() ?? "";
+  const initialSlug =
+    (tournamentParam &&
+      tournaments.some((t) => t.slug === tournamentParam) &&
+      tournamentParam) ||
+    tournaments[0]?.slug ||
+    "";
+  const [slug, setSlug] = useState(initialSlug);
   const [kind, setKind] = useState<TournamentWinnerPhotoKind>("PODIUM");
   const [alt, setAlt] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [coverLoading, setCoverLoading] = useState(false);
   const [albumLoading, setAlbumLoading] = useState(false);
@@ -106,6 +115,30 @@ export function TournamentWinnerPhotosManager({
   }, [initialCovers]);
 
   useEffect(() => {
+    if (
+      tournamentParam &&
+      tournaments.some((t) => t.slug === tournamentParam) &&
+      tournamentParam !== slug
+    ) {
+      setSlug(tournamentParam);
+    }
+  }, [tournamentParam, tournaments, slug]);
+
+  const selectTournament = (nextSlug: string) => {
+    setSlug(nextSlug);
+    const params = new URLSearchParams(searchParams.toString());
+    if (nextSlug) params.set("tournament", nextSlug);
+    else params.delete("tournament");
+    const query = params.toString();
+    router.replace(
+      query
+        ? `/admin/tournament-photos?${query}`
+        : "/admin/tournament-photos",
+      { scroll: false },
+    );
+  };
+
+  useEffect(() => {
     return () => {
       if (cropSrc) URL.revokeObjectURL(cropSrc);
     };
@@ -123,12 +156,14 @@ export function TournamentWinnerPhotosManager({
 
   const linkableAlbums = useMemo(
     () =>
-      albums.filter(
-        (album) =>
-          album.tournamentSlug == null || album.tournamentSlug === slug,
-      ),
+      albums.filter((album) => album.tournamentSlug !== slug),
     [albums, slug],
   );
+
+  const tournamentTitleBySlug = useMemo(() => {
+    const map = new Map(tournaments.map((t) => [t.slug, t.title]));
+    return map;
+  }, [tournaments]);
 
   useEffect(() => {
     setLinkAlbumId("");
@@ -316,6 +351,10 @@ export function TournamentWinnerPhotosManager({
   };
 
   const uploadFile = async (file: File) => {
+    if (editingId) {
+      setError("Finish or cancel editing before uploading a new photo.");
+      return;
+    }
     if (!slug) {
       setError("Choose a tournament first.");
       return;
@@ -373,6 +412,58 @@ export function TournamentWinnerPhotosManager({
     router.refresh();
   };
 
+  const startEdit = (photo: TournamentWinnerPhotoItem) => {
+    beginAdminEdit(() => {
+      setEditingId(photo.id);
+      selectTournament(photo.tournamentSlug);
+      setKind(
+        (TOURNAMENT_WINNER_PHOTO_KINDS as readonly string[]).includes(photo.kind)
+          ? (photo.kind as TournamentWinnerPhotoKind)
+          : "OTHER",
+      );
+      setAlt(photo.alt ?? "");
+      setError(null);
+      setMessage(null);
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setKind("PODIUM");
+    setAlt("");
+    setError(null);
+    setMessage(null);
+  };
+
+  const saveEdit = async () => {
+    if (!editingId) return;
+    setLoading(true);
+    setError(null);
+    setMessage(null);
+    const result = await apiPatch<{ photo: TournamentWinnerPhotoItem }>(
+      "/api/admin/tournament-photos",
+      {
+        id: editingId,
+        kind,
+        alt: alt.trim() || null,
+      },
+      "Could not update photo.",
+    );
+    setLoading(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setPhotos((current) =>
+      current.map((photo) =>
+        photo.id === result.data.photo.id ? result.data.photo : photo,
+      ),
+    );
+    cancelEdit();
+    setMessage("Photo updated.");
+    router.refresh();
+  };
+
   const onDelete = async (id: string) => {
     setDeletingId(id);
     setError(null);
@@ -386,6 +477,7 @@ export function TournamentWinnerPhotosManager({
       setError(result.error);
       return;
     }
+    if (editingId === id) cancelEdit();
     setMessage("Photo removed.");
     setPhotos((current) => current.filter((photo) => photo.id !== id));
     router.refresh();
@@ -549,15 +641,22 @@ export function TournamentWinnerPhotosManager({
                 >
                   <option value="">
                     {linkableAlbums.length === 0
-                      ? "No unlinked albums available"
+                      ? "No other albums available"
                       : "Choose an album…"}
                   </option>
-                  {linkableAlbums.map((album) => (
-                    <option key={album.id} value={album.id}>
-                      {album.title} ({album._count.photos} photo
-                      {album._count.photos === 1 ? "" : "s"})
-                    </option>
-                  ))}
+                  {linkableAlbums.map((album) => {
+                    const linkedTitle = album.tournamentSlug
+                      ? tournamentTitleBySlug.get(album.tournamentSlug) ??
+                        album.tournamentSlug
+                      : null;
+                    return (
+                      <option key={album.id} value={album.id}>
+                        {album.title} ({album._count.photos} photo
+                        {album._count.photos === 1 ? "" : "s"})
+                        {linkedTitle ? ` — linked to ${linkedTitle}` : ""}
+                      </option>
+                    );
+                  })}
                 </Select>
               </div>
               <Button
@@ -576,13 +675,26 @@ export function TournamentWinnerPhotosManager({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
         <AdminFormCard
-          title="Add winner photo"
+          title={editingId ? "Edit winner photo" : "Add winner photo"}
           error={error}
           message={message}
-          submitLabel={loading ? "Uploading…" : "Choose image"}
+          submitLabel={
+            loading
+              ? editingId
+                ? "Saving…"
+                : "Uploading…"
+              : editingId
+                ? "Save changes"
+                : "Choose image"
+          }
           loading={loading}
+          onCancel={editingId ? cancelEdit : undefined}
           onSubmit={(e) => {
             e.preventDefault();
+            if (editingId) {
+              void saveEdit();
+              return;
+            }
             inputRef.current?.click();
           }}
         >
@@ -591,8 +703,8 @@ export function TournamentWinnerPhotosManager({
             <Select
               id="tournament-slug"
               value={slug}
-              onChange={(e) => setSlug(e.target.value)}
-              disabled={loading || tournaments.length === 0}
+              onChange={(e) => selectTournament(e.target.value)}
+              disabled={loading || Boolean(editingId) || tournaments.length === 0}
             >
               {tournaments.length === 0 ? (
                 <option value="">No tournaments configured</option>
@@ -625,7 +737,7 @@ export function TournamentWinnerPhotosManager({
           </div>
 
           <div>
-            <Label htmlFor="photo-alt">Caption (optional)</Label>
+            <Label htmlFor="photo-alt">Caption</Label>
             <Input
               id="photo-alt"
               value={alt}
@@ -635,6 +747,12 @@ export function TournamentWinnerPhotosManager({
             />
           </div>
 
+          {editingId ? (
+            <p className="text-sm text-zinc-400">
+              Update the photo type or caption, then save. The image itself stays
+              the same — delete and re-upload to replace it.
+            </p>
+          ) : (
           <div
             className={cn(
               "relative flex flex-col items-center justify-center gap-3 border border-dashed border-white/20 bg-white/[0.02] px-4 py-8 text-center transition-colors",
@@ -684,6 +802,7 @@ export function TournamentWinnerPhotosManager({
               Browse files
             </Button>
           </div>
+          )}
         </AdminFormCard>
 
         <div className="space-y-3">
@@ -717,6 +836,7 @@ export function TournamentWinnerPhotosManager({
                 }
                 subtitle={photo.alt || "No caption"}
                 note={photo.imageUrl}
+                onEdit={() => startEdit(photo)}
                 onDelete={() => void onDelete(photo.id)}
                 deleting={deletingId === photo.id}
                 formAction={{

@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { TournamentWinnerPhotosManager } from "@/components/admin/TournamentWinnerPhotosManager";
 import { prisma } from "@/lib/prisma";
 import { TOURNAMENT_ARCHIVE } from "@/lib/tournament-archive";
@@ -7,7 +8,7 @@ export const metadata = {
   title: "Admin · Tournament photos",
 };
 
-export default async function AdminTournamentPhotosPage() {
+async function TournamentPhotosAdmin() {
   const bySlug = new Map<string, string>();
   for (const hub of TOURNAMENT_HUBS) {
     bySlug.set(hub.slug, hub.title);
@@ -52,5 +53,13 @@ export default async function AdminTournamentPhotosPage() {
       initialAlbums={albums}
       initialCovers={covers}
     />
+  );
+}
+
+export default function AdminTournamentPhotosPage() {
+  return (
+    <Suspense fallback={<p className="text-sm text-white/60">Loading…</p>}>
+      <TournamentPhotosAdmin />
+    </Suspense>
   );
 }

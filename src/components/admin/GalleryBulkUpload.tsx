@@ -8,11 +8,17 @@ import { Card } from "@/components/ui/Card";
 import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
 import {
   GALLERY_ACCEPTED_IMAGE_TYPES,
+  GALLERY_CLIENT_COMPRESS_CONCURRENCY,
   GALLERY_MAX_BULK_FILES,
+  GALLERY_MAX_PREVIEW_THUMBS,
   GALLERY_MAX_SELECTION,
   GALLERY_MAX_UPLOAD_BYTES,
   GALLERY_UPLOAD_BATCH_DELAY_MS,
 } from "@/lib/gallery-upload-config";
+import {
+  compressImageFileForUpload,
+  mapWithConcurrency,
+} from "@/lib/client-image-compress";
 import { isAcceptedImageFile } from "@/lib/image-upload-types";
 import { apiPostForm } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
@@ -26,7 +32,7 @@ type UploadResponse = {
 type PreviewFile = {
   id: string;
   file: File;
-  previewUrl: string;
+  previewUrl: string | null;
   tooLarge: boolean;
 };
 
@@ -42,6 +48,10 @@ function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function revokePreview(entry: PreviewFile) {
+  if (entry.previewUrl) URL.revokeObjectURL(entry.previewUrl);
+}
+
 export function GalleryBulkUpload({
   albumId,
   onUploaded,
@@ -50,6 +60,7 @@ export function GalleryBulkUpload({
   onUploaded: (result?: UploadResponse) => void | Promise<void>;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const filesRef = useRef<PreviewFile[]>([]);
   const [files, setFiles] = useState<PreviewFile[]>([]);
   const [dragging, setDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -57,13 +68,15 @@ export function GalleryBulkUpload({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
+  filesRef.current = files;
+
   useEffect(() => {
     return () => {
-      for (const entry of files) {
-        URL.revokeObjectURL(entry.previewUrl);
+      for (const entry of filesRef.current) {
+        revokePreview(entry);
       }
     };
-  }, [files]);
+  }, []);
 
   const addFiles = (incoming: FileList | File[]) => {
     const images = [...incoming].filter((file) => isAcceptedImageFile(file));
@@ -80,10 +93,14 @@ export function GalleryBulkUpload({
           skipped += 1;
           continue;
         }
+        const previewUrl =
+          merged.length < GALLERY_MAX_PREVIEW_THUMBS
+            ? URL.createObjectURL(file)
+            : null;
         merged.push({
-          id: `${file.name}-${file.lastModified}-${file.size}`,
+          id: `${file.name}-${file.lastModified}-${file.size}-${merged.length}`,
           file,
-          previewUrl: URL.createObjectURL(file),
+          previewUrl,
           tooLarge: file.size > GALLERY_MAX_UPLOAD_BYTES,
         });
       }
@@ -100,14 +117,14 @@ export function GalleryBulkUpload({
   const removeFile = (id: string) => {
     setFiles((current) => {
       const target = current.find((entry) => entry.id === id);
-      if (target) URL.revokeObjectURL(target.previewUrl);
+      if (target) revokePreview(target);
       return current.filter((entry) => entry.id !== id);
     });
   };
 
   const clearFiles = () => {
     for (const entry of files) {
-      URL.revokeObjectURL(entry.previewUrl);
+      revokePreview(entry);
     }
     setFiles([]);
     if (inputRef.current) inputRef.current.value = "";
@@ -127,9 +144,28 @@ export function GalleryBulkUpload({
     setLoading(true);
     setError(null);
     setMessage(null);
-    setUploadProgress(null);
+    setUploadProgress(
+      `Preparing ${validFiles.length} photo${validFiles.length === 1 ? "" : "s"}…`,
+    );
 
-    const batches = chunkFiles(validFiles, GALLERY_MAX_BULK_FILES);
+    let prepared: File[];
+    try {
+      prepared = await mapWithConcurrency(
+        validFiles,
+        GALLERY_CLIENT_COMPRESS_CONCURRENCY,
+        async (entry) => compressImageFileForUpload(entry.file, "gallery"),
+        (completed, total) => {
+          setUploadProgress(`Compressing ${completed} of ${total}…`);
+        },
+      );
+    } catch {
+      setLoading(false);
+      setUploadProgress(null);
+      setError("Could not prepare images for upload. Please try again.");
+      return;
+    }
+
+    const batches = chunkFiles(prepared, GALLERY_MAX_BULK_FILES);
     let uploadedTotal = 0;
     const warnings: string[] = [];
     let latestCoverImageUrl: string | undefined;
@@ -137,14 +173,12 @@ export function GalleryBulkUpload({
     for (let index = 0; index < batches.length; index += 1) {
       const batch = batches[index]!;
       setUploadProgress(
-        batches.length > 1
-          ? `Uploading batch ${index + 1} of ${batches.length} (${batch.length} photo${batch.length === 1 ? "" : "s"})…`
-          : `Uploading ${batch.length} photo${batch.length === 1 ? "" : "s"}…`,
+        `Uploading ${Math.min(uploadedTotal + batch.length, prepared.length)} of ${prepared.length}… (batch ${index + 1}/${batches.length})`,
       );
 
       const formData = new FormData();
-      for (const entry of batch) {
-        formData.append("files", entry.file);
+      for (const file of batch) {
+        formData.append("files", file);
       }
 
       const result = await apiPostForm<UploadResponse>(
@@ -200,6 +234,9 @@ export function GalleryBulkUpload({
     files.reduce((sum, entry) => sum + entry.file.size, 0) / (1024 * 1024)
   ).toFixed(1);
   const hasOversized = files.some((entry) => entry.tooLarge);
+  const previewEntries = files.filter((entry) => entry.previewUrl);
+  const hiddenCount = files.length - previewEntries.length;
+  const uploadCount = files.filter((entry) => !entry.tooLarge).length;
 
   return (
     <Card className="mb-8">
@@ -208,8 +245,8 @@ export function GalleryBulkUpload({
       </h3>
       <p className="mb-4 text-sm text-zinc-400">
         Drag images here or browse your device. Up to {GALLERY_MAX_SELECTION}{" "}
-        images per session ({GALLERY_MAX_BULK_FILES} at a time with a short pause
-        between batches), 15 MB each.
+        images per session — compressed in your browser first, then sent in
+        batches of {GALLERY_MAX_BULK_FILES} (15 MB max per original).
       </p>
 
       <SuccessBanner message={message} />
@@ -278,43 +315,55 @@ export function GalleryBulkUpload({
             </Button>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {files.map((entry) => (
-              <div
-                key={entry.id}
-                className={cn(
-                  "relative overflow-hidden rounded-sm border",
-                  entry.tooLarge ? "border-red-500/50" : "border-white/10",
-                )}
-              >
-                <div className="relative aspect-square">
-                  <Image
-                    src={entry.previewUrl}
-                    alt={entry.file.name}
-                    fill
-                    sizes="120px"
-                    className="object-cover"
-                    unoptimized
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white transition-colors hover:bg-black"
-                    onClick={() => removeFile(entry.id)}
-                    aria-label={`Remove ${entry.file.name}`}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
+          {previewEntries.length > 0 && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {previewEntries.map((entry) => (
+                <div
+                  key={entry.id}
+                  className={cn(
+                    "relative overflow-hidden rounded-sm border",
+                    entry.tooLarge ? "border-red-500/50" : "border-white/10",
+                  )}
+                >
+                  <div className="relative aspect-square">
+                    <Image
+                      src={entry.previewUrl!}
+                      alt={entry.file.name}
+                      fill
+                      sizes="120px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <button
+                      type="button"
+                      className="absolute right-1 top-1 rounded-full bg-black/70 p-1 text-white transition-colors hover:bg-black"
+                      onClick={() => removeFile(entry.id)}
+                      aria-label={`Remove ${entry.file.name}`}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                  <p className="truncate px-2 py-1.5 text-xs text-zinc-400">
+                    {entry.file.name}
+                  </p>
                 </div>
-                <p className="truncate px-2 py-1.5 text-xs text-zinc-400">{entry.file.name}</p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
+
+          {hiddenCount > 0 && (
+            <p className="text-sm text-zinc-500">
+              +{hiddenCount} more image{hiddenCount === 1 ? "" : "s"} queued
+              (previews limited to keep the page responsive). Clear all to
+              remove them, or upload as-is.
+            </p>
+          )}
 
           <Button type="button" disabled={loading || hasOversized} onClick={() => void handleUpload()}>
             <Upload className="h-4 w-4" />
             {loading
               ? "Uploading..."
-              : `Upload ${files.filter((entry) => !entry.tooLarge).length} photo${files.filter((entry) => !entry.tooLarge).length === 1 ? "" : "s"}`}
+              : `Upload ${uploadCount} photo${uploadCount === 1 ? "" : "s"}`}
           </Button>
         </div>
       )}

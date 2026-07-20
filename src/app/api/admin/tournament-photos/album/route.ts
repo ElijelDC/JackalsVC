@@ -118,14 +118,8 @@ export async function PATCH(request: Request) {
   });
   if (!target) return jsonError("Album not found.", 404);
 
-  if (target.tournamentSlug && target.tournamentSlug !== slug) {
-    return jsonError(
-      "That album is already linked to another tournament. Unlink it first.",
-      400,
-    );
-  }
-
   await prisma.$transaction([
+    // One album per tournament: clear any other album already on this slug.
     prisma.galleryAlbum.updateMany({
       where: {
         tournamentSlug: slug,
@@ -133,6 +127,7 @@ export async function PATCH(request: Request) {
       },
       data: { tournamentSlug: null },
     }),
+    // Reassign is allowed — linking here moves the album off any previous tournament.
     prisma.galleryAlbum.update({
       where: { id: target.id },
       data: {

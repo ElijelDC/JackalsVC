@@ -218,16 +218,15 @@ function FeaturedTournamentCard({
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_100%,rgba(232,34,42,0.35),transparent_70%)]"
         />
 
-        <div className="absolute left-4 top-4 sm:left-6 sm:top-6">
-          <span className="inline-flex bg-jackals-red px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white">
-            Completed
-          </span>
-        </div>
-
         <div className="absolute inset-x-0 bottom-0 px-5 pb-5 sm:px-8 sm:pb-7">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-jackals-red-light sm:text-xs">
-            {entry.dateLabel}
-          </p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span className="inline-flex bg-jackals-red px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest text-white">
+              Completed
+            </span>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-jackals-red-light sm:text-xs">
+              {entry.dateLabel}
+            </p>
+          </div>
           <h2 className="mt-2 font-display text-2xl font-bold uppercase tracking-wide text-white drop-shadow-sm sm:text-4xl">
             {entry.title}
           </h2>

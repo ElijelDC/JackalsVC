@@ -1,17 +1,163 @@
+"use client";
+
 import Image from "next/image";
+import { useRef, useState } from "react";
 import { AnimateIn } from "@/components/motion/AnimateIn";
-import { StaggerIn } from "@/components/motion/StaggerIn";
 import type { TournamentArchiveEntry } from "@/lib/tournament-archive";
+import { cn } from "@/lib/utils";
+
+const SWIPE_THRESHOLD_PX = 48;
+/** One desktop row fits this many before we switch to a carousel. */
+const DESKTOP_ROW_CAPACITY = 3;
+
+function WinnerPhotoSlide({
+  photo,
+  priority,
+}: {
+  photo: TournamentArchiveEntry["winnerPhotos"][number];
+  priority?: boolean;
+}) {
+  return (
+    <figure className="relative aspect-[4/3] overflow-hidden border border-white/10 bg-white/[0.02]">
+      <Image
+        src={photo.src}
+        alt={photo.alt}
+        fill
+        className="object-cover"
+        sizes="(max-width: 1024px) 100vw, 720px"
+        priority={priority}
+        unoptimized={photo.src.startsWith("/uploads/")}
+      />
+      <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-4 pt-12 text-sm text-zinc-100">
+        {photo.alt}
+      </figcaption>
+    </figure>
+  );
+}
+
+function WinnerPhotoCarousel({
+  photos,
+}: {
+  photos: TournamentArchiveEntry["winnerPhotos"];
+}) {
+  const [index, setIndex] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const touchStartX = useRef(0);
+  const touchStartY = useRef(0);
+  const draggingHorizontally = useRef(false);
+
+  const goTo = (nextIndex: number) => {
+    setIndex((nextIndex + photos.length) % photos.length);
+  };
+
+  const handleTouchStart = (clientX: number, clientY: number) => {
+    touchStartX.current = clientX;
+    touchStartY.current = clientY;
+    draggingHorizontally.current = false;
+    setIsDragging(true);
+    setDragOffset(0);
+  };
+
+  const handleTouchMove = (clientX: number, clientY: number) => {
+    if (!isDragging) return;
+    const deltaX = clientX - touchStartX.current;
+    const deltaY = clientY - touchStartY.current;
+
+    if (!draggingHorizontally.current) {
+      if (Math.abs(deltaX) < 8 && Math.abs(deltaY) < 8) return;
+      draggingHorizontally.current = Math.abs(deltaX) > Math.abs(deltaY);
+    }
+
+    if (draggingHorizontally.current) {
+      setDragOffset(deltaX);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (draggingHorizontally.current) {
+      if (dragOffset <= -SWIPE_THRESHOLD_PX) goTo(index + 1);
+      else if (dragOffset >= SWIPE_THRESHOLD_PX) goTo(index - 1);
+    }
+    setDragOffset(0);
+    setIsDragging(false);
+    draggingHorizontally.current = false;
+  };
+
+  return (
+    <div>
+      <div
+        className="overflow-hidden touch-pan-y"
+        onTouchStart={(event) =>
+          handleTouchStart(event.touches[0]!.clientX, event.touches[0]!.clientY)
+        }
+        onTouchMove={(event) =>
+          handleTouchMove(event.touches[0]!.clientX, event.touches[0]!.clientY)
+        }
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+        aria-roledescription="carousel"
+        aria-label="Winner photos"
+      >
+        <div
+          className={cn(
+            "flex will-change-transform",
+            isDragging
+              ? "transition-none"
+              : "transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
+          )}
+          style={{
+            transform: `translateX(calc(-${index * 100}% + ${dragOffset}px))`,
+          }}
+        >
+          {photos.map((photo, photoIndex) => (
+            <div
+              key={`${photo.src}-${photoIndex}`}
+              className="w-full shrink-0 select-none px-0.5"
+              aria-hidden={photoIndex !== index}
+            >
+              <WinnerPhotoSlide photo={photo} priority={photoIndex === 0} />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {photos.length > 1 ? (
+        <div className="mt-5 flex items-center justify-center gap-2">
+          {photos.map((photo, photoIndex) => (
+            <button
+              key={`${photo.src}-dot-${photoIndex}`}
+              type="button"
+              onClick={() => goTo(photoIndex)}
+              className={cn(
+                "h-2 rounded-full transition-all duration-300",
+                photoIndex === index
+                  ? "w-6 bg-jackals-red"
+                  : "w-2 bg-white/20 hover:bg-white/35",
+              )}
+              aria-label={`Show photo ${photoIndex + 1}`}
+              aria-current={photoIndex === index}
+            />
+          ))}
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function TournamentWinnerGallery({
   photos,
 }: {
   photos: TournamentArchiveEntry["winnerPhotos"];
 }) {
+  if (photos.length === 0) return null;
+
+  const fitsDesktopRow = photos.length <= DESKTOP_ROW_CAPACITY;
+
   return (
-    <section className="border-t border-white/10 py-16 sm:py-20">
+    <section className="border-b border-white/10 bg-jackals-surface/20 py-14 sm:py-16">
       <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-        <AnimateIn variant="blur-in" className="mb-10 text-center sm:mb-12">
+        <AnimateIn variant="blur-in" className="mb-8 text-center sm:mb-10">
           <p className="text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
             Gallery
           </p>
@@ -19,46 +165,34 @@ export function TournamentWinnerGallery({
             Winner photos
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Podium moments from the day — champions, runners-up, and bronze.
+            Podium moments from the day — swipe to browse.
           </p>
         </AnimateIn>
 
-        {photos.length === 0 ? (
-          <AnimateIn variant="pop-in">
-            <div className="border border-dashed border-white/15 bg-white/[0.02] px-6 py-14 text-center sm:px-10">
-              <p className="font-display text-xl font-bold text-white">
-                Photos coming soon
-              </p>
-              <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-zinc-400">
-                Winner and podium shots from the day will appear here shortly.
-              </p>
-            </div>
-          </AnimateIn>
-        ) : (
-          <StaggerIn
-            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-            stagger={70}
-            variant="pop"
+        {/* Mobile: always carousel */}
+        <div className={cn(fitsDesktopRow ? "lg:hidden" : undefined)}>
+          <WinnerPhotoCarousel photos={photos} />
+        </div>
+
+        {/* Desktop: single row when it fits */}
+        {fitsDesktopRow ? (
+          <div
+            className={cn(
+              "hidden gap-4 lg:grid",
+              photos.length === 1 && "lg:mx-auto lg:max-w-xl lg:grid-cols-1",
+              photos.length === 2 && "lg:grid-cols-2",
+              photos.length >= 3 && "lg:grid-cols-3",
+            )}
           >
-            {photos.map((photo) => (
-              <figure
-                key={photo.src}
-                className="group relative aspect-[4/3] overflow-hidden border border-white/10 bg-white/[0.02]"
-              >
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-                <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-3 pt-10 text-xs text-zinc-200">
-                  {photo.alt}
-                </figcaption>
-              </figure>
+            {photos.map((photo, photoIndex) => (
+              <WinnerPhotoSlide
+                key={`${photo.src}-row-${photoIndex}`}
+                photo={photo}
+                priority={photoIndex === 0}
+              />
             ))}
-          </StaggerIn>
-        )}
+          </div>
+        ) : null}
       </div>
     </section>
   );

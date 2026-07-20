@@ -23,6 +23,25 @@ export function isHeicFilename(filename: string): boolean {
   return /\.heic$/i.test(filename) || /\.heif$/i.test(filename);
 }
 
+/** Infer MIME from a filename extension (upload / storage helpers). */
+export function mimeFromFilename(filename: string): string {
+  const dot = filename.lastIndexOf(".");
+  const ext = dot >= 0 ? filename.slice(dot).toLowerCase() : "";
+  switch (ext) {
+    case ".png":
+      return "image/png";
+    case ".webp":
+      return "image/webp";
+    case ".gif":
+      return "image/gif";
+    case ".heic":
+    case ".heif":
+      return "image/heic";
+    default:
+      return "image/jpeg";
+  }
+}
+
 /** Resolve MIME when browsers omit type (common for iPhone HEIC). */
 export function resolveImageMimeType(
   file: Pick<File, "type" | "name">,

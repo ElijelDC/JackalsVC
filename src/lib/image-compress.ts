@@ -1,38 +1,16 @@
 import "server-only";
 
 import convert from "heic-convert";
-import path from "node:path";
 import sharp from "sharp";
-import { isHeicFilename } from "@/lib/image-upload-types";
+import {
+  PRESET_SETTINGS,
+  type ImageStoragePreset,
+} from "@/lib/image-storage-presets";
+import { isHeicFilename, mimeFromFilename } from "@/lib/image-upload-types";
 
-/** Tuned for visible quality — resize only when very large, high encode quality. */
-export type ImageStoragePreset = "gallery" | "profile" | "document";
-
-export const PRESET_SETTINGS = {
-  /** Full-screen gallery lightbox — cap pixel count, keep detail. */
-  gallery: { maxEdge: 2560, jpegQuality: 88, webpQuality: 90 },
-  /** Faces and avatars — slightly higher quality, moderate max size. */
-  profile: { maxEdge: 1600, jpegQuality: 90, webpQuality: 92 },
-  /** Payment proofs, IDs — preserve text legibility. */
-  document: { maxEdge: 2400, jpegQuality: 90, webpQuality: 92 },
-} as const;
-
-export function mimeFromFilename(filename: string): string {
-  const ext = path.extname(filename).toLowerCase();
-  switch (ext) {
-    case ".png":
-      return "image/png";
-    case ".webp":
-      return "image/webp";
-    case ".gif":
-      return "image/gif";
-    case ".heic":
-    case ".heif":
-      return "image/heic";
-    default:
-      return "image/jpeg";
-  }
-}
+export type { ImageStoragePreset } from "@/lib/image-storage-presets";
+export { PRESET_SETTINGS } from "@/lib/image-storage-presets";
+export { mimeFromFilename } from "@/lib/image-upload-types";
 
 async function decodeHeicToJpeg(input: Buffer): Promise<Buffer> {
   try {
@@ -49,6 +27,57 @@ async function decodeHeicToJpeg(input: Buffer): Promise<Buffer> {
   }
 }
 
+function needsOrientationFix(orientation: number | undefined) {
+  return orientation != null && orientation !== 1;
+}
+
+/**
+ * If the browser already resized/encoded to gallery targets, store bytes as-is
+ * (or only fix EXIF orientation) instead of a full mozjpeg re-encode.
+ */
+async function tryPassthroughOptimized(
+  input: Buffer,
+  preset: ImageStoragePreset,
+): Promise<{ buffer: Buffer; extension: string } | null> {
+  const { maxEdge, jpegQuality } = PRESET_SETTINGS[preset];
+  const image = sharp(input, { failOn: "none", unlimited: true });
+  const metadata = await image.metadata();
+  const width = metadata.width ?? 0;
+  const height = metadata.height ?? 0;
+  if (width <= 0 || height <= 0) return null;
+  if (width > maxEdge || height > maxEdge) return null;
+
+  const format = metadata.format;
+  if (format === "jpeg") {
+    if (!needsOrientationFix(metadata.orientation)) {
+      return { buffer: input, extension: "jpg" };
+    }
+    return {
+      buffer: await sharp(input, { failOn: "none", unlimited: true })
+        .rotate()
+        .jpeg({ quality: jpegQuality, mozjpeg: true })
+        .toBuffer(),
+      extension: "jpg",
+    };
+  }
+
+  if (format === "webp") {
+    if (!needsOrientationFix(metadata.orientation)) {
+      return { buffer: input, extension: "webp" };
+    }
+    const { webpQuality } = PRESET_SETTINGS[preset];
+    return {
+      buffer: await sharp(input, { failOn: "none", unlimited: true })
+        .rotate()
+        .webp({ quality: webpQuality, effort: 4 })
+        .toBuffer(),
+      extension: "webp",
+    };
+  }
+
+  return null;
+}
+
 export async function compressRasterImage(
   input: Buffer,
   mime: string,
@@ -57,6 +86,9 @@ export async function compressRasterImage(
   if (mime === "image/gif") {
     return { buffer: input, extension: "gif" };
   }
+
+  const passthrough = await tryPassthroughOptimized(input, preset);
+  if (passthrough) return passthrough;
 
   const { maxEdge, jpegQuality, webpQuality } = PRESET_SETTINGS[preset];
   const image = sharp(input, { failOn: "none", unlimited: true });

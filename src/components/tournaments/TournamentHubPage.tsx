@@ -151,6 +151,9 @@ export function TournamentHubPage({
             podium={archive.podium}
             brackets={archive.brackets}
           />
+          {archive.winnerPhotos.length > 0 ? (
+            <TournamentWinnerGallery photos={archive.winnerPhotos} />
+          ) : null}
           <TournamentPlayoffs
             playoffs={archive.playoffs}
             brackets={archive.brackets}
@@ -165,9 +168,6 @@ export function TournamentHubPage({
                 : undefined
             }
           />
-          {archive.winnerPhotos.length > 0 ? (
-            <TournamentWinnerGallery photos={archive.winnerPhotos} />
-          ) : null}
           {galleryAlbum ? (
             <TournamentGalleryLink album={galleryAlbum} />
           ) : null}

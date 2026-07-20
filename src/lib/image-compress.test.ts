@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { mimeFromFilename, PRESET_SETTINGS } from "@/lib/image-compress";
+import { PRESET_SETTINGS } from "@/lib/image-storage-presets";
+import { mimeFromFilename } from "@/lib/image-upload-types";
 
 describe("image-compress", () => {
   it("maps filenames to MIME types", () => {
