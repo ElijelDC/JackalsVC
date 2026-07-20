@@ -2,8 +2,8 @@ import { ACCEPTED_IMAGE_INPUT } from "@/lib/image-upload-types";
 
 export const GALLERY_MAX_UPLOAD_BYTES = 15 * 1024 * 1024;
 /**
- * Max images per upload request. Kept moderate so multipart bodies stay under
- * Next's proxyClientMaxBodySize (150mb) even when a few files compress poorly.
+ * Max images per upload request. Kept moderate for memory/CPU while the Next
+ * proxy body limit (300mb) covers larger compressed batches.
  */
 export const GALLERY_MAX_BULK_FILES = 20;
 /** Max images a user can queue in the uploader UI (uploaded in batched requests). */
