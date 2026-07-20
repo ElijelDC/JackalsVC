@@ -1,27 +1,33 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
+import { GalleryLightbox } from "@/components/gallery/GalleryLightbox";
+import type { GalleryPhotoItem } from "@/components/gallery/types";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import type { TournamentArchiveEntry } from "@/lib/tournament-archive";
 import { cn } from "@/lib/utils";
 
 const SWIPE_THRESHOLD_PX = 48;
 
+type WinnerPhoto = TournamentArchiveEntry["winnerPhotos"][number];
+
 function WinnerPhotoSlide({
   photo,
   priority,
+  onOpen,
 }: {
-  photo: TournamentArchiveEntry["winnerPhotos"][number];
+  photo: WinnerPhoto;
   priority?: boolean;
+  onOpen?: () => void;
 }) {
-  return (
-    <figure className="relative aspect-[4/3] overflow-hidden border border-white/10 bg-white/[0.02]">
+  const content = (
+    <>
       <Image
         src={photo.src}
         alt={photo.alt}
         fill
-        className="object-cover"
+        className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
         sizes="(max-width: 1024px) 100vw, 720px"
         priority={priority}
         unoptimized={photo.src.startsWith("/uploads/")}
@@ -29,14 +35,35 @@ function WinnerPhotoSlide({
       <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-4 pb-4 pt-12 text-sm text-zinc-100">
         {photo.alt}
       </figcaption>
-    </figure>
+    </>
+  );
+
+  if (!onOpen) {
+    return (
+      <figure className="relative aspect-[4/3] overflow-hidden border border-white/10 bg-white/[0.02]">
+        {content}
+      </figure>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group relative block w-full overflow-hidden border border-white/10 bg-white/[0.02] text-left transition-colors hover:border-jackals-red/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-jackals-red/60"
+      aria-label={`View larger: ${photo.alt}`}
+    >
+      <figure className="relative aspect-[4/3]">{content}</figure>
+    </button>
   );
 }
 
 function WinnerPhotoCarousel({
   photos,
+  onOpen,
 }: {
-  photos: TournamentArchiveEntry["winnerPhotos"];
+  photos: WinnerPhoto[];
+  onOpen: (index: number) => void;
 }) {
   const [index, setIndex] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
@@ -44,6 +71,7 @@ function WinnerPhotoCarousel({
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const draggingHorizontally = useRef(false);
+  const didSwipe = useRef(false);
 
   const goTo = (nextIndex: number) => {
     setIndex((nextIndex + photos.length) % photos.length);
@@ -53,6 +81,7 @@ function WinnerPhotoCarousel({
     touchStartX.current = clientX;
     touchStartY.current = clientY;
     draggingHorizontally.current = false;
+    didSwipe.current = false;
     setIsDragging(true);
     setDragOffset(0);
   };
@@ -74,8 +103,13 @@ function WinnerPhotoCarousel({
 
   const handleTouchEnd = () => {
     if (draggingHorizontally.current) {
-      if (dragOffset <= -SWIPE_THRESHOLD_PX) goTo(index + 1);
-      else if (dragOffset >= SWIPE_THRESHOLD_PX) goTo(index - 1);
+      if (dragOffset <= -SWIPE_THRESHOLD_PX) {
+        goTo(index + 1);
+        didSwipe.current = true;
+      } else if (dragOffset >= SWIPE_THRESHOLD_PX) {
+        goTo(index - 1);
+        didSwipe.current = true;
+      }
     }
     setDragOffset(0);
     setIsDragging(false);
@@ -114,7 +148,14 @@ function WinnerPhotoCarousel({
               className="w-full shrink-0 select-none px-0.5"
               aria-hidden={photoIndex !== index}
             >
-              <WinnerPhotoSlide photo={photo} priority={photoIndex === 0} />
+              <WinnerPhotoSlide
+                photo={photo}
+                priority={photoIndex === 0}
+                onOpen={() => {
+                  if (didSwipe.current) return;
+                  onOpen(photoIndex);
+                }}
+              />
             </div>
           ))}
         </div>
@@ -154,8 +195,21 @@ function desktopGridClass(count: number) {
 export function TournamentWinnerGallery({
   photos,
 }: {
-  photos: TournamentArchiveEntry["winnerPhotos"];
+  photos: WinnerPhoto[];
 }) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
+
+  const lightboxPhotos = useMemo<GalleryPhotoItem[]>(
+    () =>
+      photos.map((photo, index) => ({
+        id: `winner-${index}`,
+        title: null,
+        caption: photo.alt,
+        imageUrl: photo.src,
+      })),
+    [photos],
+  );
+
   if (photos.length === 0) return null;
 
   return (
@@ -169,13 +223,16 @@ export function TournamentWinnerGallery({
             Winner photos
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Podium moments from the day.
+            Podium moments from the day — click a photo to view it larger.
           </p>
         </AnimateIn>
 
         {/* Mobile: carousel */}
         <div className="lg:hidden">
-          <WinnerPhotoCarousel photos={photos} />
+          <WinnerPhotoCarousel
+            photos={photos}
+            onOpen={(index) => setActiveIndex(index)}
+          />
         </div>
 
         {/* Desktop: always static grid (never a carousel) */}
@@ -190,10 +247,20 @@ export function TournamentWinnerGallery({
               key={`${photo.src}-row-${photoIndex}`}
               photo={photo}
               priority={photoIndex === 0}
+              onOpen={() => setActiveIndex(photoIndex)}
             />
           ))}
         </div>
       </div>
+
+      {activeIndex !== null ? (
+        <GalleryLightbox
+          photos={lightboxPhotos}
+          activeIndex={activeIndex}
+          onClose={() => setActiveIndex(null)}
+          onChangeIndex={setActiveIndex}
+        />
+      ) : null}
     </section>
   );
 }
