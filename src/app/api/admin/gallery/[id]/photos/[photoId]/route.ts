@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { deleteGalleryPhotoFiles } from "@/lib/gallery-upload";
 import { prisma } from "@/lib/prisma";
 import { galleryPhotoSchema } from "@/lib/validations";
 
@@ -40,10 +41,17 @@ export async function DELETE(
   const { response } = await requireAdmin();
   if (response) return response;
 
-  const { photoId } = await params;
+  const { id: albumId, photoId } = await params;
 
   try {
+    const photo = await prisma.galleryPhoto.findFirst({
+      where: { id: photoId, albumId },
+      select: { imageUrl: true, thumbUrl: true },
+    });
+    if (!photo) return jsonError("Photo not found", 404);
+
     await prisma.galleryPhoto.delete({ where: { id: photoId } });
+    await deleteGalleryPhotoFiles(photo.imageUrl, photo.thumbUrl, albumId);
     return NextResponse.json({ success: true });
   } catch {
     return jsonError("Photo not found", 404);

@@ -3,4 +3,5 @@ export type GalleryPhotoItem = {
   title: string | null;
   caption: string | null;
   imageUrl: string;
+  thumbUrl?: string | null;
 };

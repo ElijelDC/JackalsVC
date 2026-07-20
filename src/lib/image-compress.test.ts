@@ -14,6 +14,9 @@ describe("image-compress", () => {
 
   it("keeps conservative preset settings", () => {
     expect(PRESET_SETTINGS.gallery.jpegQuality).toBeGreaterThanOrEqual(85);
+    expect(PRESET_SETTINGS.galleryThumb.maxEdge).toBeLessThan(
+      PRESET_SETTINGS.gallery.maxEdge,
+    );
     expect(PRESET_SETTINGS.profile.jpegQuality).toBeGreaterThanOrEqual(
       PRESET_SETTINGS.gallery.jpegQuality,
     );

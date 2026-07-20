@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ZoomIn } from "lucide-react";
 import { GalleryImage } from "@/components/gallery/GalleryImage";
 import { GalleryLightbox } from "@/components/gallery/GalleryLightbox";
 import type { GalleryPhotoItem } from "@/components/gallery/types";
+import { Button } from "@/components/ui/Button";
 import { useInView } from "@/hooks/useInView";
 import { fillImageStyle } from "@/lib/fill-image-layout";
 import { cn } from "@/lib/utils";
@@ -12,12 +13,18 @@ import { cn } from "@/lib/utils";
 export type { GalleryPhotoItem };
 
 const PRIORITY_TILE_COUNT = 4;
+const INITIAL_VISIBLE = 24;
+const LOAD_MORE_COUNT = 24;
 
 function scrollPhotoTileIntoView(element: HTMLButtonElement | undefined) {
   const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches
     ? "auto"
     : "smooth";
   element?.scrollIntoView({ behavior, block: "center" });
+}
+
+function gridSrc(photo: GalleryPhotoItem) {
+  return photo.thumbUrl || photo.imageUrl;
 }
 
 function GalleryPhotoTile({
@@ -49,7 +56,7 @@ function GalleryPhotoTile({
       >
         {inView ? (
           <GalleryImage
-            src={photo.imageUrl}
+            src={gridSrc(photo)}
             alt={label}
             priority={index < PRIORITY_TILE_COUNT}
             sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
@@ -87,7 +94,11 @@ function GalleryPhotoTile({
 
 export function GalleryPhotoGrid({ photos }: { photos: GalleryPhotoItem[] }) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE);
   const tileRefs = useRef(new Map<string, HTMLButtonElement>());
+
+  const visiblePhotos = photos.slice(0, visibleCount);
+  const hasMore = visibleCount < photos.length;
 
   const registerTileRef = useCallback(
     (photoId: string) => (element: HTMLButtonElement | null) => {
@@ -131,9 +142,15 @@ export function GalleryPhotoGrid({ photos }: { photos: GalleryPhotoItem[] }) {
     window.setTimeout(() => focusTile(index, false), 100);
   }, [activeIndex, focusTile]);
 
-  const changePhoto = useCallback((index: number) => {
-    setActiveIndex(index);
-  }, []);
+  const changePhoto = useCallback(
+    (index: number) => {
+      if (index >= visibleCount) {
+        setVisibleCount(index + 1);
+      }
+      setActiveIndex(index);
+    },
+    [visibleCount],
+  );
 
   if (photos.length === 0) {
     return (
@@ -146,7 +163,7 @@ export function GalleryPhotoGrid({ photos }: { photos: GalleryPhotoItem[] }) {
   return (
     <>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-        {photos.map((photo, index) => (
+        {visiblePhotos.map((photo, index) => (
           <GalleryPhotoTile
             key={photo.id}
             photo={photo}
@@ -156,6 +173,22 @@ export function GalleryPhotoGrid({ photos }: { photos: GalleryPhotoItem[] }) {
           />
         ))}
       </div>
+
+      {hasMore ? (
+        <div className="mt-8 flex justify-center">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() =>
+              setVisibleCount((count) =>
+                Math.min(count + LOAD_MORE_COUNT, photos.length),
+              )
+            }
+          >
+            Show more photos ({photos.length - visibleCount} remaining)
+          </Button>
+        </div>
+      ) : null}
 
       {activeIndex !== null && (
         <GalleryLightbox

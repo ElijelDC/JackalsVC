@@ -10,6 +10,7 @@ type GalleryPhoto = {
   title: string | null;
   caption: string | null;
   imageUrl: string;
+  thumbUrl?: string | null;
   sortOrder: number;
 };
 
@@ -55,7 +56,7 @@ export function GalleryPhotoGrid({
           >
             <div className="relative aspect-square">
               <Image
-                src={photo.imageUrl}
+                src={photo.thumbUrl || photo.imageUrl}
                 alt={label}
                 fill
                 unoptimized

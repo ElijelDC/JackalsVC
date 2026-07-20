@@ -15,6 +15,7 @@
     "generate:sponsor-pdf": "tsx scripts/generate-sponsor-presentation.ts",
     "generate:tournament-rules-pdf": "tsx scripts/generate-tournament-rules.ts",
     "compress:uploads": "tsx scripts/compress-existing-uploads.ts",
+    "gallery:thumbs": "tsx scripts/generate-gallery-thumbs.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -40,6 +40,9 @@ export function GalleryImage({
       fill
       priority={priority}
       loading={priority ? undefined : "lazy"}
+      // Uploads are already sized (full or thumb); skip Next optimizer which
+      // re-fetches through the Node /uploads rewrite and slows large albums.
+      unoptimized={imageSrc.startsWith("/uploads/")}
       className={className}
       sizes={sizes}
       onError={() => setImageError(true)}

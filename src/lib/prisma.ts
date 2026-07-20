@@ -22,7 +22,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Bump when schema changes so dev hot-reload picks up a fresh client.
-const PRISMA_SCHEMA_VERSION = 40;
+const PRISMA_SCHEMA_VERSION = 41;
 
 type RuntimeModel = {
   fields: { name: string }[];

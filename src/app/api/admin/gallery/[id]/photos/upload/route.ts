@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError, requireAdmin } from "@/lib/api";
 import {
   GALLERY_MAX_BULK_FILES,
-  saveGalleryImageFile,
+  saveGalleryImagePair,
 } from "@/lib/gallery-upload";
 import { isGalleryPlaceholderCover } from "@/lib/gallery-config";
 import { prisma } from "@/lib/prisma";
@@ -29,7 +29,7 @@ export async function POST(
   } catch (error) {
     console.error("[gallery-upload] formData parse failed", error);
     return jsonError(
-      "Could not read the upload. Try again — photos are sent one at a time.",
+      "Could not read the upload. Please try again.",
       400,
     );
   }
@@ -59,11 +59,12 @@ export async function POST(
 
   for (const file of files) {
     try {
-      const imageUrl = await saveGalleryImageFile(file, albumId);
+      const { imageUrl, thumbUrl } = await saveGalleryImagePair(file, albumId);
       const photo = await prisma.galleryPhoto.create({
         data: {
           albumId,
           imageUrl,
+          thumbUrl,
           title: null,
           sortOrder: nextSort,
         },
