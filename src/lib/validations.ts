@@ -415,6 +415,78 @@ export const coachingApplicationSchema = z.object({
     .max(2000, "Please keep your answer under 2000 characters"),
 });
 
+const trialsPositionEnum = z.enum(
+  ["WING", "OPPO", "MIDDLE", "SETTER", "LIBERO"],
+  { message: "Select a preferred position" },
+);
+
+export const trialsApplicationSchema = z
+  .object({
+    tryingOutFor: z.enum(["MENS_DIVISION_2", "WOMENS_DIVISION_3"], {
+      message: "Select which team you are trying out for",
+    }),
+    fullName: z.string().min(2, "Enter your name"),
+    age: z.coerce
+      .number({ message: "Enter your age" })
+      .int("Age must be a whole number")
+      .min(16, "You must be at least 16")
+      .max(99, "Enter a valid age"),
+    contactEmail: z.string().email("Enter a valid email address"),
+    contactNumber: z
+      .string()
+      .min(7, "Enter a valid phone number")
+      .max(30, "Phone number is too long"),
+    yearsExperience: z.coerce
+      .number({ message: "Enter years of volleyball experience" })
+      .int("Years of experience must be a whole number")
+      .min(0, "Years of experience cannot be negative")
+      .max(40, "Enter a valid number of years"),
+    inlDivision: z.enum(
+      ["PREMIER", "DIVISION_1", "DIVISION_2", "DIVISION_3", "OTHER", "NONE"],
+      {
+        message:
+          "Select the division you played in the Irish National League 25/26 season",
+      },
+    ),
+    inlDivisionOther: z
+      .string()
+      .max(120, "Keep your answer under 120 characters")
+      .optional()
+      .transform((val) => (val?.trim() ? val.trim() : undefined)),
+    inlTeamName: z
+      .string()
+      .max(120, "Keep your team name under 120 characters")
+      .optional()
+      .transform((val) => (val?.trim() ? val.trim() : undefined)),
+    preferredPosition1: trialsPositionEnum,
+    preferredPosition2: trialsPositionEnum,
+  })
+  .superRefine((data, ctx) => {
+    if (data.inlDivision === "OTHER" && !data.inlDivisionOther) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["inlDivisionOther"],
+        message: "Please state the other division or competition",
+      });
+    }
+
+    if (data.inlDivision !== "NONE" && !data.inlTeamName) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["inlTeamName"],
+        message: "Enter the team you played for",
+      });
+    }
+
+    if (data.preferredPosition1 === data.preferredPosition2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["preferredPosition2"],
+        message: "Choose a different second preferred position",
+      });
+    }
+  });
+
 export const achievementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   season: z.string().min(1, "Season is required"),

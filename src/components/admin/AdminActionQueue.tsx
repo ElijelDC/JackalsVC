@@ -6,6 +6,7 @@ import {
   CheckCircle2,
   GraduationCap,
   UserPlus,
+  Volleyball,
   Wallet,
 } from "lucide-react";
 import type { AdminActionQueueEntry } from "@/lib/admin-action-queue";
@@ -16,6 +17,7 @@ const ENTRY_ICONS = {
   payment: Banknote,
   "coach-payment": Wallet,
   "coaching-application": GraduationCap,
+  "trials-application": Volleyball,
 } as const;
 
 function ActionQueueCard({ entry }: { entry: AdminActionQueueEntry }) {

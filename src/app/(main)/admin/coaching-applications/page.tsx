@@ -7,7 +7,6 @@ export const metadata = { title: "Coaching applications | Admin" };
 
 export default async function AdminCoachingApplicationsPage() {
   const applications = await prisma.coachingApplication.findMany({
-    where: { status: "NEW" },
     orderBy: { createdAt: "desc" },
   });
 
@@ -15,7 +14,7 @@ export default async function AdminCoachingApplicationsPage() {
     <PageContainer>
       <PageHeader
         title="Coaching applications"
-        description="Review applications submitted from the Coach With Us page."
+        description="Filter by coach level, commute, or status — switch between list, cards, and compact views."
       />
       <CoachingApplicationsManager
         initialApplications={applications.map(serializeCoachingApplication)}

@@ -197,7 +197,7 @@ const GUEST_PRIMARY_NAV_HREFS = [
   "/events",
   "/sponsors",
   "/gallery",
-  "/teams",
+  "/trials",
 ] as const;
 
 function primaryNavHrefs(
@@ -277,6 +277,13 @@ export const INFO_NAV_ITEMS: NavItem[] = [
     icon: ClipboardList,
     description:
       "Join our coaching staff — paid roles, National League squads, and applications opening soon.",
+  },
+  {
+    href: "/trials",
+    label: "Trials",
+    icon: Volleyball,
+    description:
+      "August 2026 trials for Men's Division 2 and Women's Division 3 — apply now.",
   },
 ];
 

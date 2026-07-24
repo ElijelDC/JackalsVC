@@ -11,7 +11,10 @@ import { FacebookIcon } from "@/components/ui/FacebookIcon";
 import { InstagramIcon } from "@/components/ui/InstagramIcon";
 
 function InstagramPostCard({ post }: { post: InstagramPost }) {
-  const alt = post.caption?.slice(0, 120) ?? "Instagram post";
+  // Keep alt single-line — raw captions with \n cause hydration mismatches in attributes.
+  const alt =
+    post.caption?.replace(/\s+/g, " ").trim().slice(0, 120) ||
+    "Jackals VC Instagram post";
 
   return (
     <a
@@ -33,7 +36,9 @@ function InstagramPostCard({ post }: { post: InstagramPost }) {
       />
       <div className="absolute inset-x-0 bottom-0 p-3 opacity-0 transition-opacity group-hover:opacity-100">
         {post.caption && (
-          <p className="line-clamp-2 text-xs text-zinc-200">{post.caption}</p>
+          <p className="line-clamp-2 text-xs text-zinc-200">
+            {post.caption.replace(/\s+/g, " ").trim()}
+          </p>
         )}
       </div>
       {post.mediaType === "VIDEO" && (

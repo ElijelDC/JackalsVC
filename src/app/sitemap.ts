@@ -21,6 +21,7 @@ const STATIC_ROUTES: Array<{
   { path: "/register", changeFrequency: "monthly", priority: 0.7 },
   { path: "/sponsors", changeFrequency: "monthly", priority: 0.6 },
   { path: "/coaching", changeFrequency: "monthly", priority: 0.7 },
+  { path: "/trials", changeFrequency: "weekly", priority: 0.8 },
   {
     path: "/tournaments/jvc-mixed-2v2-beach",
     changeFrequency: "monthly",

@@ -18,25 +18,24 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Select } from "@/components/ui/Input";
 import {
-  COACHING_APPLICATION_STATUS_LABELS,
-  type CoachingApplicationRecord,
-  type CoachingApplicationStatus,
-} from "@/lib/coaching-application-config";
+  TRIALS_APPLICATION_STATUS_LABELS,
+  type TrialsApplicationRecord,
+  type TrialsApplicationStatus,
+} from "@/lib/trials-application-config";
 import {
-  COACHING_COMMUTE_OPTIONS,
-  COACHING_QUALIFICATION_LEVELS,
-  coachingCommuteLabel,
-  coachingQualificationLabel,
-} from "@/lib/coaching-recruitment-config";
+  TRIALS_POSITION_OPTIONS,
+  TRIALS_TEAM_OPTIONS,
+  trialsInlDivisionLabel,
+  trialsPositionLabel,
+  trialsTeamLabel,
+} from "@/lib/trials-recruitment-config";
 import { apiGet, apiPatch } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 
 type LayoutMode = "cards" | "list" | "compact";
-type StatusFilter = "ALL" | CoachingApplicationStatus;
-type QualificationFilter =
-  | "ALL"
-  | (typeof COACHING_QUALIFICATION_LEVELS)[number]["value"];
-type CommuteFilter = "ALL" | (typeof COACHING_COMMUTE_OPTIONS)[number]["value"];
+type StatusFilter = "ALL" | TrialsApplicationStatus;
+type TeamFilter = "ALL" | (typeof TRIALS_TEAM_OPTIONS)[number]["value"];
+type PositionFilter = "ALL" | (typeof TRIALS_POSITION_OPTIONS)[number]["value"];
 
 function formatSubmittedAt(value: string) {
   return new Date(value).toLocaleString("en-IE", {
@@ -52,7 +51,17 @@ function formatSubmittedShort(value: string) {
   });
 }
 
-function statusAccent(status: CoachingApplicationStatus) {
+function teamAccent(tryingOutFor: string) {
+  if (tryingOutFor === "MENS_DIVISION_2") {
+    return "bg-jackals-red/20 text-jackals-red-light";
+  }
+  if (tryingOutFor === "WOMENS_DIVISION_3") {
+    return "bg-purple-500/20 text-purple-300";
+  }
+  return "bg-zinc-500/20 text-zinc-300";
+}
+
+function statusAccent(status: TrialsApplicationStatus) {
   if (status === "NEW") return "bg-amber-500/15 text-amber-300";
   if (status === "REVIEWED") return "bg-green-500/15 text-green-300";
   return "bg-zinc-500/15 text-zinc-300";
@@ -61,7 +70,7 @@ function statusAccent(status: CoachingApplicationStatus) {
 function ApplicationDetails({
   application,
 }: {
-  application: CoachingApplicationRecord;
+  application: TrialsApplicationRecord;
 }) {
   return (
     <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
@@ -74,21 +83,30 @@ function ApplicationDetails({
         <dd className="text-white">{application.yearsExperience} years</dd>
       </div>
       <div>
-        <dt className="text-zinc-500">VLY Ireland coach level</dt>
+        <dt className="text-zinc-500">INL division 25/26</dt>
         <dd className="text-white">
-          {coachingQualificationLabel(application.qualificationLevel)}
+          {trialsInlDivisionLabel(application.inlDivision)}
+          {application.inlDivisionOther
+            ? ` — ${application.inlDivisionOther}`
+            : ""}
+        </dd>
+      </div>
+      {application.inlTeamName ? (
+        <div>
+          <dt className="text-zinc-500">INL team</dt>
+          <dd className="text-white">{application.inlTeamName}</dd>
+        </div>
+      ) : null}
+      <div>
+        <dt className="text-zinc-500">Preferred position 1</dt>
+        <dd className="text-white">
+          {trialsPositionLabel(application.preferredPosition1)}
         </dd>
       </div>
       <div>
-        <dt className="text-zinc-500">Commute to both venues</dt>
+        <dt className="text-zinc-500">Preferred position 2</dt>
         <dd className="text-white">
-          {coachingCommuteLabel(application.canCommuteToBothVenues)}
-        </dd>
-      </div>
-      <div className="sm:col-span-2">
-        <dt className="text-zinc-500">Why interested</dt>
-        <dd className="mt-1 whitespace-pre-wrap text-white">
-          {application.whyInterested}
+          {trialsPositionLabel(application.preferredPosition2)}
         </dd>
       </div>
     </dl>
@@ -100,7 +118,7 @@ function ActionButtons({
   loading,
   onAct,
 }: {
-  application: CoachingApplicationRecord;
+  application: TrialsApplicationRecord;
   loading: boolean;
   onAct: (id: string, action: "review" | "dismiss") => void;
 }) {
@@ -137,18 +155,17 @@ function ActionButtons({
   );
 }
 
-export function CoachingApplicationsManager({
+export function TrialsApplicationsManager({
   initialApplications,
 }: {
-  initialApplications: CoachingApplicationRecord[];
+  initialApplications: TrialsApplicationRecord[];
 }) {
   const router = useRouter();
   const [applications, setApplications] = useState(initialApplications);
   const [layout, setLayout] = useState<LayoutMode>("list");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("NEW");
-  const [qualificationFilter, setQualificationFilter] =
-    useState<QualificationFilter>("ALL");
-  const [commuteFilter, setCommuteFilter] = useState<CommuteFilter>("ALL");
+  const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
+  const [positionFilter, setPositionFilter] = useState<PositionFilter>("ALL");
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -161,15 +178,13 @@ export function CoachingApplicationsManager({
       if (statusFilter !== "ALL" && application.status !== statusFilter) {
         return false;
       }
-      if (
-        qualificationFilter !== "ALL" &&
-        application.qualificationLevel !== qualificationFilter
-      ) {
+      if (teamFilter !== "ALL" && application.tryingOutFor !== teamFilter) {
         return false;
       }
       if (
-        commuteFilter !== "ALL" &&
-        application.canCommuteToBothVenues !== commuteFilter
+        positionFilter !== "ALL" &&
+        application.preferredPosition1 !== positionFilter &&
+        application.preferredPosition2 !== positionFilter
       ) {
         return false;
       }
@@ -179,24 +194,27 @@ export function CoachingApplicationsManager({
         application.fullName,
         application.contactEmail,
         application.contactNumber,
-        application.whyInterested,
-        coachingQualificationLabel(application.qualificationLevel),
-        coachingCommuteLabel(application.canCommuteToBothVenues),
+        application.inlTeamName ?? "",
+        application.inlDivisionOther ?? "",
+        trialsTeamLabel(application.tryingOutFor),
+        trialsInlDivisionLabel(application.inlDivision),
+        trialsPositionLabel(application.preferredPosition1),
+        trialsPositionLabel(application.preferredPosition2),
       ]
         .join(" ")
         .toLowerCase();
 
       return haystack.includes(query);
     });
-  }, [applications, statusFilter, qualificationFilter, commuteFilter, search]);
+  }, [applications, statusFilter, teamFilter, positionFilter, search]);
 
   const refresh = async () => {
     setRefreshing(true);
     setError(null);
 
-    const result = await apiGet<{ applications: CoachingApplicationRecord[] }>(
-      "/api/admin/coaching-applications",
-      "refresh the coaching applications list",
+    const result = await apiGet<{ applications: TrialsApplicationRecord[] }>(
+      "/api/admin/trials-applications",
+      "refresh the trials applications list",
     );
 
     setRefreshing(false);
@@ -213,8 +231,8 @@ export function CoachingApplicationsManager({
     setLoadingId(id);
     setError(null);
 
-    const result = await apiPatch<{ application: CoachingApplicationRecord }>(
-      `/api/admin/coaching-applications/${id}`,
+    const result = await apiPatch<{ application: TrialsApplicationRecord }>(
+      `/api/admin/trials-applications/${id}`,
       { action },
       action === "review"
         ? "mark this application as reviewed"
@@ -239,15 +257,15 @@ export function CoachingApplicationsManager({
 
   const clearFilters = () => {
     setStatusFilter("ALL");
-    setQualificationFilter("ALL");
-    setCommuteFilter("ALL");
+    setTeamFilter("ALL");
+    setPositionFilter("ALL");
     setSearch("");
   };
 
   const hasActiveFilters =
     statusFilter !== "ALL" ||
-    qualificationFilter !== "ALL" ||
-    commuteFilter !== "ALL" ||
+    teamFilter !== "ALL" ||
+    positionFilter !== "ALL" ||
     search.trim() !== "";
 
   return (
@@ -325,31 +343,31 @@ export function CoachingApplicationsManager({
           <Input
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search name, email, notes…"
+            placeholder="Search name, email, team…"
             className="pl-9"
           />
         </div>
         <Select
-          value={qualificationFilter}
+          value={teamFilter}
           onChange={(event) =>
-            setQualificationFilter(event.target.value as QualificationFilter)
+            setTeamFilter(event.target.value as TeamFilter)
           }
         >
-          <option value="ALL">All coach levels</option>
-          {COACHING_QUALIFICATION_LEVELS.map((level) => (
-            <option key={level.value} value={level.value}>
-              {level.label}
+          <option value="ALL">All teams</option>
+          {TRIALS_TEAM_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
             </option>
           ))}
         </Select>
         <Select
-          value={commuteFilter}
+          value={positionFilter}
           onChange={(event) =>
-            setCommuteFilter(event.target.value as CommuteFilter)
+            setPositionFilter(event.target.value as PositionFilter)
           }
         >
-          <option value="ALL">All commute answers</option>
-          {COACHING_COMMUTE_OPTIONS.map((option) => (
+          <option value="ALL">All positions</option>
+          {TRIALS_POSITION_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
             </option>
@@ -383,7 +401,7 @@ export function CoachingApplicationsManager({
           </p>
           <p className="mt-2 text-sm text-zinc-400">
             {applications.length === 0
-              ? "New applications from the Coach With Us page will appear here."
+              ? "New applications from the Trials page will appear here."
               : "Try clearing filters or switching status."}
           </p>
         </div>
@@ -393,9 +411,9 @@ export function CoachingApplicationsManager({
             <thead className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
               <tr>
                 <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Coach level</th>
+                <th className="px-4 py-3 font-medium">Team</th>
+                <th className="px-4 py-3 font-medium">Positions</th>
                 <th className="px-4 py-3 font-medium">Experience</th>
-                <th className="px-4 py-3 font-medium">Commute</th>
                 <th className="px-4 py-3 font-medium">Submitted</th>
                 <th className="px-4 py-3 font-medium">Status</th>
                 <th className="px-4 py-3 font-medium">Actions</th>
@@ -426,14 +444,23 @@ export function CoachingApplicationsManager({
                         {application.contactNumber}
                       </a>
                     </td>
+                    <td className="px-4 py-3 align-top">
+                      <span
+                        className={cn(
+                          "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
+                          teamAccent(application.tryingOutFor),
+                        )}
+                      >
+                        {trialsTeamLabel(application.tryingOutFor)}
+                      </span>
+                    </td>
                     <td className="px-4 py-3 align-top text-zinc-300">
-                      {coachingQualificationLabel(application.qualificationLevel)}
+                      {trialsPositionLabel(application.preferredPosition1)}
+                      <span className="text-zinc-600"> / </span>
+                      {trialsPositionLabel(application.preferredPosition2)}
                     </td>
                     <td className="px-4 py-3 align-top text-zinc-300">
                       {application.yearsExperience} yrs · age {application.age}
-                    </td>
-                    <td className="px-4 py-3 align-top text-zinc-300">
-                      {coachingCommuteLabel(application.canCommuteToBothVenues)}
                     </td>
                     <td className="px-4 py-3 align-top text-zinc-400">
                       {formatSubmittedShort(application.createdAt)}
@@ -445,7 +472,7 @@ export function CoachingApplicationsManager({
                           statusAccent(application.status),
                         )}
                       >
-                        {COACHING_APPLICATION_STATUS_LABELS[application.status]}
+                        {TRIALS_APPLICATION_STATUS_LABELS[application.status]}
                       </span>
                     </td>
                     <td className="px-4 py-3 align-top">
@@ -478,16 +505,24 @@ export function CoachingApplicationsManager({
                     <span
                       className={cn(
                         "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        teamAccent(application.tryingOutFor),
+                      )}
+                    >
+                      {trialsTeamLabel(application.tryingOutFor)}
+                    </span>
+                    <span
+                      className={cn(
+                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
                         statusAccent(application.status),
                       )}
                     >
-                      {COACHING_APPLICATION_STATUS_LABELS[application.status]}
+                      {TRIALS_APPLICATION_STATUS_LABELS[application.status]}
                     </span>
                   </div>
                   <p className="mt-1 truncate text-xs text-zinc-400">
-                    {coachingQualificationLabel(application.qualificationLevel)}{" "}
-                    · {application.yearsExperience} yrs ·{" "}
-                    {coachingCommuteLabel(application.canCommuteToBothVenues)} ·{" "}
+                    {trialsPositionLabel(application.preferredPosition1)} /{" "}
+                    {trialsPositionLabel(application.preferredPosition2)} ·{" "}
+                    {application.yearsExperience} yrs ·{" "}
                     {application.contactEmail}
                   </p>
                 </div>
@@ -520,10 +555,18 @@ export function CoachingApplicationsManager({
                         <span
                           className={cn(
                             "rounded-full px-2.5 py-0.5 text-xs font-medium",
+                            teamAccent(application.tryingOutFor),
+                          )}
+                        >
+                          {trialsTeamLabel(application.tryingOutFor)}
+                        </span>
+                        <span
+                          className={cn(
+                            "rounded-full px-2.5 py-0.5 text-xs font-medium",
                             statusAccent(application.status),
                           )}
                         >
-                          {COACHING_APPLICATION_STATUS_LABELS[application.status]}
+                          {TRIALS_APPLICATION_STATUS_LABELS[application.status]}
                         </span>
                       </div>
 

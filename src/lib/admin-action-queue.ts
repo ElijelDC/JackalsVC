@@ -8,7 +8,12 @@ import {
 import { prisma } from "@/lib/prisma";
 
 export type AdminActionQueueEntry = {
-  kind: "registration" | "payment" | "coach-payment" | "coaching-application";
+  kind:
+    | "registration"
+    | "payment"
+    | "coach-payment"
+    | "coaching-application"
+    | "trials-application";
   href: string;
   title: string;
   summary: string;
@@ -56,6 +61,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     coachOverdueCount,
     coachingApplications,
     coachingApplicationCount,
+    trialsApplications,
+    trialsApplicationCount,
   ] = await Promise.all([
     prisma.clubMember.findMany({
       where: REGISTRATION_REVIEW_WHERE,
@@ -95,6 +102,13 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       select: { fullName: true, qualificationLevel: true },
     }),
     prisma.coachingApplication.count({ where: { status: "NEW" } }),
+    prisma.trialsApplication.findMany({
+      where: { status: "NEW" },
+      orderBy: { createdAt: "asc" },
+      take: 4,
+      select: { fullName: true, tryingOutFor: true },
+    }),
+    prisma.trialsApplication.count({ where: { status: "NEW" } }),
   ]);
 
   const pendingPaymentDueDates = await prisma.payment.findMany({
@@ -172,6 +186,20 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     });
   }
 
+  if (trialsApplicationCount > 0) {
+    entries.push({
+      kind: "trials-application",
+      href: "/admin/trials-applications",
+      title: "Trials applications",
+      summary:
+        trialsApplicationCount === 1
+          ? "1 new trials application"
+          : `${trialsApplicationCount} new trials applications`,
+      count: trialsApplicationCount,
+      previews: trialsApplications.map((application) => application.fullName),
+    });
+  }
+
   const badgeCounts: Record<string, number> = {};
   if (registrationCount > 0) {
     badgeCounts["/admin/registration-reviews"] = registrationCount;
@@ -185,6 +213,9 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
   if (coachingApplicationCount > 0) {
     badgeCounts["/admin/coaching-applications"] = coachingApplicationCount;
   }
+  if (trialsApplicationCount > 0) {
+    badgeCounts["/admin/trials-applications"] = trialsApplicationCount;
+  }
 
   return {
     entries,
@@ -192,7 +223,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       registrationCount +
       paymentCount +
       coachOverdueCount +
-      coachingApplicationCount,
+      coachingApplicationCount +
+      trialsApplicationCount,
     badgeCounts,
   };
 });
