@@ -58,7 +58,7 @@ cp .env.example .env.production   # if needed
 
 # 2. Upload and apply
 export HETZNER_USER=root
-export HETZNER_APP_DIR=/root/JackalsVC   # adjust to your server path
+export HETZNER_APP_DIR=/opt/app   # production VPS path
 ./scripts/hetzner-deploy-env.sh
 
 # For NEXT_PUBLIC_* changes:
@@ -69,7 +69,7 @@ HETZNER_REBUILD=1 ./scripts/hetzner-deploy-env.sh
 
 ```bash
 ssh root@46.225.120.67
-cd /root/JackalsVC          # adjust path
+cd /opt/app
 nano .env.production
 docker compose --env-file .env.production up -d --force-recreate app
 ```
@@ -100,7 +100,7 @@ To let a Cloud Agent upload env vars for you, configure in **Cursor → Cloud Ag
 1. **SSH key** — private key that can log into the Hetzner VPS (add the matching public key to the server’s `~/.ssh/authorized_keys`).
 2. **Environment variables** for the deploy script:
    - `HETZNER_USER` (e.g. `root`)
-   - `HETZNER_APP_DIR` (e.g. `/root/JackalsVC`)
+   - `HETZNER_APP_DIR` (e.g. `/opt/app`)
    - Optionally `HETZNER_HOST` if the IP changes
 3. **Env file content** — either paste secrets as individual env vars and have the agent write `.env.production`, or provide the full file in the agent prompt.
 
