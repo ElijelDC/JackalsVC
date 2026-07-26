@@ -6,7 +6,6 @@ import {
   CheckCircle2,
   Clock3,
   LayoutGrid,
-  List,
   Loader2,
   Mail,
   Phone,
@@ -31,7 +30,7 @@ import {
 import { apiGet, apiPatch } from "@/lib/client-api";
 import { cn } from "@/lib/utils";
 
-type LayoutMode = "cards" | "list" | "compact";
+type LayoutMode = "cards" | "compact";
 type StatusFilter = "ALL" | CoachingApplicationStatus;
 type QualificationFilter =
   | "ALL"
@@ -42,13 +41,6 @@ function formatSubmittedAt(value: string) {
   return new Date(value).toLocaleString("en-IE", {
     dateStyle: "medium",
     timeStyle: "short",
-  });
-}
-
-function formatSubmittedShort(value: string) {
-  return new Date(value).toLocaleDateString("en-IE", {
-    day: "numeric",
-    month: "short",
   });
 }
 
@@ -144,7 +136,7 @@ export function CoachingApplicationsManager({
 }) {
   const router = useRouter();
   const [applications, setApplications] = useState(initialApplications);
-  const [layout, setLayout] = useState<LayoutMode>("list");
+  const [layout, setLayout] = useState<LayoutMode>("cards");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("NEW");
   const [qualificationFilter, setQualificationFilter] =
     useState<QualificationFilter>("ALL");
@@ -278,7 +270,6 @@ export function CoachingApplicationsManager({
           <div className="flex overflow-hidden rounded-lg border border-white/10">
             {(
               [
-                { id: "list", icon: List, label: "List" },
                 { id: "cards", icon: LayoutGrid, label: "Cards" },
                 { id: "compact", icon: Rows3, label: "Compact" },
               ] as const
@@ -386,80 +377,6 @@ export function CoachingApplicationsManager({
               ? "New applications from the Coach With Us page will appear here."
               : "Try clearing filters or switching status."}
           </p>
-        </div>
-      ) : layout === "list" ? (
-        <div className="overflow-x-auto rounded-xl border border-white/10">
-          <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-white/10 bg-white/[0.04] text-xs uppercase tracking-wide text-zinc-500">
-              <tr>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Coach level</th>
-                <th className="px-4 py-3 font-medium">Experience</th>
-                <th className="px-4 py-3 font-medium">Commute</th>
-                <th className="px-4 py-3 font-medium">Submitted</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((application) => {
-                const isLoading = loadingId === application.id;
-                return (
-                  <tr
-                    key={application.id}
-                    className="border-b border-white/5 hover:bg-white/[0.03]"
-                  >
-                    <td className="px-4 py-3 align-top">
-                      <p className="font-medium text-white">
-                        {application.fullName}
-                      </p>
-                      <a
-                        href={`mailto:${application.contactEmail}`}
-                        className="mt-1 block text-xs text-jackals-gold hover:underline"
-                      >
-                        {application.contactEmail}
-                      </a>
-                      <a
-                        href={`tel:${application.contactNumber}`}
-                        className="mt-0.5 block text-xs text-zinc-400"
-                      >
-                        {application.contactNumber}
-                      </a>
-                    </td>
-                    <td className="px-4 py-3 align-top text-zinc-300">
-                      {coachingQualificationLabel(application.qualificationLevel)}
-                    </td>
-                    <td className="px-4 py-3 align-top text-zinc-300">
-                      {application.yearsExperience} yrs · age {application.age}
-                    </td>
-                    <td className="px-4 py-3 align-top text-zinc-300">
-                      {coachingCommuteLabel(application.canCommuteToBothVenues)}
-                    </td>
-                    <td className="px-4 py-3 align-top text-zinc-400">
-                      {formatSubmittedShort(application.createdAt)}
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <span
-                        className={cn(
-                          "inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          statusAccent(application.status),
-                        )}
-                      >
-                        {COACHING_APPLICATION_STATUS_LABELS[application.status]}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 align-top">
-                      <ActionButtons
-                        application={application}
-                        loading={isLoading}
-                        onAct={(id, action) => void act(id, action)}
-                      />
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
         </div>
       ) : layout === "compact" ? (
         <div className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10">
