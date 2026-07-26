@@ -371,7 +371,7 @@ export function TrialsApplicationModal({
 
         <div className="px-1">
           <Label htmlFor="trials-app-inl">
-            Division played during VLY Ireland INL 25/26 season
+            Division played during VLY Ireland National League 25/26 season
           </Label>
           <Select
             id="trials-app-inl"
