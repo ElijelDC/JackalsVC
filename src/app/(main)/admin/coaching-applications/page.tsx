@@ -14,7 +14,7 @@ export default async function AdminCoachingApplicationsPage() {
     <PageContainer>
       <PageHeader
         title="Coaching applications"
-        description="Filter by coach level, commute, or status — switch between list, cards, and compact views."
+        description="Filter by coach level, commute, or status — switch between cards and compact views."
       />
       <CoachingApplicationsManager
         initialApplications={applications.map(serializeCoachingApplication)}

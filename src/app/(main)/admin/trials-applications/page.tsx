@@ -14,7 +14,7 @@ export default async function AdminTrialsApplicationsPage() {
     <PageContainer>
       <PageHeader
         title="Trials applications"
-        description="Filter by team, position, or status — switch between list, cards, and compact views."
+        description="Filter by team, position, or status — switch between cards and compact views."
       />
       <TrialsApplicationsManager
         initialApplications={applications.map(serializeTrialsApplication)}
