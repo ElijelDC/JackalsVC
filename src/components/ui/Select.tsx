@@ -143,6 +143,7 @@ function PortalSelect({
 }) {
   const [open, setOpen] = useState(false);
   const [canPortal, setCanPortal] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [menuPosition, setMenuPosition] = useState({
     top: undefined as number | undefined,
@@ -153,10 +154,10 @@ function PortalSelect({
   });
 
   const updateMenuPosition = useCallback(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) return;
+    const container = containerRef.current;
+    if (!container) return;
 
-    const rect = trigger.getBoundingClientRect();
+    const rect = container.getBoundingClientRect();
     const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
     const margin = 8;
     const preferredMaxHeight = 240;
@@ -186,7 +187,7 @@ function PortalSelect({
     if (!open) return;
 
     updateMenuPosition();
-    triggerRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    containerRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
 
     const handleReposition = () => updateMenuPosition();
     window.addEventListener("resize", handleReposition);
@@ -228,13 +229,17 @@ function PortalSelect({
   };
 
   const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.preventDefault();
     event.stopPropagation();
     if (!value) return;
+    setOpen(false);
     onChange?.({
       target: { value: "" },
       currentTarget: { value: "" },
     } as ChangeEvent<HTMLSelectElement>);
   };
+
+  const showClearButton = clearable && Boolean(value);
 
   const placeholderOption = options.find(
     (option) => option.value === "" || option.disabled,
@@ -329,7 +334,7 @@ function PortalSelect({
           onChange={() => {}}
         />
       ) : null}
-      <div className="relative">
+      <div ref={containerRef} className="flex w-full">
         <button
           ref={triggerRef}
           id={selectId}
@@ -346,8 +351,8 @@ function PortalSelect({
           }}
           className={cn(
             fieldClassName,
-            "flex w-full items-center justify-between gap-2 text-left",
-            clearable && value && "pr-10",
+            "flex min-w-0 flex-1 items-center justify-between gap-2 text-left",
+            showClearButton && "rounded-r-none border-r-0 pr-3",
             className,
           )}
         >
@@ -360,15 +365,18 @@ function PortalSelect({
             aria-hidden
           />
         </button>
-        {clearable && value ? (
+        {showClearButton ? (
           <button
             type="button"
             disabled={disabled}
             aria-label="Clear selection"
+            onPointerDown={(event) => {
+              event.stopPropagation();
+            }}
             onClick={handleClear}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
+            className="flex w-11 shrink-0 touch-manipulation items-center justify-center border border-white/10 border-l-0 bg-jackals-inset text-zinc-400 transition-colors hover:bg-white/5 hover:text-white focus:border-jackals-red focus:outline-none focus:ring-1 focus:ring-jackals-red"
           >
-            <X className="h-4 w-4" aria-hidden />
+            <X className="h-5 w-5" aria-hidden />
           </button>
         ) : null}
       </div>
