@@ -83,7 +83,7 @@ function ApplicationDetails({
         <dd className="text-white">{application.yearsExperience} years</dd>
       </div>
       <div>
-        <dt className="text-zinc-500">INL division 25/26</dt>
+        <dt className="text-zinc-500">National League division 25/26</dt>
         <dd className="text-white">
           {trialsInlDivisionLabel(application.inlDivision)}
           {application.inlDivisionOther
@@ -93,7 +93,7 @@ function ApplicationDetails({
       </div>
       {application.inlTeamName ? (
         <div>
-          <dt className="text-zinc-500">INL team</dt>
+          <dt className="text-zinc-500">National League team</dt>
           <dd className="text-white">{application.inlTeamName}</dd>
         </div>
       ) : null}
