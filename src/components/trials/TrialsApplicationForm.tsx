@@ -205,6 +205,12 @@ export function TrialsApplicationModal({
     (option) => option.value === form.tryingOutFor,
   );
   const showInlTeam = trialsPlayedInlDivision(form.inlDivision);
+  const position1Options = TRIALS_POSITION_OPTIONS.filter(
+    (option) => option.value !== form.preferredPosition2,
+  );
+  const position2Options = TRIALS_POSITION_OPTIONS.filter(
+    (option) => option.value !== form.preferredPosition1,
+  );
 
   return (
     <Modal
@@ -437,15 +443,22 @@ export function TrialsApplicationModal({
             <Select
               id="trials-app-pos1"
               value={form.preferredPosition1}
-              onChange={(event) =>
-                updateForm({ preferredPosition1: event.target.value })
-              }
+              onChange={(event) => {
+                const preferredPosition1 = event.target.value;
+                updateForm({
+                  preferredPosition1,
+                  preferredPosition2:
+                    preferredPosition1 === form.preferredPosition2
+                      ? ""
+                      : form.preferredPosition2,
+                });
+              }}
               required
             >
               <option value="" disabled>
                 Select position
               </option>
-              {TRIALS_POSITION_OPTIONS.map((option) => (
+              {position1Options.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
@@ -465,7 +478,7 @@ export function TrialsApplicationModal({
               <option value="" disabled>
                 Select position
               </option>
-              {TRIALS_POSITION_OPTIONS.map((option) => (
+              {position2Options.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

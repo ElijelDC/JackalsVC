@@ -132,9 +132,11 @@ function PortalSelect({
   const [canPortal, setCanPortal] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [menuPosition, setMenuPosition] = useState({
-    top: 0,
+    top: undefined as number | undefined,
+    bottom: undefined as number | undefined,
     left: 0,
     width: 0,
+    maxHeight: 240,
   });
 
   const updateMenuPosition = useCallback(() => {
@@ -142,10 +144,24 @@ function PortalSelect({
     if (!trigger) return;
 
     const rect = trigger.getBoundingClientRect();
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const margin = 8;
+    const preferredMaxHeight = 240;
+    const spaceBelow = viewportHeight - rect.bottom - margin;
+    const spaceAbove = rect.top - margin;
+    const openUpward = spaceBelow < 180 && spaceAbove > spaceBelow;
+    const availableSpace = openUpward ? spaceAbove : spaceBelow;
+    const maxHeight = Math.max(
+      120,
+      Math.min(preferredMaxHeight, availableSpace - 4),
+    );
+
     setMenuPosition({
-      top: rect.bottom + 4,
+      top: openUpward ? undefined : rect.bottom + 4,
+      bottom: openUpward ? viewportHeight - rect.top + 4 : undefined,
       left: rect.left,
       width: rect.width,
+      maxHeight,
     });
   }, []);
 
@@ -157,14 +173,17 @@ function PortalSelect({
     if (!open) return;
 
     updateMenuPosition();
+    triggerRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
 
     const handleReposition = () => updateMenuPosition();
     window.addEventListener("resize", handleReposition);
     window.addEventListener("scroll", handleReposition, true);
+    window.visualViewport?.addEventListener("resize", handleReposition);
 
     return () => {
       window.removeEventListener("resize", handleReposition);
       window.removeEventListener("scroll", handleReposition, true);
+      window.visualViewport?.removeEventListener("resize", handleReposition);
     };
   }, [open, updateMenuPosition]);
 
@@ -209,12 +228,14 @@ function PortalSelect({
         <ul
           role="listbox"
           aria-label={ariaLabel}
-          className="fixed z-[10001] max-h-60 overflow-y-auto overscroll-contain border border-white/10 bg-zinc-950 py-1 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+          className="fixed z-[10001] overflow-y-auto overscroll-contain border border-white/10 bg-zinc-950 py-1 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
           style={{
             top: menuPosition.top,
+            bottom: menuPosition.bottom,
             left: menuPosition.left,
             width: menuPosition.width,
             minWidth: menuPosition.width,
+            maxHeight: menuPosition.maxHeight,
           }}
         >
           {options.map((option) => {
