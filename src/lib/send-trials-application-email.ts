@@ -5,6 +5,9 @@ import type { trialsApplicationSchema } from "@/lib/validations";
 
 type TrialsApplicationData = z.infer<typeof trialsApplicationSchema>;
 
+const TRIALS_CONFIRMATION_FOOTNOTE =
+  "Jackals Volleyball Club — main trainings at Meakstown Community Centre; extra training and matchdays at Luttrellstown Community Centre.";
+
 function firstNameFrom(fullName: string) {
   return fullName.trim().split(/\s+/)[0] || fullName;
 }
@@ -26,8 +29,7 @@ async function sendMensDivision2TrialsConfirmationEmail(
         "We're looking forward to seeing you on court.",
       ],
       details: [{ label: "Team", value: "Men's Division 2" }],
-      footnote:
-        "Jackals Volleyball Club — trainings at Meakstown Community Centre; matchdays at Luttrellstown Community Centre.",
+      footnote: TRIALS_CONFIRMATION_FOOTNOTE,
     },
   });
 }
@@ -49,8 +51,7 @@ async function sendWomensDivision3TrialsConfirmationEmail(
         "We're looking forward to seeing you on court.",
       ],
       details: [{ label: "Team", value: trialsTeamLabel(data.tryingOutFor) }],
-      footnote:
-        "Jackals Volleyball Club — trainings at Meakstown Community Centre; matchdays at Luttrellstown Community Centre.",
+      footnote: TRIALS_CONFIRMATION_FOOTNOTE,
     },
   });
 }
