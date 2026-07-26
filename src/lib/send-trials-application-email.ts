@@ -16,19 +16,16 @@ async function sendMensDivision2TrialsConfirmationEmail(
 
   return sendNotificationEmail({
     to: data.contactEmail,
-    subject: "Jackals VC — Men's Division 2 trial details",
+    subject: "Jackals VC — Men's Division 2 trials",
     content: {
       heading: "Thanks for applying",
       greeting: `Hi ${firstName},`,
       paragraphs: [
         "We've received your application for the Jackals VC Men's Division 2 trials.",
-        "The proposed trial date is Wednesday 5 August 2026. Please stay tuned to WhatsApp or email for date confirmation and any venue updates.",
+        "We'll be in touch soon regarding the August trial dates.",
         "We're looking forward to seeing you on court.",
       ],
-      details: [
-        { label: "Team", value: "Men's Division 2" },
-        { label: "Proposed trial date", value: "Wednesday 5 August 2026" },
-      ],
+      details: [{ label: "Team", value: "Men's Division 2" }],
       footnote:
         "Jackals Volleyball Club — trainings at Meakstown Community Centre; matchdays at Luttrellstown Community Centre.",
     },
