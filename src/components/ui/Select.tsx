@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, X } from "lucide-react";
+import { Check, ChevronDown, ChevronsDown, X } from "lucide-react";
 import {
   Children,
   isValidElement,
@@ -145,6 +145,12 @@ function PortalSelect({
   const [canPortal, setCanPortal] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [scrollHints, setScrollHints] = useState({
+    canScrollUp: false,
+    canScrollDown: false,
+    isScrollable: false,
+  });
   const [menuPosition, setMenuPosition] = useState({
     top: undefined as number | undefined,
     bottom: undefined as number | undefined,
@@ -179,6 +185,18 @@ function PortalSelect({
     });
   }, []);
 
+  const updateScrollHints = useCallback(() => {
+    const list = listRef.current;
+    if (!list) return;
+
+    const isScrollable = list.scrollHeight > list.clientHeight + 1;
+    setScrollHints({
+      isScrollable,
+      canScrollUp: list.scrollTop > 4,
+      canScrollDown: list.scrollTop + list.clientHeight < list.scrollHeight - 4,
+    });
+  }, []);
+
   useEffect(() => {
     setCanPortal(true);
   }, []);
@@ -189,7 +207,10 @@ function PortalSelect({
     updateMenuPosition();
     containerRef.current?.scrollIntoView({ block: "nearest", behavior: "smooth" });
 
-    const handleReposition = () => updateMenuPosition();
+    const handleReposition = () => {
+      updateMenuPosition();
+      window.requestAnimationFrame(() => updateScrollHints());
+    };
     window.addEventListener("resize", handleReposition);
     window.addEventListener("scroll", handleReposition, true);
     window.visualViewport?.addEventListener("resize", handleReposition);
@@ -199,7 +220,25 @@ function PortalSelect({
       window.removeEventListener("scroll", handleReposition, true);
       window.visualViewport?.removeEventListener("resize", handleReposition);
     };
-  }, [open, updateMenuPosition]);
+  }, [open, updateMenuPosition, updateScrollHints]);
+
+  useEffect(() => {
+    if (!open) {
+      setScrollHints({
+        canScrollUp: false,
+        canScrollDown: false,
+        isScrollable: false,
+      });
+      return;
+    }
+
+    const frame = window.requestAnimationFrame(() => {
+      if (listRef.current) listRef.current.scrollTop = 0;
+      updateScrollHints();
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [open, options.length, value, clearable, menuPosition.maxHeight, updateScrollHints]);
 
   useEffect(() => {
     if (!open) return;
@@ -266,10 +305,8 @@ function PortalSelect({
           className="fixed inset-0 z-[10000] bg-transparent"
           onClick={() => setOpen(false)}
         />
-        <ul
-          role="listbox"
-          aria-label={ariaLabel}
-          className="fixed z-[10001] overflow-y-auto overscroll-contain border border-white/10 bg-zinc-950 py-1 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
+        <div
+          className="fixed z-[10001] overflow-hidden border border-white/10 bg-zinc-950 shadow-[0_16px_40px_rgba(0,0,0,0.55)]"
           style={{
             top: menuPosition.top,
             bottom: menuPosition.bottom,
@@ -279,41 +316,78 @@ function PortalSelect({
             maxHeight: menuPosition.maxHeight,
           }}
         >
-          {menuOptions.map((option) => {
-            const isSelected = option.value === value;
-            const isPlaceholder = option.value === "";
+          {scrollHints.canScrollUp ? (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 top-0 z-10 h-7 bg-gradient-to-b from-zinc-950 via-zinc-950/80 to-transparent"
+            />
+          ) : null}
+          <ul
+            ref={listRef}
+            role="listbox"
+            aria-label={ariaLabel}
+            onScroll={updateScrollHints}
+            className={cn(
+              "max-h-[inherit] overflow-y-auto overscroll-contain py-1",
+              "[scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.28)_transparent]",
+              "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-white/25",
+              scrollHints.isScrollable &&
+                scrollHints.canScrollDown &&
+                "pb-10",
+            )}
+            style={{ maxHeight: menuPosition.maxHeight }}
+          >
+            {menuOptions.map((option) => {
+              const isSelected = option.value === value;
+              const isPlaceholder = option.value === "";
 
-            return (
-              <li key={option.value || "__clear__"} role="option" aria-selected={isSelected}>
-                <button
-                  type="button"
-                  disabled={option.disabled && !(clearable && isPlaceholder)}
-                  onClick={() => handleSelect(option.value)}
-                  className={cn(
-                    "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
-                    isSelected
-                      ? "bg-jackals-red/15 text-jackals-red-light"
-                      : isPlaceholder
-                        ? "text-zinc-400 hover:bg-white/5"
-                        : "text-zinc-200 hover:bg-white/5",
-                    option.disabled &&
-                      !(clearable && isPlaceholder) &&
-                      "cursor-not-allowed opacity-50",
-                  )}
+              return (
+                <li
+                  key={option.value || "__clear__"}
+                  role="option"
+                  aria-selected={isSelected}
                 >
-                  <Check
+                  <button
+                    type="button"
+                    disabled={option.disabled && !(clearable && isPlaceholder)}
+                    onClick={() => handleSelect(option.value)}
                     className={cn(
-                      "h-4 w-4 shrink-0",
-                      isSelected ? "opacity-100" : "opacity-0",
+                      "flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm transition-colors",
+                      isSelected
+                        ? "bg-jackals-red/15 text-jackals-red-light"
+                        : isPlaceholder
+                          ? "text-zinc-400 hover:bg-white/5"
+                          : "text-zinc-200 hover:bg-white/5",
+                      option.disabled &&
+                        !(clearable && isPlaceholder) &&
+                        "cursor-not-allowed opacity-50",
                     )}
-                    aria-hidden
-                  />
-                  <span className="min-w-0 flex-1">{option.label}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                  >
+                    <Check
+                      className={cn(
+                        "h-4 w-4 shrink-0",
+                        isSelected ? "opacity-100" : "opacity-0",
+                      )}
+                      aria-hidden
+                    />
+                    <span className="min-w-0 flex-1">{option.label}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+          {scrollHints.canScrollDown ? (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center bg-gradient-to-t from-zinc-950 via-zinc-950/95 to-transparent px-3 pb-2 pt-8"
+            >
+              <ChevronsDown className="h-4 w-4 animate-bounce text-zinc-400" />
+              <span className="mt-0.5 text-[11px] font-medium tracking-wide text-zinc-400">
+                Scroll for more
+              </span>
+            </div>
+          ) : null}
+        </div>
       </>,
       document.body,
     );
