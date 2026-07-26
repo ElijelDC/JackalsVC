@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
@@ -71,6 +71,32 @@ function clearDraft() {
   sessionStorage.removeItem(DRAFT_STORAGE_KEY);
 }
 
+function validateTrialsForm(form: TrialsFormState): string | null {
+  if (!form.tryingOutFor) return "Select which team you are trying out for";
+  if (!form.fullName.trim()) return "Enter your name";
+  if (!form.age.trim()) return "Enter your age";
+  if (!form.yearsExperience.trim()) {
+    return "Enter your years of volleyball experience";
+  }
+  if (!form.contactEmail.trim()) return "Enter your email address";
+  if (!form.contactNumber.trim()) return "Enter your phone number";
+  if (!form.inlDivision) {
+    return "Select the division you played in during the VLY Ireland National League 25/26 season";
+  }
+  if (form.inlDivision === "OTHER" && !form.inlDivisionOther.trim()) {
+    return "Please state the other division or competition";
+  }
+  if (trialsPlayedInlDivision(form.inlDivision) && !form.inlTeamName.trim()) {
+    return "Enter the team you played for";
+  }
+  if (!form.preferredPosition1) return "Select your first preferred position";
+  if (!form.preferredPosition2) return "Select your second preferred position";
+  if (form.preferredPosition1 === form.preferredPosition2) {
+    return "Choose a different second preferred position";
+  }
+  return null;
+}
+
 function teamAccentClasses(tryingOutFor: string) {
   if (tryingOutFor === "MENS_DIVISION_2") {
     return {
@@ -105,6 +131,8 @@ export function TrialsApplicationModal({
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [draftRestored, setDraftRestored] = useState(false);
+  const successRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -122,6 +150,21 @@ export function TrialsApplicationModal({
     if (!open || success) return;
     writeDraft(form);
   }, [form, open, success]);
+
+  useEffect(() => {
+    if (!success) return;
+
+    requestAnimationFrame(() => {
+      const dialog = successRef.current?.closest('[role="dialog"]');
+      if (dialog instanceof HTMLElement) {
+        dialog.scrollTo({ top: 0, behavior: "smooth" });
+      }
+      successRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [success]);
 
   const updateForm = (patch: Partial<TrialsFormState>) => {
     setDraftRestored(false);
@@ -157,9 +200,17 @@ export function TrialsApplicationModal({
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setLoading(true);
     setError(null);
     setSuccess(null);
+
+    const validationError = validateTrialsForm(form);
+    if (validationError) {
+      setError(validationError);
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+
+    setLoading(true);
 
     const playedInl = trialsPlayedInlDivision(form.inlDivision);
 
@@ -188,6 +239,10 @@ export function TrialsApplicationModal({
 
     if (!result.ok) {
       setError(result.error);
+      successRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
       return;
     }
 
@@ -223,7 +278,7 @@ export function TrialsApplicationModal({
         <div className="space-y-2">
           <p className="text-sm leading-relaxed text-zinc-400">
             Register for our August 2026 trials for Men&apos;s Division 2 or
-            Women&apos;s Division 3.
+            Women&apos;s Division 3. All fields are required.
           </p>
           {draftRestored && !success ? (
             <p className="text-sm text-amber-300/90">
@@ -235,17 +290,21 @@ export function TrialsApplicationModal({
       className="max-w-[min(100%,40rem)]"
     >
       <form
+        ref={formRef}
+        noValidate
         onSubmit={handleSubmit}
         className={cn(
           "space-y-4 rounded-xl border p-1 transition-colors sm:p-2",
           accent.panel,
         )}
       >
-        <SuccessBanner message={success} />
+        <SuccessBanner ref={successRef} message={success} />
 
         <div className="space-y-3 px-1 pt-1">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <Label>Trying out for</Label>
+            <Label>
+              Trying out for <span className="text-jackals-red-light">*</span>
+            </Label>
             {selectedTeam ? (
               <span
                 className={cn(
@@ -265,7 +324,11 @@ export function TrialsApplicationModal({
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => updateForm({ tryingOutFor: option.value })}
+                  onClick={() =>
+                    updateForm({
+                      tryingOutFor: selected ? "" : option.value,
+                    })
+                  }
                   className={cn(
                     "rounded-lg border px-4 py-4 text-left transition",
                     isRed
@@ -300,7 +363,9 @@ export function TrialsApplicationModal({
         </div>
 
         <div className="px-1">
-          <Label htmlFor="trials-app-name">Name</Label>
+          <Label htmlFor="trials-app-name">
+            Name <span className="text-jackals-red-light">*</span>
+          </Label>
           <Input
             id="trials-app-name"
             value={form.fullName}
@@ -313,7 +378,9 @@ export function TrialsApplicationModal({
 
         <div className="grid gap-4 px-1 sm:grid-cols-2">
           <div>
-            <Label htmlFor="trials-app-age">Age</Label>
+            <Label htmlFor="trials-app-age">
+              Age <span className="text-jackals-red-light">*</span>
+            </Label>
             <Input
               id="trials-app-age"
               type="text"
@@ -327,7 +394,8 @@ export function TrialsApplicationModal({
           </div>
           <div>
             <Label htmlFor="trials-app-experience">
-              Volleyball experience (years)
+              Volleyball experience (years){" "}
+              <span className="text-jackals-red-light">*</span>
             </Label>
             <Input
               id="trials-app-experience"
@@ -346,7 +414,9 @@ export function TrialsApplicationModal({
 
         <div className="grid gap-4 px-1 sm:grid-cols-2">
           <div>
-            <Label htmlFor="trials-app-email">Email</Label>
+            <Label htmlFor="trials-app-email">
+              Email <span className="text-jackals-red-light">*</span>
+            </Label>
             <Input
               id="trials-app-email"
               type="email"
@@ -360,7 +430,9 @@ export function TrialsApplicationModal({
             />
           </div>
           <div>
-            <Label htmlFor="trials-app-phone">Phone number</Label>
+            <Label htmlFor="trials-app-phone">
+              Phone number <span className="text-jackals-red-light">*</span>
+            </Label>
             <Input
               id="trials-app-phone"
               type="tel"
@@ -377,10 +449,12 @@ export function TrialsApplicationModal({
 
         <div className="px-1">
           <Label htmlFor="trials-app-inl">
-            Division played during VLY Ireland National League 25/26 season
+            Division played during VLY Ireland National League 25/26 season{" "}
+            <span className="text-jackals-red-light">*</span>
           </Label>
           <Select
             id="trials-app-inl"
+            clearable
             value={form.inlDivision}
             onChange={(event) =>
               updateForm({
@@ -407,7 +481,9 @@ export function TrialsApplicationModal({
 
         {form.inlDivision === "OTHER" ? (
           <div className="px-1">
-            <Label htmlFor="trials-app-inl-other">Please state other</Label>
+            <Label htmlFor="trials-app-inl-other">
+              Please state other <span className="text-jackals-red-light">*</span>
+            </Label>
             <Input
               id="trials-app-inl-other"
               value={form.inlDivisionOther}
@@ -423,7 +499,8 @@ export function TrialsApplicationModal({
         {showInlTeam ? (
           <div className="px-1">
             <Label htmlFor="trials-app-inl-team">
-              What team did you play for?
+              What team did you play for?{" "}
+              <span className="text-jackals-red-light">*</span>
             </Label>
             <Input
               id="trials-app-inl-team"
@@ -439,9 +516,13 @@ export function TrialsApplicationModal({
 
         <div className="grid gap-4 px-1 sm:grid-cols-2">
           <div>
-            <Label htmlFor="trials-app-pos1">Preferred position 1</Label>
+            <Label htmlFor="trials-app-pos1">
+              Preferred position 1{" "}
+              <span className="text-jackals-red-light">*</span>
+            </Label>
             <Select
               id="trials-app-pos1"
+              clearable
               value={form.preferredPosition1}
               onChange={(event) => {
                 const preferredPosition1 = event.target.value;
@@ -466,9 +547,13 @@ export function TrialsApplicationModal({
             </Select>
           </div>
           <div>
-            <Label htmlFor="trials-app-pos2">Preferred position 2</Label>
+            <Label htmlFor="trials-app-pos2">
+              Preferred position 2{" "}
+              <span className="text-jackals-red-light">*</span>
+            </Label>
             <Select
               id="trials-app-pos2"
+              clearable
               value={form.preferredPosition2}
               onChange={(event) =>
                 updateForm({ preferredPosition2: event.target.value })

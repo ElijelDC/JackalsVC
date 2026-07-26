@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, X } from "lucide-react";
 import {
   Children,
   isValidElement,
@@ -69,9 +69,19 @@ function collectOptions(children: ReactNode): SelectOption[] {
 
 export const Select = forwardRef<
   HTMLSelectElement,
-  SelectHTMLAttributes<HTMLSelectElement>
+  SelectHTMLAttributes<HTMLSelectElement> & { clearable?: boolean }
 >(function Select(
-  { className, children, value, defaultValue, onChange, disabled, id, ...props },
+  {
+    className,
+    children,
+    value,
+    defaultValue,
+    onChange,
+    disabled,
+    id,
+    clearable = false,
+    ...props
+  },
   _ref,
 ) {
   const fallbackId = useId();
@@ -96,6 +106,7 @@ export const Select = forwardRef<
       selectedLabel={selectedOption?.label ?? "Select an option"}
       onChange={onChange}
       disabled={disabled}
+      clearable={clearable}
       aria-label={props["aria-label"]}
       required={props.required}
       name={props.name}
@@ -113,6 +124,7 @@ function PortalSelect({
   selectedLabel,
   onChange,
   disabled,
+  clearable,
   required,
   name,
   "aria-label": ariaLabel,
@@ -124,6 +136,7 @@ function PortalSelect({
   selectedLabel: string;
   onChange?: SelectHTMLAttributes<HTMLSelectElement>["onChange"];
   disabled?: boolean;
+  clearable?: boolean;
   required?: boolean;
   name?: string;
   "aria-label"?: string;
@@ -200,7 +213,7 @@ function PortalSelect({
 
   const handleSelect = (nextValue: string) => {
     const option = options.find((item) => item.value === nextValue);
-    if (option?.disabled) return;
+    if (option?.disabled && !(clearable && nextValue === "")) return;
 
     if (nextValue === value) {
       setOpen(false);
@@ -213,6 +226,29 @@ function PortalSelect({
     } as ChangeEvent<HTMLSelectElement>);
     setOpen(false);
   };
+
+  const handleClear = (event: React.MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    if (!value) return;
+    onChange?.({
+      target: { value: "" },
+      currentTarget: { value: "" },
+    } as ChangeEvent<HTMLSelectElement>);
+  };
+
+  const placeholderOption = options.find(
+    (option) => option.value === "" || option.disabled,
+  );
+  const menuOptions =
+    clearable && value
+      ? [
+          {
+            value: "",
+            label: placeholderOption?.label ?? "Clear selection",
+          },
+          ...options.filter((option) => option.value !== ""),
+        ]
+      : options;
 
   const menu =
     open &&
@@ -238,21 +274,26 @@ function PortalSelect({
             maxHeight: menuPosition.maxHeight,
           }}
         >
-          {options.map((option) => {
+          {menuOptions.map((option) => {
             const isSelected = option.value === value;
+            const isPlaceholder = option.value === "";
 
             return (
-              <li key={option.value} role="option" aria-selected={isSelected}>
+              <li key={option.value || "__clear__"} role="option" aria-selected={isSelected}>
                 <button
                   type="button"
-                  disabled={option.disabled}
+                  disabled={option.disabled && !(clearable && isPlaceholder)}
                   onClick={() => handleSelect(option.value)}
                   className={cn(
                     "flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
                     isSelected
                       ? "bg-jackals-red/15 text-jackals-red-light"
-                      : "text-zinc-200 hover:bg-white/5",
-                    option.disabled && "cursor-not-allowed opacity-50",
+                      : isPlaceholder
+                        ? "text-zinc-400 hover:bg-white/5"
+                        : "text-zinc-200 hover:bg-white/5",
+                    option.disabled &&
+                      !(clearable && isPlaceholder) &&
+                      "cursor-not-allowed opacity-50",
                   )}
                 >
                   <Check
@@ -274,38 +315,63 @@ function PortalSelect({
 
   return (
     <>
-      {name && (
+      {name ? (
         <input type="hidden" name={name} value={value} required={required} />
-      )}
-      <button
-        ref={triggerRef}
-        id={selectId}
-        type="button"
-        disabled={disabled}
-        aria-label={ariaLabel}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-required={required}
-        onClick={(event) => {
-          event.stopPropagation();
-          if (disabled) return;
-          setOpen((current) => !current);
-        }}
-        className={cn(
-          fieldClassName,
-          "flex items-center justify-between gap-2 text-left",
-          className,
-        )}
-      >
-        <span className="min-w-0 truncate">{selectedLabel}</span>
-        <ChevronDown
-          className={cn(
-            "h-4 w-4 shrink-0 text-zinc-500 transition-transform",
-            open && "rotate-180",
-          )}
+      ) : required ? (
+        <input
+          type="text"
+          value={value}
+          required
+          readOnly
+          tabIndex={-1}
           aria-hidden
+          className="pointer-events-none absolute h-0 w-0 opacity-0"
+          onChange={() => {}}
         />
-      </button>
+      ) : null}
+      <div className="relative">
+        <button
+          ref={triggerRef}
+          id={selectId}
+          type="button"
+          disabled={disabled}
+          aria-label={ariaLabel}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-required={required}
+          onClick={(event) => {
+            event.stopPropagation();
+            if (disabled) return;
+            setOpen((current) => !current);
+          }}
+          className={cn(
+            fieldClassName,
+            "flex w-full items-center justify-between gap-2 text-left",
+            clearable && value && "pr-10",
+            className,
+          )}
+        >
+          <span className="min-w-0 truncate">{selectedLabel}</span>
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 shrink-0 text-zinc-500 transition-transform",
+              open && "rotate-180",
+            )}
+            aria-hidden
+          />
+        </button>
+        {clearable && value ? (
+          <button
+            type="button"
+            disabled={disabled}
+            aria-label="Clear selection"
+            onClick={handleClear}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-500 transition-colors hover:bg-white/5 hover:text-white"
+          >
+            <X className="h-4 w-4" aria-hidden />
+          </button>
+        ) : null}
+      </div>
       {menu}
     </>
   );
