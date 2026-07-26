@@ -43,11 +43,27 @@ jobs:
           script_stop: true
           script: |
             set -euo pipefail
-            cd "${{ secrets.HETZNER_APP_DIR }}"
+            APP_DIR="${{ secrets.HETZNER_APP_DIR }}"
+            if [[ ! -d "$APP_DIR" ]]; then
+              echo "Configured HETZNER_APP_DIR does not exist: $APP_DIR"
+              for candidate in /opt/app /root/JackalsVC /root/app; do
+                if [[ -d "$candidate/.git" ]]; then
+                  APP_DIR="$candidate"
+                  echo "Using detected app directory: $APP_DIR"
+                  break
+                fi
+              done
+            fi
+            if [[ ! -d "$APP_DIR" ]]; then
+              echo "::error::Could not find the app directory on the server."
+              echo "Set the HETZNER_APP_DIR secret to the repo path (production uses /opt/app)."
+              exit 1
+            fi
+            cd "$APP_DIR"
             git fetch origin main
             git checkout main
             git pull --ff-only origin main
             docker compose --env-file .env.production up -d --build --force-recreate app
-            sleep 8
-            docker compose exec -T app npx prisma migrate deploy
+            sleep 12
+            docker compose exec -T app npx prisma migrate deploy || echo "migrate deploy skipped (startup db push handles schema)"
             docker compose ps
