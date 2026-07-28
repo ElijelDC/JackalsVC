@@ -13,7 +13,7 @@ import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { enrichEventRecords, serializeEnrichedEvent } from "@/lib/event-enrichment";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
-import { getTeamTrainingSession, getUserTrainingTeamKey } from "@/lib/training-teams";
+import { getTeamTrainingSession, getUserTrainingTeamKeys } from "@/lib/training-teams";
 
 export type { TrainingRosterMember, TrainingSessionDetailData };
 
@@ -147,8 +147,8 @@ export async function getTrainingSessionDetail(
     notFound();
   }
 
-  const userTeamKey = await getUserTrainingTeamKey(userId);
-  if (userTeamKey !== event.trainingSession.trainingTeamKey) {
+  const userTeamKeys = await getUserTrainingTeamKeys(userId);
+  if (!userTeamKeys.includes(event.trainingSession.trainingTeamKey)) {
     notFound();
   }
 

@@ -12,6 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MonthNavigator } from "@/components/calendar/MonthNavigator";
+import { SquadBannerTeamFilter } from "@/components/training/SquadBannerTeamFilter";
 import {
   TrainingAttendanceStatusBadge,
 } from "@/components/training/TrainingAttendancePicker";
@@ -47,7 +48,16 @@ export type TeamMatchListItem = {
   warmUpTime: string;
   matchStart: string;
   cancelled?: boolean;
+  trainingTeamKey?: string;
+  teamName?: string;
 };
+
+function buildMatchesQuery(month: Date, teamKey: string | null | undefined) {
+  const params = new URLSearchParams();
+  params.set("month", formatTrainingMonthParam(month));
+  if (teamKey) params.set("team", teamKey);
+  return `/matches?${params.toString()}`;
+}
 
 function MonthProgressBar({
   attending,
@@ -151,12 +161,16 @@ function VenueBadge({ venue }: { venue: string }) {
 
 export function TeamMatchesMonthView({
   team,
+  teams = [],
+  selectedTeamKey = null,
   month,
   matches,
   attendanceByMatchId,
   isCoach = false,
 }: {
-  team: TrainingTeam;
+  team: TrainingTeam | null;
+  teams?: TrainingTeam[];
+  selectedTeamKey?: string | null;
   month: Date;
   matches: TeamMatchListItem[];
   attendanceByMatchId: Record<string, TrainingAttendanceStatus>;
@@ -165,6 +179,14 @@ export function TeamMatchesMonthView({
   const router = useRouter();
   const monthLabel = format(month, "MMMM yyyy");
   const now = new Date();
+  const showTeamFilter = teams.length > 1;
+  const isAllTeams = showTeamFilter && !selectedTeamKey;
+  const squadTitle = isAllTeams
+    ? "All teams"
+    : (team?.name ?? teams[0]?.name ?? "Your squad");
+  const scheduleHint = isAllTeams
+    ? teams.map((item) => item.name).join(" · ")
+    : null;
 
   const upcomingMatches = matches.filter(
     (match) => !isPast(new Date(match.matchStart)),
@@ -221,8 +243,12 @@ export function TeamMatchesMonthView({
   });
 
   const navigateMonth = (target: Date) => {
-    router.push(`/matches?month=${formatTrainingMonthParam(target)}`);
+    router.push(buildMatchesQuery(target, selectedTeamKey));
   };
+
+  const editMatchesHref = selectedTeamKey
+    ? `/coach/matches?team=${encodeURIComponent(selectedTeamKey)}`
+    : "/coach/matches";
 
   return (
     <PageContainer>
@@ -234,25 +260,42 @@ export function TeamMatchesMonthView({
       <AnimateIn>
         <div className="mb-8 overflow-hidden border border-jackals-red/25 bg-gradient-to-br from-jackals-red/15 via-jackals-surface to-jackals-surface">
           <div className="border-b border-jackals-red/20 px-6 py-3">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-              <Users className="h-3.5 w-3.5" />
-              Your squad
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+                <Users className="h-3.5 w-3.5" />
+                Your squad
+              </div>
+              {showTeamFilter && (
+                <SquadBannerTeamFilter
+                  squads={teams}
+                  value={selectedTeamKey ?? ""}
+                  onChange={(value) => {
+                    router.push(buildMatchesQuery(month, value || null));
+                  }}
+                />
+              )}
             </div>
           </div>
           <div className="px-6 py-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex-1">
                 <h2 className="font-display text-2xl font-semibold text-white">
-                  {team.name}
+                  {squadTitle}
                 </h2>
                 <p className="mt-2 text-sm text-zinc-400">
-                  {upcomingMatches.length} upcoming match
-                  {upcomingMatches.length !== 1 ? "es" : ""} this month
+                  {scheduleHint ? (
+                    <>{scheduleHint}</>
+                  ) : (
+                    <>
+                      {upcomingMatches.length} upcoming match
+                      {upcomingMatches.length !== 1 ? "es" : ""} this month
+                    </>
+                  )}
                 </p>
               </div>
               {isCoach && (
                 <Link
-                  href="/coach/matches"
+                  href={editMatchesHref}
                   className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-jackals-red-light hover:text-jackals-red transition-colors"
                 >
                   Edit matches
@@ -269,7 +312,7 @@ export function TeamMatchesMonthView({
           </div>
         </div>
 
-        <Card className="mb-6 p-4">
+        <Card className="mb-6 min-w-0 overflow-hidden p-4">
           <MonthNavigator
             month={month}
             onMonthChange={navigateMonth}
@@ -290,8 +333,9 @@ export function TeamMatchesMonthView({
                       <span className="font-medium text-white">
                         {unansweredUpcoming}
                       </span>{" "}
-                      match{unansweredUpcoming === 1 ? "" : "es"} you haven&apos;t
-                      responded to yet
+                      match{unansweredUpcoming === 1 ? "" : "es"}
+                      {" "}
+                      you haven&apos;t responded to yet
                     </>
                   ) : hasUpcomingNotYetOpen ? (
                     <>Responses open 2 weeks before each match</>
@@ -379,6 +423,11 @@ export function TeamMatchesMonthView({
                           )}
                         >
                           {formatMatchTitle(match.opponentName, match.venue)}
+                          {isAllTeams && match.teamName ? (
+                            <span className="ml-2 text-sm font-normal text-zinc-500">
+                              · {match.teamName}
+                            </span>
+                          ) : null}
                         </p>
                         {!isCancelled && (
                           <p className="mt-0.5 truncate text-sm text-zinc-500">
@@ -486,6 +535,11 @@ export function TeamMatchesMonthView({
                       </p>
                       <p className="mt-0.5 text-xs text-zinc-500">
                         {formatMatchTitle(match.opponentName, match.venue)}
+                        {isAllTeams && match.teamName ? (
+                          <span className="ml-1 text-zinc-600">
+                            · {match.teamName}
+                          </span>
+                        ) : null}
                       </p>
                       {isCancelled ? (
                         <div className="mt-1">

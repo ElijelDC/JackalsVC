@@ -29,6 +29,8 @@ const COACH_NAV_LINKS: CoachLink[] = [
   { href: "/coach/clinics", label: "Skills clinics", icon: GraduationCap },
 ];
 
+const STANDALONE_COACH_PATHS = ["/coach/trials-applications"];
+
 function CoachNavItem({
   link,
   active,
@@ -62,6 +64,17 @@ export function CoachShell({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const isStandalone = STANDALONE_COACH_PATHS.some((path) =>
+    pathname.startsWith(path),
+  );
+
+  if (isStandalone) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
+        {children}
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
