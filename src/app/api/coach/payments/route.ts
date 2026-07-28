@@ -7,10 +7,15 @@ export async function GET() {
   const { coach, response } = await requirePaidCoach();
   if (response) return response;
 
-  const eventCache = await preloadTeamEvents([coach!.trainingTeamKey], 12, 3);
+  const teamKeys = coach!.trainingTeamKeys;
+  const teamLabel =
+    coach!.teams.length > 1
+      ? coach!.teams.map((team) => team.name).join(" · ")
+      : coach!.teamName;
+  const eventCache = await preloadTeamEvents(teamKeys, 12, 3);
   const payments = await getCoachSalaryPaymentsWithCache(
     coach!.clubMemberId,
-    coach!.trainingTeamKey,
+    teamKeys,
     coach!.userId,
     { monthsBack: 12, monthsAhead: 3 },
     eventCache,
@@ -19,6 +24,6 @@ export async function GET() {
   return NextResponse.json({
     payments: maskCoachPaymentsForCoachView(payments),
     ratePerSession: COACH_SESSION_RATE_EUR,
-    teamName: coach!.teamName,
+    teamName: teamLabel,
   });
 }

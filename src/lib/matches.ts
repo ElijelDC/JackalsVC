@@ -11,21 +11,30 @@ import {
 import { parseTrainingMonthParam } from "@/lib/training-teams";
 
 export async function resolveMatchesMonth(
-  trainingTeamKey: string,
+  trainingTeamKeys: string | string[],
   monthParam: string | undefined,
 ) {
+  const keys = Array.isArray(trainingTeamKeys)
+    ? trainingTeamKeys
+    : [trainingTeamKeys];
   const month = parseTrainingMonthParam(monthParam);
-  if (monthParam) return month;
+  if (monthParam || keys.length === 0) return month;
 
-  const currentMonthMatches = await getMonthlyTeamMatches(
-    trainingTeamKey,
-    month,
-  );
+  const currentMonthMatches = await prisma.teamMatch.findMany({
+    where: {
+      trainingTeamKey: { in: keys },
+      matchStart: {
+        gte: startOfMonth(month),
+        lte: endOfMonth(month),
+      },
+    },
+    take: 1,
+  });
   if (currentMonthMatches.length > 0) return month;
 
   const nextMatch = await prisma.teamMatch.findFirst({
     where: {
-      trainingTeamKey,
+      trainingTeamKey: { in: keys },
       matchStart: { gte: startOfMonth(month) },
     },
     orderBy: { matchStart: "asc" },
@@ -37,7 +46,7 @@ export async function resolveMatchesMonth(
 
   const previousMatch = await prisma.teamMatch.findFirst({
     where: {
-      trainingTeamKey,
+      trainingTeamKey: { in: keys },
       matchStart: { lt: startOfMonth(month) },
     },
     orderBy: { matchStart: "desc" },
@@ -60,6 +69,22 @@ export async function getMonthlyTeamMatches(
   return prisma.teamMatch.findMany({
     where: {
       trainingTeamKey,
+      matchStart: { gte: monthStart, lte: monthEnd },
+    },
+    orderBy: { matchStart: "asc" },
+  });
+}
+
+export async function getMonthlyMatchesForTeams(
+  trainingTeamKeys: string[],
+  month: Date,
+) {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+
+  return prisma.teamMatch.findMany({
+    where: {
+      trainingTeamKey: { in: trainingTeamKeys },
       matchStart: { gte: monthStart, lte: monthEnd },
     },
     orderBy: { matchStart: "asc" },

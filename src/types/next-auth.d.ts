@@ -11,6 +11,7 @@ declare module "next-auth" {
       isPaidCoach: boolean;
       coachPaymentType: CoachPaymentType | null;
       coachTeamKey: string | null;
+      coachTeamKeys: string[];
     } & DefaultSession["user"];
   }
 
@@ -28,5 +29,6 @@ declare module "next-auth/jwt" {
     isPaidCoach?: boolean;
     coachPaymentType?: CoachPaymentType | null;
     coachTeamKey?: string | null;
+    coachTeamKeys?: string[];
   }
 }

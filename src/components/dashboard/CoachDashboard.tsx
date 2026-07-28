@@ -62,8 +62,6 @@ export function CoachDashboard({
         />
       )}
 
-      <CoachDashboardQuickActions />
-
       <CoachTrainingResponsesPanel pending={pendingResponses} />
 
       <div className="grid min-w-0 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
@@ -76,6 +74,8 @@ export function CoachDashboard({
           matches={upcomingMatches}
         />
       </div>
+
+      <CoachDashboardQuickActions />
 
       <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
     </AnimatedPageSections>
