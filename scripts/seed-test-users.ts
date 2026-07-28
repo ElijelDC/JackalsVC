@@ -40,7 +40,15 @@ const rosterEntries = [
   { vlyNumber: "VLY10003", name: "Mike Chen", email: "mike.chen@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "PLAYER" },
   { vlyNumber: "VLY10004", name: "Emma Williams", email: "emma.williams@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "COACH", coachPaymentType: "PAID" },
   { vlyNumber: "VLY10005", name: "James Patel", email: "james.patel@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "COACH", coachPaymentType: "PAID" },
-  { vlyNumber: "VLY10012", name: "Coach Demo", email: "coach@jackalsvc.com", trainingTeamKey: "DIV2_MENS", rosterRole: "COACH", coachPaymentType: "PAID" },
+  {
+    vlyNumber: "VLY10012",
+    name: "Coach Demo",
+    email: "coach@jackalsvc.com",
+    trainingTeamKey: "DIV2_MENS",
+    coachSquadKeys: ["DIV2_MENS", "DIV4_MENS"],
+    rosterRole: "COACH",
+    coachPaymentType: "PAID",
+  },
   { vlyNumber: "VLY10006", name: "Olivia Brown", email: "olivia.brown@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
   { vlyNumber: "VLY10007", name: "Liam Davis", email: "liam.davis@jackalsvc.com", trainingTeamKey: "DIV4_MENS", rosterRole: "PLAYER" },
   { vlyNumber: "VLY10008", name: "Sophie Taylor", email: "sophie.taylor@jackalsvc.com", trainingTeamKey: "DIV3_WOMENS", rosterRole: "PLAYER" },
@@ -101,7 +109,7 @@ async function main() {
       ? await prisma.user.findUnique({ where: { email: entry.email } })
       : null;
 
-    await prisma.clubMember.upsert({
+    const member = await prisma.clubMember.upsert({
       where: { vlyNumber: entry.vlyNumber },
       update: {
         name: entry.name,
@@ -137,6 +145,27 @@ async function main() {
         registrationReviewedByUserId: entry.registrationReviewedByUserId ?? null,
       },
     });
+
+    const coachSquadKeys =
+      entry.rosterRole === "COACH"
+        ? ("coachSquadKeys" in entry && Array.isArray(entry.coachSquadKeys)
+            ? entry.coachSquadKeys
+            : entry.trainingTeamKey
+              ? [entry.trainingTeamKey]
+              : [])
+        : [];
+
+    await prisma.clubMemberCoachSquad.deleteMany({
+      where: { clubMemberId: member.id },
+    });
+    if (coachSquadKeys.length > 0) {
+      await prisma.clubMemberCoachSquad.createMany({
+        data: coachSquadKeys.map((trainingTeamKey: string) => ({
+          clubMemberId: member.id,
+          trainingTeamKey,
+        })),
+      });
+    }
   }
 
   for (const reg of registrationCodes) {

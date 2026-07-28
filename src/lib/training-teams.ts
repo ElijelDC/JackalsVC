@@ -21,15 +21,47 @@ export {
   isTrainingSquadKey,
 } from "@/lib/training-squads";
 
-export async function getUserTrainingTeamKey(userId: string | undefined) {
-  if (!userId) return null;
+function uniqueTeamKeys(keys: Array<string | null | undefined>): string[] {
+  return [...new Set(keys.filter((key): key is string => Boolean(key)))];
+}
+
+/** All squads the user belongs to (coaches may have multiple via coachSquads). */
+export async function getUserTrainingTeamKeys(userId: string | undefined) {
+  if (!userId) return [] as string[];
 
   const clubMember = await prisma.clubMember.findFirst({
     where: { userId },
-    select: { trainingTeamKey: true },
+    select: {
+      rosterRole: true,
+      trainingTeamKey: true,
+      coachSquads: { select: { trainingTeamKey: true } },
+    },
   });
 
-  return clubMember?.trainingTeamKey ?? null;
+  if (!clubMember) return [];
+
+  if (clubMember.rosterRole === "COACH") {
+    const fromJoin = clubMember.coachSquads.map((row) => row.trainingTeamKey);
+    const keys = uniqueTeamKeys([...fromJoin, clubMember.trainingTeamKey]);
+    if (
+      clubMember.trainingTeamKey &&
+      keys.includes(clubMember.trainingTeamKey)
+    ) {
+      return [
+        clubMember.trainingTeamKey,
+        ...keys.filter((key) => key !== clubMember.trainingTeamKey),
+      ];
+    }
+    return keys;
+  }
+
+  return clubMember.trainingTeamKey ? [clubMember.trainingTeamKey] : [];
+}
+
+/** Primary / first squad key (for single-team callers). */
+export async function getUserTrainingTeamKey(userId: string | undefined) {
+  const keys = await getUserTrainingTeamKeys(userId);
+  return keys[0] ?? null;
 }
 
 export async function getTeamTrainingSession(trainingTeamKey: string) {
@@ -95,6 +127,29 @@ export async function userCanSignUpForTrainingEvent(
 ) {
   if (!trainingTeamKey) return false;
 
-  const userTeamKey = await getUserTrainingTeamKey(userId);
-  return userTeamKey === trainingTeamKey;
+  const userTeamKeys = await getUserTrainingTeamKeys(userId);
+  return userTeamKeys.includes(trainingTeamKey);
+}
+
+export async function getMonthlyTrainingEventsForTeams(
+  trainingTeamKeys: string[],
+  month: Date,
+) {
+  const results = await Promise.all(
+    trainingTeamKeys.map(async (trainingTeamKey) => {
+      const { session, events } = await getMonthlyTeamTrainingEvents(
+        trainingTeamKey,
+        month,
+      );
+      return { trainingTeamKey, session, events };
+    }),
+  );
+
+  const events = results
+    .flatMap(({ trainingTeamKey, events: teamEvents }) =>
+      teamEvents.map((event) => ({ ...event, trainingTeamKey })),
+    )
+    .sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+
+  return { results, events };
 }

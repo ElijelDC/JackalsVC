@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   CheckCircle2,
   Clock3,
+  Download,
   LayoutGrid,
   List,
   Loader2,
@@ -157,8 +158,14 @@ function ActionButtons({
 
 export function TrialsApplicationsManager({
   initialApplications,
+  listApiPath = "/api/admin/trials-applications",
+  actionApiPath = "/api/admin/trials-applications",
+  exportApiPath = "/api/admin/trials-applications/export",
 }: {
   initialApplications: TrialsApplicationRecord[];
+  listApiPath?: string;
+  actionApiPath?: string;
+  exportApiPath?: string;
 }) {
   const router = useRouter();
   const [applications, setApplications] = useState(initialApplications);
@@ -169,6 +176,7 @@ export function TrialsApplicationsManager({
   const [search, setSearch] = useState("");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
@@ -213,7 +221,7 @@ export function TrialsApplicationsManager({
     setError(null);
 
     const result = await apiGet<{ applications: TrialsApplicationRecord[] }>(
-      "/api/admin/trials-applications",
+      listApiPath,
       "refresh the trials applications list",
     );
 
@@ -232,7 +240,7 @@ export function TrialsApplicationsManager({
     setError(null);
 
     const result = await apiPatch<{ application: TrialsApplicationRecord }>(
-      `/api/admin/trials-applications/${id}`,
+      `${actionApiPath}/${id}`,
       { action },
       action === "review"
         ? "mark this application as reviewed"
@@ -253,6 +261,33 @@ export function TrialsApplicationsManager({
     );
 
     router.refresh();
+  };
+
+  const downloadExcel = async () => {
+    setExporting(true);
+    setError(null);
+    try {
+      const response = await fetch(exportApiPath, { credentials: "same-origin" });
+      if (!response.ok) {
+        throw new Error("Export failed");
+      }
+      const blob = await response.blob();
+      const disposition = response.headers.get("Content-Disposition");
+      const match = disposition?.match(/filename="([^"]+)"/);
+      const filename = match?.[1] ?? "jackals-vc-trials-applications.xlsx";
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      setError("Couldn't download the Excel sheet. Try again in a moment.");
+    } finally {
+      setExporting(false);
+    }
   };
 
   const clearFilters = () => {
@@ -318,6 +353,25 @@ export function TrialsApplicationsManager({
               </button>
             ))}
           </div>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={exporting}
+            onClick={() => void downloadExcel()}
+          >
+            {exporting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Preparing
+              </>
+            ) : (
+              <>
+                <Download className="mr-2 h-4 w-4" />
+                Excel
+              </>
+            )}
+          </Button>
           <Button
             type="button"
             size="sm"
