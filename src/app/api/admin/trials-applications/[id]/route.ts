@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
-import { serializeTrialsApplication } from "@/lib/trials-application-config";
-import { prisma } from "@/lib/prisma";
+import { updateTrialsApplicationStatus } from "@/lib/trials-applications";
 import { z } from "zod";
 
 const trialsApplicationActionSchema = z.object({
@@ -23,36 +22,31 @@ export async function PATCH(
     );
     if (parseError || !data) return parseError!;
 
-    const application = await prisma.trialsApplication.findUnique({
-      where: { id },
-    });
+    const result = await updateTrialsApplicationStatus(
+      id,
+      data.action,
+      session!.user.id,
+    );
 
-    if (!application) {
+    if ("error" in result && result.error === "not_found") {
       return jsonError(
         "This application was not found. Refresh the page — it may have already been reviewed.",
         404,
       );
     }
 
-    if (application.status !== "NEW") {
+    if ("error" in result && result.error === "not_new") {
       return jsonError(
         "This application is no longer new. Refresh the page to see the latest status.",
         409,
       );
     }
 
-    const updated = await prisma.trialsApplication.update({
-      where: { id },
-      data: {
-        status: data.action === "review" ? "REVIEWED" : "DISMISSED",
-        reviewedAt: new Date(),
-        reviewedByUserId: session!.user.id,
-      },
-    });
+    if (!("application" in result) || !result.application) {
+      return jsonError("We couldn't update this application.", 500);
+    }
 
-    return NextResponse.json({
-      application: serializeTrialsApplication(updated),
-    });
+    return NextResponse.json({ application: result.application });
   } catch (error) {
     console.error("[trials-applications] PATCH failed", error);
     return jsonError(

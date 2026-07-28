@@ -81,11 +81,15 @@ export default async function DashboardPage() {
     ]);
 
     const paymentOpts = { monthsBack: 3, monthsAhead: 1 };
-    const eventCache = await preloadTeamEvents([coach.trainingTeamKey], paymentOpts.monthsBack, paymentOpts.monthsAhead);
+    const eventCache = await preloadTeamEvents(
+      coach.trainingTeamKeys,
+      paymentOpts.monthsBack,
+      paymentOpts.monthsAhead,
+    );
     const payments = coach.isPaidCoach
       ? await getCoachSalaryPaymentsWithCache(
           coach.clubMemberId,
-          coach.trainingTeamKey,
+          coach.trainingTeamKeys,
           coach.userId,
           paymentOpts,
           eventCache,
@@ -94,6 +98,10 @@ export default async function DashboardPage() {
 
     const enrichedMatches = await enrichEventRecords(matchEventsRaw);
     const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
+    const teamLabel =
+      coach.teams.length > 1
+        ? coach.teams.map((team) => team.name).join(" · ")
+        : coach.teamName;
     const firstName = session.user.name?.split(" ")[0] ?? "Coach";
     const currentPayment =
       payments.find((payment) =>
@@ -106,12 +114,12 @@ export default async function DashboardPage() {
           title={`Welcome, ${firstName}`}
           description={
             coach.isPaidCoach
-              ? `${coach.teamName} · Your squad schedule and club payments`
-              : `${coach.teamName} · Your squad schedule and club events`
+              ? `${teamLabel} · Your squad schedule and club payments`
+              : `${teamLabel} · Your squad schedule and club events`
           }
         />
         <CoachDashboard
-          teamName={coach.teamName}
+          teamName={teamLabel}
           ratePerSession={COACH_SESSION_RATE_EUR}
           showPayments={coach.isPaidCoach}
           currentPayment={

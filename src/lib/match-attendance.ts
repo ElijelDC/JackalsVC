@@ -12,7 +12,7 @@ import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
-import { getUserTrainingTeamKey } from "@/lib/training-teams";
+import { getUserTrainingTeamKeys } from "@/lib/training-teams";
 
 export type MatchDetailData = {
   match: {
@@ -70,8 +70,8 @@ export async function getMatchDetail(
   const match = await prisma.teamMatch.findUnique({ where: { id: matchId } });
   if (!match) notFound();
 
-  const userTeamKey = await getUserTrainingTeamKey(userId);
-  if (!userTeamKey || userTeamKey !== match.trainingTeamKey) {
+  const userTeamKeys = await getUserTrainingTeamKeys(userId);
+  if (!userTeamKeys.includes(match.trainingTeamKey)) {
     notFound();
   }
 
