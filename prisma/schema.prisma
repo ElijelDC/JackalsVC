@@ -61,8 +61,20 @@ model ClubMember {
   user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  clubTeamMember  ClubTeamMember?
+  clubTeamMembers ClubTeamMember[]
+  coachSquads     ClubMemberCoachSquad[]
   coachPayments   CoachSalaryPayment[]
+}
+
+model ClubMemberCoachSquad {
+  id              String     @id @default(cuid())
+  clubMemberId    String
+  clubMember      ClubMember @relation(fields: [clubMemberId], references: [id], onDelete: Cascade)
+  trainingTeamKey String
+  createdAt       DateTime   @default(now())
+
+  @@unique([clubMemberId, trainingTeamKey])
+  @@index([trainingTeamKey])
 }
 
 model CoachSalaryPayment {
@@ -427,7 +439,7 @@ model ClubTeamMember {
   id           String      @id @default(cuid())
   teamId       String
   team         ClubTeam    @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  clubMemberId String?     @unique
+  clubMemberId String?
   clubMember   ClubMember? @relation(fields: [clubMemberId], references: [id], onDelete: SetNull)
   name         String
   role         String
@@ -437,6 +449,8 @@ model ClubTeamMember {
   photoUrl     String?
   sortOrder    Int         @default(0)
   createdAt    DateTime    @default(now())
+
+  @@unique([teamId, clubMemberId])
 }
 
 model Product {

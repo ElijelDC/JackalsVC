@@ -5,6 +5,7 @@ import {
   preloadTeamEvents,
 } from "@/lib/coach-payments";
 import type { AdminCoachPaymentRow } from "@/lib/coach-payments-config";
+import { getClubMemberSquadKeys } from "@/lib/club-team-roster-sync";
 import { prisma } from "@/lib/prisma";
 import { getTrainingSquads } from "@/lib/training-squads";
 
@@ -22,11 +23,19 @@ export async function getAdminCoachPaymentRows(options?: {
       where: {
         rosterRole: "COACH",
         active: true,
-        trainingTeamKey: { not: null },
-        OR: [{ coachPaymentType: "PAID" }, { coachPaymentType: null }],
+        OR: [
+          { trainingTeamKey: { not: null } },
+          { coachSquads: { some: {} } },
+        ],
+        AND: [
+          {
+            OR: [{ coachPaymentType: "PAID" }, { coachPaymentType: null }],
+          },
+        ],
       },
       include: {
         user: { select: { name: true, email: true } },
+        coachSquads: { select: { trainingTeamKey: true } },
       },
       orderBy: { name: "asc" },
     }),
@@ -35,34 +44,47 @@ export async function getAdminCoachPaymentRows(options?: {
 
   const teamMap = new Map(squads.map((s) => [s.key, s.name]));
 
+  const coachKeys = await Promise.all(
+    coaches.map(async (coach) => ({
+      coach,
+      keys: await getClubMemberSquadKeys(coach.id),
+    })),
+  );
+
   const teamKeys = [
-    ...new Set(
-      coaches
-        .map((c) => c.trainingTeamKey)
-        .filter((k): k is string => k != null),
-    ),
+    ...new Set(coachKeys.flatMap(({ keys }) => keys)),
   ];
 
   const eventCache = await preloadTeamEvents(teamKeys, monthsBack, monthsAhead);
 
   return Promise.all(
-    coaches.map(async (coach) => {
-      const payments = coach.trainingTeamKey
-        ? await getCoachSalaryPaymentsWithCache(
-            coach.id,
-            coach.trainingTeamKey,
-            coach.userId,
-            { monthsBack, monthsAhead },
-            eventCache,
-          )
-        : [];
+    coachKeys.map(async ({ coach, keys }) => {
+      const payments =
+        keys.length > 0
+          ? await getCoachSalaryPaymentsWithCache(
+              coach.id,
+              keys,
+              coach.userId,
+              { monthsBack, monthsAhead },
+              eventCache,
+            )
+          : [];
+
+      const teamNames = keys
+        .map((key) => teamMap.get(key) ?? key)
+        .filter(Boolean);
 
       return {
         clubMemberId: coach.id,
         name: coach.user?.name ?? coach.name,
         email: coach.user?.email ?? null,
-        trainingTeamKey: coach.trainingTeamKey,
-        teamName: teamMap.get(coach.trainingTeamKey ?? "") ?? coach.trainingTeamKey,
+        trainingTeamKey: keys[0] ?? coach.trainingTeamKey,
+        trainingTeamKeys: keys,
+        teamName:
+          teamNames.length > 0
+            ? teamNames.join(" · ")
+            : (teamMap.get(coach.trainingTeamKey ?? "") ??
+              coach.trainingTeamKey),
         payments,
       };
     }),
