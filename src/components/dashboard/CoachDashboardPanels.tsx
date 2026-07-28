@@ -6,6 +6,7 @@ import {
   Dumbbell,
   GraduationCap,
   Trophy,
+  Volleyball,
   Wallet,
 } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
@@ -64,6 +65,12 @@ export function CoachDashboardPaymentsPanel({
                   {currentPayment.breakdown.billableCount} payable training
                   {currentPayment.breakdown.billableCount === 1 ? "" : "s"} ×{" "}
                   {formatEuroFee(ratePerSession)}
+                  {currentPayment.breakdown.expectedCount > 0 && (
+                    <>
+                      {" "}
+                      · {currentPayment.breakdown.expectedCount} upcoming
+                    </>
+                  )}
                   {currentPayment.breakdown.cantAttendCount > 0 && (
                     <>
                       {" "}
@@ -116,6 +123,12 @@ const QUICK_ACTIONS = [
     description: "Schedule open sessions",
     icon: GraduationCap,
   },
+  {
+    href: "/coach/trials-applications",
+    label: "Trials applications",
+    description: "Review tryout sign-ups",
+    icon: Volleyball,
+  },
 ] as const;
 
 export function CoachDashboardQuickActions() {
@@ -130,7 +143,7 @@ export function CoachDashboardQuickActions() {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         {QUICK_ACTIONS.map(({ href, label, description, icon: Icon }) => (
           <Link
             key={href}

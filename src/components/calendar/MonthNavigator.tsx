@@ -131,25 +131,25 @@ export function MonthNavigator({
   return (
     <div
       className={cn(
-        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        "flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
         className,
       )}
     >
-      <div className="flex w-full items-center justify-between gap-2 sm:w-auto sm:justify-start sm:gap-3">
-        <div className="flex items-center gap-1">
+      <div className="flex min-w-0 w-full flex-col items-stretch gap-2 sm:w-auto sm:flex-row sm:items-center sm:gap-3">
+        <div className="flex min-w-0 items-center justify-between gap-1 sm:justify-start sm:gap-2">
           {!isAllMonths && (
             <Button
               variant="ghost"
               size="sm"
               onClick={() => navigateToMonth(previous)}
               aria-label="Previous month"
-              className="h-9 w-9 p-0"
+              className="h-9 w-9 shrink-0 p-0"
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
           )}
 
-          <div ref={containerRef} className="relative min-w-[10rem] px-2">
+          <div ref={containerRef} className="relative min-w-0 flex-1 px-1 sm:min-w-[10rem] sm:flex-none sm:px-2">
             <button
               type="button"
               aria-expanded={pickerOpen}
@@ -163,7 +163,7 @@ export function MonthNavigator({
                 </span>
                 <ChevronDown
                   className={cn(
-                    "h-4 w-4 text-zinc-500 transition-transform group-hover:text-jackals-red-light",
+                    "h-4 w-4 shrink-0 text-zinc-500 transition-transform group-hover:text-jackals-red-light",
                     pickerOpen && "rotate-180 text-jackals-red-light",
                   )}
                 />
@@ -279,7 +279,7 @@ export function MonthNavigator({
               size="sm"
               onClick={() => navigateToMonth(next)}
               aria-label="Next month"
-              className="h-9 w-9 p-0"
+              className="h-9 w-9 shrink-0 p-0"
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -291,7 +291,7 @@ export function MonthNavigator({
             type="button"
             onClick={() => navigateToMonth(startOfMonth(now))}
             aria-label="Return to current month"
-            className="group inline-flex shrink-0 items-center gap-1 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-2 py-1 text-[11px] font-medium text-jackals-red-light transition-all hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white"
+            className="group inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-jackals-red/30 bg-jackals-red/10 px-3 py-1.5 text-[11px] font-medium text-jackals-red-light transition-all hover:border-jackals-red/50 hover:bg-jackals-red/20 hover:text-white sm:w-auto sm:justify-start sm:px-2 sm:py-1"
           >
             <RotateCcw className="h-3 w-3 transition-transform group-hover:-rotate-45" />
             Current month
@@ -299,7 +299,7 @@ export function MonthNavigator({
         )}
       </div>
 
-      {trailing}
+      {trailing ? <div className="min-w-0">{trailing}</div> : null}
     </div>
   );
 }

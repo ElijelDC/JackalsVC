@@ -12,6 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MonthNavigator } from "@/components/calendar/MonthNavigator";
+import { SquadBannerTeamFilter } from "@/components/training/SquadBannerTeamFilter";
 import {
   TrainingAttendanceStatusBadge,
 } from "@/components/training/TrainingAttendancePicker";
@@ -41,12 +42,21 @@ type TrainingEvent = {
   startDate: string;
   endDate: string | null;
   cancelled?: boolean;
+  trainingTeamKey?: string;
+  teamName?: string;
 };
 
 type SessionTimes = {
   startTime: string;
   endTime: string;
 };
+
+function buildTrainingQuery(month: Date, teamKey: string | null | undefined) {
+  const params = new URLSearchParams();
+  params.set("month", formatTrainingMonthParam(month));
+  if (teamKey) params.set("team", teamKey);
+  return `/training?${params.toString()}`;
+}
 
 function MonthProgressBar({
   attending,
@@ -137,13 +147,17 @@ function SessionDateBlock({
 
 export function TeamTrainingMonthView({
   team,
+  teams = [],
+  selectedTeamKey = null,
   month,
   events,
   sessionTimes,
   attendanceByEventId,
   isCoach = false,
 }: {
-  team: TrainingTeam;
+  team: TrainingTeam | null;
+  teams?: TrainingTeam[];
+  selectedTeamKey?: string | null;
   month: Date;
   events: TrainingEvent[];
   sessionTimes?: SessionTimes | null;
@@ -153,6 +167,14 @@ export function TeamTrainingMonthView({
   const router = useRouter();
   const monthLabel = format(month, "MMMM yyyy");
   const now = new Date();
+  const showTeamFilter = teams.length > 1;
+  const isAllTeams = showTeamFilter && !selectedTeamKey;
+  const squadTitle = isAllTeams
+    ? "All teams"
+    : (team?.name ?? teams[0]?.name ?? "Your squad");
+  const scheduleHint = isAllTeams
+    ? teams.map((item) => item.name).join(" · ")
+    : null;
 
   const upcomingEvents = events.filter((event) => !isPast(new Date(event.startDate)));
   const pastEvents = events.filter((event) => isPast(new Date(event.startDate)));
@@ -197,8 +219,12 @@ export function TeamTrainingMonthView({
   });
 
   const navigateMonth = (target: Date) => {
-    router.push(`/training?month=${formatTrainingMonthParam(target)}`);
+    router.push(buildTrainingQuery(target, selectedTeamKey));
   };
+
+  const editScheduleHref = selectedTeamKey
+    ? `/coach/training?team=${encodeURIComponent(selectedTeamKey)}`
+    : "/coach/training";
 
   return (
     <PageContainer>
@@ -208,37 +234,55 @@ export function TeamTrainingMonthView({
       />
 
       <AnimateIn>
-        {/* Squad banner */}
         <div className="mb-8 overflow-hidden border border-jackals-red/25 bg-gradient-to-br from-jackals-red/15 via-jackals-surface to-jackals-surface">
           <div className="border-b border-jackals-red/20 px-6 py-3">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
-              <Users className="h-3.5 w-3.5" />
-              Your squad
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
+                <Users className="h-3.5 w-3.5" />
+                Your squad
+              </div>
+              {showTeamFilter && (
+                <SquadBannerTeamFilter
+                  squads={teams}
+                  value={selectedTeamKey ?? ""}
+                  onChange={(value) => {
+                    router.push(buildTrainingQuery(month, value || null));
+                  }}
+                />
+              )}
             </div>
           </div>
           <div className="px-6 py-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex-1">
                 <h2 className="font-display text-2xl font-semibold text-white">
-                  {team.name}
+                  {squadTitle}
                 </h2>
                 <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-400">
-                  <span className="inline-flex items-center gap-2">
-                    <CalendarDays className="h-4 w-4 shrink-0 text-jackals-red-light" />
-                    Every {team.dayLabel}
-                  </span>
-                  {sessionTimes && (
-                    <span className="inline-flex items-center gap-2">
-                      <Clock className="h-4 w-4 shrink-0 text-jackals-red-light" />
-                      {sessionTimes.startTime} – {sessionTimes.endTime}
-                    </span>
+                  {scheduleHint ? (
+                    <span>{scheduleHint}</span>
+                  ) : (
+                    <>
+                      {team && (
+                        <span className="inline-flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 shrink-0 text-jackals-red-light" />
+                          Every {team.dayLabel}
+                        </span>
+                      )}
+                      {sessionTimes && (
+                        <span className="inline-flex items-center gap-2">
+                          <Clock className="h-4 w-4 shrink-0 text-jackals-red-light" />
+                          {sessionTimes.startTime} – {sessionTimes.endTime}
+                        </span>
+                      )}
+                    </>
                   )}
                 </p>
               </div>
               <div className="flex items-center gap-4">
                 {isCoach && (
                   <Link
-                    href="/coach/training"
+                    href={editScheduleHref}
                     className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-jackals-red-light hover:text-jackals-red transition-colors"
                   >
                     Edit schedule
@@ -257,8 +301,7 @@ export function TeamTrainingMonthView({
           </div>
         </div>
 
-        {/* Month navigator */}
-        <Card className="mb-6 p-4">
+        <Card className="mb-6 min-w-0 overflow-hidden p-4">
           <MonthNavigator
             month={month}
             onMonthChange={navigateMonth}
@@ -279,8 +322,9 @@ export function TeamTrainingMonthView({
                       <span className="font-medium text-white">
                         {unansweredUpcoming}
                       </span>{" "}
-                      session{unansweredUpcoming === 1 ? "" : "s"} you haven&apos;t
-                      responded to yet
+                      session{unansweredUpcoming === 1 ? "" : "s"}
+                      {" "}
+                      you haven&apos;t responded to yet
                     </>
                   ) : hasUpcomingNotYetOpen ? (
                     <>Responses open 2 weeks before each session</>
@@ -298,8 +342,9 @@ export function TeamTrainingMonthView({
             <CalendarDays className="mx-auto h-10 w-10 text-zinc-600" />
             <CardTitle className="mt-4">No sessions this month</CardTitle>
             <CardDescription className="mx-auto mt-2 max-w-sm">
-              There are no {team.dayLabel.toLowerCase()} trainings scheduled for{" "}
-              {monthLabel}. Try another month or contact the club if this looks wrong.
+              There are no trainings scheduled for {monthLabel}
+              {team ? ` on ${team.dayLabel.toLowerCase()}` : ""}. Try another month
+              or contact the club if this looks wrong.
             </CardDescription>
           </Card>
         ) : (
@@ -373,6 +418,11 @@ export function TeamTrainingMonthView({
                           )}
                         >
                           {format(eventDate, "EEEE")}
+                          {isAllTeams && event.teamName ? (
+                            <span className="ml-2 text-sm font-normal text-zinc-500">
+                              · {event.teamName}
+                            </span>
+                          ) : null}
                         </p>
                         <p
                           className={cn(
@@ -485,6 +535,11 @@ export function TeamTrainingMonthView({
                         )}
                       >
                         {format(eventDate, "EEEE d MMMM")}
+                        {isAllTeams && event.teamName ? (
+                          <span className="ml-2 text-xs font-normal text-zinc-600">
+                            · {event.teamName}
+                          </span>
+                        ) : null}
                       </p>
                       <p className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500">
                         <Clock className="h-3 w-3 shrink-0" aria-hidden />

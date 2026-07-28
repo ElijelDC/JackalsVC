@@ -38,8 +38,11 @@ export async function syncClubTeamFromRoster(clubTeamId: string) {
 
   const rosterMembers = await prisma.clubMember.findMany({
     where: {
-      trainingTeamKey: team.trainingTeamKey,
       active: true,
+      OR: [
+        { trainingTeamKey: team.trainingTeamKey },
+        { coachSquads: { some: { trainingTeamKey: team.trainingTeamKey } } },
+      ],
       ...(excludedIds.length > 0 ? { id: { notIn: excludedIds } } : {}),
     },
     orderBy: [{ rosterRole: "asc" }, { name: "asc" }],
@@ -130,18 +133,68 @@ export async function syncClubTeamsForSquadKey(trainingTeamKey: string) {
   );
 }
 
-export async function syncClubTeamsForClubMember(clubMemberId: string) {
+export async function getClubMemberSquadKeys(clubMemberId: string) {
   const member = await prisma.clubMember.findUnique({
     where: { id: clubMemberId },
-    select: { trainingTeamKey: true },
+    select: {
+      trainingTeamKey: true,
+      rosterRole: true,
+      coachSquads: { select: { trainingTeamKey: true } },
+    },
   });
 
-  if (!member?.trainingTeamKey) {
+  if (!member) return [] as string[];
+
+  if (member.rosterRole === "COACH") {
+    const fromJoin = member.coachSquads.map((row) => row.trainingTeamKey);
+    const keys = [...new Set([...fromJoin, member.trainingTeamKey].filter(Boolean))] as string[];
+    return keys;
+  }
+
+  return member.trainingTeamKey ? [member.trainingTeamKey] : [];
+}
+
+export async function setClubMemberCoachSquads(
+  clubMemberId: string,
+  trainingTeamKeys: string[],
+) {
+  const uniqueKeys = [...new Set(trainingTeamKeys.filter(Boolean))];
+  const previousKeys = await getClubMemberSquadKeys(clubMemberId);
+  const primaryKey = uniqueKeys[0] ?? null;
+
+  await prisma.$transaction([
+    prisma.clubMemberCoachSquad.deleteMany({ where: { clubMemberId } }),
+    ...(uniqueKeys.length > 0
+      ? [
+          prisma.clubMemberCoachSquad.createMany({
+            data: uniqueKeys.map((trainingTeamKey) => ({
+              clubMemberId,
+              trainingTeamKey,
+            })),
+          }),
+        ]
+      : []),
+    prisma.clubMember.update({
+      where: { id: clubMemberId },
+      data: { trainingTeamKey: primaryKey },
+    }),
+  ]);
+
+  await handleClubMemberSquadKeysChange(clubMemberId, previousKeys, uniqueKeys);
+  return { previousKeys, nextKeys: uniqueKeys, primaryKey };
+}
+
+export async function syncClubTeamsForClubMember(clubMemberId: string) {
+  const keys = await getClubMemberSquadKeys(clubMemberId);
+
+  if (keys.length === 0) {
     await prisma.clubTeamMember.deleteMany({ where: { clubMemberId } });
     return;
   }
 
-  await syncClubTeamsForSquadKey(member.trainingTeamKey);
+  for (const key of keys) {
+    await syncClubTeamsForSquadKey(key);
+  }
 }
 
 export async function handleClubMemberSquadChange(
@@ -149,20 +202,40 @@ export async function handleClubMemberSquadChange(
   previousTeamKey: string | null,
   nextTeamKey: string | null,
 ) {
-  if (previousTeamKey && previousTeamKey !== nextTeamKey) {
+  await handleClubMemberSquadKeysChange(
+    clubMemberId,
+    previousTeamKey ? [previousTeamKey] : [],
+    nextTeamKey ? [nextTeamKey] : [],
+  );
+}
+
+export async function handleClubMemberSquadKeysChange(
+  clubMemberId: string,
+  previousKeys: string[],
+  nextKeys: string[],
+) {
+  const previous = [...new Set(previousKeys.filter(Boolean))];
+  const next = [...new Set(nextKeys.filter(Boolean))];
+  const removed = previous.filter((key) => !next.includes(key));
+  const addedOrKept = next;
+
+  for (const key of removed) {
     await prisma.clubTeamMember.deleteMany({
       where: {
         clubMemberId,
-        team: { trainingTeamKey: previousTeamKey },
+        team: { trainingTeamKey: key },
       },
     });
-    await syncClubTeamsForSquadKey(previousTeamKey);
+    await syncClubTeamsForSquadKey(key);
   }
 
-  if (nextTeamKey) {
-    await syncClubTeamsForSquadKey(nextTeamKey);
-  } else {
+  if (addedOrKept.length === 0) {
     await prisma.clubTeamMember.deleteMany({ where: { clubMemberId } });
+    return;
+  }
+
+  for (const key of addedOrKept) {
+    await syncClubTeamsForSquadKey(key);
   }
 }
 
