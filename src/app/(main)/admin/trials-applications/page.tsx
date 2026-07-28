@@ -11,7 +11,7 @@ export default async function AdminTrialsApplicationsPage() {
     <PageContainer>
       <PageHeader
         title="Trials applications"
-        description="Filter by team, position, or status — download a spreadsheet or switch between list, cards, and compact views."
+        description="Filter by team, position, or status — download a spreadsheet or switch between cards and compact views."
       />
       <TrialsApplicationsManager initialApplications={applications} />
     </PageContainer>

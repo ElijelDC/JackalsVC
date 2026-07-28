@@ -9,7 +9,6 @@ import {
   Dumbbell,
   GraduationCap,
   Trophy,
-  Volleyball,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { DashboardSection } from "@/components/layout/DashboardSection";
@@ -28,7 +27,6 @@ const COACH_NAV_LINKS: CoachLink[] = [
   { href: "/coach/training", label: "Training schedule", icon: Dumbbell },
   { href: "/coach/matches", label: "Matches", icon: Trophy },
   { href: "/coach/clinics", label: "Skills clinics", icon: GraduationCap },
-  { href: "/coach/trials-applications", label: "Trials applications", icon: Volleyball },
 ];
 
 function CoachNavItem({

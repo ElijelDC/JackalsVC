@@ -10,6 +10,10 @@ export default async function CoachLayout({
   children: React.ReactNode;
 }) {
   const { coach } = await requireCoachPage();
+  const teamLabel =
+    coach.teams.length > 1
+      ? coach.teams.map((team) => team.name).join(" · ")
+      : coach.teamName;
 
-  return <CoachShell teamName={coach.teamName}>{children}</CoachShell>;
+  return <CoachShell teamName={teamLabel}>{children}</CoachShell>;
 }
