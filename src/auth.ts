@@ -10,12 +10,25 @@ function coachFieldsFromClubMember(
     rosterRole: string;
     coachPaymentType: string | null;
     trainingTeamKey: string | null;
+    coachSquads?: Array<{ trainingTeamKey: string }>;
   } | null,
 ) {
+  const coachTeamKeys =
+    clubMember?.rosterRole === "COACH"
+      ? [
+          ...new Set(
+            [
+              ...(clubMember.coachSquads?.map((row) => row.trainingTeamKey) ??
+                []),
+              clubMember.trainingTeamKey,
+            ].filter((key): key is string => Boolean(key)),
+          ),
+        ]
+      : [];
+
   return {
     profileImageUrl: clubMember?.profileImageUrl ?? null,
-    isCoach:
-      clubMember?.rosterRole === "COACH" && Boolean(clubMember.trainingTeamKey),
+    isCoach: clubMember?.rosterRole === "COACH" && coachTeamKeys.length > 0,
     coachPaymentType:
       clubMember?.rosterRole === "COACH"
         ? ((clubMember.coachPaymentType ?? "PAID") as "PAID" | "VOLUNTEER")
@@ -24,7 +37,8 @@ function coachFieldsFromClubMember(
       clubMember?.rosterRole ?? "PLAYER",
       clubMember?.coachPaymentType,
     ),
-    coachTeamKey: clubMember?.trainingTeamKey ?? null,
+    coachTeamKey: coachTeamKeys[0] ?? clubMember?.trainingTeamKey ?? null,
+    coachTeamKeys,
   };
 }
 
@@ -92,6 +106,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 rosterRole: true,
                 coachPaymentType: true,
                 trainingTeamKey: true,
+                coachSquads: { select: { trainingTeamKey: true } },
               },
             }),
           ]);
@@ -127,6 +142,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           session.user.isPaidCoach = Boolean(token.isPaidCoach);
           session.user.coachTeamKey =
             (token.coachTeamKey as string | null | undefined) ?? null;
+          session.user.coachTeamKeys = Array.isArray(token.coachTeamKeys)
+            ? (token.coachTeamKeys as string[])
+            : session.user.coachTeamKey
+              ? [session.user.coachTeamKey]
+              : [];
         }
       } catch (error) {
         console.error("Failed to build auth session:", error);
