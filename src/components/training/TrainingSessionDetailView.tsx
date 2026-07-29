@@ -10,7 +10,7 @@ import {
   MapPin,
 } from "lucide-react";
 import { TrainingAttendancePicker } from "@/components/training/TrainingAttendancePicker";
-import { CoachResponsesSection } from "@/components/training/CoachResponsesSection";
+import { SquadSummaryCard } from "@/components/training/SquadSummaryCard";
 import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
@@ -112,8 +112,6 @@ export function TrainingSessionDetailView({
               )}
             </div>
 
-            <CoachResponsesSection coaches={detail.coaches} />
-
             {detail.event.description && (
               <p className="mt-4 text-sm leading-relaxed text-zinc-500">
                 {detail.event.description}
@@ -172,35 +170,9 @@ export function TrainingSessionDetailView({
             )}
           </Card>
 
-          <Card className="mt-4">
-            <CardTitle className="text-base">Squad summary</CardTitle>
-            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-3">
-                <p className="text-2xl font-bold text-green-400">
-                  {detail.counts.attending}
-                </p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
-                  Attending
-                </p>
-              </div>
-              <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-3">
-                <p className="text-2xl font-bold text-rose-300">
-                  {detail.counts.notAttending}
-                </p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-rose-300/70">
-                  Can&apos;t attend
-                </p>
-              </div>
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-3">
-                <p className="text-2xl font-bold text-amber-300">
-                  {detail.counts.unanswered}
-                </p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
-                  Unanswered
-                </p>
-              </div>
-            </div>
-          </Card>
+          <div className="mt-4">
+            <SquadSummaryCard counts={detail.counts} coaches={detail.coaches} />
+          </div>
         </AnimateIn>
 
         <AnimateIn delay={150} className="lg:col-span-3">

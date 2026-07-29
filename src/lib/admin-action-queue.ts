@@ -190,11 +190,11 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     entries.push({
       kind: "trials-application",
       href: "/admin/trials-applications",
-      title: "Trials applications",
+      title: "Signups",
       summary:
         trialsApplicationCount === 1
-          ? "1 new trials application"
-          : `${trialsApplicationCount} new trials applications`,
+          ? "1 new signup"
+          : `${trialsApplicationCount} new signups`,
       count: trialsApplicationCount,
       previews: trialsApplications.map((application) => application.fullName),
     });

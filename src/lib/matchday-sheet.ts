@@ -7,7 +7,7 @@ import {
   type MatchdaySheetData,
   type MatchdaySheetEntry,
 } from "@/lib/matchday-sheet-config";
-import { normalizeSignupStatus } from "@/lib/training-attendance-config";
+import { normalizeSignupStatus, resolveCoachAttendanceStatus } from "@/lib/training-attendance-config";
 import { formatMatchDateTime, formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
@@ -86,7 +86,11 @@ export async function getMatchdaySheet(
   for (const member of teammates) {
     if (!member.user) continue;
 
-    const status = signupMap.get(member.user.id) ?? "UNANSWERED";
+    const rawStatus = signupMap.get(member.user.id) ?? "UNANSWERED";
+    const status =
+      member.rosterRole === "COACH"
+        ? resolveCoachAttendanceStatus(rawStatus, match.matchStart)
+        : rawStatus;
     if (!isIncludedOnMatchdaySheet(member.rosterRole, status)) continue;
 
     const entry: MatchdaySheetEntry = {

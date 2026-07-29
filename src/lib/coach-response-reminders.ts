@@ -98,7 +98,7 @@ export async function sendCoachUnansweredReminders(input: {
   }
 
   const item = await getCoachReminderTargetItem(
-    input.coach.trainingTeamKey,
+    input.coach.trainingTeamKeys,
     input.kind,
     input.id,
     now,

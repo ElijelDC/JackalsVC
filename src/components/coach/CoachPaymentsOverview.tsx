@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import {
   COACH_PAYMENT_STATUS_LABELS,
   coachCanViewPaymentConfirmation,
+  formatCoachPaymentBreakdownShort,
   formatCoachPaymentMonth,
   isCurrentPaymentMonth,
   isFuturePaymentMonth,
@@ -148,12 +149,8 @@ function MonthSummaryCard({
           <p className="font-medium text-white">
             {formatCoachPaymentMonth(payment.year, payment.month)}
           </p>
-          <p className="mt-1 text-sm text-zinc-400">
-            {payment.breakdown.billableCount} payable
-            {payment.breakdown.expectedCount > 0 &&
-              ` · ${payment.breakdown.expectedCount} expected`}
-            {payment.breakdown.cantAttendCount > 0 &&
-              ` · ${payment.breakdown.cantAttendCount} can't attend`}
+          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+            {formatCoachPaymentBreakdownShort(payment.breakdown)}
           </p>
         </div>
         <div className="text-right">

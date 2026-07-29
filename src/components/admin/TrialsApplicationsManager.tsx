@@ -6,11 +6,10 @@ import {
   CheckCircle2,
   Clock3,
   Download,
-  LayoutGrid,
   Loader2,
   Mail,
   Phone,
-  Rows3,
+  RefreshCw,
   Search,
   XCircle,
 } from "lucide-react";
@@ -30,12 +29,27 @@ import {
   trialsTeamLabel,
 } from "@/lib/trials-recruitment-config";
 import { apiGet, apiPatch } from "@/lib/client-api";
+import {
+  filterTrialsApplications,
+  hasTrialsApplicationsFilters,
+  trialsApplicationsFilterToSearchParams,
+  type TrialsApplicationsFilter,
+  type TrialsApplicationsPositionFilter,
+  type TrialsApplicationsStatusFilter,
+  type TrialsApplicationsTeamFilter,
+} from "@/lib/trials-applications-filter";
 import { cn } from "@/lib/utils";
 
-type LayoutMode = "cards" | "compact";
-type StatusFilter = "ALL" | TrialsApplicationStatus;
-type TeamFilter = "ALL" | (typeof TRIALS_TEAM_OPTIONS)[number]["value"];
-type PositionFilter = "ALL" | (typeof TRIALS_POSITION_OPTIONS)[number]["value"];
+type StatusFilter = TrialsApplicationsStatusFilter;
+type TeamFilter = TrialsApplicationsTeamFilter;
+type PositionFilter = TrialsApplicationsPositionFilter;
+
+const STATUS_TABS = [
+  { id: "NEW", label: "Pending" },
+  { id: "ALL", label: "All" },
+  { id: "REVIEWED", label: "Reviewed" },
+  { id: "DISMISSED", label: "Dismissed" },
+] as const;
 
 function formatSubmittedAt(value: string) {
   return new Date(value).toLocaleString("en-IE", {
@@ -66,18 +80,10 @@ function ApplicationDetails({
   application: TrialsApplicationRecord;
 }) {
   return (
-    <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-      <div>
-        <dt className="text-zinc-500">Age</dt>
-        <dd className="text-white">{application.age}</dd>
-      </div>
-      <div>
-        <dt className="text-zinc-500">Experience</dt>
-        <dd className="text-white">{application.yearsExperience} years</dd>
-      </div>
+    <dl className="mt-4 grid gap-2 border-t border-white/5 pt-4 text-sm sm:grid-cols-2">
       <div>
         <dt className="text-zinc-500">INL division 25/26</dt>
-        <dd className="text-white">
+        <dd className="text-zinc-200">
           {trialsInlDivisionLabel(application.inlDivision)}
           {application.inlDivisionOther
             ? ` — ${application.inlDivisionOther}`
@@ -87,21 +93,9 @@ function ApplicationDetails({
       {application.inlTeamName ? (
         <div>
           <dt className="text-zinc-500">INL team</dt>
-          <dd className="text-white">{application.inlTeamName}</dd>
+          <dd className="text-zinc-200">{application.inlTeamName}</dd>
         </div>
       ) : null}
-      <div>
-        <dt className="text-zinc-500">Preferred position 1</dt>
-        <dd className="text-white">
-          {trialsPositionLabel(application.preferredPosition1)}
-        </dd>
-      </div>
-      <div>
-        <dt className="text-zinc-500">Preferred position 2</dt>
-        <dd className="text-white">
-          {trialsPositionLabel(application.preferredPosition2)}
-        </dd>
-      </div>
     </dl>
   );
 }
@@ -118,10 +112,11 @@ function ActionButtons({
   if (application.status !== "NEW") return null;
 
   return (
-    <div className="flex shrink-0 flex-wrap gap-2">
+    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:shrink-0 sm:gap-2">
       <Button
         type="button"
         size="sm"
+        className="w-full sm:w-auto"
         disabled={loading}
         onClick={() => onAct(application.id, "review")}
       >
@@ -129,7 +124,7 @@ function ActionButtons({
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
           <>
-            <CheckCircle2 className="mr-2 h-4 w-4" />
+            <CheckCircle2 className="mr-1.5 h-4 w-4" />
             Reviewed
           </>
         )}
@@ -138,13 +133,94 @@ function ActionButtons({
         type="button"
         size="sm"
         variant="outline"
+        className="w-full sm:w-auto"
         disabled={loading}
         onClick={() => onAct(application.id, "dismiss")}
       >
-        <XCircle className="mr-2 h-4 w-4" />
+        <XCircle className="mr-1.5 h-4 w-4" />
         Dismiss
       </Button>
     </div>
+  );
+}
+
+function ApplicationCard({
+  application,
+  loading,
+  onAct,
+}: {
+  application: TrialsApplicationRecord;
+  loading: boolean;
+  onAct: (id: string, action: "review" | "dismiss") => void;
+}) {
+  return (
+    <article className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="font-display text-base font-semibold text-white">
+            {application.fullName}
+          </h2>
+          <span
+            className={cn(
+              "rounded-full px-2.5 py-0.5 text-[11px] font-medium",
+              teamAccent(application.tryingOutFor),
+            )}
+          >
+            {trialsTeamLabel(application.tryingOutFor)}
+          </span>
+          {application.status !== "NEW" ? (
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-0.5 text-[11px] font-medium",
+                statusAccent(application.status),
+              )}
+            >
+              {TRIALS_APPLICATION_STATUS_LABELS[application.status]}
+            </span>
+          ) : null}
+        </div>
+
+        <p className="mt-1 text-sm text-zinc-400">
+          {trialsPositionLabel(application.preferredPosition1)} /{" "}
+          {trialsPositionLabel(application.preferredPosition2)} ·{" "}
+          {application.yearsExperience} yrs · age {application.age}
+        </p>
+
+        <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500">
+          <Clock3 className="h-3.5 w-3.5 shrink-0" />
+          {formatSubmittedAt(application.createdAt)}
+        </p>
+
+        <div className="mt-3 space-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-x-4 sm:gap-y-1 sm:space-y-0">
+          <a
+            href={`mailto:${application.contactEmail}`}
+            className="flex items-center gap-1.5 break-all text-jackals-gold hover:underline"
+          >
+            <Mail className="h-3.5 w-3.5 shrink-0" />
+            {application.contactEmail}
+          </a>
+          <a
+            href={`tel:${application.contactNumber}`}
+            className="flex items-center gap-1.5 text-zinc-400 hover:text-white"
+          >
+            <Phone className="h-3.5 w-3.5 shrink-0" />
+            {application.contactNumber}
+          </a>
+        </div>
+
+        <ApplicationDetails application={application} />
+      </div>
+
+      {application.status === "NEW" ? (
+        <div className="mt-4 border-t border-white/5 pt-4">
+          <ActionButtons
+            application={application}
+            loading={loading}
+            onAct={onAct}
+          />
+        </div>
+      ) : null}
+    </article>
   );
 }
 
@@ -161,7 +237,6 @@ export function TrialsApplicationsManager({
 }) {
   const router = useRouter();
   const [applications, setApplications] = useState(initialApplications);
-  const [layout, setLayout] = useState<LayoutMode>("cards");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("NEW");
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
   const [positionFilter, setPositionFilter] = useState<PositionFilter>("ALL");
@@ -171,42 +246,20 @@ export function TrialsApplicationsManager({
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const filters = useMemo<TrialsApplicationsFilter>(
+    () => ({
+      status: statusFilter,
+      team: teamFilter,
+      position: positionFilter,
+      search,
+    }),
+    [statusFilter, teamFilter, positionFilter, search],
+  );
 
-    return applications.filter((application) => {
-      if (statusFilter !== "ALL" && application.status !== statusFilter) {
-        return false;
-      }
-      if (teamFilter !== "ALL" && application.tryingOutFor !== teamFilter) {
-        return false;
-      }
-      if (
-        positionFilter !== "ALL" &&
-        application.preferredPosition1 !== positionFilter &&
-        application.preferredPosition2 !== positionFilter
-      ) {
-        return false;
-      }
-      if (!query) return true;
-
-      const haystack = [
-        application.fullName,
-        application.contactEmail,
-        application.contactNumber,
-        application.inlTeamName ?? "",
-        application.inlDivisionOther ?? "",
-        trialsTeamLabel(application.tryingOutFor),
-        trialsInlDivisionLabel(application.inlDivision),
-        trialsPositionLabel(application.preferredPosition1),
-        trialsPositionLabel(application.preferredPosition2),
-      ]
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(query);
-    });
-  }, [applications, statusFilter, teamFilter, positionFilter, search]);
+  const filtered = useMemo(
+    () => filterTrialsApplications(applications, filters),
+    [applications, filters],
+  );
 
   const refresh = async () => {
     setRefreshing(true);
@@ -214,7 +267,7 @@ export function TrialsApplicationsManager({
 
     const result = await apiGet<{ applications: TrialsApplicationRecord[] }>(
       listApiPath,
-      "refresh the trials applications list",
+      "refresh the signups list",
     );
 
     setRefreshing(false);
@@ -235,8 +288,8 @@ export function TrialsApplicationsManager({
       `${actionApiPath}/${id}`,
       { action },
       action === "review"
-        ? "mark this application as reviewed"
-        : "dismiss this application",
+        ? "mark this signup as reviewed"
+        : "dismiss this signup",
     );
 
     setLoadingId(null);
@@ -259,22 +312,24 @@ export function TrialsApplicationsManager({
     setExporting(true);
     setError(null);
     try {
-      const response = await fetch(exportApiPath, { credentials: "same-origin" });
+      const query = trialsApplicationsFilterToSearchParams(filters).toString();
+      const exportUrl = query ? `${exportApiPath}?${query}` : exportApiPath;
+      const response = await fetch(exportUrl, { credentials: "same-origin" });
       if (!response.ok) {
         throw new Error("Export failed");
       }
       const blob = await response.blob();
       const disposition = response.headers.get("Content-Disposition");
       const match = disposition?.match(/filename="([^"]+)"/);
-      const filename = match?.[1] ?? "jackals-vc-trials-applications.xlsx";
-      const url = URL.createObjectURL(blob);
+      const filename = match?.[1] ?? "jackals-vc-trial-signups.xlsx";
+      const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
-      link.href = url;
+      link.href = blobUrl;
       link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(blobUrl);
     } catch {
       setError("Couldn't download the Excel sheet. Try again in a moment.");
     } finally {
@@ -282,291 +337,158 @@ export function TrialsApplicationsManager({
     }
   };
 
-  const clearFilters = () => {
-    setStatusFilter("ALL");
+  const hasSecondaryFilters =
+    filters.team !== "ALL" ||
+    filters.position !== "ALL" ||
+    filters.search.trim() !== "";
+
+  const exportUsesFilters = hasTrialsApplicationsFilters(filters);
+
+  const clearSecondaryFilters = () => {
     setTeamFilter("ALL");
     setPositionFilter("ALL");
     setSearch("");
   };
 
-  const hasActiveFilters =
-    statusFilter !== "ALL" ||
-    teamFilter !== "ALL" ||
-    positionFilter !== "ALL" ||
-    search.trim() !== "";
-
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
-          {(
-            [
-              { id: "NEW", label: "Pending" },
-              { id: "ALL", label: "All" },
-              { id: "REVIEWED", label: "Reviewed" },
-              { id: "DISMISSED", label: "Dismissed" },
-            ] as const
-          ).map((option) => (
-            <Button
-              key={option.id}
-              type="button"
-              size="sm"
-              variant={statusFilter === option.id ? "primary" : "outline"}
-              onClick={() => setStatusFilter(option.id)}
-            >
-              {option.label}
-            </Button>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex overflow-hidden rounded-lg border border-white/10">
-            {(
-              [
-                { id: "cards", icon: LayoutGrid, label: "Cards" },
-                { id: "compact", icon: Rows3, label: "Compact" },
-              ] as const
-            ).map((option) => (
+      <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-black/20 p-1.5 sm:grid-cols-4">
+            {STATUS_TABS.map((option) => (
               <button
                 key={option.id}
                 type="button"
-                title={option.label}
-                onClick={() => setLayout(option.id)}
+                onClick={() => setStatusFilter(option.id)}
                 className={cn(
-                  "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition",
-                  layout === option.id
+                  "rounded-md px-3 py-2.5 text-sm font-medium transition sm:py-1.5",
+                  statusFilter === option.id
                     ? "bg-jackals-red text-white"
-                    : "bg-white/5 text-zinc-400 hover:bg-white/10 hover:text-white",
+                    : "text-zinc-400 hover:text-white",
                 )}
               >
-                <option.icon className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">{option.label}</span>
+                {option.label}
               </button>
             ))}
           </div>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={exporting}
-            onClick={() => void downloadExcel()}
-          >
-            {exporting ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Preparing
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Excel
-              </>
-            )}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={refreshing}
-            onClick={() => void refresh()}
-          >
-            {refreshing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Refreshing
-              </>
-            ) : (
-              "Refresh"
-            )}
-          </Button>
-        </div>
-      </div>
 
-      <div className="grid gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="relative sm:col-span-2 lg:col-span-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-          <Input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search name, email, team…"
-            className="pl-9"
-          />
-        </div>
-        <Select
-          value={teamFilter}
-          onChange={(event) =>
-            setTeamFilter(event.target.value as TeamFilter)
-          }
-        >
-          <option value="ALL">All teams</option>
-          {TRIALS_TEAM_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
-        <Select
-          value={positionFilter}
-          onChange={(event) =>
-            setPositionFilter(event.target.value as PositionFilter)
-          }
-        >
-          <option value="ALL">All positions</option>
-          {TRIALS_POSITION_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </Select>
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-zinc-400">
-            Showing{" "}
-            <span className="font-medium text-white">{filtered.length}</span>
-          </p>
-          {hasActiveFilters ? (
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:justify-end">
             <Button
               type="button"
               size="sm"
               variant="outline"
-              onClick={clearFilters}
+              className="w-full sm:w-auto"
+              disabled={exporting}
+              onClick={() => void downloadExcel()}
             >
-              Clear
+              {exporting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Preparing…
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  {exportUsesFilters ? "Excel (filtered)" : "Excel"}
+                </>
+              )}
             </Button>
-          ) : null}
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="w-full sm:w-auto"
+              disabled={refreshing}
+              onClick={() => void refresh()}
+            >
+              <RefreshCw
+                className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")}
+              />
+              Refresh
+            </Button>
+          </div>
         </div>
+
+        <div className="grid gap-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <Input
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Search…"
+              className="pl-9"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+            <Select
+              value={teamFilter}
+              onChange={(event) =>
+                setTeamFilter(event.target.value as TeamFilter)
+              }
+            >
+              <option value="ALL">All teams</option>
+              {TRIALS_TEAM_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+            <Select
+              value={positionFilter}
+              onChange={(event) =>
+                setPositionFilter(event.target.value as PositionFilter)
+              }
+            >
+              <option value="ALL">All positions</option>
+              {TRIALS_POSITION_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </Select>
+          </div>
+        </div>
+
+        {hasSecondaryFilters ? (
+          <button
+            type="button"
+            onClick={clearSecondaryFilters}
+            className="text-xs text-zinc-500 transition hover:text-zinc-300"
+          >
+            Clear search and filters
+          </button>
+        ) : null}
       </div>
 
       <FormError message={error} />
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-white/10 bg-white/3 p-8 text-center">
-          <CheckCircle2 className="mx-auto h-10 w-10 text-green-400/80" />
-          <p className="mt-4 font-display text-lg font-semibold text-white">
-            No matching applications
-          </p>
-          <p className="mt-2 text-sm text-zinc-400">
+        <div className="rounded-xl border border-dashed border-white/10 px-6 py-12 text-center">
+          <p className="font-display text-base font-semibold text-white">
             {applications.length === 0
-              ? "New applications from the Trials page will appear here."
-              : "Try clearing filters or switching status."}
+              ? "No signups yet"
+              : "No matching signups"}
           </p>
-        </div>
-      ) : layout === "compact" ? (
-        <div className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10">
-          {filtered.map((application) => {
-            const isLoading = loadingId === application.id;
-            return (
-              <div
-                key={application.id}
-                className="flex flex-col gap-3 bg-white/[0.02] px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-white">
-                      {application.fullName}
-                    </p>
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        teamAccent(application.tryingOutFor),
-                      )}
-                    >
-                      {trialsTeamLabel(application.tryingOutFor)}
-                    </span>
-                    <span
-                      className={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                        statusAccent(application.status),
-                      )}
-                    >
-                      {TRIALS_APPLICATION_STATUS_LABELS[application.status]}
-                    </span>
-                  </div>
-                  <p className="mt-1 truncate text-xs text-zinc-400">
-                    {trialsPositionLabel(application.preferredPosition1)} /{" "}
-                    {trialsPositionLabel(application.preferredPosition2)} ·{" "}
-                    {application.yearsExperience} yrs ·{" "}
-                    {application.contactEmail}
-                  </p>
-                </div>
-                <ActionButtons
-                  application={application}
-                  loading={isLoading}
-                  onAct={(id, action) => void act(id, action)}
-                />
-              </div>
-            );
-          })}
+          <p className="mt-2 text-sm text-zinc-500">
+            {applications.length === 0
+              ? "New sign-ups from the Trials page will appear here."
+              : "Try a different status tab or clear your filters."}
+          </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {filtered.map((application) => {
-            const isLoading = loadingId === application.id;
-
-            return (
-              <article
-                key={application.id}
-                className="overflow-hidden rounded-xl border border-white/10 bg-white/3"
-              >
-                <div className="p-4 sm:p-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="font-display text-lg font-semibold text-white">
-                          {application.fullName}
-                        </h2>
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                            teamAccent(application.tryingOutFor),
-                          )}
-                        >
-                          {trialsTeamLabel(application.tryingOutFor)}
-                        </span>
-                        <span
-                          className={cn(
-                            "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                            statusAccent(application.status),
-                          )}
-                        >
-                          {TRIALS_APPLICATION_STATUS_LABELS[application.status]}
-                        </span>
-                      </div>
-
-                      <p className="mt-1 flex items-center gap-1.5 text-sm text-zinc-400">
-                        <Clock3 className="h-3.5 w-3.5 shrink-0" />
-                        Submitted {formatSubmittedAt(application.createdAt)}
-                      </p>
-
-                      <div className="mt-3 flex flex-wrap gap-3 text-sm">
-                        <a
-                          href={`mailto:${application.contactEmail}`}
-                          className="inline-flex items-center gap-1.5 text-jackals-gold hover:underline"
-                        >
-                          <Mail className="h-4 w-4" />
-                          {application.contactEmail}
-                        </a>
-                        <a
-                          href={`tel:${application.contactNumber}`}
-                          className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white"
-                        >
-                          <Phone className="h-4 w-4" />
-                          {application.contactNumber}
-                        </a>
-                      </div>
-
-                      <ApplicationDetails application={application} />
-                    </div>
-
-                    <ActionButtons
-                      application={application}
-                      loading={isLoading}
-                      onAct={(id, action) => void act(id, action)}
-                    />
-                  </div>
-                </div>
-              </article>
-            );
-          })}
+        <div className="space-y-3">
+          <p className="text-xs text-zinc-500">
+            {filtered.length}{" "}
+            {filtered.length === 1 ? "signup" : "signups"}
+          </p>
+          {filtered.map((application) => (
+            <ApplicationCard
+              key={application.id}
+              application={application}
+              loading={loadingId === application.id}
+              onAct={(id, action) => void act(id, action)}
+            />
+          ))}
         </div>
       )}
     </div>

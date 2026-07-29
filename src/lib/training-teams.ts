@@ -25,6 +25,13 @@ function uniqueTeamKeys(keys: Array<string | null | undefined>): string[] {
   return [...new Set(keys.filter((key): key is string => Boolean(key)))];
 }
 
+export function normalizeTrainingTeamKeys(
+  keys: string | string[] | null | undefined,
+): string[] {
+  if (!keys) return [];
+  return uniqueTeamKeys(Array.isArray(keys) ? keys : [keys]);
+}
+
 /** All squads the user belongs to (coaches may have multiple via coachSquads). */
 export async function getUserTrainingTeamKeys(userId: string | undefined) {
   if (!userId) return [] as string[];

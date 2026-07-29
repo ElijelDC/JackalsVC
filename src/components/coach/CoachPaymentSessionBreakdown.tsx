@@ -120,18 +120,10 @@ export function CoachPaymentSessionBreakdown({
         {breakdown.billableCount === 0 && breakdown.expectedCount === 0 && (
           <>No payable trainings yet this month</>
         )}
-        {breakdown.cantAttendCount > 0 && (
-          <>
-            {" "}
-            · {breakdown.cantAttendCount} deducted for can&apos;t attend
-          </>
-        )}
-        {breakdown.cancelledCount > 0 && (
-          <>
-            {" "}
-            · {breakdown.cancelledCount} cancelled
-          </>
-        )}
+        {breakdown.cantAttendCount > 0 &&
+          ` · ${breakdown.cantAttendCount} deducted for can't attend`}
+        {breakdown.cancelledCount > 0 &&
+          ` · ${breakdown.cancelledCount} cancelled`}
       </p>
 
       {breakdown.sessions.length === 0 ? (

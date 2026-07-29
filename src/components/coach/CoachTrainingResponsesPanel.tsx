@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-import { Bell, ExternalLink, Swords, Users } from "lucide-react";
+import { Bell, ChevronRight, Swords, Users } from "lucide-react";
 import { DashboardSection } from "@/components/layout/DashboardSection";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
@@ -17,14 +17,26 @@ import { apiPost } from "@/lib/client-api";
 
 export type { CoachUnansweredItem };
 
+const PREVIEW_LIMIT = 2;
+
 function formatCoachItemDate(isoDate: string) {
   return format(new Date(isoDate), "EEE d MMM · HH:mm");
 }
 
-function PendingResponseCard({
+function TeamPill({ name }: { name: string }) {
+  return (
+    <span className="inline-flex max-w-[9rem] truncate rounded-full border border-white/10 bg-white/[0.04] px-2 py-0.5 text-[10px] font-medium text-zinc-300">
+      {name}
+    </span>
+  );
+}
+
+function PendingResponseRow({
   item,
+  showTeam,
 }: {
   item: CoachUnansweredItem;
+  showTeam: boolean;
 }) {
   const [reminderStatus, setReminderStatus] = useState<CoachReminderStatus>(
     item.reminder ?? { canSend: true, lastSentAt: null, nextAvailableAt: null },
@@ -34,8 +46,9 @@ function PendingResponseCard({
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const Icon = item.kind === "match" ? Swords : Users;
-  const viewLabel = item.kind === "match" ? "View match" : "View session";
   const itemLabel = item.kind === "match" ? "match" : "training session";
+  const headline =
+    item.kind === "match" ? item.title : formatCoachItemDate(item.startDate);
 
   const notifyPlayers = async () => {
     if (!reminderStatus.canSend || loading) return;
@@ -87,81 +100,58 @@ function PendingResponseCard({
 
   return (
     <>
-      <Card className="overflow-hidden border-amber-500/25 bg-gradient-to-br from-amber-500/[0.08] to-transparent p-0">
-      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between sm:p-6">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-start gap-3">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center bg-amber-500/15 text-amber-200 clip-slash-reverse">
-              <Icon className="h-5 w-5" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-xs font-semibold uppercase tracking-wider text-amber-200/80">
-                {item.kind === "match" ? "Match" : "Training"}
-              </p>
-              <p className="font-medium text-white">
-                {item.kind === "match" ? item.title : formatCoachItemDate(item.startDate)}
-              </p>
-              {item.kind === "match" ? (
-                <p className="mt-0.5 text-sm text-zinc-400">
-                  {formatCoachItemDate(item.startDate)}
-                </p>
-              ) : null}
-              {item.location && (
-                <p className="mt-0.5 text-sm text-zinc-400">{item.location}</p>
-              )}
-              <p className="mt-2 text-sm text-amber-200">
-                {item.players.length} player
-                {item.players.length === 1 ? "" : "s"} still need to respond
-              </p>
-            </div>
+      <div className="px-3 py-3 sm:px-4">
+        <div className="flex items-start gap-2.5">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-amber-500/15 text-amber-200 clip-slash-reverse">
+            <Icon className="h-4 w-4" />
           </div>
-          <ul className="mt-4 flex flex-wrap gap-2">
-            {item.players.slice(0, 2).map((player) => (
-              <li
-                key={player.userId}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs text-zinc-300"
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <p className="font-medium leading-snug text-white">{headline}</p>
+              {showTeam && item.teamName ? (
+                <TeamPill name={item.teamName} />
+              ) : null}
+            </div>
+            <p className="mt-0.5 text-xs text-zinc-500">
+              {item.kind === "match" ? formatCoachItemDate(item.startDate) : "Training"}
+              {item.location ? ` · ${item.location}` : ""}
+            </p>
+            <p className="mt-1 text-xs text-amber-200">
+              {item.players.length} player{item.players.length === 1 ? "" : "s"}{" "}
+              awaiting response
+            </p>
+            {(message || error) && (
+              <p
+                className={`mt-1.5 text-xs ${error ? "text-rose-300" : "text-green-300"}`}
               >
-                {player.name}
-              </li>
-            ))}
-            {item.players.length > 2 && (
-              <li className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium text-amber-200">
-                +{item.players.length - 2} more
-              </li>
+                {error ?? message}
+              </p>
             )}
-          </ul>
-        </div>
-
-        <div className="flex shrink-0 flex-col gap-2 sm:items-end">
-          <Button
-            type="button"
-            onClick={() => setConfirmOpen(true)}
-            disabled={loading || !reminderStatus.canSend}
-            className="gap-2"
-          >
-            <Bell className="h-4 w-4" />
-            {loading ? "Sending..." : "Notify players"}
-          </Button>
-          {cooldownLabel && (
-            <p className="text-xs text-zinc-500">{cooldownLabel}</p>
-          )}
-          <Link
-            href={getCoachUnansweredItemUrl(item)}
-            className="inline-flex items-center gap-1.5 text-sm text-zinc-400 transition-colors hover:text-white"
-          >
-            {viewLabel}
-            <ExternalLink className="h-3.5 w-3.5" />
-          </Link>
+            {cooldownLabel ? (
+              <p className="mt-1 text-[11px] text-zinc-500">{cooldownLabel}</p>
+            ) : null}
+          </div>
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => setConfirmOpen(true)}
+              disabled={loading || !reminderStatus.canSend}
+              className="gap-1.5"
+            >
+              <Bell className="h-3.5 w-3.5" />
+              {loading ? "Sending..." : "Notify"}
+            </Button>
+            <Link
+              href={getCoachUnansweredItemUrl(item)}
+              className="inline-flex items-center gap-1 text-xs text-zinc-500 transition-colors hover:text-white"
+            >
+              View
+              <ChevronRight className="h-3 w-3" />
+            </Link>
+          </div>
         </div>
       </div>
-
-      {(message || error) && (
-        <div className="border-t border-white/10 px-5 py-3 sm:px-6">
-          {message && <p className="text-sm text-green-300">{message}</p>}
-          {error && <p className="text-sm text-rose-300">{error}</p>}
-        </div>
-      )}
-      </Card>
 
       <Modal
         open={confirmOpen}
@@ -201,25 +191,65 @@ function PendingResponseCard({
   );
 }
 
+function panelSummary(pending: CoachUnansweredItem[]) {
+  const sessions = pending.filter((item) => item.kind === "training").length;
+  const matches = pending.filter((item) => item.kind === "match").length;
+  const players = pending.reduce((sum, item) => sum + item.players.length, 0);
+  const parts: string[] = [];
+
+  if (sessions > 0) {
+    parts.push(`${sessions} session${sessions === 1 ? "" : "s"}`);
+  }
+  if (matches > 0) {
+    parts.push(`${matches} match${matches === 1 ? "" : "es"}`);
+  }
+
+  const eventLabel = parts.join(" · ") || "No pending items";
+  return `${eventLabel} · ${players} player${players === 1 ? "" : "s"} awaiting response`;
+}
+
 export function CoachTrainingResponsesPanel({
   pending,
+  showTeam = false,
 }: {
   pending: CoachUnansweredItem[];
+  showTeam?: boolean;
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (pending.length === 0) {
     return null;
   }
 
+  const visible = expanded ? pending : pending.slice(0, PREVIEW_LIMIT);
+  const hiddenCount = pending.length - visible.length;
+
   return (
     <DashboardSection
       title="Responses needed"
-      description="Players who haven't confirmed for training or matches this week."
+      description={panelSummary(pending)}
     >
-      <div className="space-y-4">
-        {pending.map((item) => (
-          <PendingResponseCard key={`${item.kind}-${item.id}`} item={item} />
-        ))}
-      </div>
+      <Card className="overflow-hidden border-amber-500/20 p-0">
+        <div className="divide-y divide-white/10">
+          {visible.map((item) => (
+            <PendingResponseRow
+              key={`${item.kind}-${item.id}`}
+              item={item}
+              showTeam={showTeam}
+            />
+          ))}
+        </div>
+        {hiddenCount > 0 ? (
+          <button
+            type="button"
+            onClick={() => setExpanded(true)}
+            className="flex w-full items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-amber-200"
+          >
+            +{hiddenCount} more
+            <ChevronRight className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+      </Card>
     </DashboardSection>
   );
 }

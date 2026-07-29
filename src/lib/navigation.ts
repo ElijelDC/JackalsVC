@@ -83,9 +83,9 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/coach/trials-applications",
-    label: "Trials",
+    label: "Signups",
     icon: Volleyball,
-    description: "Review National League trial applications and export the spreadsheet.",
+    description: "Review trial sign-ups and export the spreadsheet.",
     requiresAuth: true,
     coachOnly: true,
   },

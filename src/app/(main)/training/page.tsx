@@ -6,6 +6,7 @@ import {
 } from "@/components/training/TeamTrainingMonthView";
 import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
 import { enrichEventRecords } from "@/lib/event-enrichment";
+import { resolveCoachEventAttendanceStatus } from "@/lib/training-attendance-config";
 import {
   getMonthlyTrainingEventsForTeams,
   getTrainingTeamByKey,
@@ -67,6 +68,17 @@ export default async function TrainingPage({
     events.map((event) => event.id),
   );
   const enrichedEvents = await enrichEventRecords(events);
+  const attendanceByEventId = Object.fromEntries(
+    enrichedEvents.map((event) => [
+      event.id,
+      resolveCoachEventAttendanceStatus(
+        event.id,
+        attendanceMap,
+        event.startDate,
+        session.user.isCoach,
+      ),
+    ]),
+  );
   const teamNameByKey = new Map(availableTeams.map((team) => [team.key, team.name]));
   const teamKeyByEventId = new Map(
     events.map((event) => [event.id, event.trainingTeamKey]),
@@ -117,7 +129,7 @@ export default async function TrainingPage({
           teamName: teamNameByKey.get(trainingTeamKey) ?? trainingTeamKey,
         };
       })}
-      attendanceByEventId={Object.fromEntries(attendanceMap)}
+      attendanceByEventId={attendanceByEventId}
     />
   );
 }

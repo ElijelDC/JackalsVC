@@ -12,6 +12,7 @@ import {
 } from "@/lib/reclub-config";
 import { fetchReclubMeetConfirmedParticipants } from "@/lib/reclub-payload";
 import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
+import { resolveCoachAttendanceStatus } from "@/lib/training-attendance-config";
 import { getSiteUrl } from "@/lib/site-url.server";
 import { resolveEventsBackLink } from "@/lib/events-config";
 
@@ -60,12 +61,19 @@ export default async function CalendarEventPage({
     isLoggedIn && session?.user
       ? await hasAttendanceAccess(session.user)
       : false;
-  const initialAttendanceStatus =
+  const rawAttendanceStatus =
     isLoggedIn && session?.user && event.type === "TRAINING"
       ? (
           await getUserEventAttendanceStatuses(session.user.id, [id])
         ).get(id) ?? "UNANSWERED"
       : "UNANSWERED";
+  const initialAttendanceStatus =
+    isLoggedIn && session?.user?.isCoach && event.type === "TRAINING"
+      ? resolveCoachAttendanceStatus(
+          rawAttendanceStatus,
+          new Date(event.startDate),
+        )
+      : rawAttendanceStatus;
   const siteOrigin = await getSiteUrl();
 
   return (

@@ -206,3 +206,39 @@ export function coachPaymentBillableSessionCount(
   }
   return breakdown.billableCount;
 }
+
+function appendBreakdownParts(
+  parts: string[],
+  breakdown: CoachMonthPayrollBreakdown,
+) {
+  if (breakdown.expectedCount > 0) {
+    parts.push(`${breakdown.expectedCount} upcoming`);
+  }
+  if (breakdown.cantAttendCount > 0) {
+    parts.push(`${breakdown.cantAttendCount} can't attend`);
+  }
+  if (breakdown.cancelledCount > 0) {
+    parts.push(`${breakdown.cancelledCount} cancelled`);
+  }
+}
+
+/** Dashboard / card one-liner, e.g. "0 payable trainings × €25 · 1 upcoming · 8 can't attend". */
+export function formatCoachPaymentBreakdownSummary(
+  breakdown: CoachMonthPayrollBreakdown,
+  formattedRate: string,
+): string {
+  const parts = [
+    `${breakdown.billableCount} payable training${breakdown.billableCount === 1 ? "" : "s"} × ${formattedRate}`,
+  ];
+  appendBreakdownParts(parts, breakdown);
+  return parts.join(" · ");
+}
+
+/** Shorter variant without rate, e.g. "3 payable · 1 upcoming · 2 can't attend". */
+export function formatCoachPaymentBreakdownShort(
+  breakdown: CoachMonthPayrollBreakdown,
+): string {
+  const parts = [`${breakdown.billableCount} payable`];
+  appendBreakdownParts(parts, breakdown);
+  return parts.join(" · ");
+}

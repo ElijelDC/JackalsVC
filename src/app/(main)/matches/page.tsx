@@ -9,6 +9,7 @@ import {
   getMonthlyMatchesForTeams,
   resolveMatchesMonth,
 } from "@/lib/matches";
+import { resolveCoachAttendanceStatus } from "@/lib/training-attendance-config";
 import {
   getTrainingTeamByKey,
   getTrainingSquads,
@@ -63,6 +64,15 @@ export default async function MatchesPage({
     session.user.id,
     matches.map((match) => match.id),
   );
+  const attendanceByMatchId = Object.fromEntries(
+    matches.map((match) => {
+      const raw = attendanceMap.get(match.id) ?? "UNANSWERED";
+      const status = session.user.isCoach
+        ? resolveCoachAttendanceStatus(raw, match.matchStart)
+        : raw;
+      return [match.id, status];
+    }),
+  );
   const teamNameByKey = new Map(availableTeams.map((team) => [team.key, team.name]));
   const singleKey = selectedKeys.length === 1 ? selectedKeys[0]! : null;
   const singleTeam = singleKey
@@ -87,7 +97,7 @@ export default async function MatchesPage({
         trainingTeamKey: match.trainingTeamKey,
         teamName: teamNameByKey.get(match.trainingTeamKey) ?? match.trainingTeamKey,
       }))}
-      attendanceByMatchId={Object.fromEntries(attendanceMap)}
+      attendanceByMatchId={attendanceByMatchId}
     />
   );
 }

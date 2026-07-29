@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message:
-        "Thanks — your trials application has been received. We'll be in touch soon.",
+        "Thanks — your signup has been received. We'll be in touch soon.",
     });
   } catch (error) {
     return jsonServerError(

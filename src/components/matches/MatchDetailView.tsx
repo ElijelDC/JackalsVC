@@ -16,7 +16,7 @@ import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer } from "@/components/layout/PageShell";
-import { CoachResponsesSection } from "@/components/training/CoachResponsesSection";
+import { SquadSummaryCard } from "@/components/training/SquadSummaryCard";
 import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
 import { TrainingAttendancePicker } from "@/components/training/TrainingAttendancePicker";
@@ -115,7 +115,6 @@ export function MatchDetailView({
               </p>
             )}
 
-            <CoachResponsesSection coaches={detail.coaches} />
           </div>
         </div>
       </AnimateIn>
@@ -245,50 +244,25 @@ export function MatchDetailView({
             )}
           </Card>
 
-          <Card className="mt-4">
-            <CardTitle className="text-base">Squad summary</CardTitle>
-            {detail.isCoachUser && !cancelled && (
-              <div className="mt-4">
-                <Link
-                  href={`/matches/${match.id}/matchday-sheet`}
-                  className="inline-flex items-center gap-2 rounded-lg border border-jackals-red/30 bg-jackals-red/10 px-4 py-2.5 text-sm font-medium text-jackals-red-light transition-colors hover:bg-jackals-red/15"
-                >
-                  <Download className="h-4 w-4" />
-                  Matchday VLY sheet
-                </Link>
-                <p className="mt-2 text-xs text-zinc-500">
-                  Download attending players&apos; VLY photos and player numbers
-                  for referees.
-                </p>
-              </div>
-            )}
-            <div className="mt-4 grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-3">
-                <p className="text-2xl font-bold text-green-400">
-                  {detail.counts.attending}
-                </p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
-                  Attending
-                </p>
-              </div>
-              <div className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-3">
-                <p className="text-2xl font-bold text-rose-300">
-                  {detail.counts.notAttending}
-                </p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-rose-300/70">
-                  Can&apos;t attend
-                </p>
-              </div>
-              <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-3">
-                <p className="text-2xl font-bold text-amber-300">
-                  {detail.counts.unanswered}
-                </p>
-                <p className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">
-                  Unanswered
-                </p>
-              </div>
-            </div>
-          </Card>
+          <div className="mt-4">
+            <SquadSummaryCard counts={detail.counts} coaches={detail.coaches}>
+              {detail.isCoachUser && !cancelled ? (
+                <div>
+                  <Link
+                    href={`/matches/${match.id}/matchday-sheet`}
+                    className="inline-flex items-center gap-2 rounded-lg border border-jackals-red/30 bg-jackals-red/10 px-4 py-2.5 text-sm font-medium text-jackals-red-light transition-colors hover:bg-jackals-red/15"
+                  >
+                    <Download className="h-4 w-4" />
+                    Matchday VLY sheet
+                  </Link>
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Download attending players&apos; VLY photos and player numbers
+                    for referees.
+                  </p>
+                </div>
+              ) : null}
+            </SquadSummaryCard>
+          </div>
         </AnimateIn>
 
         <AnimateIn delay={150} className="lg:col-span-3">

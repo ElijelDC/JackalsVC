@@ -10,6 +10,8 @@ export type CoachUnansweredItem = {
   kind: CoachUnansweredItemKind;
   id: string;
   title: string;
+  teamName?: string | null;
+  teamKey?: string | null;
   startDate: string;
   location: string | null;
   players: UnansweredPlayer[];

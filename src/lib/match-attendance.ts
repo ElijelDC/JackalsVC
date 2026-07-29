@@ -3,6 +3,7 @@ import "server-only";
 import { notFound } from "next/navigation";
 import {
   normalizeSignupStatus,
+  resolveCoachAttendanceStatus,
   type TrainingAttendanceStatus,
   type TrainingRosterGroups,
   type TrainingRosterMember,
@@ -111,15 +112,23 @@ export async function getMatchDetail(
 
   const linkedMembers = teammates
     .filter((member) => member.user)
-    .map((member) => ({
-      rosterRole: member.rosterRole,
-      member: {
-        userId: member.userId!,
-        name: member.user!.name,
-        status: signupMap.get(member.userId!) ?? "UNANSWERED",
-        isCurrentUser: member.userId === userId,
-      } satisfies TrainingRosterMember,
-    }));
+    .map((member) => {
+      const rawStatus = signupMap.get(member.userId!) ?? "UNANSWERED";
+      const status =
+        member.rosterRole === "COACH"
+          ? resolveCoachAttendanceStatus(rawStatus, match.matchStart)
+          : rawStatus;
+
+      return {
+        rosterRole: member.rosterRole,
+        member: {
+          userId: member.userId!,
+          name: member.user!.name,
+          status,
+          isCurrentUser: member.userId === userId,
+        } satisfies TrainingRosterMember,
+      };
+    });
 
   const playerMembers = linkedMembers
     .filter((entry) => entry.rosterRole !== "COACH")
@@ -133,6 +142,11 @@ export async function getMatchDetail(
   const coaches = groupByStatus(coachMembers);
   const isCoachUser =
     teammates.find((member) => member.userId === userId)?.rosterRole === "COACH";
+
+  const rawUserStatus = signupMap.get(userId) ?? "UNANSWERED";
+  const userStatus = isCoachUser
+    ? resolveCoachAttendanceStatus(rawUserStatus, match.matchStart)
+    : rawUserStatus;
 
   const coachReminder =
     isCoachUser && roster.unanswered.length > 0
@@ -152,7 +166,7 @@ export async function getMatchDetail(
       cancelled: match.cancelled,
     },
     team,
-    userStatus: signupMap.get(userId) ?? "UNANSWERED",
+    userStatus,
     isCoachUser,
     coachReminder,
     roster,

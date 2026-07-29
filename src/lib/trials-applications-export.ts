@@ -86,7 +86,7 @@ export async function buildTrialsApplicationsWorkbook(
   workbook.created = new Date();
   workbook.modified = new Date();
 
-  const sheet = workbook.addWorksheet("Trials applications", {
+  const sheet = workbook.addWorksheet("Signups", {
     views: [{ state: "frozen", ySplit: 1 }],
     properties: { defaultRowHeight: 18 },
   });
@@ -128,7 +128,7 @@ export async function buildTrialsApplicationsWorkbook(
   summary.getColumn(1).width = 28;
   summary.getColumn(2).width = 14;
 
-  summary.addRow(["Jackals VC — Trials applications"]);
+  summary.addRow(["Jackals VC — Trial signups"]);
   summary.getRow(1).font = { bold: true, size: 14, color: { argb: "FFB91C1C" } };
   summary.addRow(["Exported", new Date().toLocaleString("en-IE")]);
   summary.addRow(["Total applications", applications.length]);
@@ -159,5 +159,5 @@ export async function buildTrialsApplicationsWorkbook(
 
 export function trialsExportFilename(now = new Date()) {
   const stamp = now.toISOString().slice(0, 10);
-  return `jackals-vc-trials-applications-${stamp}.xlsx`;
+  return `jackals-vc-trial-signups-${stamp}.xlsx`;
 }

@@ -10,7 +10,7 @@ import {
   type CoachPaymentStatus,
   type CoachTrainingPayItem,
 } from "@/lib/coach-payments-config";
-import { normalizeSignupStatus } from "@/lib/training-attendance-config";
+import { normalizeSignupStatus, resolveCoachAttendanceStatus } from "@/lib/training-attendance-config";
 import { prisma } from "@/lib/prisma";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
 
@@ -106,7 +106,11 @@ function computePayrollFromEvents(
     const cancelled = event.occurrenceCancelled;
     const coachStatus = cancelled
       ? ("CANCELLED" as const)
-      : normalizeSignupStatus(signupMap.get(event.id));
+      : resolveCoachAttendanceStatus(
+          normalizeSignupStatus(signupMap.get(event.id)),
+          event.startDate,
+          now,
+        );
     const hasOccurred = event.startDate.getTime() <= now.getTime();
     const countsTowardPay = !cancelled && coachStatus !== "NOT_ATTENDING";
     const payable = countsTowardPay && hasOccurred;

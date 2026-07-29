@@ -2,7 +2,7 @@ import { TrialsApplicationsManager } from "@/components/admin/TrialsApplications
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { listTrialsApplications } from "@/lib/trials-applications";
 
-export const metadata = { title: "Trials applications | Admin" };
+export const metadata = { title: "Signups | Admin" };
 
 export default async function AdminTrialsApplicationsPage() {
   const applications = await listTrialsApplications();
@@ -10,8 +10,8 @@ export default async function AdminTrialsApplicationsPage() {
   return (
     <PageContainer>
       <PageHeader
-        title="Trials applications"
-        description="Filter by team, position, or status — download a spreadsheet or switch between cards and compact views."
+        title="Signups"
+        description="Review sign-ups, filter by team or position, and export to Excel."
       />
       <TrialsApplicationsManager initialApplications={applications} />
     </PageContainer>
