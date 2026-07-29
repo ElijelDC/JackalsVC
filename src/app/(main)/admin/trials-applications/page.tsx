@@ -1,24 +1,19 @@
 import { TrialsApplicationsManager } from "@/components/admin/TrialsApplicationsManager";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
-import { serializeTrialsApplication } from "@/lib/trials-application-config";
-import { prisma } from "@/lib/prisma";
+import { listTrialsApplications } from "@/lib/trials-applications";
 
-export const metadata = { title: "Trials applications | Admin" };
+export const metadata = { title: "Signups | Admin" };
 
 export default async function AdminTrialsApplicationsPage() {
-  const applications = await prisma.trialsApplication.findMany({
-    orderBy: { createdAt: "desc" },
-  });
+  const applications = await listTrialsApplications();
 
   return (
     <PageContainer>
       <PageHeader
-        title="Trials applications"
-        description="Filter by team, position, or status — switch between cards and compact views."
+        title="Signups"
+        description="Review sign-ups, filter by team or position, and export to Excel."
       />
-      <TrialsApplicationsManager
-        initialApplications={applications.map(serializeTrialsApplication)}
-      />
+      <TrialsApplicationsManager initialApplications={applications} />
     </PageContainer>
   );
 }

@@ -82,6 +82,14 @@ export const NAV_ITEMS: NavItem[] = [
     paidCoachOnly: true,
   },
   {
+    href: "/coach/trials-applications",
+    label: "Signups",
+    icon: Volleyball,
+    description: "Review trial sign-ups and export the spreadsheet.",
+    requiresAuth: true,
+    coachOnly: true,
+  },
+  {
     href: "/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
@@ -125,6 +133,7 @@ const COACH_PAID_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
+  "/coach/trials-applications",
   "/payments",
 ] as const;
 
@@ -133,18 +142,20 @@ const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
+  "/coach/trials-applications",
 ] as const;
 
 const COACH_PAID_MOBILE_QUICK_NAV_HREFS = [
   "/training",
   "/matches",
+  "/coach/trials-applications",
   "/payments",
 ] as const;
 
 const COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS = [
   "/training",
   "/matches",
-  "/events",
+  "/coach/trials-applications",
 ] as const;
 
 const ADMIN_MOBILE_QUICK_NAV_HREFS = [
@@ -180,7 +191,10 @@ const ADMIN_MOBILE_MENU_HIDE_HREFS = new Set(["/training", "/matches"]);
 
 const ADMIN_MORE_HIDE_HREFS = new Set(["/", "/training", "/matches"]);
 
-const COACH_MORE_HIDE_HREFS = new Set(["/coach/training"]);
+const COACH_MORE_HIDE_HREFS = new Set([
+  "/coach/training",
+  "/coach/trials-applications",
+]);
 
 export { ADMIN_MOBILE_MENU_HIDE_HREFS, ADMIN_MORE_HIDE_HREFS, COACH_MORE_HIDE_HREFS };
 

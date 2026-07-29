@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { format } from "date-fns";
 import { X } from "lucide-react";
 import { DashboardSection } from "@/components/layout/DashboardSection";
 import { Card } from "@/components/ui/Card";
@@ -11,15 +10,15 @@ import { Button } from "@/components/ui/Button";
 import {
   COACH_PAYMENT_STATUS_LABELS,
   coachCanViewPaymentConfirmation,
-  coachTrainingPayItemLabel,
+  formatCoachPaymentBreakdownShort,
   formatCoachPaymentMonth,
   isCurrentPaymentMonth,
   isFuturePaymentMonth,
   isSettledCoachPayment,
   type CoachPaymentItem,
   type CoachPaymentStatus,
-  type CoachTrainingPayItem,
 } from "@/lib/coach-payments-config";
+import { CoachPaymentSessionBreakdown } from "@/components/coach/CoachPaymentSessionBreakdown";
 import { formatEuroFee } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 
@@ -39,18 +38,6 @@ function statusBadgeClass(status: CoachPaymentStatus) {
     : "border-amber-500/40 bg-amber-500/15 text-amber-200";
 }
 
-function sessionRowClass(item: CoachTrainingPayItem) {
-  if (item.cancelled) return "border-zinc-700/50 bg-zinc-900/40";
-  if (!item.payable) return "border-rose-500/20 bg-rose-500/[0.06]";
-  return "border-green-500/20 bg-green-500/[0.06]";
-}
-
-function sessionLabelClass(item: CoachTrainingPayItem) {
-  if (item.cancelled) return "text-zinc-500";
-  if (!item.payable) return "text-rose-300";
-  return "text-green-300";
-}
-
 function TrainingBreakdown({
   payment,
   ratePerSession,
@@ -60,92 +47,12 @@ function TrainingBreakdown({
   ratePerSession: number;
   showInvoice?: boolean;
 }) {
-  const { breakdown } = payment;
-  const now = new Date();
-
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3 text-center">
-          <p className="text-xl font-bold text-white">{breakdown.billableCount}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-wide text-zinc-500">
-            Payable
-          </p>
-        </div>
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-3 py-3 text-center">
-          <p className="text-xl font-bold text-rose-300">
-            {breakdown.cantAttendCount}
-          </p>
-          <p className="mt-1 text-[10px] uppercase tracking-wide text-rose-300/70">
-            Can&apos;t attend
-          </p>
-        </div>
-        <div className="rounded-lg border border-zinc-700/40 bg-zinc-900/30 px-3 py-3 text-center">
-          <p className="text-xl font-bold text-zinc-400">
-            {breakdown.cancelledCount}
-          </p>
-          <p className="mt-1 text-[10px] uppercase tracking-wide text-zinc-600">
-            Cancelled
-          </p>
-        </div>
-      </div>
-
-      <p className="text-sm text-zinc-400">
-        {breakdown.billableCount} payable training
-        {breakdown.billableCount === 1 ? "" : "s"} × {formatEuroFee(ratePerSession)}
-        {breakdown.cantAttendCount > 0 && (
-          <>
-            {" "}
-            · {breakdown.cantAttendCount} deducted for can&apos;t attend
-          </>
-        )}
-      </p>
-
-      {breakdown.sessions.length > 0 ? (
-        <ul className="space-y-2">
-          {breakdown.sessions.map((item) => (
-            <li
-              key={item.eventId}
-              className={cn(
-                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2.5",
-                sessionRowClass(item),
-              )}
-            >
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-white">
-                  {format(new Date(item.startDate), "EEE d MMM · HH:mm")}
-                </p>
-                {item.location && (
-                  <p className="mt-0.5 truncate text-xs text-zinc-500">
-                    {item.location}
-                  </p>
-                )}
-              </div>
-              <div className="shrink-0 text-right">
-                <p
-                  className={cn(
-                    "text-sm font-semibold",
-                    item.payable ? "text-white" : "text-zinc-500",
-                  )}
-                >
-                  {formatEuroFee(item.amount)}
-                </p>
-                <p
-                  className={cn(
-                    "mt-0.5 text-[11px] font-medium",
-                    sessionLabelClass(item),
-                  )}
-                >
-                  {coachTrainingPayItemLabel(item, now)}
-                </p>
-              </div>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p className="text-sm text-zinc-500">No training sessions scheduled.</p>
-      )}
-
+      <CoachPaymentSessionBreakdown
+        breakdown={payment.breakdown}
+        ratePerSession={ratePerSession}
+      />
       {showInvoice && <PaymentConfirmation payment={payment} />}
     </div>
   );
@@ -242,10 +149,8 @@ function MonthSummaryCard({
           <p className="font-medium text-white">
             {formatCoachPaymentMonth(payment.year, payment.month)}
           </p>
-          <p className="mt-1 text-sm text-zinc-400">
-            {payment.breakdown.billableCount} payable
-            {payment.breakdown.cantAttendCount > 0 &&
-              ` · ${payment.breakdown.cantAttendCount} can't attend`}
+          <p className="mt-1 text-sm leading-relaxed text-zinc-400">
+            {formatCoachPaymentBreakdownShort(payment.breakdown)}
           </p>
         </div>
         <div className="text-right">

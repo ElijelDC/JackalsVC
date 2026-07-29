@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import {
   getResponseWindowEndDate,
   normalizeSignupStatus,
+  resolveCoachAttendanceStatus,
   TRAINING_RESPONSE_OPENS_DAYS,
   type TrainingAttendanceStatus,
   type TrainingRosterMember,
@@ -13,7 +14,7 @@ import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { enrichEventRecords, serializeEnrichedEvent } from "@/lib/event-enrichment";
 import { prisma } from "@/lib/prisma";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
-import { getTeamTrainingSession, getUserTrainingTeamKey } from "@/lib/training-teams";
+import { getTeamTrainingSession, getUserTrainingTeamKeys, normalizeTrainingTeamKeys } from "@/lib/training-teams";
 
 export type { TrainingRosterMember, TrainingSessionDetailData };
 
@@ -85,6 +86,38 @@ export async function getUpcomingAttendingTrainingEvents(
 
 export async function getUpcomingTeamTrainingEvents(
   userId: string,
+  trainingTeamKey: string | string[],
+  fromDate: Date = new Date(),
+  daysAhead: number = TRAINING_RESPONSE_OPENS_DAYS,
+  limit = 5,
+) {
+  const keys = normalizeTrainingTeamKeys(trainingTeamKey);
+  if (keys.length === 0) return [];
+
+  const perTeam = await Promise.all(
+    keys.map((key) =>
+      getUpcomingTeamTrainingEventsForKey(
+        userId,
+        key,
+        fromDate,
+        daysAhead,
+        limit,
+      ),
+    ),
+  );
+
+  const merged = perTeam
+    .flat()
+    .sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+    );
+
+  return keys.length === 1 ? merged.slice(0, limit) : merged;
+}
+
+async function getUpcomingTeamTrainingEventsForKey(
+  userId: string,
   trainingTeamKey: string,
   fromDate: Date = new Date(),
   daysAhead: number = TRAINING_RESPONSE_OPENS_DAYS,
@@ -116,12 +149,31 @@ export async function getUpcomingTeamTrainingEvents(
   );
   const team = await getTrainingTeamByKey(trainingTeamKey);
 
+  const isCoach = Boolean(
+    await prisma.clubMember.findFirst({
+      where: {
+        userId,
+        trainingTeamKey,
+        rosterRole: "COACH",
+        active: true,
+      },
+      select: { id: true },
+    }),
+  );
+
   return activeEvents.map((event) => ({
     id: event.id,
-    title: team ? `${team.name} training` : event.title,
+    title: "Training",
+    teamName: team?.name ?? null,
+    teamKey: trainingTeamKey,
     startDate: event.startDate.toISOString(),
     location: event.location,
-    userStatus: statuses.get(event.id) ?? "UNANSWERED",
+    userStatus: isCoach
+      ? resolveCoachAttendanceStatus(
+          statuses.get(event.id) ?? "UNANSWERED",
+          event.startDate,
+        )
+      : (statuses.get(event.id) ?? "UNANSWERED"),
   }));
 }
 
@@ -147,8 +199,8 @@ export async function getTrainingSessionDetail(
     notFound();
   }
 
-  const userTeamKey = await getUserTrainingTeamKey(userId);
-  if (userTeamKey !== event.trainingSession.trainingTeamKey) {
+  const userTeamKeys = await getUserTrainingTeamKeys(userId);
+  if (!userTeamKeys.includes(event.trainingSession.trainingTeamKey)) {
     notFound();
   }
 
@@ -189,17 +241,27 @@ export async function getTrainingSessionDetail(
     };
   }
 
+  const sessionDate = new Date(serialized.startDate);
+
   const linkedMembers = teammates
     .filter((member) => member.user)
-    .map((member) => ({
-      rosterRole: member.rosterRole,
-      member: {
-        userId: member.userId!,
-        name: member.user!.name,
-        status: signupMap.get(member.userId!) ?? "UNANSWERED",
-        isCurrentUser: member.userId === userId,
-      } satisfies TrainingRosterMember,
-    }));
+    .map((member) => {
+      const rawStatus = signupMap.get(member.userId!) ?? "UNANSWERED";
+      const status =
+        member.rosterRole === "COACH"
+          ? resolveCoachAttendanceStatus(rawStatus, sessionDate)
+          : rawStatus;
+
+      return {
+        rosterRole: member.rosterRole,
+        member: {
+          userId: member.userId!,
+          name: member.user!.name,
+          status,
+          isCurrentUser: member.userId === userId,
+        } satisfies TrainingRosterMember,
+      };
+    });
 
   const playerMembers = linkedMembers
     .filter((entry) => entry.rosterRole !== "COACH")
@@ -212,9 +274,13 @@ export async function getTrainingSessionDetail(
   const roster = groupByStatus(playerMembers);
   const coaches = groupByStatus(coachMembers);
 
-  const userStatus = signupMap.get(userId) ?? "UNANSWERED";
   const isCoachUser =
     teammates.find((member) => member.userId === userId)?.rosterRole === "COACH";
+
+  const rawUserStatus = signupMap.get(userId) ?? "UNANSWERED";
+  const userStatus = isCoachUser
+    ? resolveCoachAttendanceStatus(rawUserStatus, sessionDate)
+    : rawUserStatus;
 
   const coachReminder =
     isCoachUser && roster.unanswered.length > 0

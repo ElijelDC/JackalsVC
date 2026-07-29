@@ -11,10 +11,19 @@ export const metadata = {
 export default async function CoachPaymentsPage() {
   const { coach } = await requirePaidCoachPage("/payments");
   const opts = { monthsBack: 12, monthsAhead: 3 };
-  const eventCache = await preloadTeamEvents([coach.trainingTeamKey], opts.monthsBack, opts.monthsAhead);
+  const teamKeys = coach.trainingTeamKeys;
+  const teamLabel =
+    coach.teams.length > 1
+      ? coach.teams.map((team) => team.name).join(" · ")
+      : coach.teamName;
+  const eventCache = await preloadTeamEvents(
+    teamKeys,
+    opts.monthsBack,
+    opts.monthsAhead,
+  );
   const payments = await getCoachSalaryPaymentsWithCache(
     coach.clubMemberId,
-    coach.trainingTeamKey,
+    teamKeys,
     coach.userId,
     opts,
     eventCache,
@@ -24,10 +33,10 @@ export default async function CoachPaymentsPage() {
     <PageContainer>
       <PageHeader
         title="Payments"
-        description={`€${COACH_SESSION_RATE_EUR} per payable training for ${coach.teamName}. Payments are made on the last Friday of each month. Can't attend sessions are deducted automatically.`}
+        description={`€${COACH_SESSION_RATE_EUR} per payable training across ${teamLabel}. Payments are made on the last Friday of each month. Can't attend sessions are deducted automatically.`}
       />
       <CoachPaymentsOverview
-        teamName={coach.teamName}
+        teamName={teamLabel}
         ratePerSession={COACH_SESSION_RATE_EUR}
         payments={maskCoachPaymentsForCoachView(payments)}
       />

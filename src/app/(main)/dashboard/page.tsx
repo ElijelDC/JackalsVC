@@ -32,6 +32,8 @@ import {
   getUserTrainingTeamKey,
 } from "@/lib/training-teams";
 
+const COACH_DASHBOARD_SCHEDULE_LIMIT = 8;
+
 export const metadata = {
   title: "Dashboard",
 };
@@ -56,7 +58,7 @@ export default async function DashboardPage() {
       upcomingMatches,
     ] = await Promise.all([
       getCoachUnansweredItemsWithReminders(
-        coach.trainingTeamKey,
+        coach.trainingTeamKeys,
         coach.userId,
       ),
       prisma.event.findMany({
@@ -68,24 +70,30 @@ export default async function DashboardPage() {
       }),
       getUpcomingTeamTrainingEvents(
         session.user.id,
-        coach.trainingTeamKey,
+        coach.trainingTeamKeys,
         now,
         TRAINING_RESPONSE_OPENS_DAYS,
+        COACH_DASHBOARD_SCHEDULE_LIMIT,
       ),
       getUpcomingTeamMatches(
         session.user.id,
-        coach.trainingTeamKey,
+        coach.trainingTeamKeys,
         now,
         TRAINING_RESPONSE_OPENS_DAYS,
+        COACH_DASHBOARD_SCHEDULE_LIMIT,
       ),
     ]);
 
     const paymentOpts = { monthsBack: 3, monthsAhead: 1 };
-    const eventCache = await preloadTeamEvents([coach.trainingTeamKey], paymentOpts.monthsBack, paymentOpts.monthsAhead);
+    const eventCache = await preloadTeamEvents(
+      coach.trainingTeamKeys,
+      paymentOpts.monthsBack,
+      paymentOpts.monthsAhead,
+    );
     const payments = coach.isPaidCoach
       ? await getCoachSalaryPaymentsWithCache(
           coach.clubMemberId,
-          coach.trainingTeamKey,
+          coach.trainingTeamKeys,
           coach.userId,
           paymentOpts,
           eventCache,
@@ -94,6 +102,13 @@ export default async function DashboardPage() {
 
     const enrichedMatches = await enrichEventRecords(matchEventsRaw);
     const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
+    const teamLabel =
+      coach.teams.length > 1
+        ? `${coach.teams.length} squads`
+        : coach.teamName;
+    const scheduleHint = coach.isPaidCoach
+      ? "Your schedule and club payments"
+      : "Your schedule and club events";
     const firstName = session.user.name?.split(" ")[0] ?? "Coach";
     const currentPayment =
       payments.find((payment) =>
@@ -104,14 +119,11 @@ export default async function DashboardPage() {
       <PageContainer className="overflow-x-hidden py-8 sm:py-12">
         <DashboardWelcomeSection
           title={`Welcome, ${firstName}`}
-          description={
-            coach.isPaidCoach
-              ? `${coach.teamName} · Your squad schedule and club payments`
-              : `${coach.teamName} · Your squad schedule and club events`
-          }
+          description={`${teamLabel} · ${scheduleHint}`}
         />
         <CoachDashboard
-          teamName={coach.teamName}
+          teams={coach.teams}
+          teamName={teamLabel}
           ratePerSession={COACH_SESSION_RATE_EUR}
           showPayments={coach.isPaidCoach}
           currentPayment={

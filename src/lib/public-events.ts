@@ -12,7 +12,7 @@ import {
 } from "@/lib/event-enrichment";
 import { resolveOccurrenceAttendanceUrl, resolveOccurrencePaymentUrl } from "@/lib/training-occurrence";
 import { prisma } from "@/lib/prisma";
-import { getTeamTrainingSession, getUserTrainingTeamKey } from "@/lib/training-teams";
+import { getTeamTrainingSession, getUserTrainingTeamKeys } from "@/lib/training-teams";
 import { isOpenReclubEvent } from "@/lib/event-reclub";
 
 export async function getPublicEvents(
@@ -37,13 +37,18 @@ export async function getPublicEvents(
   serialized = filterEventsForViewer(serialized, isLoggedIn);
 
   if (userId) {
-    const teamKey = await getUserTrainingTeamKey(userId);
-    const teamSession = teamKey ? await getTeamTrainingSession(teamKey) : null;
+    const teamKeys = await getUserTrainingTeamKeys(userId);
+    const teamSessions = await Promise.all(
+      teamKeys.map((key) => getTeamTrainingSession(key)),
+    );
+    const sessionIds = new Set(
+      teamSessions.filter(Boolean).map((session) => session!.id),
+    );
 
     serialized = serialized.filter((event) => {
       if (event.type !== "TRAINING") return true;
-      if (!teamSession) return false;
-      return event.trainingSessionId === teamSession.id;
+      if (sessionIds.size === 0) return false;
+      return Boolean(event.trainingSessionId && sessionIds.has(event.trainingSessionId));
     });
   }
 

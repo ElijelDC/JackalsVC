@@ -14,6 +14,7 @@ import type { CoachPaymentItem } from "@/components/coach/CoachPaymentsOverview"
 import {
   COACH_PAYMENT_STATUS_LABELS,
   coachCanViewPaymentConfirmation,
+  formatCoachPaymentBreakdownSummary,
   formatCoachPaymentMonth,
 } from "@/lib/coach-payments-config";
 import { formatEuroFee } from "@/lib/utils";
@@ -60,15 +61,10 @@ export function CoachDashboardPaymentsPanel({
                   {formatCoachPaymentMonth(currentPayment.year, currentPayment.month)} ·{" "}
                   {teamName}
                 </p>
-                <p className="mt-2 text-sm text-zinc-500">
-                  {currentPayment.breakdown.billableCount} payable training
-                  {currentPayment.breakdown.billableCount === 1 ? "" : "s"} ×{" "}
-                  {formatEuroFee(ratePerSession)}
-                  {currentPayment.breakdown.cantAttendCount > 0 && (
-                    <>
-                      {" "}
-                      · {currentPayment.breakdown.cantAttendCount} can&apos;t attend
-                    </>
+                <p className="mt-2 text-sm leading-relaxed text-zinc-500">
+                  {formatCoachPaymentBreakdownSummary(
+                    currentPayment.breakdown,
+                    formatEuroFee(ratePerSession),
                   )}
                 </p>
                 {coachCanViewPaymentConfirmation(currentPayment) && (
@@ -130,7 +126,7 @@ export function CoachDashboardQuickActions() {
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {QUICK_ACTIONS.map(({ href, label, description, icon: Icon }) => (
           <Link
             key={href}

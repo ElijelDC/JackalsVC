@@ -14,7 +14,7 @@ export async function GET() {
   const { coach, response } = await requireCoach();
   if (response) return response;
 
-  const pending = await getCoachUnansweredItems(coach!.trainingTeamKey);
+  const pending = await getCoachUnansweredItems(coach!.trainingTeamKeys);
   return NextResponse.json({ pending });
 }
 

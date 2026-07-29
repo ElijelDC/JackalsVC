@@ -160,6 +160,45 @@ export function normalizeSignupStatus(
   return "UNANSWERED";
 }
 
+/** True once the session or match start time has passed. */
+export function hasSessionResponseDeadlinePassed(
+  sessionDate: Date,
+  now: Date = new Date(),
+): boolean {
+  return sessionDate.getTime() <= now.getTime();
+}
+
+/**
+ * Coaches must respond before the session starts. If they don't, treat as can't attend.
+ * Players keep UNANSWERED until they respond explicitly.
+ */
+export function resolveCoachAttendanceStatus(
+  status: TrainingAttendanceStatus,
+  sessionDate: Date,
+  now: Date = new Date(),
+): TrainingAttendanceStatus {
+  if (
+    status === "UNANSWERED" &&
+    hasSessionResponseDeadlinePassed(sessionDate, now)
+  ) {
+    return "NOT_ATTENDING";
+  }
+  return status;
+}
+
+export function resolveCoachEventAttendanceStatus(
+  eventId: string,
+  attendanceMap: Map<string, TrainingAttendanceStatus>,
+  eventStartDate: Date,
+  isCoach: boolean,
+  now: Date = new Date(),
+): TrainingAttendanceStatus {
+  const raw = attendanceMap.get(eventId) ?? "UNANSWERED";
+  return isCoach
+    ? resolveCoachAttendanceStatus(raw, eventStartDate, now)
+    : raw;
+}
+
 export type TrainingRosterMember = {
   userId: string;
   name: string;

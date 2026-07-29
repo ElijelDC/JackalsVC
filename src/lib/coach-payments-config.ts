@@ -17,13 +17,19 @@ export type CoachTrainingPayItem = {
   location: string | null;
   cancelled: boolean;
   coachStatus: TrainingAttendanceStatus | "CANCELLED";
+  /** Session already started and counts toward pay (not can't-attend / cancelled). */
   payable: boolean;
+  /** Upcoming session that will count toward pay unless marked can't attend. */
+  expected: boolean;
   amount: number;
+  trainingTeamKey?: string | null;
+  teamName?: string | null;
 };
 
 export type CoachMonthPayrollBreakdown = {
   sessions: CoachTrainingPayItem[];
   billableCount: number;
+  expectedCount: number;
   cantAttendCount: number;
   cancelledCount: number;
   totalScheduled: number;
@@ -48,6 +54,7 @@ export type AdminCoachPaymentRow = {
   name: string;
   email: string | null;
   trainingTeamKey: string | null;
+  trainingTeamKeys: string[];
   teamName: string | null;
   payments: CoachPaymentItem[];
 };
@@ -135,6 +142,103 @@ export function coachTrainingPayItemLabel(
 ) {
   if (item.cancelled) return "Cancelled";
   if (item.coachStatus === "NOT_ATTENDING") return "Can't attend";
-  if (new Date(item.startDate) < now) return "Attended";
-  return "Expected";
+  if (item.expected) return "Expected";
+  if (item.coachStatus === "ATTENDING") return "Attended";
+  return "Payable";
+}
+
+export type CoachPayTeamGroup = {
+  key: string;
+  name: string;
+  sessions: CoachTrainingPayItem[];
+  billableCount: number;
+  expectedCount: number;
+  cantAttendCount: number;
+  cancelledCount: number;
+  amount: number;
+};
+
+export function groupCoachPaySessionsByTeam(
+  sessions: CoachTrainingPayItem[],
+): CoachPayTeamGroup[] {
+  const groups = new Map<string, CoachPayTeamGroup>();
+
+  for (const item of sessions) {
+    const key = item.trainingTeamKey || item.teamName || "team";
+    const name = item.teamName || item.trainingTeamKey || "Squad";
+    const existing = groups.get(key);
+    if (existing) {
+      existing.sessions.push(item);
+      if (item.payable) existing.billableCount += 1;
+      if (item.expected) existing.expectedCount += 1;
+      if (!item.cancelled && item.coachStatus === "NOT_ATTENDING") {
+        existing.cantAttendCount += 1;
+      }
+      if (item.cancelled) existing.cancelledCount += 1;
+      existing.amount += item.amount;
+    } else {
+      groups.set(key, {
+        key,
+        name,
+        sessions: [item],
+        billableCount: item.payable ? 1 : 0,
+        expectedCount: item.expected ? 1 : 0,
+        cantAttendCount:
+          !item.cancelled && item.coachStatus === "NOT_ATTENDING" ? 1 : 0,
+        cancelledCount: item.cancelled ? 1 : 0,
+        amount: item.amount,
+      });
+    }
+  }
+
+  return [...groups.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+/** Sessions that should drive the month's payment / projection amount. */
+export function coachPaymentBillableSessionCount(
+  breakdown: CoachMonthPayrollBreakdown,
+  year: number,
+  month: number,
+  now: Date = new Date(),
+) {
+  if (isFuturePaymentMonth(year, month, now)) {
+    return breakdown.expectedCount;
+  }
+  return breakdown.billableCount;
+}
+
+function appendBreakdownParts(
+  parts: string[],
+  breakdown: CoachMonthPayrollBreakdown,
+) {
+  if (breakdown.expectedCount > 0) {
+    parts.push(`${breakdown.expectedCount} upcoming`);
+  }
+  if (breakdown.cantAttendCount > 0) {
+    parts.push(`${breakdown.cantAttendCount} can't attend`);
+  }
+  if (breakdown.cancelledCount > 0) {
+    parts.push(`${breakdown.cancelledCount} cancelled`);
+  }
+}
+
+/** Dashboard / card one-liner, e.g. "0 payable trainings × €25 · 1 upcoming · 8 can't attend". */
+export function formatCoachPaymentBreakdownSummary(
+  breakdown: CoachMonthPayrollBreakdown,
+  formattedRate: string,
+): string {
+  const parts = [
+    `${breakdown.billableCount} payable training${breakdown.billableCount === 1 ? "" : "s"} × ${formattedRate}`,
+  ];
+  appendBreakdownParts(parts, breakdown);
+  return parts.join(" · ");
+}
+
+/** Shorter variant without rate, e.g. "3 payable · 1 upcoming · 2 can't attend". */
+export function formatCoachPaymentBreakdownShort(
+  breakdown: CoachMonthPayrollBreakdown,
+): string {
+  const parts = [`${breakdown.billableCount} payable`];
+  appendBreakdownParts(parts, breakdown);
+  return parts.join(" · ");
 }

@@ -24,8 +24,8 @@ async function sendMensDivision2TrialsConfirmationEmail(
       heading: "Thanks for applying",
       greeting: `Hi ${firstName},`,
       paragraphs: [
-        "We've received your application for the Jackals VC Men's Division 2 trials.",
-        "We'll be in touch soon regarding the August trial dates.",
+        "We've received your signup for the Jackals VC Men's Division 2 trials.",
+        "The proposed trial date is Wednesday 5 August 2026. Please stay tuned to WhatsApp or email for date confirmation and any venue updates.",
         "We're looking forward to seeing you on court.",
       ],
       details: [{ label: "Team", value: "Men's Division 2" }],
@@ -46,7 +46,7 @@ async function sendWomensDivision3TrialsConfirmationEmail(
       heading: "Thanks for applying",
       greeting: `Hi ${firstName},`,
       paragraphs: [
-        "We've received your application for the Jackals VC Women's Division 3 trials.",
+        "We've received your signup for the Jackals VC Women's Division 3 trials.",
         "We'll be in touch through WhatsApp within the next few days with next steps.",
         "We're looking forward to seeing you on court.",
       ],

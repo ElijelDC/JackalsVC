@@ -15,7 +15,8 @@ import {
 } from "@/lib/training-attendance-config";
 import { prisma } from "@/lib/prisma";
 import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
-import { getTeamTrainingSession } from "@/lib/training-teams";
+import { getTeamTrainingSession, normalizeTrainingTeamKeys } from "@/lib/training-teams";
+import { getTrainingTeamByKey } from "@/lib/training-squads";
 
 export type { CoachUnansweredItem, UnansweredPlayer } from "@/lib/coach-unanswered-config";
 export { getCoachUnansweredItemUrl } from "@/lib/coach-unanswered-config";
@@ -63,6 +64,8 @@ async function getCoachUnansweredTrainingItems(
   const session = await getTeamTrainingSession(trainingTeamKey);
   if (!session) return [];
 
+  const team = await getTrainingTeamByKey(trainingTeamKey);
+
   const events = await prisma.event.findMany({
     where: {
       type: "TRAINING",
@@ -108,6 +111,8 @@ async function getCoachUnansweredTrainingItems(
       kind: "training",
       id: event.id,
       title: event.title,
+      teamName: team?.name ?? null,
+      teamKey: trainingTeamKey,
       startDate: event.startDate.toISOString(),
       location: event.location,
       players: unansweredPlayers,
@@ -122,6 +127,8 @@ async function getCoachUnansweredMatchItems(
   players: Awaited<ReturnType<typeof getSquadPlayers>>,
   now: Date,
 ): Promise<CoachUnansweredItem[]> {
+  const team = await getTrainingTeamByKey(trainingTeamKey);
+
   const matches = await prisma.teamMatch.findMany({
     where: {
       trainingTeamKey,
@@ -163,10 +170,14 @@ async function getCoachUnansweredMatchItems(
 
     if (unansweredPlayers.length === 0) continue;
 
+    const matchTitle = formatMatchTitle(match.opponentName, match.venue);
+
     items.push({
       kind: "match",
       id: match.id,
-      title: formatMatchTitle(match.opponentName, match.venue),
+      title: matchTitle,
+      teamName: team?.name ?? null,
+      teamKey: trainingTeamKey,
       startDate: match.matchStart.toISOString(),
       location: match.location,
       players: unansweredPlayers,
@@ -177,23 +188,30 @@ async function getCoachUnansweredMatchItems(
 }
 
 export async function getCoachUnansweredItems(
-  trainingTeamKey: string,
+  trainingTeamKey: string | string[],
   now: Date = new Date(),
 ): Promise<CoachUnansweredItem[]> {
-  const players = await getSquadPlayers(trainingTeamKey);
+  const keys = normalizeTrainingTeamKeys(trainingTeamKey);
+  if (keys.length === 0) return [];
 
-  const [trainingItems, matchItems] = await Promise.all([
-    getCoachUnansweredTrainingItems(trainingTeamKey, players, now),
-    getCoachUnansweredMatchItems(trainingTeamKey, players, now),
-  ]);
+  const items: CoachUnansweredItem[] = [];
 
-  return [...trainingItems, ...matchItems].sort(
+  for (const key of keys) {
+    const players = await getSquadPlayers(key);
+    const [trainingItems, matchItems] = await Promise.all([
+      getCoachUnansweredTrainingItems(key, players, now),
+      getCoachUnansweredMatchItems(key, players, now),
+    ]);
+    items.push(...trainingItems, ...matchItems);
+  }
+
+  return items.sort(
     (a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
   );
 }
 
 export async function getCoachUnansweredItemsWithReminders(
-  trainingTeamKey: string,
+  trainingTeamKey: string | string[],
   coachUserId: string,
   now: Date = new Date(),
 ) {
@@ -228,12 +246,13 @@ export function formatCoachSessionDate(isoDate: string) {
 }
 
 export async function getCoachReminderTargetItem(
-  trainingTeamKey: string,
+  trainingTeamKey: string | string[],
   kind: CoachUnansweredItemKind,
   id: string,
   now: Date = new Date(),
 ): Promise<CoachUnansweredItem | null> {
-  const players = await getSquadPlayers(trainingTeamKey);
+  const keys = normalizeTrainingTeamKeys(trainingTeamKey);
+  if (keys.length === 0) return null;
 
   if (kind === "training") {
     const event = await prisma.event.findUnique({
@@ -243,14 +262,18 @@ export async function getCoachReminderTargetItem(
       },
     });
 
+    const eventTeamKey = event?.trainingSession?.trainingTeamKey;
     if (
       !event ||
       event.type !== "TRAINING" ||
-      event.trainingSession?.trainingTeamKey !== trainingTeamKey ||
+      !eventTeamKey ||
+      !keys.includes(eventTeamKey) ||
       event.startDate < now
     ) {
       return null;
     }
+
+    const players = await getSquadPlayers(eventTeamKey);
 
     const [enriched] = await enrichEventRecords([event]);
     if (enriched.occurrenceCancelled) return null;
@@ -266,10 +289,14 @@ export async function getCoachReminderTargetItem(
     const unansweredPlayers = getUnansweredPlayers(players, signupMap);
     if (unansweredPlayers.length === 0) return null;
 
+    const team = await getTrainingTeamByKey(eventTeamKey);
+
     return {
       kind: "training",
       id: event.id,
       title: event.title,
+      teamName: team?.name ?? null,
+      teamKey: eventTeamKey,
       startDate: event.startDate.toISOString(),
       location: event.location,
       players: unansweredPlayers,
@@ -279,13 +306,15 @@ export async function getCoachReminderTargetItem(
   const match = await prisma.teamMatch.findUnique({ where: { id } });
   if (
     !match ||
-    match.trainingTeamKey !== trainingTeamKey ||
+    !keys.includes(match.trainingTeamKey) ||
     match.cancelled ||
     match.matchStart < now ||
     !canRespondToTrainingSession(match.matchStart, now)
   ) {
     return null;
   }
+
+  const players = await getSquadPlayers(match.trainingTeamKey);
 
   const signups = await prisma.matchSignup.findMany({
     where: { matchId: match.id },
@@ -297,10 +326,15 @@ export async function getCoachReminderTargetItem(
   const unansweredPlayers = getUnansweredPlayers(players, signupMap);
   if (unansweredPlayers.length === 0) return null;
 
+  const team = await getTrainingTeamByKey(match.trainingTeamKey);
+  const matchTitle = formatMatchTitle(match.opponentName, match.venue);
+
   return {
     kind: "match",
     id: match.id,
-    title: formatMatchTitle(match.opponentName, match.venue),
+    title: matchTitle,
+    teamName: team?.name ?? null,
+    teamKey: match.trainingTeamKey,
     startDate: match.matchStart.toISOString(),
     location: match.location,
     players: unansweredPlayers,

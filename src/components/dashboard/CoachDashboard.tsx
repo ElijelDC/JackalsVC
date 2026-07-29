@@ -1,16 +1,6 @@
-import {
-  DashboardUpcomingClubEventsPanel,
-  DashboardUpcomingMatchesCard,
-  DashboardUpcomingTrainingCard,
-} from "@/components/dashboard/MemberDashboardPanels";
-import {
-  CoachDashboardPaymentsPanel,
-  CoachDashboardQuickActions,
-} from "@/components/dashboard/CoachDashboardPanels";
-import { CoachTrainingResponsesPanel } from "@/components/coach/CoachTrainingResponsesPanel";
+import { CoachDashboardBody } from "@/components/dashboard/CoachDashboardBody";
 import type { CoachPaymentItem } from "@/components/coach/CoachPaymentsOverview";
 import type { CoachUnansweredItem } from "@/lib/coach-unanswered-config";
-import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 import type { TrainingAttendanceStatus } from "@/lib/training-attendance-config";
 
 type DashboardEvent = {
@@ -28,12 +18,20 @@ type DashboardEvent = {
 type UpcomingItem = {
   id: string;
   title: string;
+  teamName?: string | null;
+  teamKey?: string | null;
   startDate: string;
   location: string | null;
   userStatus: TrainingAttendanceStatus;
 };
 
+type CoachTeam = {
+  key: string;
+  name: string;
+};
+
 export function CoachDashboard({
+  teams,
   teamName,
   currentPayment,
   ratePerSession,
@@ -43,6 +41,7 @@ export function CoachDashboard({
   upcomingMatches,
   upcomingClubEvents,
 }: {
+  teams: CoachTeam[];
   teamName: string;
   currentPayment: CoachPaymentItem | null;
   ratePerSession: number;
@@ -53,31 +52,16 @@ export function CoachDashboard({
   upcomingClubEvents: DashboardEvent[];
 }) {
   return (
-    <AnimatedPageSections>
-      {showPayments && (
-        <CoachDashboardPaymentsPanel
-          teamName={teamName}
-          ratePerSession={ratePerSession}
-          currentPayment={currentPayment}
-        />
-      )}
-
-      <CoachDashboardQuickActions />
-
-      <CoachTrainingResponsesPanel pending={pendingResponses} />
-
-      <div className="grid min-w-0 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
-        <DashboardUpcomingTrainingCard
-          teamName={teamName}
-          sessions={upcomingTraining}
-        />
-        <DashboardUpcomingMatchesCard
-          teamName={teamName}
-          matches={upcomingMatches}
-        />
-      </div>
-
-      <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
-    </AnimatedPageSections>
+    <CoachDashboardBody
+      teams={teams}
+      teamName={teamName}
+      ratePerSession={ratePerSession}
+      showPayments={showPayments}
+      currentPayment={currentPayment}
+      pendingResponses={pendingResponses}
+      upcomingTraining={upcomingTraining}
+      upcomingMatches={upcomingMatches}
+      upcomingClubEvents={upcomingClubEvents}
+    />
   );
 }

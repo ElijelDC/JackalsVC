@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { format } from "date-fns";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AdminSection } from "@/components/admin/AdminShell";
@@ -9,10 +8,10 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Label, Select } from "@/components/ui/Input";
 import type { CoachPaymentItem } from "@/components/coach/CoachPaymentsOverview";
+import { CoachPaymentSessionBreakdown } from "@/components/coach/CoachPaymentSessionBreakdown";
 import {
   COACH_PAYMENT_STATUS_LABELS,
   coachPaymentMonthKey,
-  coachTrainingPayItemLabel,
   formatCoachPaymentMonth,
   isCurrentPaymentMonth,
   isFuturePaymentMonth,
@@ -65,7 +64,6 @@ function CoachPaymentAdminCard({
   projected?: boolean;
 }) {
   const { breakdown } = payment;
-  const now = new Date();
 
   return (
     <Card className="overflow-hidden p-0">
@@ -93,7 +91,12 @@ function CoachPaymentAdminCard({
               {formatEuroFee(payment.amount)}
             </p>
             <p className="mt-1 text-sm text-zinc-400">
-              {breakdown.billableCount} payable × {formatEuroFee(ratePerSession)}
+              {payment.sessionCount} session
+              {payment.sessionCount === 1 ? "" : "s"} ×{" "}
+              {formatEuroFee(ratePerSession)}
+              {breakdown.expectedCount > 0 &&
+                breakdown.billableCount === 0 &&
+                " · projected"}
             </p>
             {projected && (
               <span className="mt-2 inline-flex rounded-full border border-sky-500/30 bg-sky-500/10 px-2.5 py-1 text-xs font-medium text-sky-200">
@@ -104,64 +107,12 @@ function CoachPaymentAdminCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 border-b border-white/10 px-5 py-4 sm:gap-3 sm:px-6">
-        <div className="rounded-lg border border-white/10 bg-white/[0.03] px-3 py-3 text-center">
-          <p className="text-lg font-bold text-white">{breakdown.billableCount}</p>
-          <p className="mt-1 text-[10px] uppercase tracking-wide text-zinc-500">
-            Payable
-          </p>
-        </div>
-        <div className="rounded-lg border border-rose-500/20 bg-rose-500/[0.06] px-3 py-3 text-center">
-          <p className="text-lg font-bold text-rose-300">
-            {breakdown.cantAttendCount}
-          </p>
-          <p className="mt-1 text-[10px] uppercase tracking-wide text-rose-300/70">
-            Can&apos;t attend
-          </p>
-        </div>
-        <div className="rounded-lg border border-zinc-700/40 bg-zinc-900/30 px-3 py-3 text-center">
-          <p className="text-lg font-bold text-zinc-400">
-            {breakdown.cancelledCount}
-          </p>
-          <p className="mt-1 text-[10px] uppercase tracking-wide text-zinc-600">
-            Cancelled
-          </p>
-        </div>
+      <div className="border-b border-white/10 px-5 py-4 sm:px-6">
+        <CoachPaymentSessionBreakdown
+          breakdown={breakdown}
+          ratePerSession={ratePerSession}
+        />
       </div>
-
-      {breakdown.sessions.length > 0 && (
-        <ul className="max-h-56 space-y-2 overflow-y-auto border-b border-white/10 px-5 py-4 sm:px-6">
-          {breakdown.sessions.map((item) => (
-            <li
-              key={item.eventId}
-              className={cn(
-                "flex items-center justify-between gap-3 rounded-lg border px-3 py-2 text-sm",
-                item.cancelled
-                  ? "border-zinc-700/50 bg-zinc-900/40"
-                  : item.payable
-                    ? "border-green-500/20 bg-green-500/[0.06]"
-                    : "border-rose-500/20 bg-rose-500/[0.06]",
-              )}
-            >
-              <span className="text-zinc-300">
-                {format(new Date(item.startDate), "EEE d MMM · HH:mm")}
-              </span>
-              <span
-                className={cn(
-                  "text-xs font-medium",
-                  item.payable
-                    ? "text-green-300"
-                    : item.cancelled
-                      ? "text-zinc-500"
-                      : "text-rose-300",
-                )}
-              >
-                {coachTrainingPayItemLabel(item, now)}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
 
       {!readOnly && (
         <>

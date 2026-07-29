@@ -232,7 +232,7 @@ export function TrialsApplicationModal({
         preferredPosition1: form.preferredPosition1,
         preferredPosition2: form.preferredPosition2,
       },
-      "Failed to submit application",
+      "Failed to submit signup",
     );
 
     setLoading(false);
@@ -248,7 +248,7 @@ export function TrialsApplicationModal({
 
     setSuccess(
       result.data.message ??
-        "Thanks — your trials application has been received. We'll be in touch soon.",
+        "Thanks — your signup has been received. We'll be in touch soon.",
     );
     setForm(EMPTY_FORM);
     setDraftRestored(false);
@@ -273,7 +273,7 @@ export function TrialsApplicationModal({
       onClose={handleClose}
       closeOnBackdrop={false}
       closeOnEscape={false}
-      title="Trials application"
+      title="Signup"
       description={
         <div className="space-y-2">
           <p className="text-sm leading-relaxed text-zinc-400">
@@ -596,7 +596,7 @@ export function TrialsApplicationModal({
                   "bg-purple-600 hover:bg-purple-500",
               )}
             >
-              {loading ? "Submitting..." : "Submit application"}
+              {loading ? "Submitting..." : "Submit signup"}
             </Button>
           )}
         </div>

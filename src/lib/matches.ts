@@ -6,26 +6,37 @@ import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
 import {
   getResponseWindowEndDate,
+  resolveCoachAttendanceStatus,
   TRAINING_RESPONSE_OPENS_DAYS,
 } from "@/lib/training-attendance-config";
-import { parseTrainingMonthParam } from "@/lib/training-teams";
+import { parseTrainingMonthParam, normalizeTrainingTeamKeys } from "@/lib/training-teams";
+import { getTrainingTeamByKey } from "@/lib/training-squads";
 
 export async function resolveMatchesMonth(
-  trainingTeamKey: string,
+  trainingTeamKeys: string | string[],
   monthParam: string | undefined,
 ) {
+  const keys = Array.isArray(trainingTeamKeys)
+    ? trainingTeamKeys
+    : [trainingTeamKeys];
   const month = parseTrainingMonthParam(monthParam);
-  if (monthParam) return month;
+  if (monthParam || keys.length === 0) return month;
 
-  const currentMonthMatches = await getMonthlyTeamMatches(
-    trainingTeamKey,
-    month,
-  );
+  const currentMonthMatches = await prisma.teamMatch.findMany({
+    where: {
+      trainingTeamKey: { in: keys },
+      matchStart: {
+        gte: startOfMonth(month),
+        lte: endOfMonth(month),
+      },
+    },
+    take: 1,
+  });
   if (currentMonthMatches.length > 0) return month;
 
   const nextMatch = await prisma.teamMatch.findFirst({
     where: {
-      trainingTeamKey,
+      trainingTeamKey: { in: keys },
       matchStart: { gte: startOfMonth(month) },
     },
     orderBy: { matchStart: "asc" },
@@ -37,7 +48,7 @@ export async function resolveMatchesMonth(
 
   const previousMatch = await prisma.teamMatch.findFirst({
     where: {
-      trainingTeamKey,
+      trainingTeamKey: { in: keys },
       matchStart: { lt: startOfMonth(month) },
     },
     orderBy: { matchStart: "desc" },
@@ -66,6 +77,22 @@ export async function getMonthlyTeamMatches(
   });
 }
 
+export async function getMonthlyMatchesForTeams(
+  trainingTeamKeys: string[],
+  month: Date,
+) {
+  const monthStart = startOfMonth(month);
+  const monthEnd = endOfMonth(month);
+
+  return prisma.teamMatch.findMany({
+    where: {
+      trainingTeamKey: { in: trainingTeamKeys },
+      matchStart: { gte: monthStart, lte: monthEnd },
+    },
+    orderBy: { matchStart: "asc" },
+  });
+}
+
 export async function getAllTeamMatches(trainingTeamKey: string) {
   return prisma.teamMatch.findMany({
     where: { trainingTeamKey },
@@ -79,6 +106,32 @@ export async function getTeamMatchDetail(matchId: string, userId: string) {
 }
 
 export async function getUpcomingTeamMatches(
+  userId: string,
+  trainingTeamKey: string | string[],
+  fromDate: Date = new Date(),
+  daysAhead: number = TRAINING_RESPONSE_OPENS_DAYS,
+  limit = 5,
+) {
+  const keys = normalizeTrainingTeamKeys(trainingTeamKey);
+  if (keys.length === 0) return [];
+
+  const perTeam = await Promise.all(
+    keys.map((key) =>
+      getUpcomingTeamMatchesForKey(userId, key, fromDate, daysAhead, limit),
+    ),
+  );
+
+  const merged = perTeam
+    .flat()
+    .sort(
+      (a, b) =>
+        new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+    );
+
+  return keys.length === 1 ? merged.slice(0, limit) : merged;
+}
+
+async function getUpcomingTeamMatchesForKey(
   userId: string,
   trainingTeamKey: string,
   fromDate: Date = new Date(),
@@ -102,11 +155,35 @@ export async function getUpcomingTeamMatches(
     matches.map((match) => match.id),
   );
 
-  return matches.map((match) => ({
-    id: match.id,
-    title: formatMatchTitle(match.opponentName, match.venue),
-    startDate: match.matchStart.toISOString(),
-    location: match.location,
-    userStatus: statuses.get(match.id) ?? "UNANSWERED",
-  }));
+  const isCoach = Boolean(
+    await prisma.clubMember.findFirst({
+      where: {
+        userId,
+        trainingTeamKey,
+        rosterRole: "COACH",
+        active: true,
+      },
+      select: { id: true },
+    }),
+  );
+
+  const team = await getTrainingTeamByKey(trainingTeamKey);
+
+  return matches.map((match) => {
+    const matchTitle = formatMatchTitle(match.opponentName, match.venue);
+    return {
+      id: match.id,
+      title: matchTitle,
+      teamName: team?.name ?? null,
+      teamKey: trainingTeamKey,
+      startDate: match.matchStart.toISOString(),
+      location: match.location,
+      userStatus: isCoach
+        ? resolveCoachAttendanceStatus(
+            statuses.get(match.id) ?? "UNANSWERED",
+            match.matchStart,
+          )
+        : (statuses.get(match.id) ?? "UNANSWERED"),
+    };
+  });
 }
