@@ -264,6 +264,11 @@ function GuestFooter({
             <li>
               <FooterLink href="/about">About us</FooterLink>
             </li>
+            <li>
+              <FooterLink href="/membership/fees-2026-27">
+                2026/27 membership fees
+              </FooterLink>
+            </li>
           </FooterColumn>
 
           <FooterColumn title="Plan ahead">
@@ -310,6 +315,11 @@ function MemberFooter({
             </li>
             <li>
               <FooterLink href="/membership">Membership</FooterLink>
+            </li>
+            <li>
+              <FooterLink href="/membership/fees-2026-27">
+                2026/27 fees breakdown
+              </FooterLink>
             </li>
             <li>
               <FooterLink href="/events">Events</FooterLink>
