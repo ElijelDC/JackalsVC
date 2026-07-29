@@ -1,125 +1,103 @@
-# Jackals VC · 2026/27 Membership — Where Your Money Goes
+# Jackals VC · 2026/27 Membership
 
-**Season:** October 2026 – May 2027  
-**Prepared for members** · Honest cost breakdown
+**Season:** October 2026 – May 2027
 
 ---
 
-## At a glance
+## Your membership, your team
+
+Membership is built around **your squad** — your weekly training night, your home matchdays, and the coaches who run your sessions. You are not paying for every team’s schedule; you are paying for **what your team uses**.
+
+---
+
+## How to join
+
+1. **Club kit first** (~€45) — everyone buys kit before membership opens.  
+2. **Season membership** (Oct–May) — one fee for the full season on your team.
+
+---
+
+## 2026/27 fees
+
+| Team | Training night | Adult | Student / U18 |
+|------|----------------|------:|--------------:|
+| **Division 2 Men** (National League) | **Friday** · Meakstown | **€385** | **€330** |
+| **Division 3 Women** (National League) | **Monday** · Meakstown | **€385** | **€330** |
+| **Regional Men** | **Wednesday** · Meakstown | **€345** | **€295** |
+
+National League fees are slightly higher because those teams host **more home matches** (~7 each vs ~4 for Regional) — your fee includes your share of those extra Luttrellstown matchdays.
+
+---
+
+## What you get
+
+### Weekly training (your night only)
+
+- **Coached sessions** at Meakstown on **your team’s night**  
+- Full-court training through the league season (Oct–May)  
+- Roughly **29–33 sessions** on your night, after the Christmas break and bank holidays  
+
+| Team | Your training night |
+|------|---------------------|
+| Division 2 Men | **Friday** |
+| Division 3 Women | **Monday** |
+| Regional Men | **Wednesday** |
+
+### Home matchdays (your team’s games)
+
+- **Luttrellstown** on Sundays when **your team** hosts  
+- Hall booking and matchday setup for your home games  
+- Referees arranged for your home fixtures  
+
+| Team | Home matches (approx.) |
+|------|------------------------:|
+| Division 2 Men | 7 |
+| Division 3 Women | 7 |
+| Regional Men | 4 |
+
+### The club behind the court
+
+- Qualified coaches paid for **your team’s training**  
+- A full season of structured league volleyball — not pay-as-you-go hall hire  
+- Part of a competitive club with National League and Regional squads  
+
+---
+
+## Where your fee goes
+
+Your membership directly supports the things that matter to **your team**:
 
 | | |
 |---|---|
-| **Training** | Meakstown · Mon / Wed / Fri |
-| **Home matchdays** | Luttrellstown · Sundays |
-| **Club kit** | ~€45 · **mandatory before membership** |
-| **Membership** | Covers training + home matchdays for your team |
+| **Your training nights** | Meakstown hall + coach for your squad’s weekly session |
+| **Your home games** | Luttrellstown court time and matchday costs when you host |
+| **Running the season** | Keeping the club on the court from October through May |
 
-We price membership from **actual club costs**, not guesswork. Fees are set so that, even if most of the club are students, we still cover the season with a **small reserve of about €500** for unexpected costs — not a large profit margin.
-
----
-
-## What you pay
-
-### 1. Club kit (before membership opens)
-
-Everyone buys club kit first (~**€45**). This is **separate** from membership and is not included in the fees below.
-
-### 2. Season membership (Oct–May)
-
-Fees depend on your team, because National League teams play **more home matches** than Regional League.
-
-| Team | Adult | Student / U18 |
-|------|------:|--------------:|
-| **National League** — Division 2 Men · Division 3 Women | **€385** | **€330** |
-| **Regional League** — Men | **€345** | **€295** |
-
-**Why two prices?**  
-NL players carry about **7 home matchdays** each season. Regional players carry about **4**. Same training, same club — but NL members pay a fair share of the extra hall and referee costs for those extra home games.
+That is a full league season of training and matchday support for **less than the cost of booking a hall yourself** — with coaching, teammates, and fixtures included.
 
 ---
 
-## What membership includes
+## Good to know
 
-- **Training** at Meakstown (Mon / Wed / Fri), October–May  
-- **Home matchday costs** for your team at Luttrellstown (hall + referees when we hire them)  
-- **Coach pay** for training sessions (coaches are not paid for matches)  
-- A **small club reserve** (~€500 for the season) for things like catch-up sessions, extra ref weeks, or minor overruns  
+**Included in membership**
+- Your team’s weekly training (one night per week)  
+- Home matchday costs for your team  
+- Coach pay for your training sessions  
 
-**93 training sessions** are planned across the season (after Christmas break and bank holidays).
-
----
-
-## What membership does **not** include
-
+**Not included**
 - Club kit (~€45)  
-- Volleyball Ireland affiliation (paid separately by the club)  
-- Cup matches, playoffs, or fun sessions  
-- Travel to away matches  
-- Equipment beyond your kit  
+- Away travel  
+- Cups, playoffs, and fun sessions  
+- Volleyball Ireland affiliation (handled separately by the club)  
 
----
-
-## Where the money goes (whole club, one season)
-
-Based on **~42 members** (14 per team × 3 teams) and **worst-case** referee costs (hiring both refs for every home match):
-
-| Category | Approx. cost |
-|----------|-------------:|
-| Training hall — Meakstown | €7,440 |
-| Coach pay — training only | €2,325 |
-| Home halls — Luttrellstown | €2,214 |
-| Referees — home matchdays | €810 |
-| Hall setup on home Sundays (shared) | ~€307 |
-| **Total membership pool** | **~€13,100** |
-
-**Kit** (~€45 × 42 ≈ **€1,890**) is collected separately before membership.
-
----
-
-## Home matchdays — how we book Luttrellstown
-
-When we host at home:
-
-- **30 minutes** setup at the start of the day (once per home Sunday)  
-- **2.5 hours** per match on court  
-
-Examples:
-
-| Home Sunday | Booking |
-|-------------|---------|
-| 1 team home | 0.5h setup + 2.5h × 1 match |
-| 2 teams home | 0.5h setup + 2.5h × 2 matches |
-| All 3 teams home | 0.5h setup + 2.5h × 3 matches |
-
-We plan home Sundays using last season’s pattern (mostly single or double headers, with at least one triple-header week). **18 home matches** across the club: 7 + 7 + 4.
-
----
-
-## Training calendar notes
-
-- **Mon / Wed / Fri** at Meakstown  
-- **Off:** 21 December 2026 – 3 January 2027 (back 4 January)  
-- **No training** on Irish bank holidays that fall on those nights  
-
----
-
-## Fair pricing — how we checked it
-
-We built the fees from:
-
-1. Real hall rates (Meakstown €40/hr · Luttrellstown €98.50 per 2 hours)  
-2. Referee rates (€25 + €20 when hired)  
-3. Coach pay (€25 per training session)  
-4. Last season’s home-match schedule (how often teams share a hall day)  
-
-We then set prices so that if **about 90% of members are students**, the club still ends the season with roughly **€500** in reserve — enough for a bad ref week or a catch-up, not a big surplus.
-
-If we end up using **in-house referees** more often, that reserve grows and stays in the club for next season or emergencies.
+**Season breaks**
+- Training off **21 December 2026 – 3 January 2027** (back 4 January)  
+- No training on bank holidays that fall on your team’s night  
 
 ---
 
 ## Questions?
 
-Speak to the committee if anything is unclear. We want fees to be **transparent and fair** — you should know exactly what you’re paying for.
+Talk to the committee — we are happy to walk through fees for your team.
 
 **Jackals Volleyball Club** · 2026/27 season
