@@ -145,7 +145,7 @@ function ActionButtons({
   );
 }
 
-function DismissedActionButtons({
+function ProcessedActionButtons({
   application,
   loading,
   onReview,
@@ -156,26 +156,35 @@ function DismissedActionButtons({
   onReview: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
-  if (application.status !== "DISMISSED") return null;
+  if (application.status !== "REVIEWED" && application.status !== "DISMISSED") {
+    return null;
+  }
 
   return (
-    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:shrink-0 sm:gap-2">
-      <Button
-        type="button"
-        size="sm"
-        className="w-full sm:w-auto"
-        disabled={loading}
-        onClick={() => onReview(application.id)}
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>
-            <CheckCircle2 className="mr-1.5 h-4 w-4" />
-            Mark reviewed
-          </>
-        )}
-      </Button>
+    <div
+      className={cn(
+        "grid w-full gap-2 sm:flex sm:w-auto sm:shrink-0 sm:gap-2",
+        application.status === "DISMISSED" ? "grid-cols-2" : "grid-cols-1",
+      )}
+    >
+      {application.status === "DISMISSED" ? (
+        <Button
+          type="button"
+          size="sm"
+          className="w-full sm:w-auto"
+          disabled={loading}
+          onClick={() => onReview(application.id)}
+        >
+          {loading ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <>
+              <CheckCircle2 className="mr-1.5 h-4 w-4" />
+              Mark reviewed
+            </>
+          )}
+        </Button>
+      ) : null}
       <Button
         type="button"
         size="sm"
@@ -194,17 +203,17 @@ function DismissedActionButtons({
 function ApplicationCard({
   application,
   loading,
-  canManageDismissed,
+  canDeleteApplications,
   onAct,
   onReviewDismissed,
-  onDeleteDismissed,
+  onDeleteApplication,
 }: {
   application: TrialsApplicationRecord;
   loading: boolean;
-  canManageDismissed: boolean;
+  canDeleteApplications: boolean;
   onAct: (id: string, action: "review" | "dismiss") => void;
   onReviewDismissed: (id: string) => void;
-  onDeleteDismissed: (id: string) => void;
+  onDeleteApplication: (id: string) => void;
 }) {
   return (
     <article className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -274,13 +283,15 @@ function ApplicationCard({
         </div>
       ) : null}
 
-      {canManageDismissed && application.status === "DISMISSED" ? (
+      {canDeleteApplications &&
+      (application.status === "REVIEWED" ||
+        application.status === "DISMISSED") ? (
         <div className="mt-4 border-t border-white/5 pt-4">
-          <DismissedActionButtons
+          <ProcessedActionButtons
             application={application}
             loading={loading}
             onReview={onReviewDismissed}
-            onDelete={onDeleteDismissed}
+            onDelete={onDeleteApplication}
           />
         </div>
       ) : null}
@@ -293,13 +304,13 @@ export function TrialsApplicationsManager({
   listApiPath = "/api/admin/trials-applications",
   actionApiPath = "/api/admin/trials-applications",
   exportApiPath = "/api/admin/trials-applications/export",
-  canManageDismissed = false,
+  canDeleteApplications = false,
 }: {
   initialApplications: TrialsApplicationRecord[];
   listApiPath?: string;
   actionApiPath?: string;
   exportApiPath?: string;
-  canManageDismissed?: boolean;
+  canDeleteApplications?: boolean;
 }) {
   const router = useRouter();
   const [applications, setApplications] = useState(initialApplications);
@@ -378,12 +389,14 @@ export function TrialsApplicationsManager({
     await act(id, "review");
   };
 
-  const deleteDismissed = async (id: string) => {
+  const deleteApplication = async (id: string) => {
     const application = applications.find((item) => item.id === id);
     const name = application?.fullName ?? "this signup";
+    const statusLabel =
+      application?.status === "REVIEWED" ? "reviewed" : "dismissed";
     if (
       !window.confirm(
-        `Delete ${name}? This permanently removes the dismissed signup.`,
+        `Delete ${name}? This permanently removes the ${statusLabel} signup.`,
       )
     ) {
       return;
@@ -394,7 +407,7 @@ export function TrialsApplicationsManager({
 
     const result = await apiDelete(
       `${actionApiPath}/${id}`,
-      "delete this dismissed signup",
+      "delete this signup",
     );
 
     setLoadingId(null);
@@ -586,10 +599,10 @@ export function TrialsApplicationsManager({
               key={application.id}
               application={application}
               loading={loadingId === application.id}
-              canManageDismissed={canManageDismissed}
+              canDeleteApplications={canDeleteApplications}
               onAct={(id, action) => void act(id, action)}
               onReviewDismissed={(id) => void reviewDismissed(id)}
-              onDeleteDismissed={(id) => void deleteDismissed(id)}
+              onDeleteApplication={(id) => void deleteApplication(id)}
             />
           ))}
         </div>

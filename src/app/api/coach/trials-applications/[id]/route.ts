@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody } from "@/lib/api";
 import { requireCoach } from "@/lib/coach-auth";
-import { updateTrialsApplicationStatus } from "@/lib/trials-applications";
+import {
+  deleteTrialsApplication,
+  updateTrialsApplicationStatus,
+} from "@/lib/trials-applications";
 import { z } from "zod";
 
 const trialsApplicationActionSchema = z.object({
@@ -52,6 +55,41 @@ export async function PATCH(
     console.error("[coach/trials-applications] PATCH failed", error);
     return jsonError(
       "We couldn't update this application. Refresh the page and try again.",
+      500,
+    );
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { response } = await requireCoach();
+    if (response) return response;
+
+    const { id } = await params;
+    const result = await deleteTrialsApplication(id);
+
+    if (result.error === "not_found") {
+      return jsonError(
+        "This application was not found. Refresh the page — it may have already been deleted.",
+        404,
+      );
+    }
+
+    if (result.error === "not_deletable") {
+      return jsonError(
+        "Only reviewed or dismissed signups can be deleted. Refresh the page and try again.",
+        409,
+      );
+    }
+
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error("[coach/trials-applications] DELETE failed", error);
+    return jsonError(
+      "We couldn't delete this application. Refresh the page and try again.",
       500,
     );
   }

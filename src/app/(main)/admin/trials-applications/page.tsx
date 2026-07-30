@@ -15,7 +15,7 @@ export default async function AdminTrialsApplicationsPage() {
       />
       <TrialsApplicationsManager
         initialApplications={applications}
-        canManageDismissed
+        canDeleteApplications
       />
     </PageContainer>
   );

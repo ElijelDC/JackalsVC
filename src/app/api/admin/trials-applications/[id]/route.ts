@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import {
-  deleteDismissedTrialsApplication,
+  deleteTrialsApplication,
   updateTrialsApplicationStatus,
 } from "@/lib/trials-applications";
 import { z } from "zod";
@@ -78,7 +78,7 @@ export async function DELETE(
     if (response) return response;
 
     const { id } = await params;
-    const result = await deleteDismissedTrialsApplication(id);
+    const result = await deleteTrialsApplication(id);
 
     if (result.error === "not_found") {
       return jsonError(
@@ -87,9 +87,9 @@ export async function DELETE(
       );
     }
 
-    if (result.error === "not_dismissed") {
+    if (result.error === "not_deletable") {
       return jsonError(
-        "Only dismissed signups can be deleted. Refresh the page and try again.",
+        "Only reviewed or dismissed signups can be deleted. Refresh the page and try again.",
         409,
       );
     }

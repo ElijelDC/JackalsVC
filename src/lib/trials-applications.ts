@@ -51,7 +51,7 @@ export async function updateTrialsApplicationStatus(
   };
 }
 
-export async function deleteDismissedTrialsApplication(id: string) {
+export async function deleteTrialsApplication(id: string) {
   const application = await prisma.trialsApplication.findUnique({
     where: { id },
   });
@@ -60,8 +60,8 @@ export async function deleteDismissedTrialsApplication(id: string) {
     return { error: "not_found" as const };
   }
 
-  if (application.status !== "DISMISSED") {
-    return { error: "not_dismissed" as const };
+  if (application.status === "NEW") {
+    return { error: "not_deletable" as const };
   }
 
   await prisma.trialsApplication.delete({ where: { id } });

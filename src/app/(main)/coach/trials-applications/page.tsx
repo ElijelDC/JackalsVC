@@ -18,6 +18,7 @@ export default async function CoachTrialsApplicationsPage() {
         listApiPath="/api/coach/trials-applications"
         actionApiPath="/api/coach/trials-applications"
         exportApiPath="/api/coach/trials-applications/export"
+        canDeleteApplications
       />
     </PageContainer>
   );
