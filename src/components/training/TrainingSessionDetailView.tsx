@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import {
-  ArrowLeft,
   CalendarDays,
   ChevronRight,
   Clock,
@@ -17,6 +16,7 @@ import { TrainingResponsesLockedNotice } from "@/components/training/TrainingRes
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { DashboardBackLink } from "@/components/dashboard/DashboardBackLink";
 import { PageContainer } from "@/components/layout/PageShell";
 import { formatEventDateTime } from "@/lib/event-display";
 import type { TrainingSessionDetailData } from "@/lib/training-attendance-config";
@@ -35,11 +35,15 @@ export function TrainingSessionDetailView({
   canAccessAttendance,
   attendanceBlockReason = null,
   monthParam,
+  backHref,
+  backLabel,
 }: {
   detail: TrainingSessionDetailData;
   canAccessAttendance: boolean;
   attendanceBlockReason?: AttendanceBlockReason | null;
   monthParam: string;
+  backHref?: string;
+  backLabel?: string;
 }) {
   const eventDate = new Date(detail.event.startDate);
   const cancelled = detail.event.cancelled;
@@ -51,17 +55,13 @@ export function TrainingSessionDetailView({
   const canRespond =
     !cancelled && canRespondToTrainingSession(eventDate);
   const responseOpensOn = getTrainingResponseOpensOn(eventDate);
+  const listBackHref = backHref ?? `/training?month=${monthParam}`;
+  const listBackLabel = backLabel ?? detail.team.name;
 
   return (
     <PageContainer>
       <AnimateIn immediate>
-        <Link
-          href={`/training?month=${monthParam}`}
-          className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to {detail.team.name}
-        </Link>
+        <DashboardBackLink href={listBackHref} label={listBackLabel} />
       </AnimateIn>
 
       <AnimateIn delay={50}>
@@ -137,7 +137,7 @@ export function TrainingSessionDetailView({
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the session — from ${format(responseOpensOn, "d MMMM")}.`
                     : detail.isCoachUser
-                      ? "Let your players know if you can't attend training."
+                      ? "Let your squad know if you're attending this session."
                       : "Let coaches and teammates know if you're coming."}
             </CardDescription>
 
@@ -171,7 +171,11 @@ export function TrainingSessionDetailView({
           </Card>
 
           <div className="mt-4">
-            <SquadSummaryCard counts={detail.counts} coaches={detail.coaches} />
+            <SquadSummaryCard
+              counts={detail.counts}
+              coaches={detail.coaches}
+              isCoachUser={detail.isCoachUser}
+            />
           </div>
         </AnimateIn>
 

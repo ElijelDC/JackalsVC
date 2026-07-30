@@ -33,14 +33,14 @@ function resolveSelectedTeamKeys(
 export default async function TrainingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; team?: string }>;
+  searchParams: Promise<{ month?: string; team?: string; from?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) {
     redirect("/login?callbackUrl=/training");
   }
 
-  const { month: monthParam, team: teamParam } = await searchParams;
+  const { month: monthParam, team: teamParam, from } = await searchParams;
   const month = parseTrainingMonthParam(monthParam);
   const availableKeys = await getUserTrainingTeamKeys(session.user.id);
 
@@ -108,6 +108,7 @@ export default async function TrainingPage({
       selectedTeamKey={singleKey}
       month={month}
       isCoach={session.user.isCoach}
+      returnFrom={from ?? null}
       sessionTimes={
         singleResult?.session
           ? {

@@ -152,6 +152,17 @@ export function itemNeedsUrgentResponse(
   return getDashboardResponseDisplay(userStatus, eventDate, now).needsUrgentResponse;
 }
 
+/** Inline status suffix on dashboard schedule rows. */
+export function getDashboardStatusInlineClass(
+  display: DashboardResponseDisplay,
+  userStatus: TrainingAttendanceStatus,
+): string {
+  if (display.needsUrgentResponse) return "font-medium text-amber-300";
+  if (userStatus === "ATTENDING") return "text-green-400/90";
+  if (userStatus === "NOT_ATTENDING") return "text-rose-300/90";
+  return "text-zinc-500";
+}
+
 export function normalizeSignupStatus(
   status: string | null | undefined,
 ): TrainingAttendanceStatus {
@@ -211,6 +222,22 @@ export type TrainingRosterGroups = {
   notAttending: TrainingRosterMember[];
   unanswered: TrainingRosterMember[];
 };
+
+/** Players only see coaches who marked attending; coaches see the full coach list. */
+export function getCoachesVisibleToUser(
+  coaches: TrainingRosterGroups,
+  isCoachUser: boolean,
+): TrainingRosterGroups {
+  if (isCoachUser) {
+    return coaches;
+  }
+
+  return {
+    attending: coaches.attending,
+    notAttending: [],
+    unanswered: [],
+  };
+}
 
 export type TrainingSessionDetailData = {
   event: {

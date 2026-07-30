@@ -11,6 +11,7 @@ import {
   Phone,
   RefreshCw,
   Search,
+  Trash2,
   XCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
@@ -28,7 +29,7 @@ import {
   trialsPositionLabel,
   trialsTeamLabel,
 } from "@/lib/trials-recruitment-config";
-import { apiGet, apiPatch } from "@/lib/client-api";
+import { apiDelete, apiGet, apiPatch } from "@/lib/client-api";
 import {
   filterTrialsApplications,
   hasTrialsApplicationsFilters,
@@ -144,14 +145,66 @@ function ActionButtons({
   );
 }
 
-function ApplicationCard({
+function DismissedActionButtons({
   application,
   loading,
-  onAct,
+  onReview,
+  onDelete,
 }: {
   application: TrialsApplicationRecord;
   loading: boolean;
+  onReview: (id: string) => void;
+  onDelete: (id: string) => void;
+}) {
+  if (application.status !== "DISMISSED") return null;
+
+  return (
+    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:shrink-0 sm:gap-2">
+      <Button
+        type="button"
+        size="sm"
+        className="w-full sm:w-auto"
+        disabled={loading}
+        onClick={() => onReview(application.id)}
+      >
+        {loading ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <>
+            <CheckCircle2 className="mr-1.5 h-4 w-4" />
+            Mark reviewed
+          </>
+        )}
+      </Button>
+      <Button
+        type="button"
+        size="sm"
+        variant="outline"
+        className="w-full border-rose-500/30 text-rose-200 hover:bg-rose-500/10 sm:w-auto"
+        disabled={loading}
+        onClick={() => onDelete(application.id)}
+      >
+        <Trash2 className="mr-1.5 h-4 w-4" />
+        Delete
+      </Button>
+    </div>
+  );
+}
+
+function ApplicationCard({
+  application,
+  loading,
+  canManageDismissed,
+  onAct,
+  onReviewDismissed,
+  onDeleteDismissed,
+}: {
+  application: TrialsApplicationRecord;
+  loading: boolean;
+  canManageDismissed: boolean;
   onAct: (id: string, action: "review" | "dismiss") => void;
+  onReviewDismissed: (id: string) => void;
+  onDeleteDismissed: (id: string) => void;
 }) {
   return (
     <article className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
@@ -220,6 +273,17 @@ function ApplicationCard({
           />
         </div>
       ) : null}
+
+      {canManageDismissed && application.status === "DISMISSED" ? (
+        <div className="mt-4 border-t border-white/5 pt-4">
+          <DismissedActionButtons
+            application={application}
+            loading={loading}
+            onReview={onReviewDismissed}
+            onDelete={onDeleteDismissed}
+          />
+        </div>
+      ) : null}
     </article>
   );
 }
@@ -229,11 +293,13 @@ export function TrialsApplicationsManager({
   listApiPath = "/api/admin/trials-applications",
   actionApiPath = "/api/admin/trials-applications",
   exportApiPath = "/api/admin/trials-applications/export",
+  canManageDismissed = false,
 }: {
   initialApplications: TrialsApplicationRecord[];
   listApiPath?: string;
   actionApiPath?: string;
   exportApiPath?: string;
+  canManageDismissed?: boolean;
 }) {
   const router = useRouter();
   const [applications, setApplications] = useState(initialApplications);
@@ -305,6 +371,40 @@ export function TrialsApplicationsManager({
       ),
     );
 
+    router.refresh();
+  };
+
+  const reviewDismissed = async (id: string) => {
+    await act(id, "review");
+  };
+
+  const deleteDismissed = async (id: string) => {
+    const application = applications.find((item) => item.id === id);
+    const name = application?.fullName ?? "this signup";
+    if (
+      !window.confirm(
+        `Delete ${name}? This permanently removes the dismissed signup.`,
+      )
+    ) {
+      return;
+    }
+
+    setLoadingId(id);
+    setError(null);
+
+    const result = await apiDelete(
+      `${actionApiPath}/${id}`,
+      "delete this dismissed signup",
+    );
+
+    setLoadingId(null);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setApplications((current) => current.filter((item) => item.id !== id));
     router.refresh();
   };
 
@@ -486,7 +586,10 @@ export function TrialsApplicationsManager({
               key={application.id}
               application={application}
               loading={loadingId === application.id}
+              canManageDismissed={canManageDismissed}
               onAct={(id, action) => void act(id, action)}
+              onReviewDismissed={(id) => void reviewDismissed(id)}
+              onDeleteDismissed={(id) => void deleteDismissed(id)}
             />
           ))}
         </div>

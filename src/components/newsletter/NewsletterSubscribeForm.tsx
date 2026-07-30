@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { apiPost } from "@/lib/client-api";
@@ -63,24 +63,15 @@ export function NewsletterSubscribeForm({
 
   if (subscribed) {
     return (
-      <div
+      <p
         className={cn(
-          "flex items-start gap-2 rounded-sm border border-green-500/20 bg-green-500/5",
-          minimal ? "mt-3 px-3 py-2.5" : compact ? "px-3 py-2.5" : "mt-3 px-4 py-3",
+          "text-zinc-500",
+          minimal ? "mt-3 text-xs leading-relaxed" : compact ? "text-xs leading-relaxed" : "mt-3 text-sm",
         )}
         role="status"
       >
-        <Check
-          className={cn(
-            "shrink-0 text-green-400",
-            minimal ? "mt-0.5 h-3.5 w-3.5" : "h-4 w-4",
-          )}
-          aria-hidden
-        />
-        <p className={cn("text-green-400", minimal ? "text-xs leading-relaxed" : "text-sm")}>
-          You&apos;re subscribed — we&apos;ll email you when new events go live.
-        </p>
-      </div>
+        You&apos;re subscribed — we&apos;ll email you when new events go live.
+      </p>
     );
   }
 

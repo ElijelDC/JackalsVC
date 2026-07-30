@@ -2,160 +2,30 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
-import {
-  CalendarDays,
-  ChevronRight,
-  CreditCard,
-  Swords,
-} from "lucide-react";
+import { ChevronRight, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { DashboardEventRow } from "@/components/dashboard/DashboardScheduleRow";
+import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/components/dashboard/DashboardUpcomingScheduleCard";
+import type { DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import { getEventTypeLabel } from "@/lib/event-filters";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";
 import type { MembershipPaymentAccess } from "@/lib/membership-overdue";
-import type { AttendanceBlockReason } from "@/lib/membership";
-import {
-  getDashboardResponseDisplay,
-  itemNeedsUrgentResponse,
-  type TrainingAttendanceStatus,
-} from "@/lib/training-attendance-config";
 import { formatPrice } from "@/lib/utils";
+import { withDashboardReturn } from "@/lib/dashboard-return";
 
-const PREVIEW_LIMIT = 3;
-
-type DashboardEvent = {
-  id: string;
-  title: string;
-  description: string | null;
-  startDate: string;
-  endDate: string | null;
-  type: string;
-  location: string | null;
-  coach?: string | null;
-  trainingSessionId?: string | null;
-};
-
-type DashboardUpcomingItem = {
-  id: string;
-  title: string;
-  startDate: string;
-  location: string | null;
-  userStatus: TrainingAttendanceStatus;
-};
-
-function DatePill({ date }: { date: Date }) {
-  return (
-    <div className="flex h-11 w-11 shrink-0 flex-col items-center justify-center border border-white/10 bg-jackals-surface text-center">
-      <span className="text-[10px] font-medium uppercase leading-none text-zinc-500">
-        {format(date, "MMM")}
-      </span>
-      <span className="text-sm font-bold leading-tight text-white">{format(date, "d")}</span>
-    </div>
-  );
-}
-
-function ResponseStatusBadge({
-  status,
-  eventDate,
-}: {
-  status: TrainingAttendanceStatus;
-  eventDate: Date;
-}) {
-  const display = getDashboardResponseDisplay(status, eventDate);
-
-  return <Badge className={display.badgeClassName}>{display.label}</Badge>;
-}
-
-function CompactEventRow({
-  href,
-  date,
-  title,
-  meta,
-  status,
-  eventDate,
-}: {
-  href: string;
-  date: Date;
-  title: string;
-  meta: string;
-  status?: TrainingAttendanceStatus;
-  eventDate?: Date;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group flex items-start gap-2.5 px-3 py-3 transition-colors hover:bg-white/[0.03] sm:items-center sm:gap-3 sm:px-4"
-    >
-      <DatePill date={date} />
-      <div className="min-w-0 flex-1">
-        <p className="font-medium leading-snug text-white">{title}</p>
-        {status && eventDate && (
-          <div className="mt-1.5">
-            <ResponseStatusBadge status={status} eventDate={eventDate} />
-          </div>
-        )}
-        <p className="mt-1 truncate text-xs text-zinc-500">{meta}</p>
-      </div>
-      <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400 sm:mt-0" />
-    </Link>
-  );
-}
-
-function UpcomingList({
-  items,
-  emptyMessage,
-  buildHref,
-  buildMeta,
-  viewAllHref,
-  viewAllLabel,
-}: {
-  items: DashboardUpcomingItem[];
-  emptyMessage: string;
-  buildHref: (item: DashboardUpcomingItem) => string;
-  buildMeta: (item: DashboardUpcomingItem, date: Date) => string;
-  viewAllHref: string;
-  viewAllLabel: string;
-}) {
-  const preview = items.slice(0, PREVIEW_LIMIT);
-  const remaining = items.length - preview.length;
-
-  if (items.length === 0) {
-    return <p className="px-4 py-6 text-center text-sm text-zinc-500">{emptyMessage}</p>;
-  }
-
-  return (
-    <StaggerIn className="divide-y divide-white/10" stagger={60}>
-      {preview.map((item) => {
-        const startDate = new Date(item.startDate);
-        return (
-          <CompactEventRow
-            key={item.id}
-            href={buildHref(item)}
-            date={startDate}
-            title={item.title}
-            meta={buildMeta(item, startDate)}
-            status={item.userStatus}
-            eventDate={startDate}
-          />
-        );
-      })}
-      <Link
-        href={viewAllHref}
-        className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
-      >
-        {remaining > 0 ? `+${remaining} more · ` : ""}
-        {viewAllLabel}
-        <ChevronRight className="h-3.5 w-3.5" />
-      </Link>
-    </StaggerIn>
-  );
-}
+export {
+  CoachUpcomingMatchesCard,
+  CoachUpcomingTrainingCard,
+  DashboardUpcomingMatchesCard,
+  DashboardUpcomingTrainingCard,
+} from "@/components/dashboard/DashboardUpcomingScheduleSections";
 
 export function DashboardUpcomingClubEventsPanel({
   upcomingEvents,
 }: {
-  upcomingEvents: DashboardEvent[];
+  upcomingEvents: DashboardClubEvent[];
 }) {
   const clubEvents = upcomingEvents.filter((event) => event.type !== "TRAINING");
 
@@ -169,7 +39,7 @@ export function DashboardUpcomingClubEventsPanel({
           <p className="mt-1 text-xs text-zinc-500">Tournaments and socials · within the next 4 weeks</p>
         </div>
         <Link
-          href="/events"
+          href={withDashboardReturn("/events")}
           className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
         >
           View all
@@ -184,12 +54,12 @@ export function DashboardUpcomingClubEventsPanel({
             </p>
           ) : (
             <StaggerIn className="divide-y divide-white/10" stagger={60}>
-              {clubEvents.slice(0, PREVIEW_LIMIT).map((event) => {
+              {clubEvents.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT).map((event) => {
                 const startDate = new Date(event.startDate);
                 return (
-                  <CompactEventRow
+                  <DashboardEventRow
                     key={event.id}
-                    href={`/calendar/${event.id}`}
+                    href={withDashboardReturn(`/calendar/${event.id}`)}
                     date={startDate}
                     title={event.title}
                     meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}${
@@ -198,148 +68,16 @@ export function DashboardUpcomingClubEventsPanel({
                   />
                 );
               })}
-              {clubEvents.length > PREVIEW_LIMIT && (
+              {clubEvents.length > DASHBOARD_SCHEDULE_PREVIEW_LIMIT && (
                 <Link
-                  href="/events"
+                  href={withDashboardReturn("/events")}
                   className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
                 >
-                  +{clubEvents.length - PREVIEW_LIMIT} more events
+                  +{clubEvents.length - DASHBOARD_SCHEDULE_PREVIEW_LIMIT} more events
                   <ChevronRight className="h-3.5 w-3.5" />
                 </Link>
               )}
             </StaggerIn>
-          )}
-        </div>
-      </Card>
-    </section>
-  );
-}
-
-export function DashboardUpcomingTrainingCard({
-  teamName,
-  sessions,
-  attendanceBlocked = false,
-  attendanceBlockReason = null,
-}: {
-  teamName: string | null;
-  sessions: DashboardUpcomingItem[];
-  attendanceBlocked?: boolean;
-  attendanceBlockReason?: AttendanceBlockReason | null;
-}) {
-  const needsResponse = sessions.filter((session) =>
-    itemNeedsUrgentResponse(session.userStatus, new Date(session.startDate)),
-  ).length;
-
-  return (
-    <section className="flex min-w-0 flex-col">
-      <div className="mb-4">
-        <h2 className="font-display text-xl font-semibold text-white">
-          <span className="inline-flex items-center gap-2">
-            <CalendarDays className="h-5 w-5 shrink-0 text-jackals-red-light" />
-            Upcoming training
-          </span>
-        </h2>
-        <p className="mt-1 text-xs text-zinc-500">
-          {!teamName
-            ? "No training team assigned"
-            : needsResponse > 0
-              ? `${needsResponse} session${needsResponse === 1 ? "" : "s"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
-              : `${sessions.length} upcoming session${sessions.length === 1 ? "" : "s"} · within the next 2 weeks`}
-        </p>
-      </div>
-
-      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
-        {attendanceBlocked && attendanceBlockReason === "overdue" && (
-          <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            Training responses are paused until your overdue membership payment is cleared.
-            {" "}
-            <Link href="/membership" className="font-medium text-white underline-offset-2 hover:underline">
-              View payment schedule
-            </Link>
-          </div>
-        )}
-        <div className="divide-y divide-white/10">
-          {!teamName ? (
-            <p className="px-4 py-6 text-center text-sm text-zinc-500">
-              Ask an admin to assign you to a training team.
-            </p>
-          ) : (
-            <UpcomingList
-              items={sessions}
-              emptyMessage="No training sessions within the next 2 weeks."
-              buildHref={(item) => `/training/session/${item.id}`}
-              buildMeta={(item, date) =>
-                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""}`
-              }
-              viewAllHref="/training"
-              viewAllLabel="View training schedule"
-            />
-          )}
-        </div>
-      </Card>
-    </section>
-  );
-}
-
-export function DashboardUpcomingMatchesCard({
-  teamName,
-  matches,
-  attendanceBlocked = false,
-  attendanceBlockReason = null,
-}: {
-  teamName: string | null;
-  matches: DashboardUpcomingItem[];
-  attendanceBlocked?: boolean;
-  attendanceBlockReason?: AttendanceBlockReason | null;
-}) {
-  const needsResponse = matches.filter((match) =>
-    itemNeedsUrgentResponse(match.userStatus, new Date(match.startDate)),
-  ).length;
-
-  return (
-    <section className="flex min-w-0 flex-col">
-      <div className="mb-4">
-        <h2 className="font-display text-xl font-semibold text-white">
-          <span className="inline-flex items-center gap-2">
-            <Swords className="h-5 w-5 shrink-0 text-jackals-red-light" />
-            Upcoming matches
-          </span>
-        </h2>
-        <p className="mt-1 text-xs text-zinc-500">
-          {!teamName
-            ? "No team assigned"
-            : needsResponse > 0
-              ? `${needsResponse} match${needsResponse === 1 ? "" : "es"} ${needsResponse === 1 ? "needs" : "need"} your response this week`
-              : `${matches.length} match${matches.length === 1 ? "" : "es"} · within the next 2 weeks`}
-        </p>
-      </div>
-
-      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
-        {attendanceBlocked && attendanceBlockReason === "overdue" && (
-          <div className="border-b border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-200">
-            Match responses are paused until your overdue membership payment is cleared.
-            {" "}
-            <Link href="/membership" className="font-medium text-white underline-offset-2 hover:underline">
-              View payment schedule
-            </Link>
-          </div>
-        )}
-        <div className="divide-y divide-white/10">
-          {!teamName ? (
-            <p className="px-4 py-6 text-center text-sm text-zinc-500">
-              Ask an admin to assign you to a team.
-            </p>
-          ) : (
-            <UpcomingList
-              items={matches}
-              emptyMessage="No matches within the next 2 weeks."
-              buildHref={(item) => `/matches/${item.id}`}
-              buildMeta={(item, date) =>
-                `${format(date, "EEE HH:mm")}${item.location ? ` · ${item.location}` : ""}`
-              }
-              viewAllHref="/matches"
-              viewAllLabel="View match schedule"
-            />
           )}
         </div>
       </Card>
@@ -397,7 +135,7 @@ export function MemberPaymentsPanel({
       <div className="mb-4 flex items-center justify-between gap-4">
         <h2 className="font-display text-xl font-semibold text-white">Membership</h2>
         <Link
-          href="/membership"
+          href={withDashboardReturn("/membership")}
           className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
         >
           {currentMembership ? "View more" : "Choose schedule"}
@@ -490,7 +228,7 @@ export function MemberPaymentsPanel({
         </div>
 
         <Link
-          href="/membership"
+          href={withDashboardReturn("/membership")}
           className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
         >
           {currentMembership

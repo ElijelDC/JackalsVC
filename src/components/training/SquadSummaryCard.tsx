@@ -6,6 +6,7 @@ import { Card, CardTitle } from "@/components/ui/Card";
 import {
   TRAINING_ATTENDANCE_BADGE_STYLES,
   TRAINING_ATTENDANCE_LABELS,
+  getCoachesVisibleToUser,
   type TrainingRosterGroups,
 } from "@/lib/training-attendance-config";
 import { cn } from "@/lib/utils";
@@ -51,7 +52,13 @@ function SummaryStat({
   );
 }
 
-function CoachAttendanceList({ coaches }: { coaches: TrainingRosterGroups }) {
+function CoachAttendanceList({
+  coaches,
+  showStatusBadges,
+}: {
+  coaches: TrainingRosterGroups;
+  showStatusBadges: boolean;
+}) {
   const allCoaches = [
     ...coaches.attending,
     ...coaches.notAttending,
@@ -90,14 +97,16 @@ function CoachAttendanceList({ coaches }: { coaches: TrainingRosterGroups }) {
                 <span className="font-normal text-zinc-500"> · you</span>
               ) : null}
             </span>
-            <span
-              className={cn(
-                "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
-                TRAINING_ATTENDANCE_BADGE_STYLES[coach.status],
-              )}
-            >
-              {TRAINING_ATTENDANCE_LABELS[coach.status]}
-            </span>
+            {showStatusBadges ? (
+              <span
+                className={cn(
+                  "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                  TRAINING_ATTENDANCE_BADGE_STYLES[coach.status],
+                )}
+              >
+                {TRAINING_ATTENDANCE_LABELS[coach.status]}
+              </span>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -108,6 +117,7 @@ function CoachAttendanceList({ coaches }: { coaches: TrainingRosterGroups }) {
 export function SquadSummaryCard({
   counts,
   coaches,
+  isCoachUser,
   children,
 }: {
   counts: {
@@ -116,11 +126,13 @@ export function SquadSummaryCard({
     unanswered: number;
   };
   coaches: TrainingRosterGroups;
+  isCoachUser: boolean;
   children?: ReactNode;
 }) {
+  const visibleCoaches = getCoachesVisibleToUser(coaches, isCoachUser);
   return (
     <Card>
-      <CardTitle className="text-base">Squad summary</CardTitle>
+      <CardTitle className="text-base">Player summary</CardTitle>
 
       {children ? <div className="mt-4">{children}</div> : null}
 
@@ -142,7 +154,10 @@ export function SquadSummaryCard({
         />
       </div>
 
-      <CoachAttendanceList coaches={coaches} />
+      <CoachAttendanceList
+        coaches={visibleCoaches}
+        showStatusBadges={isCoachUser}
+      />
     </Card>
   );
 }

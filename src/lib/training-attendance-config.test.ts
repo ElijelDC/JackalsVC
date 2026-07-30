@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  getCoachesVisibleToUser,
   hasSessionResponseDeadlinePassed,
   resolveCoachAttendanceStatus,
   resolveCoachEventAttendanceStatus,
@@ -78,5 +79,25 @@ describe("hasSessionResponseDeadlinePassed", () => {
     expect(
       hasSessionResponseDeadlinePassed(sessionDate, sessionDate),
     ).toBe(true);
+  });
+});
+
+describe("getCoachesVisibleToUser", () => {
+  const coaches = {
+    attending: [{ userId: "1", name: "Alex Coach", status: "ATTENDING" as const, isCurrentUser: false }],
+    notAttending: [{ userId: "2", name: "Sam Coach", status: "NOT_ATTENDING" as const, isCurrentUser: false }],
+    unanswered: [{ userId: "3", name: "Jo Coach", status: "UNANSWERED" as const, isCurrentUser: false }],
+  };
+
+  it("shows only attending coaches to players", () => {
+    expect(getCoachesVisibleToUser(coaches, false)).toEqual({
+      attending: coaches.attending,
+      notAttending: [],
+      unanswered: [],
+    });
+  });
+
+  it("shows all coach statuses to coaches", () => {
+    expect(getCoachesVisibleToUser(coaches, true)).toEqual(coaches);
   });
 });

@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { format } from "date-fns";
 import { auth } from "@/auth";
 import { TrainingSessionDetailView } from "@/components/training/TrainingSessionDetailView";
+import { resolveDetailBackLink } from "@/lib/dashboard-return";
 import { getAttendanceAccessInfo } from "@/lib/membership";
 import { getTrainingSessionDetail } from "@/lib/training-attendance";
 import { formatTrainingMonthParam } from "@/lib/training-teams-config";
@@ -26,8 +27,10 @@ export async function generateMetadata({
 
 export default async function TrainingSessionPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ eventId: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -35,9 +38,14 @@ export default async function TrainingSessionPage({
   }
 
   const { eventId } = await params;
+  const { from } = await searchParams;
   const detail = await getTrainingSessionDetail(eventId, session.user.id);
   const attendanceAccess = await getAttendanceAccessInfo(session.user);
   const monthParam = formatTrainingMonthParam(new Date(detail.event.startDate));
+  const backLink = resolveDetailBackLink(from, {
+    path: `/training?month=${monthParam}`,
+    label: detail.team.name,
+  });
 
   return (
     <TrainingSessionDetailView
@@ -45,6 +53,8 @@ export default async function TrainingSessionPage({
       canAccessAttendance={attendanceAccess.canAccess}
       attendanceBlockReason={attendanceAccess.blockReason}
       monthParam={monthParam}
+      backHref={backLink.path}
+      backLabel={backLink.label}
     />
   );
 }

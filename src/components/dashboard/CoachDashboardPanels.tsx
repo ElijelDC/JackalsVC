@@ -19,6 +19,7 @@ import {
 } from "@/lib/coach-payments-config";
 import { formatEuroFee } from "@/lib/utils";
 import { cn } from "@/lib/utils";
+import { withDashboardReturn } from "@/lib/dashboard-return";
 
 function statusBadgeClass(status: CoachPaymentItem["status"]) {
   return status === "PAID"
@@ -82,7 +83,7 @@ export function CoachDashboardPaymentsPanel({
         </div>
 
         <Link
-          href="/payments"
+          href={withDashboardReturn("/payments")}
           className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
         >
           View payments & confirmation screenshots

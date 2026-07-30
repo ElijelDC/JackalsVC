@@ -1,15 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { formatDistanceToNow } from "date-fns";
-import { Bell, Users } from "lucide-react";
+import { Bell, CheckCircle2, Users } from "lucide-react";
+import { CoachReminderConfirmModal } from "@/components/coach/CoachReminderConfirmModal";
 import { Button } from "@/components/ui/Button";
-import { Modal } from "@/components/ui/Modal";
 import type {
   CoachReminderStatus,
   CoachUnansweredItemKind,
 } from "@/lib/coach-unanswered-config";
-import { apiPost } from "@/lib/client-api";
+import { useCoachReminderNotify } from "@/hooks/useCoachReminderNotify";
+import { cn } from "@/lib/utils";
 
 export function SquadResponsesPanelHeader({
   kind,
@@ -24,129 +23,91 @@ export function SquadResponsesPanelHeader({
   unansweredCount: number;
   showReminder: boolean;
 }) {
-  const [status, setStatus] = useState(initialStatus);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  const itemLabel = kind === "match" ? "match" : "training session";
-
-  const notifyPlayers = async () => {
-    if (!status.canSend || loading) return;
-
-    setLoading(true);
-    setMessage(null);
-    setError(null);
-
-    try {
-      const result = await apiPost<{
-        deliveredCount: number;
-        loggedCount: number;
-        cooldown: CoachReminderStatus;
-      }>("/api/coach/notify-unanswered", { kind, id: targetId });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      setStatus(result.data.cooldown);
-
-      if (result.data.deliveredCount > 0) {
-        setMessage(
-          `Reminder sent to ${result.data.deliveredCount} player${result.data.deliveredCount === 1 ? "" : "s"}.`,
-        );
-      } else if (result.data.loggedCount > 0) {
-        setMessage(
-          `Email not configured — ${result.data.loggedCount} reminder${result.data.loggedCount === 1 ? "" : "s"} logged to the server console.`,
-        );
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send reminders");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cooldownLabel =
-    !status.canSend && status.nextAvailableAt
-      ? `Available ${formatDistanceToNow(new Date(status.nextAvailableAt), { addSuffix: true })}`
-      : null;
+  const {
+    confirmOpen,
+    setConfirmOpen,
+    loading,
+    notifyPlayers,
+    onCooldown,
+    cooldownHint,
+    buttonLabel,
+    inlineNote,
+    error,
+    successMessage,
+    itemLabel,
+  } = useCoachReminderNotify({
+    kind,
+    targetId,
+    initialStatus,
+    sendLabel: "Remind",
+  });
 
   return (
     <>
-      <div className="border-b border-white/10 px-5 py-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 shrink-0 text-jackals-red-light" />
-              <p className="font-display text-sm font-semibold uppercase tracking-wide text-white">
-                Squad responses
-              </p>
+      <div className="border-b border-white/10 px-4 py-3 sm:px-5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2 pt-0.5">
+            <Users className="h-4 w-4 shrink-0 text-jackals-red-light" />
+            <p className="font-display text-sm font-semibold uppercase tracking-wide text-white">
+              Player responses
+            </p>
+          </div>
+
+          {showReminder ? (
+            <div className="flex shrink-0 flex-col items-end gap-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => setConfirmOpen(true)}
+                disabled={loading || onCooldown}
+                title={onCooldown ? cooldownHint ?? undefined : undefined}
+                className={cn(
+                  "h-8 gap-1.5 px-2.5 text-xs",
+                  onCooldown
+                    ? "cursor-not-allowed border-white/10 bg-white/[0.03] text-zinc-500 hover:border-white/10 hover:bg-white/[0.03] hover:text-zinc-500"
+                    : "border-amber-500/30 bg-amber-500/10 text-amber-100 hover:border-amber-500/50 hover:bg-amber-500/15 hover:text-amber-50",
+                )}
+              >
+                {onCooldown ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  <Bell className="h-3.5 w-3.5" />
+                )}
+                {buttonLabel}
+              </Button>
+              {inlineNote ? (
+                <p
+                  className={cn(
+                    "max-w-[9rem] truncate text-right text-[10px] leading-tight",
+                    error
+                      ? "text-rose-300"
+                      : successMessage
+                        ? "text-green-300"
+                        : "text-zinc-500",
+                  )}
+                  title={inlineNote}
+                >
+                  {inlineNote}
+                </p>
+              ) : null}
             </div>
-          </div>
-
-          {showReminder && (
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={() => setConfirmOpen(true)}
-              disabled={!status.canSend || loading}
-              className="shrink-0 gap-2 border-amber-500/30 bg-amber-500/10 text-amber-100 hover:border-amber-500/50 hover:bg-amber-500/15 hover:text-amber-50"
-            >
-              <Bell className="h-3.5 w-3.5" />
-              Send reminder
-            </Button>
-          )}
+          ) : null}
         </div>
-
-        {showReminder && (cooldownLabel || message || error) && (
-          <div className="mt-3 space-y-1">
-            {cooldownLabel && (
-              <p className="text-xs text-zinc-500">{cooldownLabel}</p>
-            )}
-            {message && <p className="text-xs text-green-300">{message}</p>}
-            {error && <p className="text-xs text-rose-300">{error}</p>}
-          </div>
-        )}
       </div>
 
-      <Modal
+      <CoachReminderConfirmModal
         open={confirmOpen}
-        onClose={() => !loading && setConfirmOpen(false)}
-        title="Send reminder?"
-        description={
-          <p className="text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Send an email reminder to {unansweredCount} unanswered player
-            {unansweredCount === 1 ? "" : "s"} asking them to respond to this{" "}
-            {itemLabel}?
-          </p>
-        }
-      >
-        <Button
-          type="button"
-          onClick={() => {
-            setConfirmOpen(false);
-            void notifyPlayers();
-          }}
-          disabled={loading || !status.canSend}
-          className="h-12 w-full gap-2 text-base"
-        >
-          <Bell className="h-4 w-4" />
-          {loading ? "Sending..." : "Send reminder"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setConfirmOpen(false)}
-          disabled={loading}
-          className="h-12 w-full text-base"
-        >
-          Cancel
-        </Button>
-      </Modal>
+        onClose={() => setConfirmOpen(false)}
+        loading={loading}
+        onCooldown={onCooldown}
+        playerCount={unansweredCount}
+        itemLabel={itemLabel}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          void notifyPlayers();
+        }}
+      />
     </>
   );
 }

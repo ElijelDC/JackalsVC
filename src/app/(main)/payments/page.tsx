@@ -1,4 +1,5 @@
 import { CoachPaymentsOverview } from "@/components/coach/CoachPaymentsOverview";
+import { ConditionalDashboardBackLink } from "@/components/dashboard/ConditionalDashboardBackLink";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { requirePaidCoachPage } from "@/lib/coach-auth";
 import { getCoachSalaryPaymentsWithCache, preloadTeamEvents } from "@/lib/coach-payments";
@@ -8,7 +9,12 @@ export const metadata = {
   title: "Payments",
 };
 
-export default async function CoachPaymentsPage() {
+export default async function CoachPaymentsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
   const { coach } = await requirePaidCoachPage("/payments");
   const opts = { monthsBack: 12, monthsAhead: 3 };
   const teamKeys = coach.trainingTeamKeys;
@@ -31,6 +37,7 @@ export default async function CoachPaymentsPage() {
 
   return (
     <PageContainer>
+      <ConditionalDashboardBackLink from={from} />
       <PageHeader
         title="Payments"
         description={`€${COACH_SESSION_RATE_EUR} per payable training across ${teamLabel}. Payments are made on the last Friday of each month. Can't attend sessions are deducted automatically.`}

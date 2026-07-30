@@ -113,7 +113,7 @@ export async function getUpcomingTeamTrainingEvents(
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
     );
 
-  return keys.length === 1 ? merged.slice(0, limit) : merged;
+  return merged.slice(0, limit);
 }
 
 async function getUpcomingTeamTrainingEventsForKey(

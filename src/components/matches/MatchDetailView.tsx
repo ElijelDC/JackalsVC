@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import {
-  ArrowLeft,
   CalendarDays,
   ChevronRight,
   Clock,
@@ -15,6 +14,7 @@ import {
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { DashboardBackLink } from "@/components/dashboard/DashboardBackLink";
 import { PageContainer } from "@/components/layout/PageShell";
 import { SquadSummaryCard } from "@/components/training/SquadSummaryCard";
 import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
@@ -41,11 +41,15 @@ export function MatchDetailView({
   canAccessAttendance,
   attendanceBlockReason = null,
   monthParam,
+  backHref,
+  backLabel,
 }: {
   detail: MatchDetailData;
   canAccessAttendance: boolean;
   attendanceBlockReason?: AttendanceBlockReason | null;
   monthParam: string;
+  backHref?: string;
+  backLabel?: string;
 }) {
   const { match, team } = detail;
   const matchDate = new Date(match.matchStart);
@@ -59,17 +63,13 @@ export function MatchDetailView({
   const canRespond =
     !cancelled && canRespondToTrainingSession(matchDate);
   const responseOpensOn = getTrainingResponseOpensOn(matchDate);
+  const listBackHref = backHref ?? `/matches?month=${monthParam}`;
+  const listBackLabel = backLabel ?? team.name;
 
   return (
     <PageContainer>
       <AnimateIn immediate>
-        <Link
-          href={`/matches?month=${monthParam}`}
-          className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to {team.name}
-        </Link>
+        <DashboardBackLink href={listBackHref} label={listBackLabel} />
       </AnimateIn>
 
       <AnimateIn delay={50}>
@@ -207,7 +207,7 @@ export function MatchDetailView({
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the match — from ${format(responseOpensOn, "d MMMM")}.`
                     : detail.isCoachUser
-                      ? "Let your players know if you can't attend the match."
+                      ? "Let your squad know if you're attending this match."
                       : "Let coaches and teammates know if you're playing."}
             </CardDescription>
 
@@ -245,7 +245,11 @@ export function MatchDetailView({
           </Card>
 
           <div className="mt-4">
-            <SquadSummaryCard counts={detail.counts} coaches={detail.coaches}>
+            <SquadSummaryCard
+              counts={detail.counts}
+              coaches={detail.coaches}
+              isCoachUser={detail.isCoachUser}
+            >
               {detail.isCoachUser && !cancelled ? (
                 <div>
                   <Link

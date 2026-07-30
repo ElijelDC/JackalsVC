@@ -157,12 +157,8 @@ function TrainingAttendancePickerInner({
   };
 
   const pickerDisabled = disabled || !canRespond;
-  const responseOptions = coachMode
-    ? (["NOT_ATTENDING"] as const)
-    : RESPONSE_OPTIONS;
-  const showClear = coachMode
-    ? status === "NOT_ATTENDING"
-    : status !== "UNANSWERED";
+  const responseOptions = RESPONSE_OPTIONS;
+  const showClear = status !== "UNANSWERED";
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -205,11 +201,11 @@ function TrainingAttendancePickerInner({
         })}
       </div>
       {status === "UNANSWERED" ? (
-        canRespond &&
-        !coachMode && (
+        canRespond && (
           <p className="text-xs text-zinc-500">
-            Choose Attend or Can&apos;t attend — teammates will see you as
-            unanswered until you respond.
+            {coachMode
+              ? "Choose Attend or Can't attend — your squad will see whether you're coaching."
+              : "Choose Attend or Can't attend — teammates will see you as unanswered until you respond."}
           </p>
         )
       ) : showClear ? (

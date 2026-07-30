@@ -162,6 +162,9 @@ export function whatsOnEventDetailPath(
 }
 
 export function resolveEventsBackLink(from: string | undefined) {
+  if (from === "dashboard") {
+    return { path: "/dashboard", label: "Dashboard" };
+  }
   if (
     from === `events-${EVENTS_SECTIONS.funSessions}` ||
     from === `whats-on-${EVENTS_SECTIONS.funSessions}`

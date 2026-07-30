@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import { CoachDashboard } from "@/components/dashboard/CoachDashboard";
+import { CoachDashboardBody } from "@/components/dashboard/CoachDashboardBody";
 import { DashboardWelcomeSection } from "@/components/dashboard/DashboardWelcomeSection";
 import {
   DashboardUpcomingClubEventsPanel,
@@ -8,6 +8,7 @@ import {
   DashboardUpcomingTrainingCard,
   MemberPaymentsPanel,
 } from "@/components/dashboard/MemberDashboardPanels";
+import { DASHBOARD_SCHEDULE_FETCH_LIMIT } from "@/components/dashboard/DashboardUpcomingScheduleCard";
 import { PageContainer } from "@/components/layout/PageShell";
 import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 import { getCoachProfile } from "@/lib/coach-auth";
@@ -17,10 +18,7 @@ import {
   preloadTeamEvents,
 } from "@/lib/coach-payments";
 import { COACH_SESSION_RATE_EUR, isCurrentPaymentMonth, maskCoachPaymentForCoachView } from "@/lib/coach-payments-config";
-import {
-  enrichEventRecords,
-  serializeEnrichedEvent,
-} from "@/lib/event-enrichment";
+import { getDashboardClubEvents } from "@/lib/dashboard-club-events";
 import { getUpcomingTeamMatches } from "@/lib/matches";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import { getAttendanceAccessInfo } from "@/lib/membership";
@@ -31,8 +29,6 @@ import {
   getTrainingTeamByKey,
   getUserTrainingTeamKey,
 } from "@/lib/training-teams";
-
-const COACH_DASHBOARD_SCHEDULE_LIMIT = 8;
 
 export const metadata = {
   title: "Dashboard",
@@ -45,15 +41,12 @@ export default async function DashboardPage() {
   if (!session?.user?.id) redirect("/login?callbackUrl=/dashboard");
 
   const coach = await getCoachProfile(session.user.id);
+  const now = new Date();
 
   if (coach) {
-    const now = new Date();
-    const eventsThrough = new Date(now);
-    eventsThrough.setDate(eventsThrough.getDate() + DASHBOARD_WEEKS * 7);
-
     const [
       pendingResponses,
-      matchEventsRaw,
+      upcomingClubEvents,
       upcomingTraining,
       upcomingMatches,
     ] = await Promise.all([
@@ -61,26 +54,20 @@ export default async function DashboardPage() {
         coach.trainingTeamKeys,
         coach.userId,
       ),
-      prisma.event.findMany({
-        where: {
-          startDate: { gte: now, lte: eventsThrough },
-          type: { in: ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"] },
-        },
-        orderBy: { startDate: "asc" },
-      }),
+      getDashboardClubEvents(now, DASHBOARD_WEEKS),
       getUpcomingTeamTrainingEvents(
         session.user.id,
         coach.trainingTeamKeys,
         now,
         TRAINING_RESPONSE_OPENS_DAYS,
-        COACH_DASHBOARD_SCHEDULE_LIMIT,
+        DASHBOARD_SCHEDULE_FETCH_LIMIT,
       ),
       getUpcomingTeamMatches(
         session.user.id,
         coach.trainingTeamKeys,
         now,
         TRAINING_RESPONSE_OPENS_DAYS,
-        COACH_DASHBOARD_SCHEDULE_LIMIT,
+        DASHBOARD_SCHEDULE_FETCH_LIMIT,
       ),
     ]);
 
@@ -100,8 +87,6 @@ export default async function DashboardPage() {
         )
       : [];
 
-    const enrichedMatches = await enrichEventRecords(matchEventsRaw);
-    const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
     const teamLabel =
       coach.teams.length > 1
         ? `${coach.teams.length} squads`
@@ -121,7 +106,7 @@ export default async function DashboardPage() {
           title={`Welcome, ${firstName}`}
           description={`${teamLabel} · ${scheduleHint}`}
         />
-        <CoachDashboard
+        <CoachDashboardBody
           teams={coach.teams}
           teamName={teamLabel}
           ratePerSession={COACH_SESSION_RATE_EUR}
@@ -132,49 +117,30 @@ export default async function DashboardPage() {
           pendingResponses={pendingResponses}
           upcomingTraining={upcomingTraining}
           upcomingMatches={upcomingMatches}
-          upcomingClubEvents={upcomingClubEvents.map((e) => ({
-            id: e.id,
-            title: e.title,
-            description: e.description,
-            startDate: e.startDate,
-            endDate: e.endDate,
-            type: e.type,
-            location: e.location,
-            coach: e.coach,
-            trainingSessionId: e.trainingSessionId,
-          }))}
+          upcomingClubEvents={upcomingClubEvents}
         />
       </PageContainer>
     );
   }
 
-  const now = new Date();
-  const eventsThrough = new Date(now);
-  eventsThrough.setDate(eventsThrough.getDate() + DASHBOARD_WEEKS * 7);
-
   const trainingTeamKey = await getUserTrainingTeamKey(session.user.id);
   const team = await getTrainingTeamByKey(trainingTeamKey);
 
-  const [memberships, matchEventsRaw, upcomingTraining, upcomingMatches] =
+  const [memberships, upcomingClubEvents, upcomingTraining, upcomingMatches] =
     await Promise.all([
       prisma.membership.findMany({
         where: { userId: session.user.id },
         include: { plan: true },
         orderBy: { createdAt: "desc" },
       }),
-      prisma.event.findMany({
-        where: {
-          startDate: { gte: now, lte: eventsThrough },
-          type: { in: ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"] },
-        },
-        orderBy: { startDate: "asc" },
-      }),
+      getDashboardClubEvents(now, DASHBOARD_WEEKS),
       trainingTeamKey
         ? getUpcomingTeamTrainingEvents(
             session.user.id,
             trainingTeamKey,
             now,
             TRAINING_RESPONSE_OPENS_DAYS,
+            DASHBOARD_SCHEDULE_FETCH_LIMIT,
           )
         : Promise.resolve([]),
       trainingTeamKey
@@ -183,6 +149,7 @@ export default async function DashboardPage() {
             trainingTeamKey,
             now,
             TRAINING_RESPONSE_OPENS_DAYS,
+            DASHBOARD_SCHEDULE_FETCH_LIMIT,
           )
         : Promise.resolve([]),
     ]);
@@ -206,9 +173,6 @@ export default async function DashboardPage() {
     : null;
 
   const attendanceAccess = await getAttendanceAccessInfo(session.user);
-
-  const enrichedMatches = await enrichEventRecords(matchEventsRaw);
-  const upcomingClubEvents = enrichedMatches.map(serializeEnrichedEvent);
 
   return (
     <PageContainer className="overflow-x-hidden py-8 sm:py-12">
@@ -253,19 +217,7 @@ export default async function DashboardPage() {
           />
         </div>
 
-        <DashboardUpcomingClubEventsPanel
-          upcomingEvents={upcomingClubEvents.map((e) => ({
-            id: e.id,
-            title: e.title,
-            description: e.description,
-            startDate: e.startDate,
-            endDate: e.endDate,
-            type: e.type,
-            location: e.location,
-            coach: e.coach,
-            trainingSessionId: e.trainingSessionId,
-          }))}
-        />
+        <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
       </AnimatedPageSections>
     </PageContainer>
   );

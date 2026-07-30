@@ -1,19 +1,18 @@
 "use client";
 
 import { useState } from "react";
-import { format, formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import Link from "next/link";
-import { Bell, ChevronRight, Swords, Users } from "lucide-react";
+import { Bell, CheckCircle2, ChevronRight, Swords, Users } from "lucide-react";
+import { CoachReminderConfirmModal } from "@/components/coach/CoachReminderConfirmModal";
 import { DashboardSection } from "@/components/layout/DashboardSection";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { Modal } from "@/components/ui/Modal";
-import type {
-  CoachReminderStatus,
-  CoachUnansweredItem,
-} from "@/lib/coach-unanswered-config";
+import type { CoachUnansweredItem } from "@/lib/coach-unanswered-config";
 import { getCoachUnansweredItemUrl } from "@/lib/coach-unanswered-config";
-import { apiPost } from "@/lib/client-api";
+import { withDashboardReturn } from "@/lib/dashboard-return";
+import { useCoachReminderNotify } from "@/hooks/useCoachReminderNotify";
+import { cn } from "@/lib/utils";
 
 export type { CoachUnansweredItem };
 
@@ -38,65 +37,32 @@ function PendingResponseRow({
   item: CoachUnansweredItem;
   showTeam: boolean;
 }) {
-  const [reminderStatus, setReminderStatus] = useState<CoachReminderStatus>(
-    item.reminder ?? { canSend: true, lastSentAt: null, nextAvailableAt: null },
-  );
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    confirmOpen,
+    setConfirmOpen,
+    loading,
+    notifyPlayers,
+    onCooldown,
+    cooldownHint,
+    buttonLabel,
+    inlineNote,
+    error,
+    successMessage,
+    itemLabel,
+  } = useCoachReminderNotify({
+    kind: item.kind,
+    targetId: item.id,
+    initialStatus: item.reminder ?? {
+      canSend: true,
+      lastSentAt: null,
+      nextAvailableAt: null,
+    },
+    sendLabel: "Notify",
+  });
+
   const Icon = item.kind === "match" ? Swords : Users;
-  const itemLabel = item.kind === "match" ? "match" : "training session";
   const headline =
     item.kind === "match" ? item.title : formatCoachItemDate(item.startDate);
-
-  const notifyPlayers = async () => {
-    if (!reminderStatus.canSend || loading) return;
-
-    setLoading(true);
-    setMessage(null);
-    setError(null);
-
-    try {
-      const result = await apiPost<{
-        notifiedCount: number;
-        deliveredCount: number;
-        loggedCount: number;
-        cooldown: CoachReminderStatus;
-      }>("/api/coach/notify-unanswered", {
-        kind: item.kind,
-        id: item.id,
-      });
-
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-
-      setReminderStatus(result.data.cooldown);
-
-      if (result.data.deliveredCount > 0) {
-        setMessage(
-          `Reminder sent to ${result.data.deliveredCount} player${result.data.deliveredCount === 1 ? "" : "s"}.`,
-        );
-      } else if (result.data.loggedCount > 0) {
-        setMessage(
-          `Email is not configured — ${result.data.loggedCount} reminder${result.data.loggedCount === 1 ? "" : "s"} logged to the server console.`,
-        );
-      } else {
-        setMessage("No players needed a reminder.");
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not send reminders");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cooldownLabel =
-    !reminderStatus.canSend && reminderStatus.nextAvailableAt
-      ? `Available ${formatDistanceToNow(new Date(reminderStatus.nextAvailableAt), { addSuffix: true })}`
-      : null;
 
   return (
     <>
@@ -120,30 +86,47 @@ function PendingResponseRow({
               {item.players.length} player{item.players.length === 1 ? "" : "s"}{" "}
               awaiting response
             </p>
-            {(message || error) && (
-              <p
-                className={`mt-1.5 text-xs ${error ? "text-rose-300" : "text-green-300"}`}
-              >
-                {error ?? message}
-              </p>
-            )}
-            {cooldownLabel ? (
-              <p className="mt-1 text-[11px] text-zinc-500">{cooldownLabel}</p>
-            ) : null}
           </div>
-          <div className="flex shrink-0 flex-col items-end gap-1.5">
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => setConfirmOpen(true)}
-              disabled={loading || !reminderStatus.canSend}
-              className="gap-1.5"
-            >
-              <Bell className="h-3.5 w-3.5" />
-              {loading ? "Sending..." : "Notify"}
-            </Button>
+          <div className="flex shrink-0 flex-col items-end justify-between self-stretch">
+            <div className="flex flex-col items-end gap-0.5">
+              <Button
+                type="button"
+                size="sm"
+                variant={onCooldown ? "outline" : "primary"}
+                onClick={() => setConfirmOpen(true)}
+                disabled={loading || onCooldown}
+                title={onCooldown ? cooldownHint ?? undefined : undefined}
+                className={cn(
+                  "h-8 gap-1.5 px-2.5 text-xs",
+                  onCooldown &&
+                    "cursor-not-allowed border-white/10 bg-white/[0.03] text-zinc-500 hover:border-white/10 hover:bg-white/[0.03] hover:text-zinc-500",
+                )}
+              >
+                {onCooldown ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                ) : (
+                  <Bell className="h-3.5 w-3.5" />
+                )}
+                {buttonLabel}
+              </Button>
+              {inlineNote ? (
+                <p
+                  className={cn(
+                    "max-w-[9rem] truncate text-right text-[10px] leading-tight",
+                    error
+                      ? "text-rose-300"
+                      : successMessage
+                        ? "text-green-300"
+                        : "text-zinc-500",
+                  )}
+                  title={inlineNote}
+                >
+                  {inlineNote}
+                </p>
+              ) : null}
+            </div>
             <Link
-              href={getCoachUnansweredItemUrl(item)}
+              href={withDashboardReturn(getCoachUnansweredItemUrl(item))}
               className="inline-flex items-center gap-1 text-xs text-zinc-500 transition-colors hover:text-white"
             >
               View
@@ -153,40 +136,18 @@ function PendingResponseRow({
         </div>
       </div>
 
-      <Modal
+      <CoachReminderConfirmModal
         open={confirmOpen}
-        onClose={() => !loading && setConfirmOpen(false)}
-        title="Send reminder?"
-        description={
-          <p className="text-sm leading-relaxed text-zinc-400 sm:text-base">
-            Send an email reminder to {item.players.length} unanswered player
-            {item.players.length === 1 ? "" : "s"} asking them to respond to this{" "}
-            {itemLabel}?
-          </p>
-        }
-      >
-        <Button
-          type="button"
-          onClick={() => {
-            setConfirmOpen(false);
-            void notifyPlayers();
-          }}
-          disabled={loading || !reminderStatus.canSend}
-          className="h-12 w-full gap-2 text-base"
-        >
-          <Bell className="h-4 w-4" />
-          {loading ? "Sending..." : "Send reminder"}
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          onClick={() => setConfirmOpen(false)}
-          disabled={loading}
-          className="h-12 w-full text-base"
-        >
-          Cancel
-        </Button>
-      </Modal>
+        onClose={() => setConfirmOpen(false)}
+        loading={loading}
+        onCooldown={onCooldown}
+        playerCount={item.players.length}
+        itemLabel={itemLabel}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          void notifyPlayers();
+        }}
+      />
     </>
   );
 }

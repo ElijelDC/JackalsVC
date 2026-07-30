@@ -5,9 +5,11 @@ import {
   CalendarDays,
   Camera,
   ClipboardList,
+  ClipboardPen,
   Dumbbell,
   Handshake,
   Home,
+  Megaphone,
   LayoutDashboard,
   Mail,
   Settings,
@@ -84,7 +86,7 @@ export const NAV_ITEMS: NavItem[] = [
   {
     href: "/coach/trials-applications",
     label: "Signups",
-    icon: Volleyball,
+    icon: ClipboardPen,
     description: "Review trial sign-ups and export the spreadsheet.",
     requiresAuth: true,
     coachOnly: true,
@@ -295,7 +297,7 @@ export const INFO_NAV_ITEMS: NavItem[] = [
   {
     href: "/trials",
     label: "Trials",
-    icon: Volleyball,
+    icon: Megaphone,
     description:
       "August 2026 trials for Men's Division 2 and Women's Division 3 — apply now.",
   },

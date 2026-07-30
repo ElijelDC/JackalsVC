@@ -33,14 +33,14 @@ function resolveSelectedTeamKeys(
 export default async function MatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; team?: string }>;
+  searchParams: Promise<{ month?: string; team?: string; from?: string }>;
 }) {
   const session = await auth();
   if (!session?.user) {
     redirect("/login?callbackUrl=/matches");
   }
 
-  const { month: monthParam, team: teamParam } = await searchParams;
+  const { month: monthParam, team: teamParam, from } = await searchParams;
   const availableKeys = await getUserTrainingTeamKeys(session.user.id);
 
   if (availableKeys.length === 0) {
@@ -86,6 +86,7 @@ export default async function MatchesPage({
       selectedTeamKey={singleKey}
       month={month}
       isCoach={session.user.isCoach}
+      returnFrom={from ?? null}
       matches={matches.map((match) => ({
         id: match.id,
         opponentName: match.opponentName,

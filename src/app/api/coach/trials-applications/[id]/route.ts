@@ -36,7 +36,7 @@ export async function PATCH(
       );
     }
 
-    if ("error" in result && result.error === "not_new") {
+    if ("error" in result && result.error === "invalid_status") {
       return jsonError(
         "This application is no longer new. Refresh the page to see the latest status.",
         409,

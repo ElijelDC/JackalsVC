@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { ConditionalDashboardBackLink } from "@/components/dashboard/ConditionalDashboardBackLink";
 import { MemberPaymentStatus } from "@/components/membership/MemberPaymentStatus";
 import { MembershipCheckout } from "@/components/membership/MembershipPlans";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
@@ -14,6 +15,7 @@ import {
 import { getClubBankDetails } from "@/lib/payments";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import { getCoachProfile } from "@/lib/coach-auth";
+import { isDashboardReturn } from "@/lib/dashboard-return";
 import { isCoachMembershipStatus } from "@/lib/membership-status";
 import { prisma } from "@/lib/prisma";
 
@@ -21,11 +23,18 @@ export const metadata = {
   title: CLUB_MEMBERSHIP_PLAN_NAME,
 };
 
-export default async function MembershipPage() {
+export default async function MembershipPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login?callbackUrl=/membership");
   }
+
+  const { from } = await searchParams;
+  const showDashboardBack = isDashboardReturn(from);
 
   const [membership, activePlans] = await Promise.all([
     prisma.membership.findFirst({
@@ -46,7 +55,7 @@ export default async function MembershipPage() {
     if (isCoachMembershipStatus(membership.status)) {
       const coach = await getCoachProfile(session.user.id);
       if (coach?.isPaidCoach) {
-        redirect("/payments");
+        redirect(showDashboardBack ? "/payments?from=dashboard" : "/payments");
       }
       redirect("/dashboard");
     }
@@ -66,6 +75,7 @@ export default async function MembershipPage() {
 
     return (
       <PageContainer>
+        <ConditionalDashboardBackLink from={from} />
         <PageHeader
           title={CLUB_MEMBERSHIP_PLAN_NAME}
           description={`${session.user.name} — your membership payments`}
@@ -107,13 +117,19 @@ export default async function MembershipPage() {
           clubBank={clubBank}
         />
 
-        <AnimatedBlock delay={80} className="mt-8 text-center text-sm text-zinc-500">
-          <Link href="/dashboard" className="text-jackals-red-light hover:text-jackals-red">
-            Back to dashboard
-          </Link>
-          {" · "}
-          Payment schedule cannot be changed
-        </AnimatedBlock>
+        {!showDashboardBack ? (
+          <AnimatedBlock delay={80} className="mt-8 text-center text-sm text-zinc-500">
+            <Link href="/dashboard" className="text-jackals-red-light hover:text-jackals-red">
+              Back to dashboard
+            </Link>
+            {" · "}
+            Payment schedule cannot be changed
+          </AnimatedBlock>
+        ) : (
+          <AnimatedBlock delay={80} className="mt-8 text-center text-sm text-zinc-500">
+            Payment schedule cannot be changed
+          </AnimatedBlock>
+        )}
       </PageContainer>
     );
   }
@@ -121,6 +137,7 @@ export default async function MembershipPage() {
   if (activePlans.length === 0) {
     return (
       <PageContainer>
+        <ConditionalDashboardBackLink from={from} />
         <PageHeader
           title={CLUB_MEMBERSHIP_PLAN_NAME}
           description="Club membership is not available right now."
@@ -141,6 +158,7 @@ export default async function MembershipPage() {
 
   return (
     <PageContainer>
+      <ConditionalDashboardBackLink from={from} />
       <PageHeader
         title={CLUB_MEMBERSHIP_PLAN_NAME}
         description="Choose your membership type, then pick how you want to pay."

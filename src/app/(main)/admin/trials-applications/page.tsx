@@ -13,7 +13,10 @@ export default async function AdminTrialsApplicationsPage() {
         title="Signups"
         description="Review sign-ups, filter by team or position, and export to Excel."
       />
-      <TrialsApplicationsManager initialApplications={applications} />
+      <TrialsApplicationsManager
+        initialApplications={applications}
+        canManageDismissed
+      />
     </PageContainer>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import {
   CoachUpcomingMatchesCard,
   CoachUpcomingTrainingCard,
-} from "@/components/dashboard/CoachDashboardSchedule";
+} from "@/components/dashboard/DashboardUpcomingScheduleSections";
 import { DashboardUpcomingClubEventsPanel } from "@/components/dashboard/MemberDashboardPanels";
 import {
   CoachDashboardPaymentsPanel,
@@ -17,31 +17,9 @@ import {
   type CoachTeamOption,
 } from "@/components/dashboard/CoachTeamFilter";
 import type { CoachPaymentItem } from "@/components/coach/CoachPaymentsOverview";
+import type { CoachScheduleItem, DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import type { CoachUnansweredItem } from "@/lib/coach-unanswered-config";
 import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
-import type { TrainingAttendanceStatus } from "@/lib/training-attendance-config";
-
-type DashboardEvent = {
-  id: string;
-  title: string;
-  description: string | null;
-  startDate: string;
-  endDate: string | null;
-  type: string;
-  location: string | null;
-  coach?: string | null;
-  trainingSessionId?: string | null;
-};
-
-type UpcomingItem = {
-  id: string;
-  title: string;
-  teamName?: string | null;
-  teamKey?: string | null;
-  startDate: string;
-  location: string | null;
-  userStatus: TrainingAttendanceStatus;
-};
 
 export function CoachDashboardBody({
   teams,
@@ -60,9 +38,9 @@ export function CoachDashboardBody({
   ratePerSession: number;
   showPayments: boolean;
   pendingResponses: CoachUnansweredItem[];
-  upcomingTraining: UpcomingItem[];
-  upcomingMatches: UpcomingItem[];
-  upcomingClubEvents: DashboardEvent[];
+  upcomingTraining: CoachScheduleItem[];
+  upcomingMatches: CoachScheduleItem[];
+  upcomingClubEvents: DashboardClubEvent[];
 }) {
   const [teamFilter, setTeamFilter] = useState("");
   const multiTeam = teams.length > 1;
@@ -104,21 +82,11 @@ export function CoachDashboardBody({
           sessions={filteredTraining}
           selectedTeamKey={teamFilter}
           multiTeam={multiTeam}
-          emptyMessage={
-            teamFilter
-              ? "Nothing scheduled for this squad in the next 2 weeks."
-              : "No training sessions in the next 2 weeks."
-          }
         />
         <CoachUpcomingMatchesCard
           matches={filteredMatches}
           selectedTeamKey={teamFilter}
           multiTeam={multiTeam}
-          emptyMessage={
-            teamFilter
-              ? "No matches for this squad in the next 2 weeks."
-              : "No matches in the next 2 weeks."
-          }
         />
       </div>
 

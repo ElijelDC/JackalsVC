@@ -22,6 +22,8 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
+import { ConditionalDashboardBackLink } from "@/components/dashboard/ConditionalDashboardBackLink";
+import { appendReturnFrom, buildScheduleListHref, isDashboardReturn } from "@/lib/dashboard-return";
 import {
   sessionNeedsPlayerResponse,
   canRespondToTrainingSession,
@@ -51,11 +53,16 @@ type SessionTimes = {
   endTime: string;
 };
 
-function buildTrainingQuery(month: Date, teamKey: string | null | undefined) {
-  const params = new URLSearchParams();
-  params.set("month", formatTrainingMonthParam(month));
-  if (teamKey) params.set("team", teamKey);
-  return `/training?${params.toString()}`;
+function buildTrainingQuery(
+  month: Date,
+  teamKey: string | null | undefined,
+  returnFrom?: string | null,
+) {
+  return buildScheduleListHref("/training", {
+    month: formatTrainingMonthParam(month),
+    team: teamKey || undefined,
+    from: isDashboardReturn(returnFrom) ? "dashboard" : undefined,
+  });
 }
 
 function MonthProgressBar({
@@ -154,6 +161,7 @@ export function TeamTrainingMonthView({
   sessionTimes,
   attendanceByEventId,
   isCoach = false,
+  returnFrom = null,
 }: {
   team: TrainingTeam | null;
   teams?: TrainingTeam[];
@@ -163,6 +171,7 @@ export function TeamTrainingMonthView({
   sessionTimes?: SessionTimes | null;
   attendanceByEventId: Record<string, TrainingAttendanceStatus>;
   isCoach?: boolean;
+  returnFrom?: string | null;
 }) {
   const router = useRouter();
   const monthLabel = format(month, "MMMM yyyy");
@@ -219,7 +228,7 @@ export function TeamTrainingMonthView({
   });
 
   const navigateMonth = (target: Date) => {
-    router.push(buildTrainingQuery(target, selectedTeamKey));
+    router.push(buildTrainingQuery(target, selectedTeamKey, returnFrom));
   };
 
   const editScheduleHref = selectedTeamKey
@@ -228,6 +237,7 @@ export function TeamTrainingMonthView({
 
   return (
     <PageContainer>
+      <ConditionalDashboardBackLink from={returnFrom} />
       <PageHeader
         title="Training"
         description="Sign up for each session so coaches know you're coming."
@@ -246,7 +256,7 @@ export function TeamTrainingMonthView({
                   squads={teams}
                   value={selectedTeamKey ?? ""}
                   onChange={(value) => {
-                    router.push(buildTrainingQuery(month, value || null));
+                    router.push(buildTrainingQuery(month, value || null, returnFrom));
                   }}
                 />
               )}
@@ -381,7 +391,7 @@ export function TeamTrainingMonthView({
                 const isLocked =
                   !isCancelled && userStatus === "UNANSWERED" && !canRespond;
                 const opensOn = getTrainingResponseOpensOn(eventDate);
-                const href = `/training/session/${event.id}`;
+                const href = appendReturnFrom(`/training/session/${event.id}`, returnFrom);
                 const rowClassName = cn(
                   "flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
                   isCancelled &&
@@ -577,7 +587,7 @@ export function TeamTrainingMonthView({
                 ) : (
                   <Link
                     key={event.id}
-                    href={`/training/session/${event.id}`}
+                    href={appendReturnFrom(`/training/session/${event.id}`, returnFrom)}
                     className="flex items-center gap-4 px-5 py-3 opacity-60 transition-opacity hover:opacity-80"
                   >
                     {row}
