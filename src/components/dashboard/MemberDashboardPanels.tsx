@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { StaggerIn } from "@/components/motion/StaggerIn";
 import { DashboardEventRow } from "@/components/dashboard/DashboardScheduleRow";
-import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/components/dashboard/DashboardUpcomingScheduleCard";
+import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 import type { DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import { getEventTypeLabel } from "@/lib/event-filters";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";

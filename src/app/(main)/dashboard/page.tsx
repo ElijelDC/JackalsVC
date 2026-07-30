@@ -8,7 +8,7 @@ import {
   DashboardUpcomingTrainingCard,
   MemberPaymentsPanel,
 } from "@/components/dashboard/MemberDashboardPanels";
-import { DASHBOARD_SCHEDULE_FETCH_LIMIT } from "@/components/dashboard/DashboardUpcomingScheduleCard";
+import { DASHBOARD_SCHEDULE_FETCH_LIMIT } from "@/lib/dashboard-schedule-config";
 import { PageContainer } from "@/components/layout/PageShell";
 import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 import { getCoachProfile } from "@/lib/coach-auth";

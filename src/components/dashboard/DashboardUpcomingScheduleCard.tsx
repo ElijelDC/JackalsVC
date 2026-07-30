@@ -14,8 +14,7 @@ import {
 import { itemNeedsUrgentResponse } from "@/lib/training-attendance-config";
 import { withDashboardReturn } from "@/lib/dashboard-return";
 
-export const DASHBOARD_SCHEDULE_PREVIEW_LIMIT = 3;
-export const DASHBOARD_SCHEDULE_FETCH_LIMIT = DASHBOARD_SCHEDULE_PREVIEW_LIMIT + 5;
+import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 
 function squadCount(items: DashboardScheduleItem[]) {
   return new Set(items.map((item) => item.teamName).filter(Boolean)).size;
