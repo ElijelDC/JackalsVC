@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
+import { coachOwnsTeam, requireCoach } from "@/lib/coach-auth";
 import { jsonError, parseJsonBody } from "@/lib/api";
-import { requireCoach } from "@/lib/coach-auth";
 import {
   deleteTrainingOccurrence,
+  getTrainingEventForTeam,
   patchTrainingOccurrence,
 } from "@/lib/training-schedule-actions";
 import { coachTrainingOccurrenceSchema } from "@/lib/validations";
@@ -21,11 +22,15 @@ export async function PATCH(
   );
   if (parseError || !data) return parseError!;
 
-  const result = await patchTrainingOccurrence(
-    eventId,
-    data,
-    coach!.trainingTeamKey,
-  );
+  const match = await getTrainingEventForTeam(eventId);
+  if (
+    !match ||
+    !coachOwnsTeam(coach!, match.session.trainingTeamKey ?? "")
+  ) {
+    return jsonError("Training session not found", 404);
+  }
+
+  const result = await patchTrainingOccurrence(eventId, data);
   if (!result.ok) {
     const status = result.error === "End time must be after start time" ? 400 : 404;
     return jsonError(result.error, status);
@@ -45,11 +50,15 @@ export async function DELETE(
   const { searchParams } = new URL(request.url);
   const action = searchParams.get("action") === "cancel" ? "cancel" : "reset";
 
-  const result = await deleteTrainingOccurrence(
-    eventId,
-    action,
-    coach!.trainingTeamKey,
-  );
+  const match = await getTrainingEventForTeam(eventId);
+  if (
+    !match ||
+    !coachOwnsTeam(coach!, match.session.trainingTeamKey ?? "")
+  ) {
+    return jsonError("Training session not found", 404);
+  }
+
+  const result = await deleteTrainingOccurrence(eventId, action);
   if (!result.ok) {
     return jsonError(result.error, 404);
   }

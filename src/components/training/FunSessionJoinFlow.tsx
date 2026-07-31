@@ -18,16 +18,18 @@ export function formatReclubPaymentReference(
   return `Session date – Reclub name - ${username}`;
 }
 
-function PaymentInstructions({
+export function PaymentInstructions({
   sessionDate,
   sessionTitle,
   reclubUsername,
   showPayBeforeNote = false,
+  registerHint = "Make sure to register attendance after payment.",
 }: {
   sessionDate?: Date | string | null;
   sessionTitle?: string | null;
   reclubUsername?: string | null;
   showPayBeforeNote?: boolean;
+  registerHint?: string;
 }) {
   const reference = formatReclubPaymentReference(
     sessionDate,
@@ -41,11 +43,11 @@ function PaymentInstructions({
         Payment details are also available in the details section on ReClub.
         Use a reference like:
       </p>
-      <p className="rounded-md border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-zinc-200">
+      <p className="rounded-md border border-white/10 bg-white/5 px-3 py-2 font-mono text-sm text-zinc-200 break-words [overflow-wrap:anywhere]">
         {reference}
       </p>
       <p>
-        Make sure to register attendance after payment.
+        {registerHint}
         {showPayBeforeNote ? " Pay before you arrive." : null}
       </p>
     </div>
@@ -173,6 +175,9 @@ export function SessionPaymentSection({
   reclubUsername,
   sessionFee,
   showPayBeforeNote = false,
+  registerHint,
+  showInstructions = true,
+  onPaymentLinkClick,
 }: {
   paymentUrl: string;
   payLabel?: string;
@@ -181,19 +186,29 @@ export function SessionPaymentSection({
   reclubUsername?: string | null;
   sessionFee?: number | null;
   showPayBeforeNote?: boolean;
+  registerHint?: string;
+  showInstructions?: boolean;
+  onPaymentLinkClick?: () => void;
 }) {
   return (
     <div className="space-y-4">
       {sessionFee != null && (
         <EntryFeeBadge amount={sessionFee} label="session fee" />
       )}
-      <PaymentInstructions
-        sessionDate={sessionDate}
-        sessionTitle={sessionTitle}
-        reclubUsername={reclubUsername}
-        showPayBeforeNote={showPayBeforeNote}
+      {showInstructions && (
+        <PaymentInstructions
+          sessionDate={sessionDate}
+          sessionTitle={sessionTitle}
+          reclubUsername={reclubUsername}
+          showPayBeforeNote={showPayBeforeNote}
+          registerHint={registerHint}
+        />
+      )}
+      <PaymentLink
+        href={paymentUrl}
+        label={payLabel}
+        onClick={onPaymentLinkClick}
       />
-      <PaymentLink href={paymentUrl} label={payLabel} />
     </div>
   );
 }

@@ -1,20 +1,29 @@
 import { NextResponse } from "next/server";
-import { requireCoach } from "@/lib/coach-auth";
+import { coachOwnsTeam, requireCoach, resolveCoachWriteTeamKey } from "@/lib/coach-auth";
 import { jsonError, parseJsonBody } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
+import { getTrainingTeamByKey } from "@/lib/training-squads";
 import { toTeamMatchData } from "@/lib/team-match-mutations";
 import { teamMatchSchema } from "@/lib/validations";
 
-export async function GET() {
+export async function GET(request: Request) {
   const { coach, response } = await requireCoach();
   if (response) return response;
 
+  const { searchParams } = new URL(request.url);
+  const teamKey = resolveCoachWriteTeamKey(coach!, searchParams.get("team"));
+
   const matches = await prisma.teamMatch.findMany({
-    where: { trainingTeamKey: coach!.trainingTeamKey },
+    where: { trainingTeamKey: teamKey },
     orderBy: { matchStart: "asc" },
   });
 
-  return NextResponse.json({ matches, teamName: coach!.teamName });
+  const team = await getTrainingTeamByKey(teamKey);
+
+  return NextResponse.json({
+    matches,
+    teamName: team?.name ?? coach!.teamName,
+  });
 }
 
 export async function POST(request: Request) {
@@ -27,15 +36,12 @@ export async function POST(request: Request) {
   );
   if (parseError || !data) return parseError!;
 
-  if (data.trainingTeamKey !== coach!.trainingTeamKey) {
-    return jsonError("You can only manage matches for your assigned squad", 403);
+  if (!coachOwnsTeam(coach!, data.trainingTeamKey)) {
+    return jsonError("You can only manage matches for your assigned squads", 403);
   }
 
   const match = await prisma.teamMatch.create({
-    data: toTeamMatchData({
-      ...data,
-      trainingTeamKey: coach!.trainingTeamKey,
-    }),
+    data: toTeamMatchData(data),
   });
 
   return NextResponse.json({ match }, { status: 201 });

@@ -1,27 +1,33 @@
 import { NextResponse } from "next/server";
-import { requireCoach } from "@/lib/coach-auth";
+import { coachOwnsTeam, requireCoach, resolveCoachWriteTeamKey } from "@/lib/coach-auth";
 import { jsonError, parseJsonBody } from "@/lib/api";
 import {
   getWeeklyTrainingSessionForTeam,
   updateWeeklyTrainingSchedule,
   createWeeklyTrainingSession,
 } from "@/lib/training-schedule-actions";
+import { getTrainingTeamByKey } from "@/lib/training-squads";
 import { serializeTrainingSession } from "@/lib/training-utils";
-import { coachTrainingUpdateSchema } from "@/lib/validations";
+import { adminTrainingScheduleUpdateSchema } from "@/lib/validations";
 
-export async function GET() {
+export async function GET(request: Request) {
   const { coach, response } = await requireCoach();
   if (response) return response;
 
-  const session = await getWeeklyTrainingSessionForTeam(coach!.trainingTeamKey);
+  const { searchParams } = new URL(request.url);
+  const teamKey = resolveCoachWriteTeamKey(coach!, searchParams.get("team"));
+
+  const session = await getWeeklyTrainingSessionForTeam(teamKey);
 
   if (!session) {
-    return jsonError("No training session found for your squad", 404);
+    return jsonError("No training session found for this squad", 404);
   }
+
+  const team = await getTrainingTeamByKey(teamKey);
 
   return NextResponse.json({
     session: serializeTrainingSession(session),
-    teamName: coach!.teamName,
+    teamName: team?.name ?? coach!.teamName,
   });
 }
 
@@ -31,17 +37,23 @@ export async function PATCH(request: Request) {
 
   const { data, response: parseError } = await parseJsonBody(
     request,
-    coachTrainingUpdateSchema,
+    adminTrainingScheduleUpdateSchema,
   );
   if (parseError || !data) return parseError!;
 
-  const existing = await getWeeklyTrainingSessionForTeam(coach!.trainingTeamKey);
+  const { teamKey, ...schedule } = data;
+
+  if (!coachOwnsTeam(coach!, teamKey)) {
+    return jsonError("You can only manage training for your assigned squads", 403);
+  }
+
+  const existing = await getWeeklyTrainingSessionForTeam(teamKey);
 
   let result;
   if (existing) {
-    result = await updateWeeklyTrainingSchedule(coach!.trainingTeamKey, data);
+    result = await updateWeeklyTrainingSchedule(teamKey, schedule);
   } else {
-    result = await createWeeklyTrainingSession(coach!.trainingTeamKey, data);
+    result = await createWeeklyTrainingSession(teamKey, schedule);
   }
 
   if (!result.ok) {

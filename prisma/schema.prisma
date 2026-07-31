@@ -535,3 +535,46 @@ model TrialsApplication {
 
   @@index([status, createdAt])
 }
+
+model TrialSession {
+  id              String               @id @default(cuid())
+  slug            String               @unique
+  title           String
+  description     String?
+  startDate       DateTime
+  endDate         DateTime?
+  location        String?
+  locationUrl     String?
+  paymentUrl      String?
+  reclubUsername  String?
+  sessionFee      Float?
+  coachName       String?
+  active          Boolean              @default(true)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  signups         TrialSessionSignup[]
+}
+
+model TrialSessionSignup {
+  id             String                 @id @default(cuid())
+  trialSessionId String
+  trialSession   TrialSession           @relation(fields: [trialSessionId], references: [id], onDelete: Cascade)
+  email          String
+  displayName    String
+  createdAt      DateTime               @default(now())
+  reminders      TrialSessionReminder[]
+
+  @@unique([trialSessionId, email])
+  @@index([trialSessionId, createdAt])
+}
+
+model TrialSessionReminder {
+  id       String             @id @default(cuid())
+  signupId String
+  signup   TrialSessionSignup @relation(fields: [signupId], references: [id], onDelete: Cascade)
+  kind     String
+  sentAt   DateTime           @default(now())
+
+  @@unique([signupId, kind])
+  @@index([signupId])
+}

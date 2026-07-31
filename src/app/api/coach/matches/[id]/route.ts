@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireCoach } from "@/lib/coach-auth";
+import { coachOwnsTeam, requireCoach } from "@/lib/coach-auth";
 import { jsonError, parseJsonBody } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import {
@@ -17,7 +17,7 @@ export async function PUT(
 
   const { id } = await params;
   const existing = await prisma.teamMatch.findUnique({ where: { id } });
-  if (!existing || existing.trainingTeamKey !== coach!.trainingTeamKey) {
+  if (!existing || !coachOwnsTeam(coach!, existing.trainingTeamKey)) {
     return jsonError("Match not found", 404);
   }
 
@@ -27,16 +27,13 @@ export async function PUT(
   );
   if (parseError || !data) return parseError!;
 
-  if (data.trainingTeamKey !== coach!.trainingTeamKey) {
-    return jsonError("You can only manage matches for your assigned squad", 403);
+  if (!coachOwnsTeam(coach!, data.trainingTeamKey)) {
+    return jsonError("You can only manage matches for your assigned squads", 403);
   }
 
   const match = await prisma.teamMatch.update({
     where: { id },
-    data: toTeamMatchData({
-      ...data,
-      trainingTeamKey: coach!.trainingTeamKey,
-    }),
+    data: toTeamMatchData(data),
   });
 
   return NextResponse.json({ match });
@@ -51,7 +48,7 @@ export async function DELETE(
 
   const { id } = await params;
   const existing = await prisma.teamMatch.findUnique({ where: { id } });
-  if (!existing || existing.trainingTeamKey !== coach!.trainingTeamKey) {
+  if (!existing || !coachOwnsTeam(coach!, existing.trainingTeamKey)) {
     return jsonError("Match not found", 404);
   }
 

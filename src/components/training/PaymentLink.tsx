@@ -6,9 +6,11 @@ const buttonClass =
 export function PaymentLink({
   href,
   label = "Pay for session",
+  onClick,
 }: {
   href: string;
   label?: string;
+  onClick?: () => void;
 }) {
   return (
     <a
@@ -16,6 +18,7 @@ export function PaymentLink({
       target="_blank"
       rel="noopener noreferrer"
       className={buttonClass}
+      onClick={onClick}
     >
       <CreditCard className="h-4 w-4" />
       {label}

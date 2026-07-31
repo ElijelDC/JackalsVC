@@ -53,6 +53,7 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
       { href: "/admin/registration-reviews", label: "Registration review", icon: UserPlus },
       { href: "/admin/coaching-applications", label: "Coaching applications", icon: GraduationCap },
       { href: "/admin/trials-applications", label: "Signups", icon: ClipboardPen },
+      { href: "/admin/trial-sessions", label: "Trial sessions", icon: Calendar },
       { href: "/admin/roster", label: "Roster", icon: ClipboardList },
       { href: "/admin/subscriptions", label: "Subscriptions", icon: UserCheck },
     ],

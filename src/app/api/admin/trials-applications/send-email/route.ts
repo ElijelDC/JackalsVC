@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { isEmailConfigured } from "@/lib/email";
 import { getSiteContentMap } from "@/lib/site-content";
 import { sendTrialsApplicantEmail } from "@/lib/send-trials-applicant-email";
 import { listTrialsApplications } from "@/lib/trials-applications";
@@ -32,6 +33,10 @@ const sendEmailSchema = z.object({
 export async function POST(request: Request) {
   const { response } = await requireAdmin();
   if (response) return response;
+
+  if (!isEmailConfigured()) {
+    return jsonError("Email delivery is not configured", 503);
+  }
 
   const { data, response: parseError } = await parseJsonBody(
     request,

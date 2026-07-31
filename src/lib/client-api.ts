@@ -49,9 +49,10 @@ async function parseResponse<T>(
 export async function apiGet<T>(
   url: string,
   fallbackError = "Failed to load data",
+  init?: RequestInit,
 ): Promise<ApiResult<T>> {
   try {
-    const res = await fetch(url);
+    const res = await fetch(url, { cache: "no-store", ...init });
     return parseResponse<T>(res, fallbackError, url);
   } catch {
     reportClientError({ message: NETWORK_ERROR_MESSAGE, endpoint: url });

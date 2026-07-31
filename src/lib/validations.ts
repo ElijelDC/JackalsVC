@@ -659,3 +659,61 @@ export const clientErrorReportSchema = z.object({
   stack: z.string().max(2000).optional(),
   component: z.string().max(200).optional(),
 });
+
+export const trialSessionSchema = z
+  .object({
+  title: z.string().min(1, "Title is required"),
+  description: z.string().optional(),
+  startDate: z.string().min(1, "Start date is required"),
+  endDate: z.string().optional(),
+  location: z.string().optional(),
+  locationUrl: z.preprocess(
+    emptyToUndefined,
+    z.string().url("Must be a valid maps link").optional(),
+  ),
+  coachName: z.preprocess(emptyToUndefined, z.string().min(1).max(80).optional()),
+  paymentUrl: z.preprocess(
+    emptyToUndefined,
+    z.string().url("Must be a valid payment URL").optional(),
+  ),
+  reclubUsername: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+  sessionFee: z.preprocess(
+    emptyToUndefined,
+    z.coerce.number().positive("Session fee must be greater than zero").optional(),
+  ),
+  active: z.boolean().optional(),
+  slug: z.preprocess(
+    emptyToUndefined,
+    z
+      .string()
+      .min(3, "Link slug must be at least 3 characters")
+      .max(64, "Link slug is too long")
+      .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens only")
+      .optional(),
+  ),
+})
+  .superRefine((data, ctx) => {
+    if (!data.endDate) return;
+
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
+
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+
+    if (end <= start) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "End time must be after the start time",
+        path: ["endDate"],
+      });
+    }
+  });
+
+export const trialSessionSignupSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  displayName: z
+    .string()
+    .trim()
+    .min(1, "Enter the name you'd like coaches to see")
+    .max(80, "Name is too long"),
+});

@@ -1,10 +1,10 @@
 import { endOfMonth, startOfMonth } from "date-fns";
-import { CoachMatchesManager } from "@/components/coach/CoachMatchesManager";
+import { CoachMatchesScheduleEditor } from "@/components/coach/CoachMatchesScheduleEditor";
 import {
   serializeTeamMatch,
   type TeamMatchItem,
 } from "@/components/coach/match-form-utils";
-import { requireCoachPage } from "@/lib/coach-auth";
+import { requireCoachPage, resolveCoachWriteTeamKey } from "@/lib/coach-auth";
 import { getAllTeamMatches } from "@/lib/matches";
 import {
   formatTrainingMonthParam,
@@ -28,25 +28,27 @@ function filterMatchesForMonth(matches: TeamMatchItem[], month: Date) {
 export default async function CoachMatchesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ team?: string; month?: string }>;
 }) {
   const { coach } = await requireCoachPage();
-  const { month: monthParamRaw } = await searchParams;
+  const { team: teamParam, month: monthParamRaw } = await searchParams;
   const { mode, month } = parseScheduleMonthParam(monthParamRaw);
   const monthParam =
     monthParamRaw && (isAllMonthsParam(monthParamRaw) || monthParamRaw.match(/^\d{4}-\d{2}$/))
       ? monthParamRaw
       : formatTrainingMonthParam(month);
 
-  const matches = await getAllTeamMatches(coach.trainingTeamKey);
+  const selectedTeamKey = resolveCoachWriteTeamKey(coach, teamParam);
+
+  const matches = await getAllTeamMatches(selectedTeamKey);
   const allMatches = matches.map(serializeTeamMatch);
   const monthMatches =
     mode === "all" ? allMatches : filterMatchesForMonth(allMatches, month);
 
   return (
-    <CoachMatchesManager
-      teamName={coach.teamName}
-      trainingTeamKey={coach.trainingTeamKey}
+    <CoachMatchesScheduleEditor
+      teams={coach.teams}
+      selectedTeamKey={selectedTeamKey}
       monthMatches={monthMatches}
       monthParam={monthParam}
     />

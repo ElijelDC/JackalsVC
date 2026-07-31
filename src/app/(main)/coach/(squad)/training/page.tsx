@@ -1,6 +1,6 @@
 import { endOfMonth, startOfMonth } from "date-fns";
-import { CoachTrainingEditor } from "@/components/coach/CoachTrainingEditor";
-import { requireCoachPage } from "@/lib/coach-auth";
+import { CoachWeeklyTrainingEditor } from "@/components/coach/CoachWeeklyTrainingEditor";
+import { requireCoachPage, resolveCoachWriteTeamKey } from "@/lib/coach-auth";
 import { getCoachTrainingSessionsForTeam } from "@/lib/training-coach-sessions";
 import {
   formatTrainingMonthParam,
@@ -29,63 +29,58 @@ function filterSessionsForMonth<T extends { startDate: string }>(
 export default async function CoachTrainingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>;
+  searchParams: Promise<{ team?: string; month?: string }>;
 }) {
   const { coach } = await requireCoachPage();
-  const { month: monthParamRaw } = await searchParams;
+  const { team: teamParam, month: monthParamRaw } = await searchParams;
   const { mode, month } = parseScheduleMonthParam(monthParamRaw);
   const monthParam =
     monthParamRaw && (isAllMonthsParam(monthParamRaw) || monthParamRaw.match(/^\d{4}-\d{2}$/))
       ? monthParamRaw
       : formatTrainingMonthParam(month);
 
+  const selectedTeamKey = resolveCoachWriteTeamKey(coach, teamParam);
+
   const session = await prisma.trainingSession.findFirst({
     where: {
       category: SESSION_CATEGORIES.WEEKLY,
-      trainingTeamKey: coach.trainingTeamKey,
+      trainingTeamKey: selectedTeamKey,
     },
   });
 
-  if (!session) {
-    return (
-      <CoachTrainingEditor
-        teamName={coach.teamName}
-        initialSession={{
-          id: "",
-          title: coach.teamName,
-          dayOfWeek: 2, // Default to Tuesday
-          startTime: "19:00",
-          endTime: "20:30",
-          location: "",
-        }}
-        monthSessions={[]}
-        monthParam={monthParam}
-        isCreating={true}
-      />
+  let monthSessions: Awaited<
+    ReturnType<typeof getCoachTrainingSessionsForTeam>
+  > = [];
+
+  if (session) {
+    const allSessions = await getCoachTrainingSessionsForTeam(
+      selectedTeamKey,
+      session.id,
     );
+    monthSessions =
+      mode === "all" ? allSessions : filterSessionsForMonth(allSessions, month);
   }
 
-  const serialized = serializeTrainingSession(session);
-  const allSessions = await getCoachTrainingSessionsForTeam(
-    coach.trainingTeamKey,
-    session.id,
-  );
-  const monthSessions =
-    mode === "all" ? allSessions : filterSessionsForMonth(allSessions, month);
+  const serialized = session ? serializeTrainingSession(session) : null;
 
   return (
-    <CoachTrainingEditor
-      teamName={coach.teamName}
-      initialSession={{
-        id: serialized.id,
-        title: serialized.title,
-        dayOfWeek: serialized.dayOfWeek,
-        startTime: serialized.startTime,
-        endTime: serialized.endTime,
-        location: serialized.location,
-        recurringFrom: serialized.recurringFrom,
-        recurringTo: serialized.recurringTo,
-      }}
+    <CoachWeeklyTrainingEditor
+      teams={coach.teams}
+      selectedTeamKey={selectedTeamKey}
+      session={
+        serialized
+          ? {
+              id: serialized.id,
+              title: serialized.title,
+              dayOfWeek: serialized.dayOfWeek,
+              startTime: serialized.startTime,
+              endTime: serialized.endTime,
+              location: serialized.location,
+              recurringFrom: serialized.recurringFrom,
+              recurringTo: serialized.recurringTo,
+            }
+          : null
+      }
       monthSessions={monthSessions}
       monthParam={monthParam}
     />

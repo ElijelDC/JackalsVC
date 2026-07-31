@@ -137,13 +137,14 @@ Transactional and notification emails use the same `SMTP_*` settings as registra
 | Variable | Purpose |
 |----------|---------|
 | `ADMIN_NOTIFICATION_EMAILS` | Comma-separated admin recipients. If unset, every `ADMIN` user is emailed. |
-| `CRON_SECRET` | Shared secret for the membership-due reminder endpoint. |
+| `CRON_SECRET` | Shared secret for cron endpoints (membership due, trial session reminders). |
 
 Membership "payment due" reminders (a week ahead, then the day before) are sent by `POST /api/cron/membership-due`. It is idempotent, so it is safe to run daily. Wire it up with a host crontab on the VPS:
 
 ```bash
 # crontab -e  (runs every day at 09:00)
 0 9 * * * curl -fsS -X POST https://jackalsvolleyball.com/api/cron/membership-due -H "x-cron-secret: $CRON_SECRET" >/dev/null 2>&1
+0 9 * * * curl -fsS -X POST https://jackalsvolleyball.com/api/cron/trial-session-reminders -H "x-cron-secret: $CRON_SECRET" >/dev/null 2>&1
 ```
 
 (Replace `$CRON_SECRET` with the value you set in `.env.production`.)
