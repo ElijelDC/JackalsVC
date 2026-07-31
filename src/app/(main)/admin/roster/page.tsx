@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { ClubRosterManager } from "@/components/admin/ClubRosterManager";
 import { isCoachPaymentType } from "@/lib/coach-payment-type";
+import { serializeClubMemberForAdmin } from "@/lib/club-team-roster-sync";
 import { getTrainingSquads } from "@/lib/training-squads";
 
 export const metadata = { title: "Admin · Registered Members" };
@@ -10,6 +11,7 @@ export default async function AdminRosterPage() {
     prisma.clubMember.findMany({
       include: {
         user: { select: { id: true, email: true } },
+        coachSquads: { select: { trainingTeamKey: true } },
       },
       orderBy: { vlyNumber: "asc" },
     }),
@@ -37,7 +39,7 @@ export default async function AdminRosterPage() {
   return (
     <ClubRosterManager
       initialClubMembers={clubMembers.map((member) => ({
-        ...member,
+        ...serializeClubMemberForAdmin(member),
         coachPaymentType: isCoachPaymentType(member.coachPaymentType)
           ? member.coachPaymentType
           : member.rosterRole === "COACH"

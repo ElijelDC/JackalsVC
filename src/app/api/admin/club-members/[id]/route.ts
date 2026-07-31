@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
-import { handleClubMemberSquadChange, syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
+import {
+  handleClubMemberSquadChange,
+  serializeClubMemberForAdmin,
+  setClubMemberCoachSquads,
+  syncClubTeamsForSquadKey,
+} from "@/lib/club-team-roster-sync";
 import { isTrainingSquadKey } from "@/lib/training-squads";
 import { clubMemberUpdateSchema } from "@/lib/validations";
 import {
@@ -10,6 +15,30 @@ import {
 import { prisma } from "@/lib/prisma";
 
 type RouteContext = { params: Promise<{ id: string }> };
+
+function resolveSquadKeysFromBody(data: {
+  trainingTeamKey?: string | null;
+  trainingTeamKeys?: string[];
+}) {
+  if (data.trainingTeamKeys !== undefined) {
+    return data.trainingTeamKeys;
+  }
+
+  if (data.trainingTeamKey !== undefined) {
+    return data.trainingTeamKey ? [data.trainingTeamKey] : [];
+  }
+
+  return null;
+}
+
+async function validateSquadKeys(keys: string[]) {
+  for (const key of keys) {
+    if (!(await isTrainingSquadKey(key))) {
+      return false;
+    }
+  }
+  return true;
+}
 
 export async function PATCH(request: Request, context: RouteContext) {
   const { response } = await requireAdmin();
@@ -22,15 +51,10 @@ export async function PATCH(request: Request, context: RouteContext) {
   );
   if (parseError || !data) return parseError!;
 
-  if (
-    data.trainingTeamKey !== undefined &&
-    data.trainingTeamKey !== null &&
-    !(await isTrainingSquadKey(data.trainingTeamKey))
-  ) {
-    return jsonError("Invalid squad", 400);
-  }
-
-  const existing = await prisma.clubMember.findUnique({ where: { id } });
+  const existing = await prisma.clubMember.findUnique({
+    where: { id },
+    include: { coachSquads: { select: { trainingTeamKey: true } } },
+  });
   if (!existing) return jsonError("Roster entry not found", 404);
 
   const nextRosterRole = (data.rosterRole ?? existing.rosterRole) as "PLAYER" | "COACH";
@@ -38,6 +62,21 @@ export async function PATCH(request: Request, context: RouteContext) {
     data.vlyNumber !== undefined
       ? normalizeVlyNumber(data.vlyNumber)
       : existing.vlyNumber;
+  const squadKeysFromBody = resolveSquadKeysFromBody(data);
+
+  if (squadKeysFromBody !== null) {
+    if (!(await validateSquadKeys(squadKeysFromBody))) {
+      return jsonError("Invalid squad", 400);
+    }
+
+    if (nextRosterRole === "COACH" && squadKeysFromBody.length === 0) {
+      return jsonError("Coaches need at least one squad", 400);
+    }
+
+    if (nextRosterRole === "PLAYER" && squadKeysFromBody.length > 1) {
+      return jsonError("Players can only belong to one squad", 400);
+    }
+  }
 
   if (!isValidClubMemberNumberForRole(nextVlyNumber, nextRosterRole)) {
     return jsonError(
@@ -76,37 +115,56 @@ export async function PATCH(request: Request, context: RouteContext) {
       data.rosterRole !== undefined
         ? { coachPaymentType: nextCoachPaymentType }
         : {}),
-      ...(data.trainingTeamKey !== undefined
-        ? { trainingTeamKey: data.trainingTeamKey }
+      ...(squadKeysFromBody !== null &&
+      nextRosterRole === "PLAYER" &&
+      squadKeysFromBody.length <= 1
+        ? { trainingTeamKey: squadKeysFromBody[0] ?? null }
         : {}),
     },
+    include: { coachSquads: { select: { trainingTeamKey: true } } },
   });
 
-  const squadChanged =
-    data.trainingTeamKey !== undefined &&
-    data.trainingTeamKey !== existing.trainingTeamKey;
   const roleOrActiveChanged =
     data.rosterRole !== undefined ||
     data.active !== undefined ||
     data.name !== undefined;
 
-  if (squadChanged) {
-    await handleClubMemberSquadChange(
-      id,
-      existing.trainingTeamKey,
-      clubMember.trainingTeamKey,
-    );
+  if (nextRosterRole === "PLAYER" && existing.rosterRole === "COACH") {
+    await prisma.clubMemberCoachSquad.deleteMany({ where: { clubMemberId: id } });
+  }
+
+  if (squadKeysFromBody !== null) {
+    if (nextRosterRole === "COACH") {
+      await setClubMemberCoachSquads(id, squadKeysFromBody);
+    } else {
+      await handleClubMemberSquadChange(
+        id,
+        existing.trainingTeamKey,
+        squadKeysFromBody[0] ?? null,
+      );
+    }
+  } else if (
+    nextRosterRole === "COACH" &&
+    existing.rosterRole === "PLAYER" &&
+    clubMember.trainingTeamKey
+  ) {
+    await setClubMemberCoachSquads(id, [clubMember.trainingTeamKey]);
   } else if (roleOrActiveChanged && clubMember.trainingTeamKey) {
     await syncClubTeamsForSquadKey(clubMember.trainingTeamKey);
   } else if (data.active === false) {
-    await handleClubMemberSquadChange(
-      id,
-      existing.trainingTeamKey,
-      null,
-    );
+    await handleClubMemberSquadChange(id, existing.trainingTeamKey, null);
   }
 
-  return NextResponse.json({ clubMember });
+  const updated = await prisma.clubMember.findUnique({
+    where: { id },
+    include: {
+      coachSquads: { select: { trainingTeamKey: true } },
+    },
+  });
+
+  return NextResponse.json({
+    clubMember: updated ? serializeClubMemberForAdmin(updated) : clubMember,
+  });
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {

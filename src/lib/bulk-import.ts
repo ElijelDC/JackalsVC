@@ -7,7 +7,7 @@ import {
   safeFormatDate,
 } from "@/lib/csv-date-parse";
 import type { BulkImportType } from "@/lib/bulk-import-config";
-import { syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
+import { setClubMemberCoachSquads, syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
 import { toManualEventData } from "@/lib/manual-event-data";
 import { prisma } from "@/lib/prisma";
 import { isTrainingSquadKey } from "@/lib/training-squads";
@@ -322,10 +322,17 @@ async function importRosterRow(
     return "skipped";
   }
 
+  const squadKeys =
+    row.training_team_key
+      ?.split(",")
+      .map((value) => value.trim())
+      .filter(Boolean) ?? [];
+
   const parsed = clubMemberCreateSchema.safeParse({
     vlyNumber,
     name: row.name?.trim(),
-    trainingTeamKey: row.training_team_key?.trim(),
+    trainingTeamKey: squadKeys.length === 1 ? squadKeys[0] : undefined,
+    trainingTeamKeys: squadKeys.length > 1 ? squadKeys : undefined,
     rosterRole,
     coachPaymentType: parseOptional(row.coach_payment_type)?.toUpperCase(),
     active: parseBool(row.active, true),
@@ -336,21 +343,31 @@ async function importRosterRow(
   }
 
   const data = parsed.data;
-  if (!(await isTrainingSquadKey(data.trainingTeamKey))) {
-    throw new Error("Invalid training_team_key");
+  const resolvedSquadKeys =
+    data.trainingTeamKeys ??
+    (data.trainingTeamKey ? [data.trainingTeamKey] : []);
+
+  for (const key of resolvedSquadKeys) {
+    if (!(await isTrainingSquadKey(key))) {
+      throw new Error("Invalid training_team_key");
+    }
   }
 
-  await prisma.clubMember.create({
+  const clubMember = await prisma.clubMember.create({
     data: {
       vlyNumber,
       name: data.name.trim(),
-      trainingTeamKey: data.trainingTeamKey,
+      trainingTeamKey: resolvedSquadKeys[0],
       rosterRole: data.rosterRole,
       coachPaymentType:
         data.rosterRole === "COACH" ? (data.coachPaymentType ?? "PAID") : null,
       active: data.active ?? true,
     },
   });
+
+  if (data.rosterRole === "COACH") {
+    await setClubMemberCoachSquads(clubMember.id, resolvedSquadKeys);
+  }
 
   seenInFile.add(fingerprint);
   existing.add(fingerprint);

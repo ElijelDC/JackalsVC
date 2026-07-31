@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import {
+  serializeClubMemberForAdmin,
+  setClubMemberCoachSquads,
+  syncClubTeamsForSquadKey,
+} from "@/lib/club-team-roster-sync";
 import { isTrainingSquadKey } from "@/lib/training-squads";
 import {
   isValidClubMemberNumberForRole,
@@ -7,7 +12,6 @@ import {
 } from "@/lib/vly-number";
 import { clubMemberCreateSchema } from "@/lib/validations";
 import { prisma } from "@/lib/prisma";
-import { syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
 
 export async function GET() {
   const { response } = await requireAdmin();
@@ -16,11 +20,14 @@ export async function GET() {
   const clubMembers = await prisma.clubMember.findMany({
     include: {
       user: { select: { id: true, email: true } },
+      coachSquads: { select: { trainingTeamKey: true } },
     },
     orderBy: { vlyNumber: "asc" },
   });
 
-  return NextResponse.json({ clubMembers });
+  return NextResponse.json({
+    clubMembers: clubMembers.map(serializeClubMemberForAdmin),
+  });
 }
 
 export async function POST(request: Request) {
@@ -43,8 +50,22 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!(await isTrainingSquadKey(data.trainingTeamKey))) {
+  const squadKeys =
+    data.trainingTeamKeys ??
+    (data.trainingTeamKey ? [data.trainingTeamKey] : []);
+
+  if (squadKeys.length === 0) {
     return jsonError("Select a valid squad", 400);
+  }
+
+  for (const key of squadKeys) {
+    if (!(await isTrainingSquadKey(key))) {
+      return jsonError("Select a valid squad", 400);
+    }
+  }
+
+  if (data.rosterRole === "PLAYER" && squadKeys.length > 1) {
+    return jsonError("Players can only belong to one squad", 400);
   }
 
   const existing = await prisma.clubMember.findUnique({ where: { vlyNumber } });
@@ -56,15 +77,31 @@ export async function POST(request: Request) {
     data: {
       vlyNumber,
       name: data.name.trim(),
-      trainingTeamKey: data.trainingTeamKey,
+      trainingTeamKey: squadKeys[0],
       rosterRole: data.rosterRole,
       coachPaymentType:
         data.rosterRole === "COACH" ? (data.coachPaymentType ?? "PAID") : null,
       active: data.active ?? true,
     },
+    include: { coachSquads: { select: { trainingTeamKey: true } } },
   });
 
-  await syncClubTeamsForSquadKey(data.trainingTeamKey);
+  if (data.rosterRole === "COACH") {
+    await setClubMemberCoachSquads(clubMember.id, squadKeys);
+  } else {
+    await syncClubTeamsForSquadKey(squadKeys[0]);
+  }
 
-  return NextResponse.json({ clubMember }, { status: 201 });
+  const created = await prisma.clubMember.findUnique({
+    where: { id: clubMember.id },
+    include: {
+      user: { select: { id: true, email: true } },
+      coachSquads: { select: { trainingTeamKey: true } },
+    },
+  });
+
+  return NextResponse.json(
+    { clubMember: created ? serializeClubMemberForAdmin(created) : clubMember },
+    { status: 201 },
+  );
 }

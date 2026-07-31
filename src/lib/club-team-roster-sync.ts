@@ -209,6 +209,32 @@ export async function handleClubMemberSquadChange(
   );
 }
 
+type ClubMemberWithCoachSquads = {
+  trainingTeamKey: string | null;
+  rosterRole: string;
+  coachSquads?: { trainingTeamKey: string }[];
+};
+
+export function resolveClubMemberTrainingTeamKeys(
+  member: ClubMemberWithCoachSquads,
+): string[] {
+  if (member.rosterRole === "COACH") {
+    const fromJoin = member.coachSquads?.map((row) => row.trainingTeamKey) ?? [];
+    return [...new Set([...fromJoin, member.trainingTeamKey].filter(Boolean))] as string[];
+  }
+
+  return member.trainingTeamKey ? [member.trainingTeamKey] : [];
+}
+
+export function serializeClubMemberForAdmin<
+  T extends ClubMemberWithCoachSquads & Record<string, unknown>,
+>(member: T) {
+  return {
+    ...member,
+    trainingTeamKeys: resolveClubMemberTrainingTeamKeys(member),
+  };
+}
+
 export async function handleClubMemberSquadKeysChange(
   clubMemberId: string,
   previousKeys: string[],

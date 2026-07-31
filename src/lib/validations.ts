@@ -357,14 +357,29 @@ export const paymentDeferralRequestSchema = z.object({
   dueDate: z.string().min(1, "Choose when you expect to pay"),
 });
 
-export const clubMemberCreateSchema = z.object({
-  vlyNumber: z.string().min(3, "VLY number is required"),
-  name: z.string().min(2, "Full name is required"),
-  trainingTeamKey: z.string().min(1, "Team is required"),
-  rosterRole: z.enum(["PLAYER", "COACH"]).default("PLAYER"),
-  coachPaymentType: z.enum(COACH_PAYMENT_TYPES).optional(),
-  active: z.boolean().optional(),
-});
+export const clubMemberCreateSchema = z
+  .object({
+    vlyNumber: z.string().min(3, "VLY number is required"),
+    name: z.string().min(2, "Full name is required"),
+    trainingTeamKey: z.string().min(1, "Team is required").optional(),
+    trainingTeamKeys: z.array(z.string().min(1)).min(1).optional(),
+    rosterRole: z.enum(["PLAYER", "COACH"]).default("PLAYER"),
+    coachPaymentType: z.enum(COACH_PAYMENT_TYPES).optional(),
+    active: z.boolean().optional(),
+  })
+  .refine(
+    (data) =>
+      Boolean(data.trainingTeamKey) ||
+      Boolean(data.trainingTeamKeys && data.trainingTeamKeys.length > 0),
+    { message: "Team is required", path: ["trainingTeamKey"] },
+  )
+  .refine(
+    (data) =>
+      data.rosterRole !== "PLAYER" ||
+      !data.trainingTeamKeys ||
+      data.trainingTeamKeys.length <= 1,
+    { message: "Players can only belong to one squad", path: ["trainingTeamKeys"] },
+  );
 
 export const clubMemberUpdateSchema = z.object({
   vlyNumber: z.string().min(3).optional(),
@@ -373,6 +388,7 @@ export const clubMemberUpdateSchema = z.object({
   rosterRole: z.enum(["PLAYER", "COACH"]).optional(),
   coachPaymentType: z.enum(COACH_PAYMENT_TYPES).nullable().optional(),
   trainingTeamKey: z.string().nullable().optional(),
+  trainingTeamKeys: z.array(z.string().min(1)).optional(),
 });
 
 export const orderUpdateSchema = z.object({

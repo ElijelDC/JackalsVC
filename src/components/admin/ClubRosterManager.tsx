@@ -37,6 +37,7 @@ type ClubMember = {
   rosterRole: string;
   coachPaymentType: CoachPaymentType | null;
   trainingTeamKey: string | null;
+  trainingTeamKeys: string[];
   profileImageUrl: string | null;
   vlyMembershipPhotoUrl: string | null;
   userId: string | null;
@@ -53,9 +54,68 @@ const emptyForm = {
   vlyNumber: "",
   name: "",
   trainingTeamKey: "",
+  trainingTeamKeys: [] as string[],
   rosterRole: "PLAYER",
   coachPaymentType: "PAID" as CoachPaymentType,
 };
+
+function memberSquadKeys(member: ClubMember) {
+  return member.trainingTeamKeys.length > 0
+    ? member.trainingTeamKeys
+    : member.trainingTeamKey
+      ? [member.trainingTeamKey]
+      : [];
+}
+
+function SquadCheckboxGroup({
+  selectedKeys,
+  trainingTeams,
+  disabled,
+  onChange,
+  idPrefix,
+}: {
+  selectedKeys: string[];
+  trainingTeams: TrainingTeam[];
+  disabled?: boolean;
+  onChange: (keys: string[]) => void;
+  idPrefix: string;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {trainingTeams.map((team) => {
+        const checked = selectedKeys.includes(team.key);
+        return (
+          <label
+            key={team.key}
+            htmlFor={`${idPrefix}-${team.key}`}
+            className={cn(
+              "inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition",
+              checked
+                ? "border-jackals-red/40 bg-jackals-red/10 text-white"
+                : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-white",
+              disabled && "cursor-not-allowed opacity-60",
+            )}
+          >
+            <input
+              id={`${idPrefix}-${team.key}`}
+              type="checkbox"
+              className="h-4 w-4 rounded border-white/20 bg-black/20 text-jackals-red focus:ring-jackals-red/40"
+              checked={checked}
+              disabled={disabled}
+              onChange={() => {
+                const next = checked
+                  ? selectedKeys.filter((key) => key !== team.key)
+                  : [...selectedKeys, team.key];
+                onChange(next);
+              }}
+            />
+            {team.name}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
 
 export function ClubRosterManager({
   initialClubMembers,
@@ -93,9 +153,10 @@ export function ClubRosterManager({
       }
 
       if (teamFilter !== "all") {
+        const keys = memberSquadKeys(member);
         if (teamFilter === "unassigned") {
-          if (member.trainingTeamKey) return false;
-        } else if (member.trainingTeamKey !== teamFilter) {
+          if (keys.length > 0) return false;
+        } else if (!keys.includes(teamFilter)) {
           return false;
         }
       }
@@ -106,7 +167,9 @@ export function ClubRosterManager({
         member.name,
         member.user?.email ?? "",
         member.active ? "active" : "inactive",
-        getTrainingTeamFromList(trainingTeams, member.trainingTeamKey)?.name ?? "",
+        memberSquadKeys(member)
+          .map((key) => getTrainingTeamFromList(trainingTeams, key)?.name ?? "")
+          .join(" "),
       );
     });
 
@@ -140,9 +203,24 @@ export function ClubRosterManager({
     setError(null);
     setMessage(null);
 
+    if (form.rosterRole === "COACH" && form.trainingTeamKeys.length === 0) {
+      setLoading(false);
+      setError("Select at least one squad for this coach.");
+      return;
+    }
+
+    const payload =
+      form.rosterRole === "COACH"
+        ? {
+            ...form,
+            trainingTeamKeys: form.trainingTeamKeys,
+            trainingTeamKey: undefined,
+          }
+        : form;
+
     const result = await apiPost(
       "/api/admin/club-members",
-      form,
+      payload,
       "Failed to add club member",
     );
 
@@ -186,6 +264,26 @@ export function ClubRosterManager({
       `/api/admin/club-members/${member.id}`,
       { trainingTeamKey: trainingTeamKey || null },
       "Failed to assign training team",
+    );
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    await loadClubMembers();
+  };
+
+  const assignCoachSquads = async (member: ClubMember, trainingTeamKeys: string[]) => {
+    setLoading(true);
+    setError(null);
+
+    const result = await apiPatch(
+      `/api/admin/club-members/${member.id}`,
+      { trainingTeamKeys },
+      "Failed to assign coach squads",
     );
 
     setLoading(false);
@@ -364,27 +462,48 @@ export function ClubRosterManager({
             />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="roster-team">Team</Label>
-            <Select
-              id="roster-team"
-              value={form.trainingTeamKey}
-              onChange={(event) =>
-                setForm((current) => ({
-                  ...current,
-                  trainingTeamKey: event.target.value,
-                }))
-              }
-              required
-            >
-              <option value="" disabled>
-                Select team
-              </option>
-              {trainingTeams.map((team) => (
-                <option key={team.key} value={team.key}>
-                  {team.name}
+            <Label>
+              {form.rosterRole === "COACH" ? "Squads" : "Team"}
+            </Label>
+            {form.rosterRole === "COACH" ? (
+              <>
+                <SquadCheckboxGroup
+                  idPrefix="roster-add"
+                  selectedKeys={form.trainingTeamKeys}
+                  trainingTeams={trainingTeams}
+                  disabled={loading}
+                  onChange={(trainingTeamKeys) =>
+                    setForm((current) => ({ ...current, trainingTeamKeys }))
+                  }
+                />
+                {form.trainingTeamKeys.length === 0 ? (
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Select at least one squad for this coach.
+                  </p>
+                ) : null}
+              </>
+            ) : (
+              <Select
+                id="roster-team"
+                value={form.trainingTeamKey}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    trainingTeamKey: event.target.value,
+                  }))
+                }
+                required
+              >
+                <option value="" disabled>
+                  Select team
                 </option>
-              ))}
-            </Select>
+                {trainingTeams.map((team) => (
+                  <option key={team.key} value={team.key}>
+                    {team.name}
+                  </option>
+                ))}
+              </Select>
+            )}
           </div>
           <div className="sm:col-span-2">
             <Label htmlFor="roster-role">Roster role</Label>
@@ -395,6 +514,16 @@ export function ClubRosterManager({
                 setForm((current) => ({
                   ...current,
                   rosterRole: event.target.value,
+                  trainingTeamKeys:
+                    event.target.value === "COACH"
+                      ? current.trainingTeamKey
+                        ? [current.trainingTeamKey]
+                        : current.trainingTeamKeys
+                      : [],
+                  trainingTeamKey:
+                    event.target.value === "PLAYER"
+                      ? current.trainingTeamKeys[0] ?? current.trainingTeamKey
+                      : current.trainingTeamKey,
                 }))
               }
               required
@@ -759,29 +888,36 @@ export function ClubRosterManager({
                           </Select>
                         </div>
                       )}
-                      <div className="flex flex-col gap-1.5">
-                        <Label
-                          htmlFor={`team-${member.id}`}
-                          className="mb-0 text-xs font-normal text-zinc-500"
-                        >
-                          Squad
+                      <div className="flex flex-col gap-1.5 sm:col-span-2">
+                        <Label className="mb-0 text-xs font-normal text-zinc-500">
+                          {member.rosterRole === "COACH" ? "Squads" : "Squad"}
                         </Label>
-                        <Select
-                          id={`team-${member.id}`}
-                          value={member.trainingTeamKey ?? ""}
-                          disabled={loading}
-                          className="py-2 text-sm"
-                          onChange={(event) =>
-                            assignTeam(member, event.target.value)
-                          }
-                        >
-                          <option value="">No squad assigned</option>
-                          {trainingTeams.map((team) => (
-                            <option key={team.key} value={team.key}>
-                              {team.name}
-                            </option>
-                          ))}
-                        </Select>
+                        {member.rosterRole === "COACH" ? (
+                          <SquadCheckboxGroup
+                            idPrefix={`team-${member.id}`}
+                            selectedKeys={memberSquadKeys(member)}
+                            trainingTeams={trainingTeams}
+                            disabled={loading}
+                            onChange={(keys) => assignCoachSquads(member, keys)}
+                          />
+                        ) : (
+                          <Select
+                            id={`team-${member.id}`}
+                            value={member.trainingTeamKey ?? ""}
+                            disabled={loading}
+                            className="py-2 text-sm"
+                            onChange={(event) =>
+                              assignTeam(member, event.target.value)
+                            }
+                          >
+                            <option value="">No squad assigned</option>
+                            {trainingTeams.map((team) => (
+                              <option key={team.key} value={team.key}>
+                                {team.name}
+                              </option>
+                            ))}
+                          </Select>
+                        )}
                       </div>
                     </div>
                   </div>
