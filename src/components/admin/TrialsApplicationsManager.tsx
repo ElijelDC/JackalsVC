@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { TrialsApplicantEmailPanel } from "@/components/admin/TrialsApplicantEmailPanel";
 import {
   CheckCircle2,
   Clock3,
@@ -305,12 +306,14 @@ export function TrialsApplicationsManager({
   actionApiPath = "/api/admin/trials-applications",
   exportApiPath = "/api/admin/trials-applications/export",
   canDeleteApplications = false,
+  canEmailApplicants = false,
 }: {
   initialApplications: TrialsApplicationRecord[];
   listApiPath?: string;
   actionApiPath?: string;
   exportApiPath?: string;
   canDeleteApplications?: boolean;
+  canEmailApplicants?: boolean;
 }) {
   const router = useRouter();
   const [applications, setApplications] = useState(initialApplications);
@@ -465,6 +468,13 @@ export function TrialsApplicationsManager({
 
   return (
     <div className="space-y-4">
+      {canEmailApplicants ? (
+        <TrialsApplicantEmailPanel
+          filteredApplications={filtered}
+          filters={filters}
+        />
+      ) : null}
+
       <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-black/20 p-1.5 sm:grid-cols-4">

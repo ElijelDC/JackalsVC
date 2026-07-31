@@ -11,11 +11,12 @@ export default async function AdminTrialsApplicationsPage() {
     <PageContainer>
       <PageHeader
         title="Signups"
-        description="Review sign-ups, filter by team or position, and export to Excel."
+        description="Review sign-ups, email applicants, filter by team or position, and export to Excel."
       />
       <TrialsApplicationsManager
         initialApplications={applications}
         canDeleteApplications
+        canEmailApplicants
       />
     </PageContainer>
   );

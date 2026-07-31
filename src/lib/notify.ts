@@ -82,7 +82,16 @@ export type NotificationContent = {
   imageAlt?: string;
   /** Small muted note at the bottom (e.g. unsubscribe hint). */
   footnote?: string;
+  /** Turn plain-text URLs in paragraphs into clickable links in HTML. */
+  linkifyParagraphs?: boolean;
 };
+
+function linkifyEscapedHtml(text: string): string {
+  return text.replace(
+    /(https?:\/\/[^\s<]+[^\s<.,;:!?)])/g,
+    '<a href="$1" style="color:#e8222a;text-decoration:underline;">$1</a>',
+  );
+}
 
 /** Builds branded HTML + plain-text bodies for a notification email. */
 export function renderNotificationEmail(content: NotificationContent): {
@@ -109,7 +118,12 @@ export function renderNotificationEmail(content: NotificationContent): {
   }
 
   for (const paragraph of content.paragraphs ?? []) {
-    htmlParts.push(`<p style="margin:0 0 12px;">${escapeHtml(paragraph)}</p>`);
+    const escaped = escapeHtml(paragraph);
+    htmlParts.push(
+      `<p style="margin:0 0 12px;${paragraph.includes("\n") ? "white-space:pre-wrap;" : ""}">${
+        content.linkifyParagraphs ? linkifyEscapedHtml(escaped) : escaped
+      }</p>`,
+    );
     textParts.push(paragraph, "");
   }
 
