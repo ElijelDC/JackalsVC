@@ -35,6 +35,8 @@ export default async function TrialSessionPage({
       slug={slug}
       initialSession={result.session}
       initialViewerRegistered={result.viewerRegistered}
+      initialViewerPendingApproval={result.viewerPendingApproval}
+      initialViewerRejected={result.viewerRejected}
     />
   );
 }

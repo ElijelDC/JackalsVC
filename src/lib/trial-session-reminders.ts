@@ -28,7 +28,7 @@ export async function getTrialSessionReminderStats(
   now: Date = new Date(),
 ): Promise<TrialSessionReminderStats> {
   const signups = await prisma.trialSessionSignup.findMany({
-    where: { trialSessionId: sessionId },
+    where: { trialSessionId: sessionId, status: "APPROVED" },
     select: {
       reminders: {
         where: { kind: TRIAL_SESSION_REMINDER_KIND },
@@ -115,8 +115,8 @@ export async function sendTrialSessionReminders(
     include: {
       signups: {
         ...(signupIdFilter
-          ? { where: { id: { in: [...signupIdFilter] } } }
-          : {}),
+          ? { where: { id: { in: [...signupIdFilter] }, status: "APPROVED" } }
+          : { where: { status: "APPROVED" } }),
         include: {
           reminders: {
             where: { kind: TRIAL_SESSION_REMINDER_KIND },
@@ -182,6 +182,7 @@ export async function runTrialSessionDayBeforeReminders(
     },
     include: {
       signups: {
+        where: { status: "APPROVED" },
         include: {
           reminders: {
             where: { kind: TRIAL_SESSION_REMINDER_KIND },

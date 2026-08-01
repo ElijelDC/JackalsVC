@@ -31,16 +31,39 @@ export async function POST(
           { status: 409 },
         );
       }
+      if ("code" in result && result.code === "already_pending") {
+        return NextResponse.json(
+          {
+            error: result.error,
+            code: result.code,
+            existingDisplayName: result.existingDisplayName,
+          },
+          { status: 409 },
+        );
+      }
+      if (
+        "code" in result &&
+        (result.code === "payment_proof_required" ||
+          result.code === "payment_proof_invalid")
+      ) {
+        return NextResponse.json(
+          { error: result.error, code: result.code },
+          { status: 400 },
+        );
+      }
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
 
     return NextResponse.json(
       {
         success: true,
-        message: "You're registered. We'll see you at the session.",
+        message: result.resubmitted
+          ? "Your request has been resubmitted for admin approval."
+          : "Your request has been submitted. An admin will review it shortly.",
         signup: {
           id: result.signup.id,
           displayName: result.signup.displayName,
+          status: result.signup.status,
         },
       },
       { status: 201 },

@@ -553,6 +553,19 @@ model TrialSession {
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
   signups         TrialSessionSignup[]
+  paymentProofs   TrialSessionPaymentProof[]
+}
+
+model TrialSessionPaymentProof {
+  id                 String              @id @default(cuid())
+  trialSessionId     String
+  trialSession       TrialSession        @relation(fields: [trialSessionId], references: [id], onDelete: Cascade)
+  proofScreenshotUrl String
+  createdAt          DateTime            @default(now())
+  signupId           String?             @unique
+  signup             TrialSessionSignup? @relation(fields: [signupId], references: [id], onDelete: SetNull)
+
+  @@index([trialSessionId, createdAt])
 }
 
 model TrialSessionSignup {
@@ -561,11 +574,14 @@ model TrialSessionSignup {
   trialSession   TrialSession           @relation(fields: [trialSessionId], references: [id], onDelete: Cascade)
   email          String
   displayName    String
+  status         String                 @default("PENDING")
   createdAt      DateTime               @default(now())
   reminders      TrialSessionReminder[]
+  paymentProof   TrialSessionPaymentProof?
 
   @@unique([trialSessionId, email])
   @@index([trialSessionId, createdAt])
+  @@index([trialSessionId, status])
 }
 
 model TrialSessionReminder {

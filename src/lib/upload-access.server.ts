@@ -100,6 +100,31 @@ async function authorizeVlyMembershipPhoto(
   return clubMember?.id === memberId;
 }
 
+async function authorizeTrialSessionPaymentProof(relativePath: string) {
+  const prefix = "trial-session-proofs/";
+  if (!relativePath.startsWith(prefix)) return false;
+
+  const filename = relativePath.slice(prefix.length);
+  const match = filename.match(/^([0-9a-f-]{36})-\d+\.[a-z0-9]+$/i);
+  const proofId = match?.[1];
+  if (!proofId) return false;
+
+  const proof = await prisma.trialSessionPaymentProof.findUnique({
+    where: { id: proofId },
+    select: {
+      id: true,
+      trialSession: { select: { active: true } },
+    },
+  });
+  if (!proof) return false;
+
+  const session = await auth();
+  if (session?.user?.role === "ADMIN") return true;
+
+  // Public trial signup: the proof UUID in the filename acts as the access token.
+  return proof.trialSession.active;
+}
+
 export async function authorizeUploadAccess(
   relativePath: string,
   request: Request,
@@ -118,6 +143,10 @@ export async function authorizeUploadAccess(
 
   if (relativePath.startsWith("vly-membership-photos/")) {
     return authorizeVlyMembershipPhoto(relativePath, request);
+  }
+
+  if (relativePath.startsWith("trial-session-proofs/")) {
+    return authorizeTrialSessionPaymentProof(relativePath);
   }
 
   // Unknown upload folder — deny by default.

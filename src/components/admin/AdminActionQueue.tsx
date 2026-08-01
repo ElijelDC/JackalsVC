@@ -3,6 +3,7 @@ import {
   AlertCircle,
   ArrowRight,
   Banknote,
+  Calendar,
   CheckCircle2,
   GraduationCap,
   UserPlus,
@@ -18,6 +19,7 @@ const ENTRY_ICONS = {
   "coach-payment": Wallet,
   "coaching-application": GraduationCap,
   "trials-application": Volleyball,
+  "trial-session-signup": Calendar,
 } as const;
 
 function ActionQueueCard({ entry }: { entry: AdminActionQueueEntry }) {
@@ -115,8 +117,8 @@ export function AdminActionQueue({
             <div>
               <p className="font-medium text-green-100">All caught up</p>
               <p className="mt-1 text-sm text-green-200/70">
-                New member registrations and payment proofs will show up here as
-                soon as someone submits them.
+                New member registrations, payment proofs, and trial session
+                requests will show up here as soon as someone submits them.
               </p>
             </div>
           </div>

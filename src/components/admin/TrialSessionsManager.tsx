@@ -16,14 +16,17 @@ import { Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import { DEFAULT_RECLUB_USERNAME } from "@/lib/club-payment-defaults";
 import { toDatetimeLocal } from "@/lib/datetime-form";
-import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/client-api";
 import type {
   AdminTrialSessionListItem,
   TrialSessionReminderStats,
   TrialSessionSignupRecord,
 } from "@/lib/trial-session-types";
+import {
+  TRIAL_SESSION_SIGNUP_STATUS_LABELS,
+  trialSessionPublicPath,
+} from "@/lib/trial-session-types";
 import { trialSessionReminderWindowOpensAt } from "@/lib/trial-session-reminder-window";
-import { trialSessionPublicPath } from "@/lib/trial-session-types";
 
 type TrialSessionFormState = {
   title: string;
@@ -111,6 +114,7 @@ export function TrialSessionsManager({
   const [sendingReminders, setSendingReminders] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [removingSignupId, setRemovingSignupId] = useState<string | null>(null);
+  const [updatingSignupId, setUpdatingSignupId] = useState<string | null>(null);
   const [selectedSignupIds, setSelectedSignupIds] = useState<string[]>([]);
   const [registrationsOpen, setRegistrationsOpen] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -155,7 +159,10 @@ export function TrialSessionsManager({
       setSelectedSignupIds((current) => {
         const eligible = new Set(
           result.data.signups
-            .filter((signup) => !signup.reminderSent)
+            .filter(
+              (signup) =>
+                signup.status === "APPROVED" && !signup.reminderSent,
+            )
             .map((signup) => signup.id),
         );
         return current.filter((id) => eligible.has(id));
@@ -203,15 +210,25 @@ export function TrialSessionsManager({
   }, [editingId, loadSignups]);
 
   const editingSession = sessions.find((session) => session.id === editingId);
-  const registrationCount =
+  const approvedCount =
     signups.length > 0
-      ? signups.length
-      : (editingSession?.signupCount ?? signups.length);
+      ? signups.filter((signup) => signup.status === "APPROVED").length
+      : (editingSession?.signupCount ?? 0);
+  const awaitingApprovalCount =
+    signups.length > 0
+      ? signups.filter((signup) => signup.status === "PENDING").length
+      : (editingSession?.pendingApprovalCount ?? 0);
+  const registrationSummary =
+    awaitingApprovalCount > 0
+      ? `${approvedCount} approved, ${awaitingApprovalCount} awaiting approval`
+      : `${approvedCount} approved`;
 
   useEffect(() => {
     if (!editingId || !editingSession || loadingSignups) return;
 
-    const listCount = editingSession.signupCount;
+    const listCount =
+      (editingSession?.signupCount ?? 0) +
+      (editingSession?.pendingApprovalCount ?? 0);
     if (
       lastLoadedSignupCountRef.current !== null &&
       lastLoadedSignupCountRef.current !== listCount
@@ -222,6 +239,7 @@ export function TrialSessionsManager({
   }, [
     editingId,
     editingSession?.signupCount,
+    editingSession?.pendingApprovalCount,
     editingSession,
     loadingSignups,
     loadSignups,
@@ -284,6 +302,34 @@ export function TrialSessionsManager({
     router.refresh();
   };
 
+  const handleUpdateSignupStatus = async (
+    signupId: string,
+    status: "APPROVED" | "REJECTED",
+  ) => {
+    if (!editingId) return;
+
+    setUpdatingSignupId(signupId);
+    setSignupError(null);
+
+    const result = await apiPatch<{ message: string }>(
+      `/api/admin/trial-sessions/${editingId}/signups/${signupId}`,
+      { status },
+      "update signup status",
+    );
+
+    setUpdatingSignupId(null);
+
+    if (!result.ok) {
+      setSignupError(result.error);
+      return;
+    }
+
+    setMessage(result.data.message);
+    await loadSignups(editingId);
+    await loadSessions();
+    router.refresh();
+  };
+
   const handleRemoveSignup = async (signupId: string) => {
     if (!editingId) return;
     if (!confirm("Remove this registration from the session?")) return;
@@ -311,7 +357,9 @@ export function TrialSessionsManager({
     const idsToSend = signups
       .filter(
         (signup) =>
-          selectedSignupIds.includes(signup.id) && !signup.reminderSent,
+          selectedSignupIds.includes(signup.id) &&
+          signup.status === "APPROVED" &&
+          !signup.reminderSent,
       )
       .map((signup) => signup.id);
 
@@ -359,16 +407,23 @@ export function TrialSessionsManager({
     router.refresh();
   };
 
-  const pendingSignups = signups.filter((signup) => !signup.reminderSent);
-  const selectedPendingCount = pendingSignups.filter((signup) =>
+  const reminderEligibleSignups = signups.filter(
+    (signup) => signup.status === "APPROVED" && !signup.reminderSent,
+  );
+  const selectedPendingCount = reminderEligibleSignups.filter((signup) =>
     selectedSignupIds.includes(signup.id),
   ).length;
   const allPendingSelected =
-    pendingSignups.length > 0 &&
-    pendingSignups.every((signup) => selectedSignupIds.includes(signup.id));
+    reminderEligibleSignups.length > 0 &&
+    reminderEligibleSignups.every((signup) =>
+      selectedSignupIds.includes(signup.id),
+    );
 
-  const toggleSignupSelection = (signupId: string, reminderSent: boolean) => {
-    if (reminderSent) return;
+  const toggleSignupSelection = (
+    signupId: string,
+    signup: TrialSessionSignupRecord,
+  ) => {
+    if (signup.reminderSent || signup.status !== "APPROVED") return;
 
     setSelectedSignupIds((current) =>
       current.includes(signupId)
@@ -383,7 +438,7 @@ export function TrialSessionsManager({
       return;
     }
 
-    setSelectedSignupIds(pendingSignups.map((signup) => signup.id));
+    setSelectedSignupIds(reminderEligibleSignups.map((signup) => signup.id));
   };
 
   const reminderOpensAt = editingSession
@@ -393,7 +448,7 @@ export function TrialSessionsManager({
   return (
     <AdminSection
       title="One-off trial sessions"
-      description="Create private trial session links for prospective players. Share the link directly — no login required. Attendees register with email and display name."
+      description="Create private trial session links for prospective players. Requests are submitted with email and payment receipt, then approved manually before they appear on the public list."
     >
       <AdminFormCard
         collapsible
@@ -617,7 +672,7 @@ export function TrialSessionsManager({
             variant="outline"
             onClick={() => setRegistrationsOpen(true)}
           >
-            Registrations ({registrationCount})
+            Registrations ({registrationSummary})
           </Button>
         </div>
       ) : null}
@@ -627,9 +682,9 @@ export function TrialSessionsManager({
           <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="flex items-center gap-2 text-sm font-semibold text-white">
               <Users className="h-4 w-4 text-jackals-red-light" />
-              Registrations ({registrationCount})
+              Registrations ({registrationSummary})
             </div>
-            {registrationCount > 0 && reminderStats ? (
+            {(approvedCount > 0 || awaitingApprovalCount > 0) && reminderStats ? (
               <button
                 type="button"
                 onClick={() => void handleSendReminders()}
@@ -667,24 +722,24 @@ export function TrialSessionsManager({
             <p className="text-sm text-zinc-500">Loading registrations…</p>
           ) : signups.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              {registrationCount > 0
+              {approvedCount > 0 || awaitingApprovalCount > 0
                 ? "Could not load registrations. Refresh the page or try again."
                 : "No registrations yet."}
             </p>
           ) : (
             <div className="overflow-x-auto">
-              {pendingSignups.length > 0 && reminderStats?.windowOpen ? (
+              {reminderEligibleSignups.length > 0 && reminderStats?.windowOpen ? (
                 <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
                   <button
                     type="button"
                     onClick={toggleSelectAllPending}
                     className="text-jackals-red-light transition-colors hover:text-jackals-red"
                   >
-                    {allPendingSelected ? "Clear selection" : "Select all pending"}
+                    {allPendingSelected ? "Clear selection" : "Select all"}
                   </button>
                   <span className="text-zinc-600">
-                    {selectedPendingCount} of {pendingSignups.length} pending
-                    selected
+                    {selectedPendingCount} of {reminderEligibleSignups.length}{" "}
+                    reminder-eligible selected
                   </span>
                 </div>
               ) : null}
@@ -692,7 +747,8 @@ export function TrialSessionsManager({
                 <thead>
                   <tr className="border-b border-zinc-800 text-zinc-500">
                     <th className="px-3 py-2 font-medium">
-                      {pendingSignups.length > 0 && reminderStats?.windowOpen ? (
+                      {reminderEligibleSignups.length > 0 &&
+                      reminderStats?.windowOpen ? (
                         <label className="inline-flex items-center">
                           <input
                             type="checkbox"
@@ -706,7 +762,9 @@ export function TrialSessionsManager({
                     </th>
                     <th className="px-3 py-2 font-medium">Name</th>
                     <th className="px-3 py-2 font-medium">Email</th>
-                    <th className="px-3 py-2 font-medium">Registered</th>
+                    <th className="px-3 py-2 font-medium">Submitted</th>
+                    <th className="px-3 py-2 font-medium">Status</th>
+                    <th className="px-3 py-2 font-medium">Receipt</th>
                     <th className="px-3 py-2 font-medium">Reminder</th>
                     <th className="px-3 py-2 font-medium">Actions</th>
                   </tr>
@@ -719,11 +777,11 @@ export function TrialSessionsManager({
                           type="checkbox"
                           checked={selectedSignupIds.includes(signup.id)}
                           disabled={
-                            signup.reminderSent || !reminderStats?.windowOpen
+                            signup.reminderSent ||
+                            signup.status !== "APPROVED" ||
+                            !reminderStats?.windowOpen
                           }
-                          onChange={() =>
-                            toggleSignupSelection(signup.id, signup.reminderSent)
-                          }
+                          onChange={() => toggleSignupSelection(signup.id, signup)}
                           aria-label={`Select ${signup.displayName}`}
                           className="rounded border-zinc-600 disabled:opacity-40"
                         />
@@ -733,6 +791,33 @@ export function TrialSessionsManager({
                       <td className="px-3 py-2 text-zinc-500">
                         {format(new Date(signup.createdAt), "d MMM yyyy HH:mm")}
                       </td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={
+                            signup.status === "APPROVED"
+                              ? "text-emerald-400"
+                              : signup.status === "PENDING"
+                                ? "text-amber-300"
+                                : "text-rose-300"
+                          }
+                        >
+                          {TRIAL_SESSION_SIGNUP_STATUS_LABELS[signup.status]}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-zinc-500">
+                        {signup.paymentProofUrl ? (
+                          <a
+                            href={signup.paymentProofUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-jackals-red-light hover:text-jackals-red"
+                          >
+                            View
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
                       <td className="px-3 py-2 text-zinc-500">
                         {signup.reminderSent ? (
                           <span className="text-emerald-400">Emailed</span>
@@ -741,14 +826,48 @@ export function TrialSessionsManager({
                         )}
                       </td>
                       <td className="px-3 py-2">
-                        <button
-                          type="button"
-                          onClick={() => void handleRemoveSignup(signup.id)}
-                          disabled={removingSignupId === signup.id}
-                          className="text-sm text-rose-300 transition-colors hover:text-rose-200 disabled:opacity-50"
-                        >
-                          {removingSignupId === signup.id ? "Removing..." : "Remove"}
-                        </button>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {signup.status === "PENDING" ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void handleUpdateSignupStatus(
+                                    signup.id,
+                                    "APPROVED",
+                                  )
+                                }
+                                disabled={updatingSignupId === signup.id}
+                                className="text-sm text-emerald-300 transition-colors hover:text-emerald-200 disabled:opacity-50"
+                              >
+                                {updatingSignupId === signup.id
+                                  ? "Saving..."
+                                  : "Approve"}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  void handleUpdateSignupStatus(
+                                    signup.id,
+                                    "REJECTED",
+                                  )
+                                }
+                                disabled={updatingSignupId === signup.id}
+                                className="text-sm text-rose-300 transition-colors hover:text-rose-200 disabled:opacity-50"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : null}
+                          <button
+                            type="button"
+                            onClick={() => void handleRemoveSignup(signup.id)}
+                            disabled={removingSignupId === signup.id}
+                            className="text-sm text-zinc-400 transition-colors hover:text-zinc-200 disabled:opacity-50"
+                          >
+                            {removingSignupId === signup.id ? "Removing..." : "Remove"}
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -775,7 +894,11 @@ export function TrialSessionsManager({
                   : null,
                 sessionFeeLabel(session),
                 session.paymentUrl ? "Payment link set" : "No payment link",
-                `${session.signupCount} registered`,
+                `${session.signupCount} approved${
+                  session.pendingApprovalCount > 0
+                    ? `, ${session.pendingApprovalCount} awaiting approval`
+                    : ""
+                }`,
                 session.active ? "Open" : "Closed",
               ]
                 .filter(Boolean)

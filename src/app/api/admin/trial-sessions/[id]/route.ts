@@ -58,7 +58,7 @@ export async function GET(
 
   const signups = await listTrialSessionSignupsForAdmin(id);
   const reminderStats = deriveTrialSessionReminderStats(
-    signups,
+    signups.filter((signup) => signup.status === "APPROVED"),
     session.startDate,
   );
 

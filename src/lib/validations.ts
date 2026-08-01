@@ -716,4 +716,5 @@ export const trialSessionSignupSchema = z.object({
     .trim()
     .min(1, "Enter the name you'd like coaches to see")
     .max(80, "Name is too long"),
+  paymentProofId: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 });

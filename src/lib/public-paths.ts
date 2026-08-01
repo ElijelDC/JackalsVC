@@ -14,6 +14,7 @@ export const PUBLIC_PATHS = {
     profileImages: "/uploads/profile-images",
     vlyMembershipPhotos: "/uploads/vly-membership-photos",
     coachInvoices: "/uploads/coach-invoices",
+    trialSessionProofs: "/uploads/trial-session-proofs",
     tournamentDocs: "/uploads/tournament-docs",
     tournamentWinners: "/uploads/tournament-winners",
   },

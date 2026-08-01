@@ -1,16 +1,28 @@
 import "server-only";
 
+import { randomUUID } from "crypto";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import {
+  deleteTrialSessionPaymentProofFile,
+  saveTrialSessionPaymentProofFile,
+} from "@/lib/trial-session-payment-proof";
 import type {
   PublicTrialSession,
   TrialSessionRecord,
   TrialSessionSignupRecord,
 } from "@/lib/trial-session-types";
 import {
+  isTrialSessionSignupStatus,
   normalizeTrialSessionEmail,
   slugifyTrialSessionTitle,
+  trialSessionRequiresPaymentProof,
+  type TrialSessionSignupStatus,
 } from "@/lib/trial-session-types";
+
+export const TRIAL_SESSION_SIGNUP_APPROVED = "APPROVED";
+export const TRIAL_SESSION_SIGNUP_PENDING = "PENDING";
+export const TRIAL_SESSION_SIGNUP_REJECTED = "REJECTED";
 
 export type {
   AdminTrialSessionListItem,
@@ -77,14 +89,20 @@ function serializeSignup(signup: {
   id: string;
   displayName: string;
   email: string;
+  status: string;
   createdAt: Date;
+  paymentProof?: { proofScreenshotUrl: string } | null;
 }): TrialSessionSignupRecord {
   return {
     id: signup.id,
     displayName: signup.displayName,
     email: signup.email,
+    status: isTrialSessionSignupStatus(signup.status)
+      ? signup.status
+      : TRIAL_SESSION_SIGNUP_PENDING,
     createdAt: signup.createdAt.toISOString(),
     reminderSent: false,
+    paymentProofUrl: signup.paymentProof?.proofScreenshotUrl ?? null,
   };
 }
 
@@ -92,13 +110,18 @@ export async function listTrialSessions() {
   const sessions = await prisma.trialSession.findMany({
     orderBy: { startDate: "desc" },
     include: {
-      _count: { select: { signups: true } },
+      signups: { select: { status: true } },
     },
   });
 
   return sessions.map((session) => ({
     ...serializeTrialSession(session),
-    signupCount: session._count.signups,
+    signupCount: session.signups.filter(
+      (signup) => signup.status === TRIAL_SESSION_SIGNUP_APPROVED,
+    ).length,
+    pendingApprovalCount: session.signups.filter(
+      (signup) => signup.status === TRIAL_SESSION_SIGNUP_PENDING,
+    ).length,
   }));
 }
 
@@ -114,7 +137,10 @@ export const getPublicTrialSessionBySlug = cache(async function getPublicTrialSe
       ok: true;
       session: PublicTrialSession;
       viewerRegistered: boolean;
+      viewerPendingApproval: boolean;
+      viewerRejected: boolean;
       viewerDisplayName: string | null;
+      viewerPaymentProofId: string | null;
     }
   | { ok: false; reason: "not_found" | "inactive" }
 > {
@@ -123,7 +149,13 @@ export const getPublicTrialSessionBySlug = cache(async function getPublicTrialSe
     include: {
       signups: {
         orderBy: { createdAt: "asc" },
-        select: { id: true, displayName: true, email: true },
+        select: {
+          id: true,
+          displayName: true,
+          email: true,
+          status: true,
+          paymentProof: { select: { id: true } },
+        },
       },
     },
   });
@@ -146,6 +178,9 @@ export const getPublicTrialSessionBySlug = cache(async function getPublicTrialSe
     : null;
 
   const serialized = serializeTrialSession(session);
+  const approvedSignups = session.signups.filter(
+    (signup) => signup.status === TRIAL_SESSION_SIGNUP_APPROVED,
+  );
 
   return {
     ok: true,
@@ -163,14 +198,17 @@ export const getPublicTrialSessionBySlug = cache(async function getPublicTrialSe
       sessionFee: serialized.sessionFee,
       coachName: serialized.coachName,
       active: serialized.active,
-      attendeeCount: session.signups.length,
-      attendees: session.signups.map((signup) => ({
+      attendeeCount: approvedSignups.length,
+      attendees: approvedSignups.map((signup) => ({
         id: signup.id,
         displayName: signup.displayName,
       })),
     },
-    viewerRegistered: Boolean(viewerSignup),
+    viewerRegistered: viewerSignup?.status === TRIAL_SESSION_SIGNUP_APPROVED,
+    viewerPendingApproval: viewerSignup?.status === TRIAL_SESSION_SIGNUP_PENDING,
+    viewerRejected: viewerSignup?.status === TRIAL_SESSION_SIGNUP_REJECTED,
     viewerDisplayName: viewerSignup?.displayName ?? null,
+    viewerPaymentProofId: viewerSignup?.paymentProof?.id ?? null,
   };
 });
 
@@ -184,6 +222,9 @@ export async function listTrialSessionSignupsForAdmin(trialSessionId: string) {
         select: { id: true },
         take: 1,
       },
+      paymentProof: {
+        select: { proofScreenshotUrl: true },
+      },
     },
   });
 
@@ -195,7 +236,7 @@ export async function listTrialSessionSignupsForAdmin(trialSessionId: string) {
 
 export async function registerForTrialSession(
   slug: string,
-  input: { email: string; displayName: string },
+  input: { email: string; displayName: string; paymentProofId?: string },
 ) {
   const sessionResult = await getOpenTrialSessionForSignup(slug);
   if (!sessionResult.ok) {
@@ -204,6 +245,7 @@ export async function registerForTrialSession(
 
   const email = normalizeTrialSessionEmail(input.email);
   const displayName = input.displayName.trim();
+  const requiresProof = trialSessionRequiresPaymentProof(sessionResult.session);
 
   const existing = await prisma.trialSessionSignup.findUnique({
     where: {
@@ -215,53 +257,147 @@ export async function registerForTrialSession(
   });
 
   if (existing) {
+    if (existing.status === TRIAL_SESSION_SIGNUP_APPROVED) {
+      return {
+        ok: false as const,
+        error: "You're already registered for this session with that email.",
+        code: "already_registered" as const,
+        existingDisplayName: existing.displayName,
+      };
+    }
+
+    if (existing.status === TRIAL_SESSION_SIGNUP_PENDING) {
+      return {
+        ok: false as const,
+        error: "Your request is already awaiting admin approval.",
+        code: "already_pending" as const,
+        existingDisplayName: existing.displayName,
+      };
+    }
+
+    const signup = await prisma.trialSessionSignup.update({
+      where: { id: existing.id },
+      data: {
+        displayName,
+        status: TRIAL_SESSION_SIGNUP_PENDING,
+      },
+    });
+
     return {
-      ok: false as const,
-      error: "You're already registered for this session with that email.",
-      code: "already_registered" as const,
-      existingDisplayName: existing.displayName,
+      ok: true as const,
+      signup: serializeSignup(signup),
+      resubmitted: true as const,
     };
   }
 
-  const signup = await prisma.trialSessionSignup.create({
-    data: {
-      trialSessionId: sessionResult.session.id,
-      email,
-      displayName,
-    },
-  }).catch((error: unknown) => {
+  if (requiresProof && !input.paymentProofId?.trim()) {
+    return {
+      ok: false as const,
+      error: "Upload your payment receipt before registering.",
+      code: "payment_proof_required" as const,
+    };
+  }
+
+  if (requiresProof) {
+    const proof = await prisma.trialSessionPaymentProof.findFirst({
+      where: {
+        id: input.paymentProofId!.trim(),
+        trialSessionId: sessionResult.session.id,
+        signupId: null,
+      },
+    });
+
+    if (!proof) {
+      return {
+        ok: false as const,
+        error: "Upload a valid payment receipt before registering.",
+        code: "payment_proof_invalid" as const,
+      };
+    }
+  }
+
+  let signup;
+  try {
+    signup = await prisma.$transaction(async (tx) => {
+      if (requiresProof) {
+        const proof = await tx.trialSessionPaymentProof.findFirst({
+          where: {
+            id: input.paymentProofId!.trim(),
+            trialSessionId: sessionResult.session.id,
+            signupId: null,
+          },
+        });
+
+        if (!proof) {
+          throw new Error("payment_proof_invalid");
+        }
+      }
+
+      const created = await tx.trialSessionSignup.create({
+        data: {
+          trialSessionId: sessionResult.session.id,
+          email,
+          displayName,
+          status: TRIAL_SESSION_SIGNUP_PENDING,
+        },
+      });
+
+      if (requiresProof) {
+        const linked = await tx.trialSessionPaymentProof.updateMany({
+          where: {
+            id: input.paymentProofId!.trim(),
+            trialSessionId: sessionResult.session.id,
+            signupId: null,
+          },
+          data: { signupId: created.id },
+        });
+
+        if (linked.count !== 1) {
+          throw new Error("payment_proof_invalid");
+        }
+      }
+
+      return created;
+    });
+  } catch (error) {
+    if (error instanceof Error && error.message === "payment_proof_invalid") {
+      return {
+        ok: false as const,
+        error: "Upload a valid payment receipt before registering.",
+        code: "payment_proof_invalid" as const,
+      };
+    }
+
     if (
       error &&
       typeof error === "object" &&
       "code" in error &&
       error.code === "P2002"
     ) {
-      return null;
-    }
-    throw error;
-  });
-
-  if (!signup) {
-    const raced = await prisma.trialSessionSignup.findUnique({
-      where: {
-        trialSessionId_email: {
-          trialSessionId: sessionResult.session.id,
-          email,
+      const raced = await prisma.trialSessionSignup.findUnique({
+        where: {
+          trialSessionId_email: {
+            trialSessionId: sessionResult.session.id,
+            email,
+          },
         },
-      },
-    });
+      });
 
-    return {
-      ok: false as const,
-      error: "You're already registered for this session with that email.",
-      code: "already_registered" as const,
-      existingDisplayName: raced?.displayName ?? displayName,
-    };
+      return {
+        ok: false as const,
+        error: "You're already registered for this session with that email.",
+        code: "already_registered" as const,
+        existingDisplayName: raced?.displayName ?? displayName,
+      };
+    }
+
+    throw error;
   }
 
   return {
     ok: true as const,
     signup: serializeSignup(signup),
+    resubmitted: false as const,
   };
 }
 
@@ -338,6 +474,42 @@ export async function updateTrialSessionSignup(
   };
 }
 
+export async function setTrialSessionSignupStatus(
+  trialSessionId: string,
+  signupId: string,
+  status: TrialSessionSignupStatus,
+) {
+  const signup = await prisma.trialSessionSignup.findFirst({
+    where: { id: signupId, trialSessionId },
+  });
+
+  if (!signup) {
+    return { ok: false as const, error: "Registration not found." };
+  }
+
+  if (signup.status === status) {
+    return {
+      ok: true as const,
+      signup: serializeSignup(signup),
+      unchanged: true as const,
+    };
+  }
+
+  const updated = await prisma.trialSessionSignup.update({
+    where: { id: signupId },
+    data: { status },
+    include: {
+      paymentProof: { select: { proofScreenshotUrl: true } },
+    },
+  });
+
+  return {
+    ok: true as const,
+    signup: serializeSignup(updated),
+    unchanged: false as const,
+  };
+}
+
 export async function removeTrialSessionSignup(
   trialSessionId: string,
   signupId: string,
@@ -351,6 +523,111 @@ export async function removeTrialSessionSignup(
   }
 
   await prisma.trialSessionSignup.delete({ where: { id: signupId } });
+  return { ok: true as const };
+}
+
+export async function getTrialSessionPaymentProofStatus(
+  slug: string,
+  proofId: string,
+) {
+  const session = await prisma.trialSession.findUnique({ where: { slug } });
+  if (!session || !session.active) {
+    return { ok: false as const, error: "This trial session could not be found." };
+  }
+
+  const proof = await prisma.trialSessionPaymentProof.findFirst({
+    where: {
+      id: proofId,
+      trialSessionId: session.id,
+    },
+    select: {
+      id: true,
+      proofScreenshotUrl: true,
+      createdAt: true,
+      signupId: true,
+    },
+  });
+
+  if (!proof) {
+    return { ok: false as const, error: "Payment receipt not found." };
+  }
+
+  return {
+    ok: true as const,
+    proof: {
+      id: proof.id,
+      proofScreenshotUrl: proof.proofScreenshotUrl,
+      createdAt: proof.createdAt.toISOString(),
+      removable: proof.signupId === null,
+    },
+  };
+}
+
+export async function createTrialSessionPaymentProof(
+  slug: string,
+  file: File,
+) {
+  const sessionResult = await getOpenTrialSessionForSignup(slug);
+  if (!sessionResult.ok) {
+    return sessionResult;
+  }
+
+  if (!trialSessionRequiresPaymentProof(sessionResult.session)) {
+    return {
+      ok: false as const,
+      error: "This session does not require a payment receipt.",
+    };
+  }
+
+  const proofId = randomUUID();
+  const proofScreenshotUrl = await saveTrialSessionPaymentProofFile(
+    proofId,
+    file,
+  );
+
+  const proof = await prisma.trialSessionPaymentProof.create({
+    data: {
+      id: proofId,
+      trialSessionId: sessionResult.session.id,
+      proofScreenshotUrl,
+    },
+  });
+
+  return {
+    ok: true as const,
+    proof: {
+      id: proof.id,
+      proofScreenshotUrl: proof.proofScreenshotUrl,
+      createdAt: proof.createdAt.toISOString(),
+      removable: true,
+    },
+  };
+}
+
+export async function removeTrialSessionPaymentProof(
+  slug: string,
+  proofId: string,
+) {
+  const session = await prisma.trialSession.findUnique({ where: { slug } });
+  if (!session) {
+    return { ok: false as const, error: "This trial session could not be found." };
+  }
+
+  const proof = await prisma.trialSessionPaymentProof.findFirst({
+    where: {
+      id: proofId,
+      trialSessionId: session.id,
+      signupId: null,
+    },
+  });
+
+  if (!proof) {
+    return { ok: false as const, error: "Payment receipt not found." };
+  }
+
+  await deleteTrialSessionPaymentProofFile(proof.proofScreenshotUrl);
+  await prisma.trialSessionPaymentProof.delete({ where: { id: proof.id } });
+
   return { ok: true as const };
 }
 

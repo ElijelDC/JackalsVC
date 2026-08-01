@@ -66,6 +66,15 @@ function rateLimitResponse(retryAfterSec: number) {
 }
 
 function checkPathRateLimit(pathname: string, request: NextRequest) {
+  if (
+    request.method === "GET" &&
+    (pathname === "/api/auth/session" ||
+      pathname === "/api/auth/csrf" ||
+      pathname === "/api/auth/providers")
+  ) {
+    return null;
+  }
+
   if (!pathname.startsWith("/api/") && !pathname.startsWith("/uploads/")) {
     return null;
   }

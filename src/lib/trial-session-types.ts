@@ -20,9 +20,42 @@ export type TrialSessionSignupRecord = {
   id: string;
   displayName: string;
   email: string;
+  status: TrialSessionSignupStatus;
   createdAt: string;
   reminderSent: boolean;
+  paymentProofUrl: string | null;
 };
+
+export const TRIAL_SESSION_SIGNUP_STATUSES = [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+] as const;
+
+export type TrialSessionSignupStatus =
+  (typeof TRIAL_SESSION_SIGNUP_STATUSES)[number];
+
+export const TRIAL_SESSION_SIGNUP_STATUS_LABELS: Record<
+  TrialSessionSignupStatus,
+  string
+> = {
+  PENDING: "Awaiting approval",
+  APPROVED: "Approved",
+  REJECTED: "Rejected",
+};
+
+export function isTrialSessionSignupStatus(
+  value: string,
+): value is TrialSessionSignupStatus {
+  return (TRIAL_SESSION_SIGNUP_STATUSES as readonly string[]).includes(value);
+}
+
+export function trialSessionRequiresPaymentProof(session: {
+  paymentUrl: string | null;
+  sessionFee: number | null;
+}): boolean {
+  return Boolean(session.paymentUrl || session.sessionFee != null);
+}
 
 export type PublicTrialSession = Omit<TrialSessionRecord, "createdAt" | "updatedAt"> & {
   attendeeCount: number;
@@ -31,6 +64,7 @@ export type PublicTrialSession = Omit<TrialSessionRecord, "createdAt" | "updated
 
 export type AdminTrialSessionListItem = TrialSessionRecord & {
   signupCount: number;
+  pendingApprovalCount: number;
 };
 
 export type TrialSessionReminderStats = {

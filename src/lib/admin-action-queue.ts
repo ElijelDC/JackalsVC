@@ -13,7 +13,8 @@ export type AdminActionQueueEntry = {
     | "payment"
     | "coach-payment"
     | "coaching-application"
-    | "trials-application";
+    | "trials-application"
+    | "trial-session-signup";
   href: string;
   title: string;
   summary: string;
@@ -63,6 +64,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     coachingApplicationCount,
     trialsApplications,
     trialsApplicationCount,
+    trialSessionSignups,
+    trialSessionSignupCount,
   ] = await Promise.all([
     prisma.clubMember.findMany({
       where: REGISTRATION_REVIEW_WHERE,
@@ -109,6 +112,16 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       select: { fullName: true, tryingOutFor: true },
     }),
     prisma.trialsApplication.count({ where: { status: "NEW" } }),
+    prisma.trialSessionSignup.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      take: 4,
+      select: {
+        displayName: true,
+        trialSession: { select: { title: true } },
+      },
+    }),
+    prisma.trialSessionSignup.count({ where: { status: "PENDING" } }),
   ]);
 
   const pendingPaymentDueDates = await prisma.payment.findMany({
@@ -200,6 +213,22 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     });
   }
 
+  if (trialSessionSignupCount > 0) {
+    entries.push({
+      kind: "trial-session-signup",
+      href: "/admin/trial-sessions",
+      title: "Trial session requests",
+      summary:
+        trialSessionSignupCount === 1
+          ? "1 attendee waiting for approval"
+          : `${trialSessionSignupCount} attendees waiting for approval`,
+      count: trialSessionSignupCount,
+      previews: trialSessionSignups.map(
+        (signup) => `${signup.displayName} · ${signup.trialSession.title}`,
+      ),
+    });
+  }
+
   const badgeCounts: Record<string, number> = {};
   if (registrationCount > 0) {
     badgeCounts["/admin/registration-reviews"] = registrationCount;
@@ -216,6 +245,9 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
   if (trialsApplicationCount > 0) {
     badgeCounts["/admin/trials-applications"] = trialsApplicationCount;
   }
+  if (trialSessionSignupCount > 0) {
+    badgeCounts["/admin/trial-sessions"] = trialSessionSignupCount;
+  }
 
   return {
     entries,
@@ -224,7 +256,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       paymentCount +
       coachOverdueCount +
       coachingApplicationCount +
-      trialsApplicationCount,
+      trialsApplicationCount +
+      trialSessionSignupCount,
     badgeCounts,
   };
 });

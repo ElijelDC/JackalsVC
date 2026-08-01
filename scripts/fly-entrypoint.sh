@@ -5,6 +5,7 @@ DATA_DIR="${DATA_DIR:-/data}"
 UPLOADS_DIR="${DATA_DIR}/uploads"
 
 mkdir -p "${UPLOADS_DIR}/payment-proofs"
+mkdir -p "${UPLOADS_DIR}/trial-session-proofs"
 mkdir -p "${UPLOADS_DIR}/gallery"
 mkdir -p "${UPLOADS_DIR}/achievements"
 mkdir -p "${UPLOADS_DIR}/profile-images"

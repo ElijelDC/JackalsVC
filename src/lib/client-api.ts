@@ -222,6 +222,17 @@ export async function apiRemovePaymentProof(
   );
 }
 
+export async function apiRemoveTrialSessionPaymentProof(
+  slug: string,
+  proofId: string,
+  fallbackError = "Failed to remove payment receipt",
+): Promise<ApiResult<{ message: string }>> {
+  return apiDelete<{ message: string }>(
+    `/api/trial-sessions/${slug}/payment-proof?proofId=${encodeURIComponent(proofId)}`,
+    fallbackError,
+  );
+}
+
 export async function apiImportPaymentCsv(
   file: File,
   fallbackError = "Failed to import CSV",

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPublicTrialSessionBySlug } from "@/lib/trial-sessions";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ slug: string }> },
@@ -22,6 +24,9 @@ export async function GET(
   return NextResponse.json({
     session: result.session,
     viewerRegistered: result.viewerRegistered,
+    viewerPendingApproval: result.viewerPendingApproval,
+    viewerRejected: result.viewerRejected,
     viewerDisplayName: result.viewerDisplayName,
+    viewerPaymentProofId: result.viewerPaymentProofId,
   });
 }
