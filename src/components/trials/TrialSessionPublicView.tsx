@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import {
   CalendarDays,
@@ -24,7 +24,10 @@ import { PageContainer } from "@/components/layout/PageShell";
 import { apiGet, apiPatch, apiPost } from "@/lib/client-api";
 import { formatEventDateTime } from "@/lib/event-display";
 import type { PublicTrialSession } from "@/lib/trial-session-types";
-import { trialSessionRequiresPaymentProof } from "@/lib/trial-session-types";
+import {
+  TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
+  trialSessionRequiresPaymentProof,
+} from "@/lib/trial-session-types";
 import { cn } from "@/lib/utils";
 
 type TrialSessionPublicViewProps = {
@@ -165,6 +168,54 @@ function firstName(name: string) {
   return name.split(" ").filter(Boolean)[0] ?? name;
 }
 
+type ClientBootstrap = {
+  form: { email: string; displayName: string };
+  hasStoredEmail: boolean;
+  paymentProofId: string | null;
+  proofReady: boolean;
+  viewerRegistered: boolean;
+  viewerRejected: boolean;
+  statusConfirmed: boolean;
+  initialMessage: string | null;
+};
+
+function readClientBootstrap(slug: string): ClientBootstrap {
+  const empty: ClientBootstrap = {
+    form: { email: "", displayName: "" },
+    hasStoredEmail: false,
+    paymentProofId: null,
+    proofReady: false,
+    viewerRegistered: false,
+    viewerRejected: false,
+    statusConfirmed: false,
+    initialMessage: null,
+  };
+
+  if (typeof window === "undefined") return empty;
+
+  const stored = readStoredRegistration(slug);
+  const storedProofId = readStoredPaymentProofId(slug);
+  const storedViewer = readStoredViewerState(slug);
+  const viewerMatches =
+    Boolean(stored?.email) && storedViewer?.email === stored!.email;
+  const cachedRegistered = Boolean(viewerMatches && storedViewer!.registered);
+  const cachedRejected = Boolean(viewerMatches && storedViewer!.rejected);
+  const cachedConfirmed = cachedRegistered || cachedRejected;
+
+  return {
+    form: stored ?? empty.form,
+    hasStoredEmail: Boolean(stored?.email),
+    paymentProofId: storedProofId,
+    proofReady: Boolean(storedProofId),
+    viewerRegistered: cachedRegistered,
+    viewerRejected: cachedRejected,
+    statusConfirmed: cachedConfirmed,
+    initialMessage: cachedRejected
+      ? "Your previous request was not approved. You can submit again below."
+      : null,
+  };
+}
+
 export function TrialSessionPublicView({
   slug,
   initialSession,
@@ -182,31 +233,32 @@ export function TrialSessionPublicView({
   const [form, setForm] = useState({ email: "", displayName: "" });
   const [duplicatePrompt, setDuplicatePrompt] = useState(false);
   const [paymentProofId, setPaymentProofId] = useState<string | null>(null);
+  const [previousRejectedProofId, setPreviousRejectedProofId] = useState<
+    string | null
+  >(null);
   const [proofReady, setProofReady] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusConfirmed, setStatusConfirmed] = useState(false);
-  const [storageHydrated, setStorageHydrated] = useState(false);
+  const [hasStoredEmail, setHasStoredEmail] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const formDisplayNameRef = useRef(form.displayName);
   formDisplayNameRef.current = form.displayName;
 
-  const hasSubmittedRequest =
-    viewerRegistered || viewerPendingApproval || viewerRejected;
   const awaitingViewerStatus =
-    !storageHydrated ||
-    statusLoading ||
-    Boolean(form.email.trim() && !statusConfirmed);
+    (statusLoading && !statusConfirmed) ||
+    (hasStoredEmail && !statusConfirmed);
   const showPendingApproval =
     viewerPendingApproval && !duplicatePrompt && statusConfirmed;
   const canEditExistingRequest =
     viewerRegistered || showPendingApproval || duplicatePrompt;
   const lockSignupEmail =
     canEditExistingRequest ||
-    (viewerRejected && statusConfirmed && !duplicatePrompt);
+    (viewerRejected && !duplicatePrompt) ||
+    (hasStoredEmail && !statusConfirmed);
   const receiptOnFile =
-    (viewerRegistered || showPendingApproval || viewerRejected) &&
+    (viewerRegistered || showPendingApproval) &&
     !duplicatePrompt &&
     statusConfirmed;
 
@@ -216,11 +268,17 @@ export function TrialSessionPublicView({
   const hasPaymentStep =
     trialSessionRequiresPaymentProof(session) && !past;
   const registerStep = hasPaymentStep ? 3 : 1;
+  const hasNewReceiptForResubmit =
+    Boolean(paymentProofId) &&
+    paymentProofId !== previousRejectedProofId;
+  // Rejected users can always try to submit — we prompt if they reuse the old receipt.
   const canRegister =
+    viewerRejected ||
     !hasPaymentStep ||
     proofReady ||
     Boolean(paymentProofId) ||
-    hasSubmittedRequest ||
+    viewerRegistered ||
+    viewerPendingApproval ||
     duplicatePrompt;
 
   const handlePaymentProofChange = useCallback(
@@ -261,16 +319,33 @@ export function TrialSessionPublicView({
       setViewerRejected(rejected);
       setDuplicatePrompt(false);
 
-      if (viewerPaymentProofId && !rejected) {
+      const storedProofId = readStoredPaymentProofId(slug);
+      setPreviousRejectedProofId(rejected ? viewerPaymentProofId : null);
+
+      if (!rejected && viewerPaymentProofId) {
         setPaymentProofId(viewerPaymentProofId);
         setProofReady(true);
         writeStoredPaymentProofId(slug, viewerPaymentProofId);
-      }
-
-      if (rejected) {
-        setPaymentProofId(null);
+      } else if (rejected) {
+        // Keep a newly uploaded (unlinked) receipt; don't treat the old linked one as ready.
+        if (storedProofId && storedProofId !== viewerPaymentProofId) {
+          setPaymentProofId(storedProofId);
+          setProofReady(true);
+        } else if (viewerPaymentProofId) {
+          setPaymentProofId(viewerPaymentProofId);
+          setProofReady(false);
+          writeStoredPaymentProofId(slug, viewerPaymentProofId);
+        } else {
+          setPaymentProofId(null);
+          setProofReady(false);
+          writeStoredPaymentProofId(slug, null);
+        }
+      } else if (storedProofId) {
+        setPaymentProofId(storedProofId);
         setProofReady(true);
-        writeStoredPaymentProofId(slug, null);
+      } else {
+        setPaymentProofId(null);
+        setProofReady(false);
       }
 
       const hasActiveSignup = registered || pending || rejected;
@@ -300,6 +375,7 @@ export function TrialSessionPublicView({
       }
 
       if (rejected) {
+        setError(null);
         setMessage(
           "Your previous request was not approved. You can submit again below.",
         );
@@ -322,7 +398,7 @@ export function TrialSessionPublicView({
           pending,
           rejected,
         });
-      } else       if (normalizedEmail && !hasActiveSignup) {
+      } else if (normalizedEmail && !hasActiveSignup) {
         clearStoredViewerState(slug);
       }
 
@@ -362,42 +438,51 @@ export function TrialSessionPublicView({
     [form.email, slug],
   );
 
-  useEffect(() => {
-    const stored = readStoredRegistration(slug);
-    const storedProofId = readStoredPaymentProofId(slug);
-    const storedViewer = readStoredViewerState(slug);
-
-    if (stored) {
-      setForm(stored);
-    }
-    if (storedProofId) {
-      setPaymentProofId(storedProofId);
+  useLayoutEffect(() => {
+    const bootstrap = readClientBootstrap(slug);
+    setForm(bootstrap.form);
+    setHasStoredEmail(bootstrap.hasStoredEmail);
+    if (bootstrap.paymentProofId) {
+      setPaymentProofId(bootstrap.paymentProofId);
       setProofReady(true);
     }
-    if (stored && storedViewer?.email === stored.email) {
-      if (storedViewer.registered) {
-        setViewerRegistered(true);
-        setStatusConfirmed(true);
-      }
-      if (storedViewer.rejected) {
-        setViewerRejected(true);
-        setStatusConfirmed(true);
-      }
+    if (bootstrap.viewerRegistered) {
+      setViewerRegistered(true);
     }
+    if (bootstrap.viewerRejected) {
+      setViewerRejected(true);
+    }
+    if (bootstrap.statusConfirmed) {
+      setStatusConfirmed(true);
+    }
+    if (bootstrap.initialMessage) {
+      setMessage(bootstrap.initialMessage);
+    }
+  }, [slug]);
 
-    const email = stored?.email;
+  useEffect(() => {
+    const email = readStoredRegistration(slug)?.email;
     if (email) {
-      setStatusLoading(true);
+      const cachedViewer = readStoredViewerState(slug);
+      const cacheConfirmed = Boolean(
+        cachedViewer?.email === email &&
+          (cachedViewer.registered || cachedViewer.rejected),
+      );
+      if (!cacheConfirmed) {
+        setStatusLoading(true);
+      }
       void refreshSessionRef
         .current(email)
+        .then((data) => {
+          if (data) {
+            setStatusConfirmed(true);
+          }
+        })
         .finally(() => {
           setStatusLoading(false);
-          setStatusConfirmed(true);
-          setStorageHydrated(true);
         });
     } else {
       setStatusConfirmed(true);
-      setStorageHydrated(true);
     }
   }, [slug]);
 
@@ -412,7 +497,11 @@ export function TrialSessionPublicView({
       void refreshSessionRef.current(email);
     };
 
-    const pollMs = viewerPendingApproval ? 2_000 : 5_000;
+    const pollMs = !statusConfirmed
+      ? 1_000
+      : viewerPendingApproval
+        ? 2_000
+        : 5_000;
     const interval = window.setInterval(refreshAttendees, pollMs);
     const onVisibilityChange = () => {
       if (document.visibilityState === "visible") {
@@ -431,13 +520,23 @@ export function TrialSessionPublicView({
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("focus", onWindowFocus);
     };
-  }, [form.email, past, slug, viewerPendingApproval]);
+  }, [form.email, past, slug, statusConfirmed, viewerPendingApproval]);
 
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
     setError(null);
     setMessage(null);
+
+    if (
+      viewerRejected &&
+      hasPaymentStep &&
+      (!paymentProofId || paymentProofId === previousRejectedProofId)
+    ) {
+      setLoading(false);
+      setError(TRIAL_SESSION_NEW_RECEIPT_REQUIRED);
+      return;
+    }
 
     const result = await apiPost<{
       success: boolean;
@@ -459,6 +558,11 @@ export function TrialSessionPublicView({
 
     if (!result.ok) {
       const refreshed = await refreshSession(form.email.trim());
+      if (/receipt|payment proof/i.test(result.error)) {
+        setDuplicatePrompt(false);
+        setError(result.error);
+        return;
+      }
       if (refreshed?.viewerRegistered) {
         setDuplicatePrompt(true);
         setError(null);
@@ -512,6 +616,7 @@ export function TrialSessionPublicView({
     setViewerRegistered(false);
     setViewerPendingApproval(true);
     setViewerRejected(false);
+    setPreviousRejectedProofId(null);
     setViewerCanResubmit(false);
     setDuplicatePrompt(false);
     setMessage(result.data.message);
@@ -755,12 +860,20 @@ export function TrialSessionPublicView({
                       </div>
                     </div>
                   ) : (
-                    <TrialSessionPaymentProofUpload
-                      slug={slug}
-                      proofId={paymentProofId}
-                      onProofChange={handlePaymentProofChange}
-                      disabled={awaitingViewerStatus}
-                    />
+                    <>
+                      {viewerRejected && !duplicatePrompt ? (
+                        <p className="mb-4 text-sm text-zinc-400">
+                          Remove the previous receipt and upload a different
+                          one, then submit again below.
+                        </p>
+                      ) : null}
+                      <TrialSessionPaymentProofUpload
+                        slug={slug}
+                        proofId={paymentProofId}
+                        onProofChange={handlePaymentProofChange}
+                        disabled={awaitingViewerStatus}
+                      />
+                    </>
                   )}
                 </JoinFlowStep>
               )}
@@ -798,8 +911,9 @@ export function TrialSessionPublicView({
                     </p>
                   ) : viewerRejected && !duplicatePrompt ? (
                     <p className="mb-4 text-sm text-zinc-400">
-                      Your previous request was not approved. You can update
-                      your details below and submit again.
+                      {hasPaymentStep && !hasNewReceiptForResubmit
+                        ? "Your previous request was not approved. Upload a different payment receipt above, then submit again."
+                        : "Your previous request was not approved. Submit again when you're ready."}
                     </p>
                   ) : viewerCanResubmit && !duplicatePrompt ? (
                     <p className="mb-4 text-sm text-zinc-400">
@@ -807,7 +921,7 @@ export function TrialSessionPublicView({
                         ? "Your previous request is no longer active. Submit again below if you'd still like to join."
                         : "Your previous request is no longer active. Upload your payment receipt above again, then submit below."}
                     </p>
-                  ) : awaitingViewerStatus && form.email.trim() ? (
+                  ) : awaitingViewerStatus && hasStoredEmail ? (
                     <p className="mb-4 text-sm text-zinc-400">
                       Checking your request status…
                     </p>

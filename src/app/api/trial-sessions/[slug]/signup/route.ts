@@ -44,7 +44,8 @@ export async function POST(
       if (
         "code" in result &&
         (result.code === "payment_proof_required" ||
-          result.code === "payment_proof_invalid")
+          result.code === "payment_proof_invalid" ||
+          result.code === "payment_proof_reuse")
       ) {
         return NextResponse.json(
           { error: result.error, code: result.code },

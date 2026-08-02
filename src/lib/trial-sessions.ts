@@ -16,6 +16,7 @@ import {
   isTrialSessionSignupStatus,
   normalizeTrialSessionEmail,
   slugifyTrialSessionTitle,
+  TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
   trialSessionRequiresPaymentProof,
   type TrialSessionSignupStatus,
 } from "@/lib/trial-session-types";
@@ -273,6 +274,92 @@ export async function registerForTrialSession(
         code: "already_pending" as const,
         existingDisplayName: existing.displayName,
       };
+    }
+
+    // Rejected requests must upload a different (new/unlinked) receipt when proof is required.
+    if (requiresProof) {
+      const resubmitProofId = input.paymentProofId?.trim();
+      if (!resubmitProofId) {
+        return {
+          ok: false as const,
+          error: TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
+          code: "payment_proof_required" as const,
+        };
+      }
+
+      const oldLinkedProof = await prisma.trialSessionPaymentProof.findFirst({
+        where: { signupId: existing.id },
+        select: { id: true },
+      });
+
+      if (oldLinkedProof && resubmitProofId === oldLinkedProof.id) {
+        return {
+          ok: false as const,
+          error: TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
+          code: "payment_proof_reuse" as const,
+        };
+      }
+
+      const oldProofUrls: string[] = [];
+
+      try {
+        const signup = await prisma.$transaction(async (tx) => {
+          const newProof = await tx.trialSessionPaymentProof.findFirst({
+            where: {
+              id: resubmitProofId,
+              trialSessionId: sessionResult.session.id,
+              signupId: null,
+            },
+          });
+
+          if (!newProof) {
+            throw new Error("payment_proof_invalid");
+          }
+
+          const oldProofs = await tx.trialSessionPaymentProof.findMany({
+            where: { signupId: existing.id },
+          });
+
+          for (const oldProof of oldProofs) {
+            oldProofUrls.push(oldProof.proofScreenshotUrl);
+            await tx.trialSessionPaymentProof.delete({
+              where: { id: oldProof.id },
+            });
+          }
+
+          await tx.trialSessionPaymentProof.update({
+            where: { id: newProof.id },
+            data: { signupId: existing.id },
+          });
+
+          return tx.trialSessionSignup.update({
+            where: { id: existing.id },
+            data: {
+              displayName,
+              status: TRIAL_SESSION_SIGNUP_PENDING,
+            },
+          });
+        });
+
+        for (const proofUrl of oldProofUrls) {
+          await deleteTrialSessionPaymentProofFile(proofUrl);
+        }
+
+        return {
+          ok: true as const,
+          signup: serializeSignup(signup),
+          resubmitted: true as const,
+        };
+      } catch (error) {
+        if (error instanceof Error && error.message === "payment_proof_invalid") {
+          return {
+            ok: false as const,
+            error: TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
+            code: "payment_proof_invalid" as const,
+          };
+        }
+        throw error;
+      }
     }
 
     const signup = await prisma.trialSessionSignup.update({
@@ -545,6 +632,9 @@ export async function getTrialSessionPaymentProofStatus(
       proofScreenshotUrl: true,
       createdAt: true,
       signupId: true,
+      signup: {
+        select: { status: true },
+      },
     },
   });
 
@@ -552,13 +642,17 @@ export async function getTrialSessionPaymentProofStatus(
     return { ok: false as const, error: "Payment receipt not found." };
   }
 
+  const linkedToRejected =
+    proof.signup?.status === TRIAL_SESSION_SIGNUP_REJECTED;
+
   return {
     ok: true as const,
     proof: {
       id: proof.id,
       proofScreenshotUrl: proof.proofScreenshotUrl,
       createdAt: proof.createdAt.toISOString(),
-      removable: proof.signupId === null,
+      // Unlinked proofs, or proofs on a rejected request, can be replaced.
+      removable: proof.signupId === null || linkedToRejected,
     },
   };
 }
@@ -617,12 +711,27 @@ export async function removeTrialSessionPaymentProof(
     where: {
       id: proofId,
       trialSessionId: session.id,
-      signupId: null,
+    },
+    include: {
+      signup: {
+        select: { status: true },
+      },
     },
   });
 
   if (!proof) {
     return { ok: false as const, error: "Payment receipt not found." };
+  }
+
+  const canRemove =
+    proof.signupId === null ||
+    proof.signup?.status === TRIAL_SESSION_SIGNUP_REJECTED;
+
+  if (!canRemove) {
+    return {
+      ok: false as const,
+      error: "This receipt is linked to an active request and cannot be removed.",
+    };
   }
 
   await deleteTrialSessionPaymentProofFile(proof.proofScreenshotUrl);

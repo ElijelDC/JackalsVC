@@ -45,6 +45,7 @@ export function TrialSessionPaymentProofUpload({
   useEffect(() => {
     if (!proofId) {
       setUploadedProof(null);
+      setMessage(null);
       setCheckingProof(false);
       confirmedProofIdRef.current = null;
       return;
@@ -179,7 +180,9 @@ export function TrialSessionPaymentProofUpload({
             <div>
               <p className="font-medium text-green-200">Payment receipt uploaded</p>
               <p className="mt-1 text-green-300/80">
-                You can now register with your email and name below.
+                {uploadedProof.removable !== false
+                  ? "You can submit below, or remove this and upload a different receipt."
+                  : "You can now register with your email and name below."}
               </p>
             </div>
           </div>

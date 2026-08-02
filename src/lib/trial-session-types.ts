@@ -57,6 +57,10 @@ export function trialSessionRequiresPaymentProof(session: {
   return Boolean(session.paymentUrl || session.sessionFee != null);
 }
 
+/** Shown when a rejected applicant tries to resubmit with the same receipt. */
+export const TRIAL_SESSION_NEW_RECEIPT_REQUIRED =
+  "Upload a different payment receipt before submitting again.";
+
 export type PublicTrialSession = Omit<TrialSessionRecord, "createdAt" | "updatedAt"> & {
   attendeeCount: number;
   attendees: Array<{ id: string; displayName: string }>;
