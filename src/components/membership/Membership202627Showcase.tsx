@@ -193,7 +193,7 @@ export function Membership202627Showcase() {
               step={1}
               icon={Shirt}
               title={`Club kit · ${formatMembershipEuro(KIT_FEE_EUR)}`}
-              description="Custom sublimated Legea kit. Everyone buys kit before membership opens — separate from the fees below."
+              description="Premium Jackal-Legea Club Kit. Mandatory purchase before membership opens — separate from the fees below."
             />
             <StepCard
               step={2}
