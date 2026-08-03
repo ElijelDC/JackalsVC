@@ -83,7 +83,6 @@ export const MEMBERSHIP_INCLUDES = [
 
 export const MEMBERSHIP_EXCLUDES = [
   `Club kit (€${KIT_FEE_EUR} — buy before membership opens)`,
-  "Away travel",
   "Cups, playoffs, and fun sessions",
   "Volleyball Ireland affiliation (handled separately by the club)",
 ] as const;
