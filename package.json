@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3005",
+    "dev:setup": "node scripts/dev-setup.mjs",
+    "dev:prepare": "prisma generate",
     "build": "prisma generate && next build",
     "build:local": "DATABASE_URL=\"file:./prisma/dev.db\" prisma generate && DATABASE_URL=\"file:./prisma/dev.db\" next build",
     "start": "next start",

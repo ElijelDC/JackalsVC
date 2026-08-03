@@ -36,6 +36,33 @@ Required in production:
 - `NEXT_PUBLIC_SITE_URL` (`https://jackalsvolleyball.com`)
 - `SMTP_*` — registration verification and contact form
 
+## Local development
+
+Dev server runs on **port 3005** (not 3000).
+
+**First time (or fresh clone):**
+
+```bash
+npm run dev:setup
+```
+
+This runs `npm install`, creates `.env` from `.env.example` (with a generated `AUTH_SECRET`), applies Prisma migrations, and starts the dev server at [http://localhost:3005](http://localhost:3005).
+
+**Manual setup:**
+
+```bash
+npm install
+cp .env.example .env
+# Set AUTH_SECRET — e.g. openssl rand -base64 32
+npx prisma generate
+npx prisma migrate deploy   # or: npx prisma db push
+npm run dev
+```
+
+**Public pages to spot-check:**
+
+- [http://localhost:3005/membership/2026-27](http://localhost:3005/membership/2026-27) — season fees breakdown (no login)
+
 ## Local production build
 
 ```bash
@@ -49,6 +76,8 @@ npm run start
 
 | Command | Description |
 |---------|-------------|
+| `npm run dev` | Dev server on port **3005** |
+| `npm run dev:setup` | Install deps, create `.env`, migrate DB, start dev |
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run db:deploy` | Apply migrations (production / CI) |
