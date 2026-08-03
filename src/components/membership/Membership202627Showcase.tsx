@@ -179,11 +179,6 @@ export function Membership202627Showcase() {
         title="2026/27"
         highlight="Membership"
         description={`${MEMBERSHIP_SEASON_LABEL}. One fee for your squad — your training night, your home games, your season.`}
-        stats={[
-          { icon: Shirt, value: formatMembershipEuro(KIT_FEE_EUR), label: "Club kit first" },
-          { icon: CalendarDays, value: "Oct–May", label: "Full season" },
-          { icon: Users, value: "3", label: "Competitive squads" },
-        ]}
         cta={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/contact">
