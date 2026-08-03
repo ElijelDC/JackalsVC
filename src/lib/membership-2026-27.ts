@@ -2,6 +2,9 @@ export const MEMBERSHIP_SEASON_LABEL = "October 2026 – May 2027";
 
 export const KIT_FEE_EUR = 50;
 
+/** Approximate training nights per squad across the Oct–May season. */
+export const MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON = 28;
+
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
   {
@@ -19,43 +22,34 @@ export const MEMBERSHIP_PAYMENT_OPTIONS = [
   },
 ] as const;
 
-export type MembershipTeamFee202627 = {
+export type MembershipLeagueTier202627 = {
   id: string;
-  team: string;
   league: string;
-  trainingNight: string;
+  name: string;
+  squads: string;
+  homeMatches: number;
   adultFee: number;
   studentFee: number;
-  homeMatches: number;
 };
 
-export const MEMBERSHIP_TEAM_FEES_2026_27: MembershipTeamFee202627[] = [
+export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
   {
-    id: "d2-men",
-    team: "Division 2 Men",
+    id: "national-league",
     league: "National League",
-    trainingNight: "Friday · Meakstown",
+    name: "National League team",
+    squads: "Division 2 Men · Division 3 Women",
+    homeMatches: 7,
     adultFee: 360,
     studentFee: 315,
-    homeMatches: 7,
   },
   {
-    id: "d3-women",
-    team: "Division 3 Women",
-    league: "National League",
-    trainingNight: "Monday · Meakstown",
-    adultFee: 360,
-    studentFee: 315,
-    homeMatches: 7,
-  },
-  {
-    id: "regional-men",
-    team: "Regional Men",
+    id: "regional-league",
     league: "Regional League",
-    trainingNight: "Wednesday · Meakstown",
+    name: "Regional League team",
+    squads: "Regional Men",
+    homeMatches: 4,
     adultFee: 320,
     studentFee: 275,
-    homeMatches: 4,
   },
 ];
 
