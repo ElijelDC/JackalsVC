@@ -91,7 +91,7 @@ function TeamMembershipCard({ team }: { team: MembershipTeam202627 }) {
 
         <p className="mt-3 flex items-center gap-2 text-sm text-zinc-400">
           <MapPin className="h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-          {team.venue} · ~{team.sessions} sessions on your night
+          {team.venue}
         </p>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
