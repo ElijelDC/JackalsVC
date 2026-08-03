@@ -77,7 +77,7 @@ export const MEMBERSHIP_INCLUDES = [
 
 export const MEMBERSHIP_EXCLUDES = [
   `Club kit (€${KIT_FEE_EUR} — buy before membership opens)`,
-  "Volleyball Ireland affiliation (handled separately by the club)",
+  "Volleyball Ireland League License",
   "National Cup and Shield registration",
   "Tournament, playoff, and cup entry fees",
   "Extra training beyond your team's weekly night",
