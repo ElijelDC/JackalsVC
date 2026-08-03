@@ -4,7 +4,6 @@ import Link from "next/link";
 import {
   CalendarDays,
   Check,
-  MapPin,
   Shirt,
   Trophy,
   Users,

@@ -24,7 +24,6 @@ export type MembershipTeam202627 = {
   name: string;
   league: string;
   trainingNight: string;
-  venue: string;
   homeMatches: number;
   adultFee: number;
   studentFee: number;
@@ -36,7 +35,6 @@ export const MEMBERSHIP_TEAMS_2026_27: MembershipTeam202627[] = [
     name: "Division 2 Men",
     league: "National League",
     trainingNight: "Friday",
-    venue: "Meakstown",
     homeMatches: 7,
     adultFee: 385,
     studentFee: 330,
