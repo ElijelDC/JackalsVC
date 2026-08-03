@@ -17,9 +17,9 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
+  formatLeagueMatchdaysCopy,
   KIT_FEE_EUR,
   MEMBERSHIP_FULL_COURT_TRAINING_COPY,
-  MEMBERSHIP_MATCHDAYS_COPY,
   MEMBERSHIP_COACHING_COPY,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
@@ -108,7 +108,7 @@ function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
           </li>
           <li className="flex items-start gap-2.5">
             <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>{MEMBERSHIP_MATCHDAYS_COPY}</span>
+            <span>{formatLeagueMatchdaysCopy(tier.leagueMatchdays)}</span>
           </li>
           <li className="flex items-start gap-2.5">
             <Users className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
@@ -216,8 +216,8 @@ export function Membership202627Showcase() {
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
               Membership is priced by league tier. National League is for Division 2
               Men and Division 3 Women; Regional League is for Regional Men. National
-              fees are slightly higher because those squads host more home games (~7
-              vs ~4). Amounts below are the full season total.
+              fees are slightly higher because those squads have more league matchdays (~14
+              vs ~8). Amounts below are the full season total.
             </p>
           </AnimateIn>
           <StaggerIn

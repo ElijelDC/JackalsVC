@@ -5,11 +5,12 @@ export const KIT_FEE_EUR = 45;
 export const MEMBERSHIP_FULL_COURT_TRAINING_COPY =
   "Full-court training sessions at Meakstown throughout the season for your squad";
 
-export const MEMBERSHIP_MATCHDAYS_COPY =
-  "~14 league matchdays throughout the season";
-
 export const MEMBERSHIP_COACHING_COPY =
   "Dedicated coaching staff for your squad every training night";
+
+export function formatLeagueMatchdaysCopy(matchdays: number) {
+  return `~${matchdays} league matchdays throughout the season`;
+}
 
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
@@ -33,7 +34,7 @@ export type MembershipLeagueTier202627 = {
   league: string;
   name: string;
   squads: string;
-  homeMatches: number;
+  leagueMatchdays: number;
   adultFee: number;
   studentFee: number;
 };
@@ -44,7 +45,7 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     league: "National League",
     name: "National League team",
     squads: "Division 2 Men · Division 3 Women",
-    homeMatches: 7,
+    leagueMatchdays: 14,
     adultFee: 365,
     studentFee: 320,
   },
@@ -53,7 +54,7 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     league: "Regional League",
     name: "Regional League team",
     squads: "Regional Men",
-    homeMatches: 4,
+    leagueMatchdays: 8,
     adultFee: 325,
     studentFee: 280,
   },
