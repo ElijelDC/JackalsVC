@@ -18,7 +18,7 @@ import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
   KIT_FEE_EUR,
-  MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON,
+  MEMBERSHIP_FULL_COURT_TRAINING_COPY,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
   MEMBERSHIP_LEAGUE_TIERS_2026_27,
@@ -102,10 +102,7 @@ function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
         <ul className="mt-6 space-y-2.5 border-t border-white/10 pt-5 text-sm text-zinc-300">
           <li className="flex items-start gap-2.5">
             <Volleyball className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>
-              ~{MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON} training session nights at
-              Meakstown throughout the season for your squad
-            </span>
+            <span>{MEMBERSHIP_FULL_COURT_TRAINING_COPY}</span>
           </li>
           <li className="flex items-start gap-2.5">
             <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
@@ -202,7 +199,7 @@ export function Membership202627Showcase() {
               step={2}
               icon={Volleyball}
               title="Season membership"
-              description="Covers your weekly training night and your team's home matchdays for Oct–May. Choose how you pay below."
+              description="Covers full-court training sessions through the season and your team's home matchdays for Oct–April. Choose how you pay below."
             />
           </StaggerIn>
         </div>
@@ -267,7 +264,7 @@ export function Membership202627Showcase() {
             <ValuePillar
               icon={CalendarDays}
               title="Weekly training"
-              description="Hall and coach for your squad's weekly session through the season."
+              description="Full-court hall time and coaching for your squad's weekly session through the season."
             />
             <ValuePillar
               icon={Trophy}
@@ -277,7 +274,7 @@ export function Membership202627Showcase() {
             <ValuePillar
               icon={Volleyball}
               title="Your full season"
-              description="Structured league volleyball from October through May — less than booking a hall yourself, with teammates and coaching included."
+              description="Structured league volleyball from October through April — less than booking a hall yourself, with teammates and coaching included."
             />
           </StaggerIn>
         </div>
