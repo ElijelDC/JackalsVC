@@ -245,11 +245,11 @@ export function Membership202627Showcase() {
               Ways to pay
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              When membership opens, you pick one schedule — monthly, three instalments, or pay in
-              full. Same season total; different timing.
+              When membership opens, you pick one schedule — three instalments or pay in full.
+              Same season total; different timing.
             </p>
           </AnimateIn>
-          <StaggerIn className="mt-10 grid gap-4 md:grid-cols-3" stagger={80}>
+          <StaggerIn className="mt-10 grid gap-4 md:grid-cols-2 md:max-w-3xl md:mx-auto" stagger={80}>
             {MEMBERSHIP_PAYMENT_OPTIONS.map((option) => (
               <PaymentOptionCard
                 key={option.id}

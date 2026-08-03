@@ -5,13 +5,6 @@ export const KIT_FEE_EUR = 50;
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
   {
-    id: "monthly",
-    label: "Monthly",
-    summary: "Oct–May",
-    description:
-      "Spread the season total across the league year — pay each month instead of all at once.",
-  },
-  {
     id: "installments",
     label: "3 instalments",
     summary: "Oct · Jan · Mar",
