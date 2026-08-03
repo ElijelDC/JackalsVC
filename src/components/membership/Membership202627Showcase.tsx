@@ -113,7 +113,7 @@ function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
           </li>
           <li className="flex items-start gap-2.5">
             <Users className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>Coach pay for your squad&apos;s training sessions</span>
+            <span>Coaching included for your squad&apos;s training sessions</span>
           </li>
         </ul>
       </div>
