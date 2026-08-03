@@ -5,6 +5,12 @@ export const KIT_FEE_EUR = 45;
 export const MEMBERSHIP_FULL_COURT_TRAINING_COPY =
   "Full-court training sessions at Meakstown throughout the season for your squad";
 
+export const MEMBERSHIP_MATCHDAYS_COPY =
+  "~14 league matchdays throughout the season";
+
+export const MEMBERSHIP_COACHING_COPY =
+  "Dedicated coaching staff for your squad every training night";
+
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
   {
