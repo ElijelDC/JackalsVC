@@ -55,7 +55,7 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
 
 export const MEMBERSHIP_INCLUDES = [
   "Your team's weekly training — one night per week",
-  "Home matchday costs when your squad hosts at Luttrellstown",
+  "Home matchday costs when the club hosts at Luttrellstown",
   "Coached sessions for your squad through the league season",
   "Structured league volleyball Oct–May — hall, coach, and fixtures",
   "Reduced member pricing on club fun sessions",
