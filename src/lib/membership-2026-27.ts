@@ -2,6 +2,9 @@ export const MEMBERSHIP_SEASON_LABEL = "October 2026 – May 2027";
 
 export const KIT_FEE_EUR = 50;
 
+/** Approximate training nights per squad across the Oct–May season. */
+export const MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON = 28;
+
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
   {
