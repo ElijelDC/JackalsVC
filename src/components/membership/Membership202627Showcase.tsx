@@ -319,10 +319,6 @@ export function Membership202627Showcase() {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-6 text-xs leading-relaxed text-zinc-500">
-                  Training off 21 Dec 2026 – 3 Jan 2027 (back 4 Jan). No sessions on bank holidays
-                  that fall on your team&apos;s night.
-                </p>
               </div>
             </AnimateIn>
           </div>
