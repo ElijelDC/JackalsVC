@@ -25,7 +25,6 @@ export type MembershipTeam202627 = {
   league: string;
   trainingNight: string;
   venue: string;
-  sessions: number;
   homeMatches: number;
   adultFee: number;
   studentFee: number;
