@@ -103,8 +103,8 @@ function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
           <li className="flex items-start gap-2.5">
             <Volleyball className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
             <span>
-              ~{MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON} training session nights throughout
-              the season for your squad
+              ~{MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON} training session nights at
+              Meakstown throughout the season for your squad
             </span>
           </li>
           <li className="flex items-start gap-2.5">
