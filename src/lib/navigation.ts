@@ -267,6 +267,13 @@ export const INFO_NAV_ITEMS: NavItem[] = [
       "Tournaments hosted by Jackals — champions, standings, and play-off results.",
   },
   {
+    href: "/membership/2026-27",
+    label: "2026/27 Membership",
+    icon: Wallet,
+    description:
+      "Season fees, kit, and what's included — broken down by team for Oct 2026 – May 2027.",
+  },
+  {
     href: "/about",
     label: "About Us",
     icon: BookOpen,

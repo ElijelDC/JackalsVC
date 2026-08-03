@@ -12,7 +12,7 @@ Membership is built around **your squad** — your weekly training night, your h
 
 ## How to join
 
-1. **Club kit first** (~€45) — everyone buys kit before membership opens.  
+1. **Club kit first** (~€50) — everyone buys kit before membership opens.  
 2. **Season membership** (Oct–May) — one fee for the full season on your team.
 
 ---
@@ -85,7 +85,7 @@ That is a full league season of training and matchday support for **less than th
 - Coach pay for your training sessions  
 
 **Not included**
-- Club kit (~€45)  
+- Club kit (~€50)  
 - Away travel  
 - Cups, playoffs, and fun sessions  
 - Volleyball Ireland affiliation (handled separately by the club)  
