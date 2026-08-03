@@ -272,7 +272,7 @@ export function Membership202627Showcase() {
             <ValuePillar
               icon={Trophy}
               title="Your home games"
-              description="Luttrellstown on Sundays when your team hosts — hall, setup, and matchday costs for your fixtures."
+              description="Luttrellstown on Sundays when the club hosts — hall, setup, and matchday costs for your fixtures."
             />
             <ValuePillar
               icon={Volleyball}
