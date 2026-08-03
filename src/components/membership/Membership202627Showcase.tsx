@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
   KIT_FEE_EUR,
+  MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
   MEMBERSHIP_PAYMENT_OPTIONS,
@@ -107,8 +108,9 @@ function TeamMembershipCard({ team }: { team: MembershipTeam202627 }) {
           <li className="flex items-start gap-2.5">
             <Volleyball className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
             <span>
-              <strong className="font-semibold text-white">Your</strong> {team.trainingNight}{" "}
-              training — not every team&apos;s nights
+              ~{MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON} training session nights throughout
+              the season — <strong className="font-semibold text-white">your</strong>{" "}
+              {team.trainingNight} training, not every team&apos;s nights
             </span>
           </li>
           <li className="flex items-start gap-2.5">
