@@ -225,9 +225,9 @@ export function Membership202627Showcase() {
               Fees by team
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              National League squads host more home games (~7 each), so those fees are slightly
-              higher than Regional (~4 homes). Same club, same quality — your fee matches your
-              team&apos;s schedule. Amounts below are the full season total.
+              National League squads host more home games (~7 each), so those fees run a
+              little higher than Regional (~4 homes). Your fee reflects your team&apos;s
+              schedule — amounts below are the full season total.
             </p>
           </AnimateIn>
           <StaggerIn className="mt-10 grid gap-6 lg:grid-cols-3" stagger={100}>
