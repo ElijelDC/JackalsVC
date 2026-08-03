@@ -178,7 +178,7 @@ export function Membership202627Showcase() {
       <ShowcaseHero
         title="2026/27"
         highlight="Membership"
-        description={`${MEMBERSHIP_SEASON_LABEL}. Season membership for your squad — your training night, your home games, your full league year. Pay monthly, in three instalments, or upfront.`}
+        description={`${MEMBERSHIP_SEASON_LABEL}. Your squad, your training night, your season.`}
         cta={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/contact">
