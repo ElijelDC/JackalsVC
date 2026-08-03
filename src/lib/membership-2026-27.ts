@@ -79,6 +79,7 @@ export const MEMBERSHIP_INCLUDES = [
   "Home matchday costs when your squad hosts at Luttrellstown",
   "Coached sessions for your squad through the league season",
   "Structured league volleyball Oct–May — hall, coach, and fixtures",
+  "Reduced member pricing on club fun sessions",
 ] as const;
 
 export const MEMBERSHIP_EXCLUDES = [
