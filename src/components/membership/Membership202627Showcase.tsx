@@ -6,7 +6,6 @@ import {
   Check,
   Shirt,
   Trophy,
-  Users,
   Volleyball,
   Wallet,
   X,
@@ -18,15 +17,12 @@ import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
   KIT_FEE_EUR,
-  MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
-  MEMBERSHIP_LEAGUE_TIERS_2026_27,
   MEMBERSHIP_PAYMENT_OPTIONS,
   MEMBERSHIP_SEASON_LABEL,
-  type MembershipLeagueTier202627,
+  MEMBERSHIP_TEAM_FEES_2026_27,
 } from "@/lib/membership-2026-27";
-import { cn } from "@/lib/utils";
 
 function StepCard({
   step,
@@ -61,63 +57,56 @@ function StepCard({
   );
 }
 
-function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
-  const isNationalLeague = tier.league === "National League";
-
+function MembershipFeesTable() {
   return (
-    <article className="relative flex h-full flex-col overflow-hidden border border-white/10 bg-jackals-surface/90">
-      <div
-        aria-hidden
-        className={cn(
-          "h-1.5 w-full",
-          isNationalLeague
-            ? "bg-gradient-to-r from-jackals-red via-jackals-red-light to-jackals-red"
-            : "bg-gradient-to-r from-zinc-500 via-zinc-400 to-zinc-500",
-        )}
-      />
-      <div className="flex flex-1 flex-col p-6">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-            {tier.league}
-          </p>
-          <h3 className="mt-1 font-display text-2xl font-bold text-white">{tier.name}</h3>
-          <p className="mt-2 text-sm text-zinc-400">{tier.squads}</p>
-        </div>
-
-        <div className="mt-6 grid grid-cols-2 gap-3">
-          <div className="border border-white/10 bg-jackals-inset/40 p-4">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Adult</p>
-            <p className="mt-1 font-display text-3xl font-bold text-jackals-red-light">
-              {formatMembershipEuro(tier.adultFee)}
-            </p>
-          </div>
-          <div className="border border-white/10 bg-jackals-inset/40 p-4">
-            <p className="text-xs uppercase tracking-wide text-zinc-500">Student / U18</p>
-            <p className="mt-1 font-display text-3xl font-bold text-white">
-              {formatMembershipEuro(tier.studentFee)}
-            </p>
-          </div>
-        </div>
-
-        <ul className="mt-6 space-y-2.5 border-t border-white/10 pt-5 text-sm text-zinc-300">
-          <li className="flex items-start gap-2.5">
-            <Volleyball className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>
-              ~{MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON} training session nights at
-              Meakstown throughout the season for your squad
-            </span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>~{tier.homeMatches} home matchdays at Luttrellstown (Sundays)</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <Users className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>Coaching included for your squad&apos;s training sessions</span>
-          </li>
-        </ul>
+    <div className="overflow-hidden border border-white/10 bg-jackals-surface/90">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] text-left text-sm">
+          <thead>
+            <tr className="border-b border-white/10 bg-jackals-inset/40">
+              <th className="px-4 py-3 font-semibold uppercase tracking-wide text-zinc-500 sm:px-6">
+                Team
+              </th>
+              <th className="px-4 py-3 font-semibold uppercase tracking-wide text-zinc-500 sm:px-6">
+                Training night
+              </th>
+              <th className="px-4 py-3 font-semibold uppercase tracking-wide text-zinc-500 sm:px-6">
+                Adult
+              </th>
+              <th className="px-4 py-3 font-semibold uppercase tracking-wide text-zinc-500 sm:px-6">
+                Student / U18
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {MEMBERSHIP_TEAM_FEES_2026_27.map((team) => (
+              <tr
+                key={team.id}
+                className="border-b border-white/10 last:border-0 even:bg-jackals-inset/20"
+              >
+                <td className="px-4 py-4 sm:px-6">
+                  <p className="font-display text-base font-bold text-white sm:text-lg">
+                    {team.team}
+                  </p>
+                  <p className="mt-0.5 text-xs text-zinc-500">{team.league}</p>
+                </td>
+                <td className="px-4 py-4 text-zinc-300 sm:px-6">{team.trainingNight}</td>
+                <td className="px-4 py-4 font-display text-xl font-bold text-jackals-red-light sm:px-6">
+                  {formatMembershipEuro(team.adultFee)}
+                </td>
+                <td className="px-4 py-4 font-display text-xl font-bold text-white sm:px-6">
+                  {formatMembershipEuro(team.studentFee)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
-    </article>
+      <p className="border-t border-white/10 px-4 py-3 text-xs leading-relaxed text-zinc-500 sm:px-6">
+        National League squads host ~7 home matchdays at Luttrellstown; Regional Men
+        host ~4. Amounts above are the full season total.
+      </p>
+    </div>
   );
 }
 
@@ -212,23 +201,16 @@ export function Membership202627Showcase() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <AnimateIn variant="fade-up" className="mx-auto max-w-3xl text-center">
             <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
-              Fees by league
+              2026/27 fees
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Membership is priced by league tier. National League is for Division 2
-              Men and Division 3 Women; Regional League is for Regional Men. National
-              fees are slightly higher because those squads host more home games (~7
-              vs ~4). Amounts below are the full season total.
+              Membership is priced by team. Your fee covers weekly training at Meakstown
+              and your squad&apos;s home matchdays when the club hosts at Luttrellstown.
             </p>
           </AnimateIn>
-          <StaggerIn
-            className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2"
-            stagger={100}
-          >
-            {MEMBERSHIP_LEAGUE_TIERS_2026_27.map((tier) => (
-              <LeagueMembershipCard key={tier.id} tier={tier} />
-            ))}
-          </StaggerIn>
+          <AnimateIn variant="fade-up" className="mx-auto mt-10 max-w-4xl">
+            <MembershipFeesTable />
+          </AnimateIn>
         </div>
       </section>
 
