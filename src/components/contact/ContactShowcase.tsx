@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShowcaseCard, ShowcaseCtaBand } from "@/components/layout/ShowcaseCard";
+import { ShowcaseCard } from "@/components/layout/ShowcaseCard";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
@@ -62,8 +62,8 @@ export function ContactShowcase() {
       />
 
       <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 sm:py-16 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-5 lg:gap-10">
-          <StaggerIn className="space-y-6 lg:col-span-2" stagger={100}>
+        <div className="grid gap-8 lg:grid-cols-5 lg:items-start lg:gap-10">
+          <AnimateIn variant="fade-up" className="lg:col-span-2">
             <ShowcaseCard title="Get in touch" interactive={false}>
               <div className="space-y-4">
                 <ContactLink
@@ -94,17 +94,9 @@ export function ContactShowcase() {
                 />
               </div>
             </ShowcaseCard>
+          </AnimateIn>
 
-            <ShowcaseCard title="What to expect" interactive={false}>
-              <p>
-                We read every message and aim to reply within a few days. For
-                urgent session or event questions, Instagram or Facebook is often
-                the fastest way to reach us.
-              </p>
-            </ShowcaseCard>
-          </StaggerIn>
-
-          <AnimateIn variant="fade-up" className="lg:col-span-3">
+          <AnimateIn variant="fade-up" className="lg:col-span-3 lg:row-span-2">
             <ShowcaseCard title="Send a message" interactive={false}>
               <p className="mb-6">
                 Tell us a little about what you need — whether you are new to
@@ -113,25 +105,41 @@ export function ContactShowcase() {
               <ContactForm />
             </ShowcaseCard>
           </AnimateIn>
-        </div>
 
-        <AnimateIn className="mt-16 sm:mt-20">
-          <ShowcaseCtaBand
-            title="New to Jackals Volleyball Club?"
-            description="Browse open sessions and events to see what is coming up, or read about our squads and how to join."
+          <StaggerIn
+            className="grid gap-6 sm:grid-cols-2 lg:col-span-2 lg:col-start-1 lg:row-start-2"
+            stagger={100}
           >
-            <Link href="/events" className="w-full sm:w-auto">
-              <Button size="lg" className="w-full sm:w-auto">
-                What&apos;s on?
-              </Button>
-            </Link>
-            <Link href="/about" className="w-full sm:w-auto">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto">
-                About us
-              </Button>
-            </Link>
-          </ShowcaseCtaBand>
-        </AnimateIn>
+            <ShowcaseCard title="What to expect" interactive={false} className="h-full">
+              <p>
+                We read every message and aim to reply within a few days. For
+                urgent session or event questions, Instagram or Facebook is often
+                the fastest way to reach us.
+              </p>
+            </ShowcaseCard>
+
+            <ShowcaseCard
+              title="New to Jackals Volleyball Club?"
+              interactive={false}
+              className="h-full"
+            >
+              <p>
+                Browse open sessions and events to see what is coming up, or read
+                about our squads and how to join.
+              </p>
+              <div className="mt-6 flex flex-col gap-3">
+                <Link href="/events">
+                  <Button className="w-full">What&apos;s on?</Button>
+                </Link>
+                <Link href="/about">
+                  <Button variant="outline" className="w-full">
+                    About us
+                  </Button>
+                </Link>
+              </div>
+            </ShowcaseCard>
+          </StaggerIn>
+        </div>
       </div>
     </>
   );
