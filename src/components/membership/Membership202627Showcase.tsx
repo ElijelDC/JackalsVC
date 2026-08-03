@@ -9,6 +9,7 @@ import {
   Trophy,
   Users,
   Volleyball,
+  Wallet,
   X,
 } from "lucide-react";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
@@ -20,7 +21,7 @@ import {
   KIT_FEE_EUR,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
-  MEMBERSHIP_PAYMENT_OPTIONS_NOTE,
+  MEMBERSHIP_PAYMENT_OPTIONS,
   MEMBERSHIP_SEASON_LABEL,
   MEMBERSHIP_TEAMS_2026_27,
   type MembershipTeam202627,
@@ -130,6 +131,29 @@ function TeamMembershipCard({ team }: { team: MembershipTeam202627 }) {
   );
 }
 
+function PaymentOptionCard({
+  label,
+  summary,
+  description,
+}: {
+  label: string;
+  summary: string;
+  description: string;
+}) {
+  return (
+    <div className="flex h-full flex-col border border-white/10 bg-jackals-surface/90 p-6">
+      <div className="flex items-start justify-between gap-3">
+        <Wallet className="h-6 w-6 shrink-0 text-jackals-red-light" aria-hidden />
+        <span className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          {summary}
+        </span>
+      </div>
+      <h3 className="mt-4 font-display text-xl font-bold text-white">{label}</h3>
+      <p className="mt-2 flex-1 text-sm leading-relaxed text-zinc-400">{description}</p>
+    </div>
+  );
+}
+
 function ValuePillar({
   title,
   description,
@@ -193,7 +217,7 @@ export function Membership202627Showcase() {
               step={2}
               icon={Volleyball}
               title="Season membership"
-              description={`Covers your weekly training night and your team's home matchdays for Oct–May. ${MEMBERSHIP_INSTALMENT_NOTE}`}
+              description="Covers your weekly training night and your team's home matchdays for Oct–May. Choose how you pay below."
             />
           </StaggerIn>
         </div>
@@ -220,6 +244,30 @@ export function Membership202627Showcase() {
       </section>
 
       <section className="border-y border-white/10 bg-jackals-inset/20 py-14 sm:py-16">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <AnimateIn variant="fade-up" className="mx-auto max-w-3xl text-center">
+            <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
+              Ways to pay
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
+              When membership opens, you pick one schedule — monthly, three instalments, or pay in
+              full. Same season total; different timing.
+            </p>
+          </AnimateIn>
+          <StaggerIn className="mt-10 grid gap-4 md:grid-cols-3" stagger={80}>
+            {MEMBERSHIP_PAYMENT_OPTIONS.map((option) => (
+              <PaymentOptionCard
+                key={option.id}
+                label={option.label}
+                summary={option.summary}
+                description={option.description}
+              />
+            ))}
+          </StaggerIn>
+        </div>
+      </section>
+
+      <section className="border-b border-white/10 py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <AnimateIn variant="fade-up" className="text-center">
             <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">

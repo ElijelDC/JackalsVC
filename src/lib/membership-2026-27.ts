@@ -3,8 +3,28 @@ export const MEMBERSHIP_SEASON_LABEL = "October 2026 – May 2027";
 export const KIT_FEE_EUR = 50;
 
 /** Matches payment schedules on the member checkout. */
-export const MEMBERSHIP_PAYMENT_OPTIONS_NOTE =
-  "Season fees can be paid monthly, in three instalments (due on the first Monday of October, January, and March), or in full upfront when you join.";
+export const MEMBERSHIP_PAYMENT_OPTIONS = [
+  {
+    id: "monthly",
+    label: "Monthly",
+    summary: "Oct–May",
+    description:
+      "Spread the season total across the league year — pay each month instead of all at once.",
+  },
+  {
+    id: "installments",
+    label: "3 instalments",
+    summary: "Oct · Jan · Mar",
+    description:
+      "Three payments due on the first Monday of October, January, and March.",
+  },
+  {
+    id: "full",
+    label: "Pay in full",
+    summary: "One payment",
+    description: "Pay the full season fee upfront when you register.",
+  },
+] as const;
 
 export type MembershipTeam202627 = {
   id: string;
