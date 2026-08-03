@@ -44,7 +44,6 @@ export const MEMBERSHIP_TEAMS_2026_27: MembershipTeam202627[] = [
     name: "Division 3 Women",
     league: "National League",
     trainingNight: "Monday",
-    venue: "Meakstown",
     homeMatches: 7,
     adultFee: 385,
     studentFee: 330,
@@ -54,7 +53,6 @@ export const MEMBERSHIP_TEAMS_2026_27: MembershipTeam202627[] = [
     name: "Regional Men",
     league: "Regional League",
     trainingNight: "Wednesday",
-    venue: "Meakstown",
     homeMatches: 4,
     adultFee: 345,
     studentFee: 295,
@@ -62,7 +60,7 @@ export const MEMBERSHIP_TEAMS_2026_27: MembershipTeam202627[] = [
 ];
 
 export const MEMBERSHIP_INCLUDES = [
-  "Your team's weekly training — one night per week at Meakstown",
+  "Your team's weekly training — one night per week",
   "Home matchday costs when your squad hosts at Luttrellstown",
   "Coached sessions for your squad through the league season",
   "Structured league volleyball Oct–May — hall, coach, and fixtures",

@@ -88,11 +88,6 @@ function TeamMembershipCard({ team }: { team: MembershipTeam202627 }) {
           </span>
         </div>
 
-        <p className="mt-3 flex items-center gap-2 text-sm text-zinc-400">
-          <MapPin className="h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-          {team.venue}
-        </p>
-
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="border border-white/10 bg-jackals-inset/40 p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Adult</p>
@@ -272,7 +267,7 @@ export function Membership202627Showcase() {
             <ValuePillar
               icon={CalendarDays}
               title="Your training night"
-              description="Meakstown hall and coach for your squad's weekly session — Monday, Wednesday, or Friday depending on your team."
+              description="Hall and coach for your squad's weekly session — Monday, Wednesday, or Friday depending on your team."
             />
             <ValuePillar
               icon={Trophy}
