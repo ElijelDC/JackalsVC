@@ -2,6 +2,10 @@ export const MEMBERSHIP_SEASON_LABEL = "October 2026 – May 2027";
 
 export const KIT_FEE_EUR = 50;
 
+/** Matches instalment schedule on the member checkout (Oct / Jan / Mar). */
+export const MEMBERSHIP_INSTALMENT_NOTE =
+  "Season fees can be paid in three instalments — due on the first Monday of October, January, and March — or in full upfront when you join.";
+
 export type MembershipTeam202627 = {
   id: string;
   name: string;
