@@ -1,9 +1,9 @@
-export const MEMBERSHIP_SEASON_LABEL = "October 2026 – May 2027";
+export const MEMBERSHIP_SEASON_LABEL = "October 2026 – April 2027";
 
-export const KIT_FEE_EUR = 50;
+export const KIT_FEE_EUR = 45;
 
-/** Approximate training nights per squad across the Oct–May season. */
-export const MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON = 28;
+export const MEMBERSHIP_FULL_COURT_TRAINING_COPY =
+  "Full-court training sessions at Meakstown throughout the season for your squad";
 
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
@@ -39,8 +39,8 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     name: "National League team",
     squads: "Division 2 Men · Division 3 Women",
     homeMatches: 7,
-    adultFee: 360,
-    studentFee: 315,
+    adultFee: 365,
+    studentFee: 320,
   },
   {
     id: "regional-league",
@@ -48,16 +48,17 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     name: "Regional League team",
     squads: "Regional Men",
     homeMatches: 4,
-    adultFee: 320,
-    studentFee: 275,
+    adultFee: 325,
+    studentFee: 280,
   },
 ];
 
 export const MEMBERSHIP_INCLUDES = [
-  "Your team's weekly training — one night per week",
+  "Full-court training sessions for your squad through the season",
+  "Your team's weekly training — one night per week at Meakstown",
   "Home matchday costs when the club hosts at Luttrellstown",
   "Coached sessions for your squad through the league season",
-  "Structured league volleyball Oct–May — hall, coach, and fixtures",
+  "Structured league volleyball Oct–April — hall, coach, and fixtures",
   "Reduced member pricing on club fun sessions",
 ] as const;
 
