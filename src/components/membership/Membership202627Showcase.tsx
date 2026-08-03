@@ -215,9 +215,10 @@ export function Membership202627Showcase() {
               Fees by league
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              National League covers Division 2 Men and Division 3 Women. Regional
-              League covers Regional Men. National League squads host more home games
-              (~7) than Regional (~4) — amounts below are the full season total.
+              Membership is priced by league tier. National League is for Division 2
+              Men and Division 3 Women; Regional League is for Regional Men. National
+              fees are slightly higher because those squads host more home games (~7
+              vs ~4). Amounts below are the full season total.
             </p>
           </AnimateIn>
           <StaggerIn
