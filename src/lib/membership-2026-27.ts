@@ -22,40 +22,31 @@ export const MEMBERSHIP_PAYMENT_OPTIONS = [
   },
 ] as const;
 
-export type MembershipTeam202627 = {
+export type MembershipLeagueTier202627 = {
   id: string;
-  name: string;
   league: string;
-  trainingNight: string;
+  name: string;
+  squads: string;
   homeMatches: number;
   adultFee: number;
   studentFee: number;
 };
 
-export const MEMBERSHIP_TEAMS_2026_27: MembershipTeam202627[] = [
+export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
   {
-    id: "d2-men",
-    name: "Division 2 Men",
+    id: "national-league",
     league: "National League",
-    trainingNight: "Friday",
+    name: "National League team",
+    squads: "Division 2 Men · Division 3 Women",
     homeMatches: 7,
     adultFee: 385,
     studentFee: 330,
   },
   {
-    id: "d3-women",
-    name: "Division 3 Women",
-    league: "National League",
-    trainingNight: "Monday",
-    homeMatches: 7,
-    adultFee: 385,
-    studentFee: 330,
-  },
-  {
-    id: "regional-men",
-    name: "Regional Men",
+    id: "regional-league",
     league: "Regional League",
-    trainingNight: "Wednesday",
+    name: "Regional League team",
+    squads: "Regional Men",
     homeMatches: 4,
     adultFee: 345,
     studentFee: 295,

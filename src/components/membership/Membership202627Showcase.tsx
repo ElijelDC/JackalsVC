@@ -21,10 +21,10 @@ import {
   MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
+  MEMBERSHIP_LEAGUE_TIERS_2026_27,
   MEMBERSHIP_PAYMENT_OPTIONS,
   MEMBERSHIP_SEASON_LABEL,
-  MEMBERSHIP_TEAMS_2026_27,
-  type MembershipTeam202627,
+  type MembershipLeagueTier202627,
 } from "@/lib/membership-2026-27";
 import { cn } from "@/lib/utils";
 
@@ -61,8 +61,8 @@ function StepCard({
   );
 }
 
-function TeamMembershipCard({ team }: { team: MembershipTeam202627 }) {
-  const isNl = team.league === "National League";
+function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
+  const isNationalLeague = tier.league === "National League";
 
   return (
     <article className="relative flex h-full flex-col overflow-hidden border border-white/10 bg-jackals-surface/90">
@@ -70,36 +70,31 @@ function TeamMembershipCard({ team }: { team: MembershipTeam202627 }) {
         aria-hidden
         className={cn(
           "h-1.5 w-full",
-          isNl
+          isNationalLeague
             ? "bg-gradient-to-r from-jackals-red via-jackals-red-light to-jackals-red"
             : "bg-gradient-to-r from-zinc-500 via-zinc-400 to-zinc-500",
         )}
       />
       <div className="flex flex-1 flex-col p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-              {team.league}
-            </p>
-            <h3 className="mt-1 font-display text-2xl font-bold text-white">{team.name}</h3>
-          </div>
-          <span className="inline-flex items-center gap-1.5 border border-white/10 bg-jackals-inset/60 px-3 py-1.5 text-xs font-semibold text-white">
-            <CalendarDays className="h-3.5 w-3.5 text-jackals-red-light" aria-hidden />
-            {team.trainingNight}s
-          </span>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            {tier.league}
+          </p>
+          <h3 className="mt-1 font-display text-2xl font-bold text-white">{tier.name}</h3>
+          <p className="mt-2 text-sm text-zinc-400">{tier.squads}</p>
         </div>
 
         <div className="mt-6 grid grid-cols-2 gap-3">
           <div className="border border-white/10 bg-jackals-inset/40 p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Adult</p>
             <p className="mt-1 font-display text-3xl font-bold text-jackals-red-light">
-              {formatMembershipEuro(team.adultFee)}
+              {formatMembershipEuro(tier.adultFee)}
             </p>
           </div>
           <div className="border border-white/10 bg-jackals-inset/40 p-4">
             <p className="text-xs uppercase tracking-wide text-zinc-500">Student / U18</p>
             <p className="mt-1 font-display text-3xl font-bold text-white">
-              {formatMembershipEuro(team.studentFee)}
+              {formatMembershipEuro(tier.studentFee)}
             </p>
           </div>
         </div>
@@ -109,13 +104,12 @@ function TeamMembershipCard({ team }: { team: MembershipTeam202627 }) {
             <Volleyball className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
             <span>
               ~{MEMBERSHIP_TRAINING_NIGHTS_PER_SEASON} training session nights throughout
-              the season — <strong className="font-semibold text-white">your</strong>{" "}
-              {team.trainingNight} training, not every team&apos;s nights
+              the season for your squad
             </span>
           </li>
           <li className="flex items-start gap-2.5">
             <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>~{team.homeMatches} home matchdays at Luttrellstown (Sundays)</span>
+            <span>~{tier.homeMatches} home matchdays at Luttrellstown (Sundays)</span>
           </li>
           <li className="flex items-start gap-2.5">
             <Users className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
@@ -174,7 +168,7 @@ export function Membership202627Showcase() {
       <ShowcaseHero
         title="2026/27"
         highlight="Membership"
-        description={`${MEMBERSHIP_SEASON_LABEL}. Your squad, your training night, your season.`}
+        description={`${MEMBERSHIP_SEASON_LABEL}. Your squad, your season.`}
         cta={
           <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
             <Link href="/contact">
@@ -218,17 +212,20 @@ export function Membership202627Showcase() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <AnimateIn variant="fade-up" className="mx-auto max-w-3xl text-center">
             <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
-              Fees by team
+              Fees by league
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              National League squads host more home games (~7 each), so those fees run a
-              little higher than Regional (~4 homes). Your fee reflects your team&apos;s
-              schedule — amounts below are the full season total.
+              National League covers Division 2 Men and Division 3 Women. Regional
+              League covers Regional Men. National League squads host more home games
+              (~7) than Regional (~4) — amounts below are the full season total.
             </p>
           </AnimateIn>
-          <StaggerIn className="mt-10 grid gap-6 lg:grid-cols-3" stagger={100}>
-            {MEMBERSHIP_TEAMS_2026_27.map((team) => (
-              <TeamMembershipCard key={team.id} team={team} />
+          <StaggerIn
+            className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2"
+            stagger={100}
+          >
+            {MEMBERSHIP_LEAGUE_TIERS_2026_27.map((tier) => (
+              <LeagueMembershipCard key={tier.id} tier={tier} />
             ))}
           </StaggerIn>
         </div>
@@ -268,8 +265,8 @@ export function Membership202627Showcase() {
           <StaggerIn className="mt-10 grid gap-4 md:grid-cols-3" stagger={80}>
             <ValuePillar
               icon={CalendarDays}
-              title="Your training night"
-              description="Hall and coach for your squad's weekly session — Monday, Wednesday, or Friday depending on your team."
+              title="Weekly training"
+              description="Hall and coach for your squad's weekly session through the season."
             />
             <ValuePillar
               icon={Trophy}

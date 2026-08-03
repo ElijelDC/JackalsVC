@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "2026/27 Membership",
   description:
-    "Jackals VC 2026/27 season membership — kit, fees by team, training nights, and what's included. Division 2 Men, Division 3 Women, and Regional Men.",
+    "Jackals VC 2026/27 season membership — kit, fees by league, and what's included. National League and Regional League squads.",
   path: "/membership/2026-27",
 });
 
