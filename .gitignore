@@ -64,6 +64,8 @@ next-env.d.ts
 !/public/uploads/coach-invoices/.gitkeep
 /public/uploads/trial-session-proofs/*
 !/public/uploads/trial-session-proofs/.gitkeep
+/public/uploads/admin-docs/*
+!/public/uploads/admin-docs/.gitkeep
 /public/uploads/tournament-winners/*
 !/public/uploads/tournament-winners/.gitkeep
 .env.production

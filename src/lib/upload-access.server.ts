@@ -149,6 +149,11 @@ export async function authorizeUploadAccess(
     return authorizeTrialSessionPaymentProof(relativePath);
   }
 
+  if (relativePath.startsWith("admin-docs/")) {
+    const session = await auth();
+    return session?.user?.role === "ADMIN";
+  }
+
   // Unknown upload folder — deny by default.
   return false;
 }
