@@ -21,6 +21,7 @@ import {
   Package,
   PartyPopper,
   Settings,
+  Shirt,
   ShoppingBag,
   Trophy,
   UserCheck,
@@ -62,6 +63,7 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     title: "Billing",
     links: [
       { href: "/admin/membership", label: "Plans", icon: CreditCard },
+      { href: "/admin/legea-store-order", label: "Legea store order", icon: Shirt },
       { href: "/admin/payments", label: "Payments", icon: Banknote },
       { href: "/admin/coach-payments", label: "Coach payments", icon: Wallet },
     ],
