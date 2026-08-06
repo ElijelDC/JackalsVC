@@ -53,16 +53,16 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     league: "National League",
     name: "National League team",
     squads: "Division 2 Men · Division 3 Women",
-    adultFee: 365,
-    studentFee: 320,
+    adultFee: 350,
+    studentFee: 305,
   },
   {
     id: "regional-league",
     league: "Regional League",
     name: "Regional League team",
     squads: "Regional Men",
-    adultFee: 325,
-    studentFee: 280,
+    adultFee: 310,
+    studentFee: 265,
   },
 ];
 
