@@ -18,6 +18,7 @@ import {
   PartyPopper,
   Trophy,
   Package,
+  Shirt,
   ShoppingBag,
   UserCheck,
   Users,
@@ -54,6 +55,13 @@ const SECTIONS = [
     description: "Pricing and features",
     icon: CreditCard,
     countKey: "plans" as const,
+  },
+  {
+    href: "/admin/legea-products",
+    title: "Legea products store",
+    description: "Club kit catalog and store order form",
+    icon: Shirt,
+    countKey: null,
   },
   {
     href: "/admin/training",
@@ -207,6 +215,7 @@ export default async function AdminPage() {
       <AdminOverviewGrid>
         {SECTIONS.filter(
           (section) =>
+            section.href === "/admin/legea-products" ||
             SHOP_ENABLED ||
             (section.href !== "/admin/products" &&
               section.href !== "/admin/orders"),
@@ -222,9 +231,15 @@ export default async function AdminPage() {
               <CardDescription className="mt-1 line-clamp-2 text-xs sm:mt-2 sm:text-sm">
                 {description}
               </CardDescription>
-              <p className="mt-2 text-xs font-medium text-jackals-red-light sm:mt-4 sm:text-sm">
-                {counts[countKey]} record{counts[countKey] !== 1 ? "s" : ""} →
-              </p>
+              {countKey ? (
+                <p className="mt-2 text-xs font-medium text-jackals-red-light sm:mt-4 sm:text-sm">
+                  {counts[countKey]} record{counts[countKey] !== 1 ? "s" : ""} →
+                </p>
+              ) : (
+                <p className="mt-2 text-xs font-medium text-jackals-red-light sm:mt-4 sm:text-sm">
+                  Open →
+                </p>
+              )}
             </Card>
           </Link>
         ))}

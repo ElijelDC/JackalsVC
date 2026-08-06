@@ -63,7 +63,6 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     title: "Billing",
     links: [
       { href: "/admin/membership", label: "Plans", icon: CreditCard },
-      { href: "/admin/legea-store-order", label: "Legea store order", icon: Shirt },
       { href: "/admin/payments", label: "Payments", icon: Banknote },
       { href: "/admin/coach-payments", label: "Coach payments", icon: Wallet },
     ],
@@ -95,6 +94,7 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
   {
     title: "Shop",
     links: [
+      { href: "/admin/legea-products", label: "Legea products store", icon: Shirt },
       { href: "/admin/products", label: "Products", icon: Package },
       { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
     ],
@@ -104,6 +104,7 @@ const ADMIN_NAV_GROUPS: { title: string; links: AdminLink[] }[] = [
     ...group,
     links: group.links.filter(
       (link) =>
+        link.href === "/admin/legea-products" ||
         SHOP_ENABLED ||
         (link.href !== "/admin/products" && link.href !== "/admin/orders"),
     ),

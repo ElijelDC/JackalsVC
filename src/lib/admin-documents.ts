@@ -9,12 +9,15 @@ export type AdminDocumentDefinition = {
   filename: string;
 };
 
-export const LEGEA_STORE_ORDER_DOCUMENT: AdminDocumentDefinition = {
-  slug: "legea-store-order",
-  title: "Legea store order",
-  description: "Club kit order form for the Legea store.",
+export const LEGEA_PRODUCTS_STORE_DOCUMENT: AdminDocumentDefinition = {
+  slug: "legea-products",
+  title: "Legea products store",
+  description: "Club kit catalog and Legea store order form — admin only.",
   filename: "leagea-store-order.pdf",
 };
+
+/** @deprecated Use LEGEA_PRODUCTS_STORE_DOCUMENT */
+export const LEGEA_STORE_ORDER_DOCUMENT = LEGEA_PRODUCTS_STORE_DOCUMENT;
 
 const UPLOADS_ROOT = path.join(process.cwd(), "public", "uploads");
 

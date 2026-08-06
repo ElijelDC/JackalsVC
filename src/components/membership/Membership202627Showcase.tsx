@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   CalendarDays,
   Check,
   Shirt,
   Trophy,
-  Users,
   Volleyball,
   Wallet,
   X,
@@ -17,12 +17,12 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
-  formatLeagueMatchdaysCopy,
   KIT_FEE_EUR,
-  MEMBERSHIP_FULL_COURT_TRAINING_COPY,
-  MEMBERSHIP_COACHING_COPY,
+  KIT_PAYMENT_DUE,
+  MEMBERSHIP_FEES_BY_LEAGUE_INTRO,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
+  MEMBERSHIP_LEAGUE_COVERAGE_COPY,
   MEMBERSHIP_LEAGUE_TIERS_2026_27,
   MEMBERSHIP_PAYMENT_OPTIONS,
   MEMBERSHIP_SEASON_LABEL,
@@ -38,7 +38,7 @@ function StepCard({
 }: {
   step: number;
   title: string;
-  description: string;
+  description: ReactNode;
   icon: typeof Shirt;
 }) {
   return (
@@ -100,23 +100,40 @@ function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
             </p>
           </div>
         </div>
-
-        <ul className="mt-6 space-y-2.5 border-t border-white/10 pt-5 text-sm text-zinc-300">
-          <li className="flex items-start gap-2.5">
-            <Volleyball className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>{MEMBERSHIP_FULL_COURT_TRAINING_COPY}</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <Trophy className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>{formatLeagueMatchdaysCopy(tier.leagueMatchdays)}</span>
-          </li>
-          <li className="flex items-start gap-2.5">
-            <Users className="mt-0.5 h-4 w-4 shrink-0 text-jackals-red-light" aria-hidden />
-            <span>{MEMBERSHIP_COACHING_COPY}</span>
-          </li>
-        </ul>
       </div>
     </article>
+  );
+}
+
+function MembershipIncludesCard() {
+  return (
+    <article className="relative flex flex-col overflow-hidden border border-white/10 bg-jackals-surface/90 md:col-span-2">
+      <div
+        aria-hidden
+        className="h-1.5 w-full bg-gradient-to-r from-jackals-red via-jackals-red-light to-jackals-red"
+      />
+      <div className="p-6">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          What every membership includes
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-zinc-300 sm:text-base">
+          {MEMBERSHIP_LEAGUE_COVERAGE_COPY}
+        </p>
+      </div>
+    </article>
+  );
+}
+
+function LeagueFeesComparison() {
+  return (
+    <div className="mx-auto mt-10 max-w-4xl">
+      <StaggerIn className="grid gap-6 md:grid-cols-2" stagger={100}>
+        {MEMBERSHIP_LEAGUE_TIERS_2026_27.map((tier) => (
+          <LeagueMembershipCard key={tier.id} tier={tier} />
+        ))}
+        <MembershipIncludesCard />
+      </StaggerIn>
+    </div>
   );
 }
 
@@ -169,14 +186,9 @@ export function Membership202627Showcase() {
         highlight="Membership"
         description={`${MEMBERSHIP_SEASON_LABEL}. Your squad, your season.`}
         cta={
-          <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Link href="/contact">
-              <Button>Questions? Contact us</Button>
-            </Link>
-            <Link href="/trials">
-              <Button variant="outline">Trials & joining</Button>
-            </Link>
-          </div>
+          <Link href="/contact">
+            <Button>Questions? Contact us</Button>
+          </Link>
         }
       />
 
@@ -184,10 +196,11 @@ export function Membership202627Showcase() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <AnimateIn variant="fade-up" className="mx-auto max-w-2xl text-center">
             <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
-              How to join
+              Kit &amp; membership
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Kit first, then season membership for your team.
+              Your season has two parts — club kit and squad membership. They&apos;re
+              priced and paid separately; here&apos;s what each covers.
             </p>
           </AnimateIn>
           <StaggerIn className="mt-10 grid gap-4 md:grid-cols-2" stagger={80}>
@@ -195,13 +208,13 @@ export function Membership202627Showcase() {
               step={1}
               icon={Shirt}
               title={`Club kit · ${formatMembershipEuro(KIT_FEE_EUR)}`}
-              description="Premium Jackal-Legea Club Kit. Mandatory purchase before membership opens — separate from the fees below."
+              description={`Premium Jackal-Legea club kit — custom sublimated jersey and shorts for the squad. Kit payment due ${KIT_PAYMENT_DUE}. Priced separately from the season fees below.`}
             />
             <StepCard
               step={2}
               icon={Volleyball}
               title="Season membership"
-              description="Covers full-court training sessions through the season and your team's home matchdays for Oct–April. Choose how you pay below."
+              description="Covers your squad's league season from October through April. Choose how you pay below."
             />
           </StaggerIn>
         </div>
@@ -214,20 +227,12 @@ export function Membership202627Showcase() {
               Fees by league
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Membership is priced by league tier. National League is for Division 2
-              Men and Division 3 Women; Regional League is for Regional Men. National
-              fees are slightly higher because those squads have more league matchdays (~14
-              vs ~8). Amounts below are the full season total.
+              {MEMBERSHIP_FEES_BY_LEAGUE_INTRO}
             </p>
           </AnimateIn>
-          <StaggerIn
-            className="mx-auto mt-10 grid max-w-4xl gap-6 md:grid-cols-2"
-            stagger={100}
-          >
-            {MEMBERSHIP_LEAGUE_TIERS_2026_27.map((tier) => (
-              <LeagueMembershipCard key={tier.id} tier={tier} />
-            ))}
-          </StaggerIn>
+          <AnimateIn variant="fade-up">
+            <LeagueFeesComparison />
+          </AnimateIn>
         </div>
       </section>
 
@@ -266,7 +271,7 @@ export function Membership202627Showcase() {
             <ValuePillar
               icon={CalendarDays}
               title="Weekly training"
-              description="Full-court hall time and coaching for your squad's weekly session through the season."
+              description="Your squad's weekly session at Meakstown — hall time and structure through the season."
             />
             <ValuePillar
               icon={Trophy}

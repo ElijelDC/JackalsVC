@@ -2,15 +2,24 @@ export const MEMBERSHIP_SEASON_LABEL = "October 2026 – April 2027";
 
 export const KIT_FEE_EUR = 45;
 
+/** When kit payment is due (shown on the public membership page). */
+export const KIT_PAYMENT_DUE = "first week of September";
+
 export const MEMBERSHIP_FULL_COURT_TRAINING_COPY =
   "Full-court training sessions at Meakstown throughout the season for your squad";
 
 export const MEMBERSHIP_COACHING_COPY =
   "Dedicated coaching staff for your squad every training night";
 
-export function formatLeagueMatchdaysCopy(matchdays: number) {
-  return `~${matchdays} league matchdays throughout the season`;
-}
+export const MEMBERSHIP_MERCHANDISE_COPY =
+  "Reduced pricing on club merchandise";
+
+/** Shown once below the league fee cards. */
+export const MEMBERSHIP_LEAGUE_COVERAGE_COPY =
+  "Full-court training sessions at Meakstown throughout the season for your squad, with dedicated coaching staff every training night. Members also get reduced pricing on club merchandise.";
+
+export const MEMBERSHIP_FEES_BY_LEAGUE_INTRO =
+  "Membership is priced by league tier. National League is for Division 2 Men and Division 3 Women; Regional League is for Regional Men. Amounts below are the full season total.";
 
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
@@ -34,7 +43,6 @@ export type MembershipLeagueTier202627 = {
   league: string;
   name: string;
   squads: string;
-  leagueMatchdays: number;
   adultFee: number;
   studentFee: number;
 };
@@ -45,7 +53,6 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     league: "National League",
     name: "National League team",
     squads: "Division 2 Men · Division 3 Women",
-    leagueMatchdays: 14,
     adultFee: 365,
     studentFee: 320,
   },
@@ -54,23 +61,20 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     league: "Regional League",
     name: "Regional League team",
     squads: "Regional Men",
-    leagueMatchdays: 8,
     adultFee: 325,
     studentFee: 280,
   },
 ];
 
 export const MEMBERSHIP_INCLUDES = [
-  "Full-court training sessions for your squad through the season",
-  "Your team's weekly training — one night per week at Meakstown",
   "Home matchday costs when the club hosts at Luttrellstown",
-  "Coached sessions for your squad through the league season",
   "Structured league volleyball Oct–April — hall, coach, and fixtures",
   "Reduced member pricing on club fun sessions",
+  MEMBERSHIP_MERCHANDISE_COPY,
 ] as const;
 
 export const MEMBERSHIP_EXCLUDES = [
-  `Club kit (€${KIT_FEE_EUR} — buy before membership opens)`,
+  `Club kit (€${KIT_FEE_EUR} — due ${KIT_PAYMENT_DUE}, separate from membership)`,
   "Volleyball Ireland League License",
   "Tournament entries",
   "Extra training beyond your team's weekly night",
