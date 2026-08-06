@@ -12,8 +12,10 @@ import {
   X,
 } from "lucide-react";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
+import { MembershipMerchGallery } from "@/components/membership/MembershipMerchGallery";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
+import { TournamentCollapsibleSection } from "@/components/tournaments/TournamentCollapsibleSection";
 import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
@@ -219,6 +221,17 @@ export function Membership202627Showcase() {
           </StaggerIn>
         </div>
       </section>
+
+      <TournamentCollapsibleSection
+        eyebrow="2026/27"
+        title="Kit & merch"
+        description="Premium Legea designs for the season — what your squad wears on court and off it."
+        toggleLabel="kit & merch"
+        className="border-b border-white/10 border-t-0"
+        contentClassName="!mt-0"
+      >
+        <MembershipMerchGallery />
+      </TournamentCollapsibleSection>
 
       <section className="py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
