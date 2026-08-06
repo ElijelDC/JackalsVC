@@ -12,10 +12,9 @@ import {
   X,
 } from "lucide-react";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
-import { MembershipMerchGallery } from "@/components/membership/MembershipMerchGallery";
+import { MembershipMerchCollapsible } from "@/components/membership/MembershipMerchGallery";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
-import { TournamentCollapsibleSection } from "@/components/tournaments/TournamentCollapsibleSection";
 import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
@@ -109,7 +108,7 @@ function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
 
 function MembershipIncludesCard() {
   return (
-    <article className="relative flex flex-col overflow-hidden border border-white/10 bg-jackals-surface/90 md:col-span-2">
+    <article className="relative flex flex-col overflow-hidden border border-white/10 bg-jackals-surface/90">
       <div
         aria-hidden
         className="h-1.5 w-full bg-gradient-to-r from-jackals-red via-jackals-red-light to-jackals-red"
@@ -128,13 +127,14 @@ function MembershipIncludesCard() {
 
 function LeagueFeesComparison() {
   return (
-    <div className="mx-auto mt-10 max-w-4xl">
+    <div className="mx-auto mt-10 max-w-4xl space-y-6">
       <StaggerIn className="grid gap-6 md:grid-cols-2" stagger={100}>
         {MEMBERSHIP_LEAGUE_TIERS_2026_27.map((tier) => (
           <LeagueMembershipCard key={tier.id} tier={tier} />
         ))}
-        <MembershipIncludesCard />
       </StaggerIn>
+      <MembershipMerchCollapsible />
+      <MembershipIncludesCard />
     </div>
   );
 }
@@ -221,17 +221,6 @@ export function Membership202627Showcase() {
           </StaggerIn>
         </div>
       </section>
-
-      <TournamentCollapsibleSection
-        eyebrow="2026/27"
-        title="Kit & merch"
-        description="Premium Legea designs for the season — what your squad wears on court and off it."
-        toggleLabel="kit & merch"
-        className="border-b border-white/10 border-t-0"
-        contentClassName="!mt-0"
-      >
-        <MembershipMerchGallery />
-      </TournamentCollapsibleSection>
 
       <section className="py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

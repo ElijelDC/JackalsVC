@@ -1,9 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   X,
@@ -347,7 +348,7 @@ function MerchCarousel({
   );
 }
 
-export function MembershipMerchGallery() {
+export function MembershipMerchGallery({ embedded = false }: { embedded?: boolean }) {
   const [kitFilter, setKitFilter] = useState<MembershipMerchCategory>("men");
   const [lightboxItems, setLightboxItems] = useState<MembershipMerchItem202627[] | null>(
     null,
@@ -367,7 +368,7 @@ export function MembershipMerchGallery() {
 
   return (
     <>
-      <div className="mx-auto max-w-6xl space-y-12">
+      <div className={cn("mx-auto space-y-12", embedded ? "max-w-6xl p-4 sm:p-6" : "mt-10 max-w-6xl")}>
         <div>
           <div className="mb-6 text-center md:mb-8">
             <h3 className="font-display text-xl font-bold text-white sm:text-2xl">
@@ -426,5 +427,45 @@ export function MembershipMerchGallery() {
         />
       ) : null}
     </>
+  );
+}
+
+export function MembershipMerchCollapsible() {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+
+  return (
+    <div className="overflow-hidden border border-white/10 bg-jackals-surface/90">
+      <div className="p-5 text-center sm:p-6">
+        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+          2026/27
+        </p>
+        <h3 className="mt-1 font-display text-xl font-bold text-white sm:text-2xl">
+          Kit &amp; merch
+        </h3>
+        <p className="mx-auto mt-2 max-w-xl text-sm leading-relaxed text-zinc-400">
+          Premium Legea designs for the season — what your squad wears on court and off it.
+        </p>
+        <button
+          type="button"
+          className="mt-5 inline-flex min-h-11 items-center gap-2 border border-white/15 bg-white/[0.03] px-5 py-2.5 text-sm font-semibold uppercase tracking-wide text-white transition-colors hover:border-jackals-red/45 hover:bg-jackals-red/10"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={() => setOpen((value) => !value)}
+        >
+          {open ? "Hide" : "View"} kit &amp; merch
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 transition-transform duration-200",
+              open && "rotate-180",
+            )}
+            aria-hidden
+          />
+        </button>
+      </div>
+      <div id={panelId} hidden={!open} className="border-t border-white/10">
+        {open ? <MembershipMerchGallery embedded /> : null}
+      </div>
+    </div>
   );
 }
