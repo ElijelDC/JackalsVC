@@ -6,6 +6,10 @@
   --jackals-red: #e8222a;
   --jackals-red-hover: #ff2d35;
   --jackals-red-light: #ff4d54;
+  /* Women's kit accent — black & purple */
+  --jackals-purple: #9333ea;
+  --jackals-purple-hover: #a855f7;
+  --jackals-purple-light: #c084fc;
   --jackals-gray: #a3a3a3;
   --jackals-surface: #2a2b2b;
   --jackals-surface-muted: #252626;
@@ -18,6 +22,9 @@
   --color-jackals-red: var(--jackals-red);
   --color-jackals-red-hover: var(--jackals-red-hover);
   --color-jackals-red-light: var(--jackals-red-light);
+  --color-jackals-purple: var(--jackals-purple);
+  --color-jackals-purple-hover: var(--jackals-purple-hover);
+  --color-jackals-purple-light: var(--jackals-purple-light);
   --color-jackals-gray: var(--jackals-gray);
   --color-jackals-surface: var(--jackals-surface);
   --color-jackals-surface-muted: var(--jackals-surface-muted);
@@ -642,5 +649,223 @@ h4,
   }
   100% {
     background-position: 200% center;
+  }
+}
+
+/* Club offer — team accent themes (red default, purple for D3 Women) */
+/* Club offer theme hooks (purple override); red teams use jackals-red utilities directly */
+.club-offer-theme {
+  --offer-accent: var(--jackals-red);
+  --offer-accent-hover: var(--jackals-red-hover);
+  --offer-accent-light: var(--jackals-red-light);
+  --offer-accent-rgb: 232, 34, 42;
+}
+
+.club-offer-theme-purple {
+  --offer-accent: var(--jackals-purple);
+  --offer-accent-hover: var(--jackals-purple-hover);
+  --offer-accent-light: var(--jackals-purple-light);
+  --offer-accent-rgb: 147, 51, 234;
+}
+
+/* Club offer — celebratory visual language */
+@keyframes club-offer-sweep {
+  0% {
+    transform: translateX(-120%) skewX(-18deg);
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.55;
+  }
+  100% {
+    transform: translateX(140%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@keyframes club-offer-stamp {
+  0% {
+    transform: scale(1.35) rotate(-8deg);
+    opacity: 0;
+    filter: blur(6px);
+  }
+  55% {
+    transform: scale(0.96) rotate(1deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes club-offer-underline {
+  from {
+    transform: scaleX(0);
+    opacity: 0.2;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+@keyframes club-offer-benefit-in {
+  from {
+    opacity: 0;
+    transform: translateY(36px) scale(0.94);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+@keyframes club-offer-confetti {
+  0% {
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--cx), var(--cy), 0) rotate(220deg) scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes club-offer-ring-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  50% {
+    transform: scale(1.12);
+    opacity: 0.7;
+  }
+}
+
+/* Periodic lightning strike — flash → bolt → fade */
+@keyframes club-offer-strike-flash {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  12% {
+    opacity: 0.85;
+    transform: scale(1.05);
+  }
+  35% {
+    opacity: 0.35;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes club-offer-strike-bolt {
+  0% {
+    opacity: 0;
+  }
+  8% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes club-offer-strike-draw {
+  from {
+    stroke-dashoffset: 220;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.club-offer-strike-flash {
+  opacity: 0;
+}
+
+.club-offer-theme .club-offer-strike-flash {
+  background-color: rgba(232, 34, 42, 0.45);
+}
+
+.club-offer-theme-purple .club-offer-strike-flash {
+  background-color: rgba(147, 51, 234, 0.45);
+}
+
+.club-offer-strike-bolt {
+  opacity: 0;
+}
+
+.club-offer-strike-bolt path {
+  stroke-dasharray: 220;
+  stroke-dashoffset: 220;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .club-offer-accent-word {
+    animation: motion-ambient-orb 10s ease-in-out infinite;
+  }
+
+  .club-offer-light-sweep {
+    animation: club-offer-sweep 3.8s cubic-bezier(0.22, 1, 0.36, 1) 0.35s both;
+  }
+
+  .club-offer-stamp {
+    animation: club-offer-stamp 0.85s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+  }
+
+  .club-offer-benefit-active {
+    animation: club-offer-benefit-in 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .club-offer-benefit-underline {
+    transform-origin: center;
+    animation: club-offer-underline 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .club-offer-cta-ring {
+    animation: club-offer-ring-pulse 2.8s ease-in-out infinite;
+  }
+
+  .club-offer-confetti-piece {
+    animation: club-offer-confetti 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .club-offer-strike-active .club-offer-strike-flash {
+    animation: club-offer-strike-flash 0.42s ease-out both;
+  }
+
+  .club-offer-strike-bolt.is-striking {
+    animation: club-offer-strike-bolt 0.42s ease-out both;
+  }
+
+  .club-offer-strike-bolt.is-striking path {
+    animation: club-offer-strike-draw 0.18s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .club-offer-light-sweep,
+  .club-offer-stamp,
+  .club-offer-benefit-active,
+  .club-offer-benefit-underline,
+  .club-offer-cta-ring,
+  .club-offer-confetti-piece,
+  .club-offer-accent-word,
+  .club-offer-strike-active .club-offer-strike-flash,
+  .club-offer-strike-bolt.is-striking,
+  .club-offer-strike-bolt.is-striking path {
+    animation: none;
   }
 }

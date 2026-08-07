@@ -503,6 +503,89 @@ export const trialsApplicationSchema = z
     }
   });
 
+const offerTeamSlugSchema = z.enum(
+  ["division-2-men", "division-3-women", "regional-men"],
+  { message: "Select a valid team offer" },
+);
+
+const offerPersonFields = {
+  teamSlug: offerTeamSlugSchema,
+  fullName: z.string().min(2, "Enter your full name").max(120),
+  email: z.string().email("Enter a valid email address"),
+};
+
+const offerPhoneRequired = z
+  .string()
+  .min(7, "Enter a valid phone number")
+  .max(30, "Phone number is too long");
+
+const offerPhoneOptional = z
+  .string()
+  .max(30, "Phone number is too long")
+  .optional()
+  .transform((val) => (val?.trim() ? val.trim() : ""));
+
+const offerCommitmentAccepted = z.literal(true, {
+  message: "Please confirm your commitment to the club",
+});
+
+const offerSignatureDataUrl = z
+  .string()
+  .min(40, "Please sign in the signature box")
+  .max(400_000, "Signature is too large — try signing again")
+  .refine(
+    (value) => value.startsWith("data:image/png;base64,"),
+    "Invalid signature format",
+  );
+
+export const clubOfferAcceptanceSchema = z
+  .object({
+    ...offerPersonFields,
+    phoneNumber: offerPhoneRequired,
+    preferredKitNumber1: z.coerce
+      .number({ message: "Enter preferred kit number 1" })
+      .int("Kit number must be a whole number")
+      .min(1, "Kit numbers are between 1 and 99")
+      .max(99, "Kit numbers are between 1 and 99"),
+    preferredKitNumber2: z.coerce
+      .number({ message: "Enter preferred kit number 2" })
+      .int("Kit number must be a whole number")
+      .min(1, "Kit numbers are between 1 and 99")
+      .max(99, "Kit numbers are between 1 and 99"),
+    commitmentAccepted: offerCommitmentAccepted,
+    signatureDataUrl: offerSignatureDataUrl,
+  })
+  .superRefine((data, ctx) => {
+    if (data.preferredKitNumber1 === data.preferredKitNumber2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["preferredKitNumber2"],
+        message: "Choose a different second kit number",
+      });
+    }
+  });
+
+export const clubOfferDeclineSchema = z.object({
+  ...offerPersonFields,
+  phoneNumber: offerPhoneOptional,
+});
+
+export const coachOfferAcceptanceSchema = z.object({
+  ...offerPersonFields,
+  phoneNumber: offerPhoneRequired,
+  poloMaterial: z.enum(["polyester", "cotton"], {
+    message: "Select your coach polo material",
+  }),
+  poloSize: z.string().min(1, "Select your coach polo size").max(20),
+  commitmentAccepted: offerCommitmentAccepted,
+  signatureDataUrl: offerSignatureDataUrl,
+});
+
+export const coachOfferDeclineSchema = z.object({
+  ...offerPersonFields,
+  phoneNumber: offerPhoneOptional,
+});
+
 export const achievementSchema = z.object({
   title: z.string().min(1, "Title is required"),
   season: z.string().min(1, "Season is required"),

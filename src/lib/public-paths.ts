@@ -23,6 +23,11 @@ export const PUBLIC_PATHS = {
     sponsorPresentation: "/downloads/jackals-vc-sponsor-presentation.pdf",
     beachTournamentRules:
       "/downloads/jvc-mixed-beach-2v2-tournament-rules.pdf",
+    coachOfferPoloSizeGuide:
+      "/downloads/coach-offer/legea-m1194-polo-size-guide.png",
+    coachOfferPoloPolyester:
+      "/downloads/coach-offer/coach-polo-polyester.png",
+    coachOfferPoloCotton: "/downloads/coach-offer/coach-polo-cotton.png",
   },
 } as const;
 

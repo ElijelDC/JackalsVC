@@ -1,32 +1,18 @@
 import { NextResponse } from "next/server";
 import type { ZodSchema } from "zod";
 import { auth } from "@/auth";
-import { reportClientErrorToAdmins } from "@/lib/client-error-report.server";
 import { prisma } from "@/lib/prisma";
 
 export function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
 }
 
-/** User-safe 500 response that also notifies admins (never throws). */
+/** User-safe 500 response (never throws). Errors are logged; no admin email. */
 export async function jsonServerError(
   message: string,
   context?: { route?: string; cause?: unknown },
 ) {
   console.error("[api]", context?.route ?? "unknown route", context?.cause ?? message);
-
-  void reportClientErrorToAdmins({
-    message,
-    endpoint: context?.route,
-    status: 500,
-    stack:
-      context?.cause instanceof Error
-        ? context.cause.stack
-        : context?.cause
-          ? String(context.cause)
-          : undefined,
-  });
-
   return jsonError(message, 500);
 }
 

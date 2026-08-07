@@ -213,6 +213,7 @@ const GUEST_PRIMARY_NAV_HREFS = [
   "/events",
   "/sponsors",
   "/gallery",
+  "/coaching",
   "/trials",
 ] as const;
 
