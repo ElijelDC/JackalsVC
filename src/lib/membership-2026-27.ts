@@ -4,6 +4,8 @@ export const KIT_FEE_EUR = 45;
 
 export const CLUB_JACKET_FEE_EUR = 25;
 
+export const CLUB_JACKET_FULL_PRICE_EUR = 45;
+
 export function formatMembershipEuro(amount: number) {
   return `€${amount.toLocaleString("en-IE", { maximumFractionDigits: 0 })}`;
 }
@@ -68,7 +70,7 @@ export const MEMBERSHIP_CLUB_JACKETS_2026_27: MembershipMerchItem202627[] = [
   {
     id: "jacket-quarter-zip",
     title: "Quarter zip",
-    subtitle: `Club jacket · ${formatMembershipEuro(CLUB_JACKET_FEE_EUR)}`,
+    subtitle: "Club jacket",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/jacket-quarter-zip.png`,
     imageAlt: "Jackals club quarter-zip jacket in black with red accents — front and back",
     accent: "red",
@@ -76,7 +78,7 @@ export const MEMBERSHIP_CLUB_JACKETS_2026_27: MembershipMerchItem202627[] = [
   {
     id: "jacket-hoodie",
     title: "Zip hoodie",
-    subtitle: `Club jacket · ${formatMembershipEuro(CLUB_JACKET_FEE_EUR)}`,
+    subtitle: "Club jacket",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/jacket-hoodie.png`,
     imageAlt: "Jackals club zip hoodie in black with red accents — front and back",
     accent: "red",
@@ -84,7 +86,7 @@ export const MEMBERSHIP_CLUB_JACKETS_2026_27: MembershipMerchItem202627[] = [
   {
     id: "jacket-high-collar",
     title: "High collar zip",
-    subtitle: `Club jacket · ${formatMembershipEuro(CLUB_JACKET_FEE_EUR)}`,
+    subtitle: "Club jacket",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/jacket-high-collar.png`,
     imageAlt: "Jackals club high-collar zip jacket in black with red accents — front and back",
     accent: "red",

@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import {
   CLUB_JACKET_FEE_EUR,
+  CLUB_JACKET_FULL_PRICE_EUR,
   formatMembershipEuro,
   MEMBERSHIP_CLUB_JACKETS_2026_27,
   MEMBERSHIP_MATCH_KITS_2026_27,
@@ -21,6 +22,19 @@ import {
 import { cn } from "@/lib/utils";
 
 const SWIPE_THRESHOLD_PX = 48;
+
+function ClubJacketPrice({ className }: { className?: string }) {
+  return (
+    <p className={cn("mt-1 flex flex-wrap items-baseline gap-2", className)}>
+      <span className="font-display text-lg text-zinc-500 line-through">
+        {formatMembershipEuro(CLUB_JACKET_FULL_PRICE_EUR)}
+      </span>
+      <span className="font-display text-xl font-bold text-jackals-red-light">
+        {formatMembershipEuro(CLUB_JACKET_FEE_EUR)}
+      </span>
+    </p>
+  );
+}
 
 function MerchImageLightbox({
   items,
@@ -161,7 +175,11 @@ function MerchPreviewCard({
       </button>
       <div className="border-t border-white/10 p-4 sm:p-5">
         <h3 className="font-display text-lg font-bold text-white">{item.title}</h3>
-        <p className="mt-1 text-sm text-zinc-400">{item.subtitle}</p>
+        {item.id.startsWith("jacket-") ? (
+          <ClubJacketPrice />
+        ) : (
+          <p className="mt-1 text-sm text-zinc-400">{item.subtitle}</p>
+        )}
       </div>
     </article>
   );
@@ -404,9 +422,8 @@ export function MembershipMerchGallery({ embedded = false }: { embedded?: boolea
               Club jackets
             </h3>
             <p className="mt-2 text-sm text-zinc-400 sm:text-base">
-              Optional off-court layer in club colours — three styles, each{" "}
-              {formatMembershipEuro(CLUB_JACKET_FEE_EUR)}. Priced separately from
-              match kit and membership.
+              Optional Legea off-court layer — 3 different variants. Prices below
+              include the reduced member rate.
             </p>
           </div>
 

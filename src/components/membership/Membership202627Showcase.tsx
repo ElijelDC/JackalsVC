@@ -133,8 +133,8 @@ function LeagueFeesComparison() {
           <LeagueMembershipCard key={tier.id} tier={tier} />
         ))}
       </StaggerIn>
-      <MembershipMerchCollapsible />
       <MembershipIncludesCard />
+      <MembershipMerchCollapsible />
     </div>
   );
 }
@@ -273,7 +273,7 @@ export function Membership202627Showcase() {
             <ValuePillar
               icon={CalendarDays}
               title="Weekly training"
-              description="Your squad's weekly session at Meakstown — hall time and structure through the season."
+              description="Your squad's weekly session at Meakstown — hall time, coaching, and structure through the season."
             />
             <ValuePillar
               icon={Trophy}
