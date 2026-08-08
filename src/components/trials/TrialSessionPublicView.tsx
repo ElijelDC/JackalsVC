@@ -38,6 +38,7 @@ type TrialSessionPublicViewProps = {
 };
 
 const STORAGE_PREFIX = "trial-session-registration:";
+const GLOBAL_SIGNUP_PROFILE_KEY = "trial-session-signup-profile";
 const PAYMENT_PROOF_PREFIX = "trial-session-payment-proof:";
 const SUBMITTED_PREFIX = "trial-session-submitted:";
 const VIEWER_STATE_PREFIX = "trial-session-viewer-state:";
@@ -133,10 +134,10 @@ type StoredRegistration = {
   displayName: string;
 };
 
-function readStoredRegistration(slug: string): StoredRegistration | null {
+function readGlobalSignupProfile(): StoredRegistration | null {
   if (typeof window === "undefined") return null;
 
-  const raw = localStorage.getItem(storageKey(slug));
+  const raw = localStorage.getItem(GLOBAL_SIGNUP_PROFILE_KEY);
   if (!raw) return null;
 
   try {
@@ -147,20 +148,50 @@ function readStoredRegistration(slug: string): StoredRegistration | null {
       displayName: parsed.displayName?.trim() ?? "",
     };
   } catch {
-    const legacyEmail = raw.trim().toLowerCase();
-    return legacyEmail ? { email: legacyEmail, displayName: "" } : null;
+    return null;
   }
 }
 
-function writeStoredRegistration(slug: string, registration: StoredRegistration) {
+function writeGlobalSignupProfile(registration: StoredRegistration) {
   if (typeof window === "undefined") return;
   localStorage.setItem(
-    storageKey(slug),
+    GLOBAL_SIGNUP_PROFILE_KEY,
     JSON.stringify({
       email: registration.email.trim().toLowerCase(),
       displayName: registration.displayName.trim(),
     }),
   );
+}
+
+function readStoredRegistration(slug: string): StoredRegistration | null {
+  if (typeof window === "undefined") return null;
+
+  const raw = localStorage.getItem(storageKey(slug));
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw) as Partial<StoredRegistration>;
+      if (!parsed.email?.trim()) return null;
+      return {
+        email: parsed.email.trim().toLowerCase(),
+        displayName: parsed.displayName?.trim() ?? "",
+      };
+    } catch {
+      const legacyEmail = raw.trim().toLowerCase();
+      return legacyEmail ? { email: legacyEmail, displayName: "" } : null;
+    }
+  }
+
+  return readGlobalSignupProfile();
+}
+
+function writeStoredRegistration(slug: string, registration: StoredRegistration) {
+  if (typeof window === "undefined") return;
+  const normalized = {
+    email: registration.email.trim().toLowerCase(),
+    displayName: registration.displayName.trim(),
+  };
+  localStorage.setItem(storageKey(slug), JSON.stringify(normalized));
+  writeGlobalSignupProfile(normalized);
 }
 
 function firstName(name: string) {
