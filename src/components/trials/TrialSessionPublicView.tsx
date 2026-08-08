@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { format } from "date-fns";
 import {
   CalendarDays,
   CheckCircle2,
@@ -264,7 +263,11 @@ export function TrialSessionPublicView({
 
   const eventDate = useMemo(() => new Date(session.startDate), [session.startDate]);
   const past = eventDate < new Date();
-  const { timeLabel } = formatEventDateTime(session.startDate, session.endDate);
+  const { dateLabel, timeLabel } = formatEventDateTime(
+    session.startDate,
+    session.endDate,
+    { timeZone: "club" },
+  );
   const hasPaymentStep =
     trialSessionRequiresPaymentProof(session) && !past;
   const registerStep = hasPaymentStep ? 3 : 1;
@@ -758,9 +761,7 @@ export function TrialSessionPublicView({
             <h1 className="font-display text-2xl font-semibold text-white">
               {session.title}
             </h1>
-            <p className="mt-2 text-sm text-zinc-400">
-              {format(eventDate, "EEEE d MMMM yyyy")}
-            </p>
+            <p className="mt-2 text-sm text-zinc-400">{dateLabel}</p>
 
             <div className="mt-5 grid gap-3 sm:grid-cols-2">
               <div className="flex items-center gap-2 text-sm text-zinc-300">

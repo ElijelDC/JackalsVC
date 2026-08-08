@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
 import { COACH_PAYMENT_TYPES } from "@/lib/coach-payment-type";
 
 /** Preprocess empty strings/null/undefined → undefined for optional Zod fields */
@@ -778,17 +779,19 @@ export const trialSessionSchema = z
   .superRefine((data, ctx) => {
     if (!data.endDate) return;
 
-    const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
+    try {
+      const start = parseDatetimeLocalAsClubTime(data.startDate);
+      const end = parseDatetimeLocalAsClubTime(data.endDate);
 
-    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
-
-    if (end <= start) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "End time must be after the start time",
-        path: ["endDate"],
-      });
+      if (end <= start) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "End time must be after the start time",
+          path: ["endDate"],
+        });
+      }
+    } catch {
+      // Invalid datetime strings are handled by required/format checks elsewhere.
     }
   });
 

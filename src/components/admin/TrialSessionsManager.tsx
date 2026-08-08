@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { format } from "date-fns";
 import { useRouter } from "next/navigation";
 import { Check, Copy, ExternalLink, Loader2, Mail, Users } from "lucide-react";
@@ -15,7 +15,10 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import { DEFAULT_RECLUB_USERNAME } from "@/lib/club-payment-defaults";
-import { toDatetimeLocal } from "@/lib/datetime-form";
+import {
+  formatInClubTime,
+  toClubDatetimeLocal,
+} from "@/lib/datetime-form";
 import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/client-api";
 import type {
   AdminTrialSessionListItem,
@@ -27,6 +30,35 @@ import {
   trialSessionPublicPath,
 } from "@/lib/trial-session-types";
 import { trialSessionReminderWindowOpensAt } from "@/lib/trial-session-reminder-window";
+import { cn } from "@/lib/utils";
+
+type SessionTimeFilter = "all" | "active" | "past";
+
+const TIME_FILTERS: { id: SessionTimeFilter; label: string }[] = [
+  { id: "all", label: "All" },
+  { id: "active", label: "Active" },
+  { id: "past", label: "Past" },
+];
+
+function sessionEndsAt(session: AdminTrialSessionListItem) {
+  return new Date(session.endDate ?? session.startDate);
+}
+
+function isPastSession(session: AdminTrialSessionListItem, now = new Date()) {
+  return sessionEndsAt(session) < now;
+}
+
+function formatSessionWhen(iso: string) {
+  return formatInClubTime(iso, {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+}
 
 type TrialSessionFormState = {
   title: string;
@@ -104,6 +136,7 @@ export function TrialSessionsManager({
   const router = useRouter();
   const [sessions, setSessions] = useSyncedListState(initialSessions);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
   const [form, setForm] = useState<TrialSessionFormState>(createEmptyForm);
   const [signups, setSignups] = useState<TrialSessionSignupRecord[]>([]);
   const [reminderStats, setReminderStats] =
@@ -117,6 +150,7 @@ export function TrialSessionsManager({
   const [updatingSignupId, setUpdatingSignupId] = useState<string | null>(null);
   const [selectedSignupIds, setSelectedSignupIds] = useState<string[]>([]);
   const [registrationsOpen, setRegistrationsOpen] = useState(true);
+  const [timeFilter, setTimeFilter] = useState<SessionTimeFilter>("active");
   const [error, setError] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -125,6 +159,7 @@ export function TrialSessionsManager({
   const resetForm = () => {
     setForm(createEmptyForm());
     setEditingId(null);
+    setIsDuplicating(false);
     setSignups([]);
     setReminderStats(null);
     setPublicPath(null);
@@ -176,23 +211,38 @@ export function TrialSessionsManager({
     setSignupError(result.error);
   }, []);
 
+  const formFromSession = (
+    session: AdminTrialSessionListItem,
+    options?: { duplicate?: boolean },
+  ): TrialSessionFormState => {
+    const duplicate = options?.duplicate ?? false;
+    const title = duplicate
+      ? session.title.endsWith(" (copy)")
+        ? session.title
+        : `${session.title} (copy)`
+      : session.title;
+
+    return {
+      title,
+      description: session.description ?? "",
+      startDate: toClubDatetimeLocal(session.startDate),
+      endDate: toClubDatetimeLocal(session.endDate),
+      location: session.location ?? "",
+      locationUrl: session.locationUrl ?? "",
+      coachName: session.coachName ?? "",
+      paymentUrl: session.paymentUrl ?? "",
+      reclubUsername: session.reclubUsername ?? DEFAULT_RECLUB_USERNAME,
+      sessionFee: session.sessionFee?.toString() ?? "",
+      slug: duplicate ? "" : session.slug,
+      active: session.active,
+    };
+  };
+
   const startEdit = (session: AdminTrialSessionListItem) => {
     beginAdminEdit(() => {
       setEditingId(session.id);
-      setForm({
-        title: session.title,
-        description: session.description ?? "",
-        startDate: toDatetimeLocal(session.startDate),
-        endDate: toDatetimeLocal(session.endDate),
-        location: session.location ?? "",
-        locationUrl: session.locationUrl ?? "",
-        coachName: session.coachName ?? "",
-        paymentUrl: session.paymentUrl ?? "",
-        reclubUsername: session.reclubUsername ?? DEFAULT_RECLUB_USERNAME,
-        sessionFee: session.sessionFee?.toString() ?? "",
-        slug: session.slug,
-        active: session.active,
-      });
+      setIsDuplicating(false);
+      setForm(formFromSession(session));
       setPublicPath(trialSessionPublicPath(session.slug));
       setRegistrationsOpen(true);
       setError(null);
@@ -200,6 +250,32 @@ export function TrialSessionsManager({
       setSelectedSignupIds([]);
     });
   };
+
+  const startDuplicate = (session: AdminTrialSessionListItem) => {
+    beginAdminEdit(() => {
+      setEditingId(null);
+      setIsDuplicating(true);
+      setForm(formFromSession(session, { duplicate: true }));
+      setSignups([]);
+      setReminderStats(null);
+      setPublicPath(null);
+      setRegistrationsOpen(true);
+      setError(null);
+      setMessage(null);
+      setSelectedSignupIds([]);
+      setSignupError(null);
+    });
+  };
+
+  const filteredSessions = useMemo(() => {
+    const now = new Date();
+    return sessions.filter((session) => {
+      const past = isPastSession(session, now);
+      if (timeFilter === "past") return past;
+      if (timeFilter === "active") return !past;
+      return true;
+    });
+  }, [sessions, timeFilter]);
 
   useEffect(() => {
     if (!editingId) {
@@ -453,11 +529,17 @@ export function TrialSessionsManager({
       <AdminFormCard
         collapsible
         openTriggerLabel="Create session"
-        title={editingId ? "Edit session" : "Create session"}
+        title={
+          editingId
+            ? "Edit session"
+            : isDuplicating
+              ? "Duplicate session"
+              : "Create session"
+        }
         error={error}
         message={message}
         onSubmit={handleSubmit}
-        onCancel={editingId ? resetForm : undefined}
+        onCancel={editingId || isDuplicating ? resetForm : undefined}
         submitLabel={editingId ? "Save changes" : "Create session"}
         loading={loading}
       >
@@ -489,7 +571,7 @@ export function TrialSessionsManager({
             />
           </div>
           <div>
-            <Label htmlFor="trial-session-start">Start</Label>
+            <Label htmlFor="trial-session-start">Start (Ireland time)</Label>
             <Input
               id="trial-session-start"
               type="datetime-local"
@@ -504,7 +586,7 @@ export function TrialSessionsManager({
             />
           </div>
           <div>
-            <Label htmlFor="trial-session-end">End (optional)</Label>
+            <Label htmlFor="trial-session-end">End (optional, Ireland time)</Label>
             <Input
               id="trial-session-end"
               type="datetime-local"
@@ -711,7 +793,15 @@ export function TrialSessionsManager({
                   ? "Select attendees below, then send reminders. Use Select all to include everyone who has not been emailed yet — useful for late sign-ups."
                   : "All registered attendees have already received a reminder."
                 : reminderOpensAt
-                  ? `Reminders open on ${format(reminderOpensAt, "EEE d MMM yyyy · HH:mm")}. Attendees are emailed automatically within 24 hours of the session.`
+                  ? `Reminders open on ${formatInClubTime(reminderOpensAt, {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hourCycle: "h23",
+                    })}. Attendees are emailed automatically within 24 hours of the session.`
                   : "Attendees are emailed automatically within 24 hours of the session."}
             </p>
           ) : null}
@@ -879,15 +969,50 @@ export function TrialSessionsManager({
       ) : null}
 
       <div className="mt-10 space-y-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="grid grid-cols-3 gap-1 rounded-lg bg-black/20 p-1 sm:w-auto sm:inline-grid">
+            {TIME_FILTERS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => setTimeFilter(option.id)}
+                className={cn(
+                  "rounded-md px-3 py-2 text-sm font-medium transition sm:py-1.5",
+                  timeFilter === option.id
+                    ? "bg-jackals-red text-white shadow-sm"
+                    : "text-zinc-400 hover:text-white",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-zinc-500">
+            Showing {filteredSessions.length} of {sessions.length}
+          </p>
+        </div>
+
         {sessions.length === 0 ? (
           <p className="text-sm text-zinc-500">No one-off sessions yet.</p>
+        ) : filteredSessions.length === 0 ? (
+          <p className="text-sm text-zinc-500">
+            No {timeFilter === "past" ? "past" : "active"} sessions.
+          </p>
         ) : (
-          sessions.map((session) => (
+          filteredSessions.map((session) => (
             <AdminListItem
               key={session.id}
               title={session.title}
               subtitle={[
-                format(new Date(session.startDate), "EEE d MMM yyyy · HH:mm"),
+                formatSessionWhen(session.startDate),
+                session.endDate
+                  ? `to ${formatInClubTime(session.endDate, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hourCycle: "h23",
+                    })}`
+                  : null,
+                isPastSession(session) ? "Past" : "Active",
                 session.location ? session.location : null,
                 session.coachName
                   ? `Coach ${session.coachName}`
@@ -904,6 +1029,7 @@ export function TrialSessionsManager({
                 .filter(Boolean)
                 .join(" · ")}
               onEdit={() => startEdit(session)}
+              onDuplicate={() => startDuplicate(session)}
               onDelete={() => void handleDelete(session.id)}
               deleting={deletingId === session.id}
             />

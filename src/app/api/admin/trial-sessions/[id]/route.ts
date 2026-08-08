@@ -9,6 +9,7 @@ import {
 import {
   deriveTrialSessionReminderStats,
 } from "@/lib/trial-session-reminders";
+import { parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
 import { trialSessionPublicPath } from "@/lib/trial-session-types";
 import { trialSessionSchema } from "@/lib/validations";
 
@@ -30,8 +31,8 @@ function toTrialSessionData(data: {
   return {
     title: data.title.trim(),
     description: data.description?.trim() || null,
-    startDate: new Date(data.startDate),
-    endDate: data.endDate ? new Date(data.endDate) : null,
+    startDate: parseDatetimeLocalAsClubTime(data.startDate),
+    endDate: data.endDate ? parseDatetimeLocalAsClubTime(data.endDate) : null,
     location: data.location?.trim() || null,
     locationUrl: data.locationUrl?.trim() || null,
     coachName: data.coachName?.trim() || null,

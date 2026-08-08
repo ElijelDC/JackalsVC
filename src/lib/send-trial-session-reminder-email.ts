@@ -24,6 +24,7 @@ export async function sendTrialSessionReminderEmail(input: {
   const { dateLabel, timeLabel } = formatEventDateTime(
     input.session.startDate.toISOString(),
     input.session.endDate?.toISOString() ?? null,
+    { timeZone: "club" },
   );
 
   const details = [

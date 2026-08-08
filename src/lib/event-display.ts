@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { CLUB_TIMEZONE, formatInClubTime } from "@/lib/datetime-form";
 import { isSkillsClinicEvent } from "@/lib/events-config";
 
 export const EVENT_TYPE_STYLES: Record<
@@ -100,11 +101,37 @@ function formatStartTimeLabel(date: Date) {
 export function formatEventDateTime(
   startDate: string,
   endDate: string | null,
-  options?: { eventType?: string },
+  options?: { eventType?: string; timeZone?: string },
 ) {
   const start = new Date(startDate);
   const end = endDate ? new Date(endDate) : null;
   const isTournament = options?.eventType === "TOURNAMENT";
+  const useClubTime =
+    options?.timeZone === CLUB_TIMEZONE || options?.timeZone === "club";
+
+  if (useClubTime) {
+    const dateLabel = formatInClubTime(start, {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const formatClock = (value: Date) =>
+      formatInClubTime(value, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      });
+
+    return {
+      dateLabel,
+      timeLabel: isTournament
+        ? formatClock(start)
+        : end
+          ? `${formatClock(start)} – ${formatClock(end)}`
+          : formatClock(start),
+    };
+  }
 
   return {
     dateLabel: format(start, "EEEE, d MMMM yyyy"),
