@@ -492,20 +492,20 @@ async function getOpenTrialSessionForSignup(slug: string) {
   const session = await prisma.trialSession.findUnique({ where: { slug } });
 
   if (!session) {
-    return { ok: false as const, error: "This trial session could not be found." };
+    return { ok: false as const, error: "This session could not be found." };
   }
 
   if (!session.active) {
     return {
       ok: false as const,
-      error: "Registration is closed for this trial session.",
+      error: "Registration is closed for this session.",
     };
   }
 
   if (session.startDate < new Date()) {
     return {
       ok: false as const,
-      error: "This trial session has already started.",
+      error: "This session has already started.",
     };
   }
 
@@ -619,7 +619,7 @@ export async function getTrialSessionPaymentProofStatus(
 ) {
   const session = await prisma.trialSession.findUnique({ where: { slug } });
   if (!session || !session.active) {
-    return { ok: false as const, error: "This trial session could not be found." };
+    return { ok: false as const, error: "This session could not be found." };
   }
 
   const proof = await prisma.trialSessionPaymentProof.findFirst({
@@ -704,7 +704,7 @@ export async function removeTrialSessionPaymentProof(
 ) {
   const session = await prisma.trialSession.findUnique({ where: { slug } });
   if (!session) {
-    return { ok: false as const, error: "This trial session could not be found." };
+    return { ok: false as const, error: "This session could not be found." };
   }
 
   const proof = await prisma.trialSessionPaymentProof.findFirst({

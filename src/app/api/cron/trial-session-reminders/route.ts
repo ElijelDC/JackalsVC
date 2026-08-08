@@ -15,7 +15,7 @@ async function handle(request: Request) {
     const message =
       error instanceof Error
         ? error.message
-        : "Failed to run trial session reminders";
+        : "Failed to run session reminders";
     return jsonError(message, 500);
   }
 }

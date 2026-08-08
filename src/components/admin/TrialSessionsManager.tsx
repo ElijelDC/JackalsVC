@@ -277,7 +277,7 @@ export function TrialSessionsManager({
       return;
     }
 
-    setMessage(editingId ? "Trial session updated." : "Trial session created.");
+    setMessage(editingId ? "Session updated." : "Session created.");
     if (!editingId) {
       resetForm();
     } else {
@@ -289,7 +289,7 @@ export function TrialSessionsManager({
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Delete this trial session and all registrations?")) return;
+    if (!confirm("Delete this session and all registrations?")) return;
     setDeletingId(id);
     const result = await apiDelete(`/api/admin/trial-sessions/${id}`);
     setDeletingId(null);
@@ -447,13 +447,13 @@ export function TrialSessionsManager({
 
   return (
     <AdminSection
-      title="One-off trial sessions"
-      description="Create private trial session links for prospective players. Requests are submitted with email and payment receipt, then approved manually before they appear on the public list."
+      title="One-off sessions"
+      description="Create private one-off session links. Requests are submitted with email and payment receipt, then approved manually before they appear on the public list."
     >
       <AdminFormCard
         collapsible
-        openTriggerLabel="Create trial session"
-        title={editingId ? "Edit trial session" : "Create trial session"}
+        openTriggerLabel="Create session"
+        title={editingId ? "Edit session" : "Create session"}
         error={error}
         message={message}
         onSubmit={handleSubmit}
@@ -551,7 +551,7 @@ export function TrialSessionsManager({
             </p>
           </div>
           <div>
-            <Label htmlFor="trial-session-coach">Trialing coach</Label>
+            <Label htmlFor="trial-session-coach">Session coach</Label>
             <Input
               id="trial-session-coach"
               value={form.coachName}
@@ -880,7 +880,7 @@ export function TrialSessionsManager({
 
       <div className="mt-10 space-y-3">
         {sessions.length === 0 ? (
-          <p className="text-sm text-zinc-500">No trial sessions yet.</p>
+          <p className="text-sm text-zinc-500">No one-off sessions yet.</p>
         ) : (
           sessions.map((session) => (
             <AdminListItem
@@ -890,7 +890,7 @@ export function TrialSessionsManager({
                 format(new Date(session.startDate), "EEE d MMM yyyy · HH:mm"),
                 session.location ? session.location : null,
                 session.coachName
-                  ? `Trialed by Coach ${session.coachName}`
+                  ? `Coach ${session.coachName}`
                   : null,
                 sessionFeeLabel(session),
                 session.paymentUrl ? "Payment link set" : "No payment link",

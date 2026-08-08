@@ -53,7 +53,7 @@ export async function GET(
   const session = await prisma.trialSession.findUnique({ where: { id } });
 
   if (!session) {
-    return jsonError("Trial session not found", 404);
+    return jsonError("Session not found", 404);
   }
 
   const signups = await listTrialSessionSignupsForAdmin(id);
@@ -80,7 +80,7 @@ export async function PUT(
   const { id } = await params;
   const existing = await prisma.trialSession.findUnique({ where: { id } });
   if (!existing) {
-    return jsonError("Trial session not found", 404);
+    return jsonError("Session not found", 404);
   }
 
   const { data, response: parseError } = await parseJsonBody(
@@ -121,7 +121,7 @@ export async function DELETE(
   const { id } = await params;
   const existing = await prisma.trialSession.findUnique({ where: { id } });
   if (!existing) {
-    return jsonError("Trial session not found", 404);
+    return jsonError("Session not found", 404);
   }
 
   await prisma.trialSession.delete({ where: { id } });

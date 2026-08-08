@@ -10,6 +10,7 @@ import {
   Rows3,
   Search,
   Shirt,
+  Trash2,
 } from "lucide-react";
 import { OfferSignatureModal } from "@/components/admin/OfferSignatureModal";
 import { Button } from "@/components/ui/Button";
@@ -24,7 +25,7 @@ import {
   coachPoloMaterialLabel,
   type CoachOfferTeamSlug,
 } from "@/lib/coach-offer-config";
-import { apiGet } from "@/lib/client-api";
+import { apiDelete, apiGet } from "@/lib/client-api";
 import { downloadExcelFromUrl } from "@/lib/download-excel";
 import {
   formatOfferSubmittedAt,
@@ -90,6 +91,7 @@ export function CoachOfferAcceptancesManager({
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [signaturePreview, setSignaturePreview] = useState<{
     fullName: string;
@@ -142,6 +144,31 @@ export function CoachOfferAcceptancesManager({
   const clearFilters = () => {
     setTeamFilter("ALL");
     setSearch("");
+  };
+
+  const handleDelete = async (row: CoachOfferResponseRecord) => {
+    if (
+      !confirm(
+        `Delete ${row.fullName}'s ${offerResponseStatusLabel(row.status).toLowerCase()} response for ${row.teamLabel}? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingId(row.id);
+    setError(null);
+    const result = await apiDelete(
+      `/api/admin/coach-offer-acceptances/${row.id}`,
+      "delete this coach offer response",
+    );
+    setDeletingId(null);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setResponses((current) => current.filter((item) => item.id !== row.id));
   };
 
   const hasSecondaryFilters = teamFilter !== "ALL" || search.trim() !== "";
@@ -347,9 +374,22 @@ export function CoachOfferAcceptancesManager({
                     : ""}
                 </p>
               </div>
-              <p className="shrink-0 text-xs text-zinc-600">
-                {formatOfferSubmittedAt(row.createdAt)}
-              </p>
+              <div className="flex shrink-0 items-center gap-3">
+                <p className="text-xs text-zinc-600">
+                  {formatOfferSubmittedAt(row.createdAt)}
+                </p>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="text-zinc-500 hover:text-rose-300"
+                  disabled={deletingId === row.id}
+                  onClick={() => void handleDelete(row)}
+                  aria-label={`Delete ${row.fullName}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>
@@ -429,10 +469,23 @@ export function CoachOfferAcceptancesManager({
                     ) : null}
                   </div>
 
-                  <p className="inline-flex shrink-0 items-center gap-1.5 text-xs text-zinc-600 sm:pt-1">
-                    <Clock3 className="h-3.5 w-3.5" />
-                    {formatOfferSubmittedAt(row.createdAt)}
-                  </p>
+                  <div className="flex shrink-0 items-center gap-2 sm:pt-1">
+                    <p className="inline-flex items-center gap-1.5 text-xs text-zinc-600">
+                      <Clock3 className="h-3.5 w-3.5" />
+                      {formatOfferSubmittedAt(row.createdAt)}
+                    </p>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      className="text-zinc-500 hover:text-rose-300"
+                      disabled={deletingId === row.id}
+                      onClick={() => void handleDelete(row)}
+                    >
+                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+                      {deletingId === row.id ? "Deleting…" : "Delete"}
+                    </Button>
+                  </div>
                 </div>
               </article>
             );

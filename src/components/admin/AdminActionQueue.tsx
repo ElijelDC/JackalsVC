@@ -117,7 +117,7 @@ export function AdminActionQueue({
             <div>
               <p className="font-medium text-green-100">All caught up</p>
               <p className="mt-1 text-sm text-green-200/70">
-                New member registrations, payment proofs, and trial session
+                New member registrations, payment proofs, and session
                 requests will show up here as soon as someone submits them.
               </p>
             </div>

@@ -12,7 +12,7 @@ export async function generateMetadata({
   const result = await getPublicTrialSessionBySlug(slug);
 
   if (!result.ok) {
-    return privatePageMetadata("Trial session");
+    return privatePageMetadata("Session");
   }
 
   return privatePageMetadata(result.session.title);

@@ -128,7 +128,7 @@ export async function sendTrialSessionReminders(
   });
 
   if (!session) {
-    throw new Error("Trial session not found");
+    throw new Error("Session not found");
   }
 
   if (signupIdFilter && session.signups.length !== signupIdFilter.size) {

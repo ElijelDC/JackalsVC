@@ -751,7 +751,7 @@ export function TrialSessionPublicView({
           <div className="border-b border-jackals-red/20 px-6 py-3">
             <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
               <CalendarDays className="h-3.5 w-3.5" />
-              Trial session
+              Session
             </div>
           </div>
           <div className="px-6 py-6">
@@ -790,7 +790,7 @@ export function TrialSessionPublicView({
               {session.coachName && (
                 <div className="flex items-center gap-2 text-sm text-zinc-300">
                   <GraduationCap className="h-4 w-4 shrink-0 text-jackals-red-light" />
-                  Trialed by Coach {session.coachName}
+                  Coach {session.coachName}
                 </div>
               )}
             </div>

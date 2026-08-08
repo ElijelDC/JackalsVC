@@ -72,7 +72,7 @@ export async function POST(
     const message =
       error instanceof Error ? error.message : "Failed to send reminders";
     const status =
-      message === "Trial session not found"
+      message === "Session not found"
         ? 404
         : message === "This session has already started" ||
             message ===

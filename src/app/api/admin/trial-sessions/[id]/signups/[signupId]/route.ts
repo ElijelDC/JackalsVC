@@ -25,6 +25,7 @@ async function revalidateTrialSessionViews(trialSessionId: string) {
   if (!session) return;
 
   revalidatePath("/admin");
+  revalidatePath("/admin/one-off-sessions");
   revalidatePath("/admin/trial-sessions");
   revalidatePath(trialSessionPublicPath(session.slug));
 }

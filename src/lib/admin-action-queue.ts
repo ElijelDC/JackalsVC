@@ -216,8 +216,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
   if (trialSessionSignupCount > 0) {
     entries.push({
       kind: "trial-session-signup",
-      href: "/admin/trial-sessions",
-      title: "Trial session requests",
+      href: "/admin/one-off-sessions",
+      title: "Session requests",
       summary:
         trialSessionSignupCount === 1
           ? "1 attendee waiting for approval"
@@ -246,7 +246,7 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     badgeCounts["/admin/trials-applications"] = trialsApplicationCount;
   }
   if (trialSessionSignupCount > 0) {
-    badgeCounts["/admin/trial-sessions"] = trialSessionSignupCount;
+    badgeCounts["/admin/one-off-sessions"] = trialSessionSignupCount;
   }
 
   return {

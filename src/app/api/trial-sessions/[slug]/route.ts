@@ -16,8 +16,8 @@ export async function GET(
   if (!result.ok) {
     const message =
       result.reason === "inactive"
-        ? "Registration is closed for this trial session."
-        : "This trial session could not be found.";
+        ? "Registration is closed for this session."
+        : "This session could not be found.";
     return NextResponse.json({ error: message }, { status: 404 });
   }
 

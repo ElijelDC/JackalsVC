@@ -40,10 +40,10 @@ export async function sendTrialSessionReminderEmail(input: {
     to: input.to,
     subject: `Reminder: ${input.session.title} is coming up`,
     content: {
-      heading: "Trial session reminder",
+      heading: "Session reminder",
       greeting: `Hi ${firstNameFrom(input.displayName)},`,
       paragraphs: [
-        "This is a reminder that you're registered for a Jackals VC trial session.",
+        "This is a reminder that you're registered for a Jackals VC session.",
         "We look forward to seeing you on court.",
       ],
       details,
