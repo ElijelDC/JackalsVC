@@ -1,4 +1,7 @@
-import { clubOfferTeamLabel } from "@/lib/club-offer-config";
+import {
+  clubOfferTeamLabel,
+  type ClubOfferTeamSlug,
+} from "@/lib/club-offer-config";
 import {
   OFFER_RESPONSE_STATUSES,
   type OfferResponseStatus,

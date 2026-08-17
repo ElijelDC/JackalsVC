@@ -1,4 +1,7 @@
-import { coachOfferTeamLabel } from "@/lib/coach-offer-config";
+import {
+  coachOfferTeamLabel,
+  type CoachOfferTeamSlug,
+} from "@/lib/coach-offer-config";
 import {
   OFFER_RESPONSE_STATUSES,
   type OfferResponseStatus,
