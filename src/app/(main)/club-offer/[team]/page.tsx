@@ -1,6 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { ClubOfferExperience } from "@/components/club-offer/ClubOfferExperience";
 import {
+  CLUB_OFFER_LEGACY_TEAM_SLUG,
   CLUB_OFFER_TEAM_SLUGS,
   getClubOfferTeam,
 } from "@/lib/club-offer-config";
@@ -33,6 +34,9 @@ export default async function ClubOfferPage({
   params: Promise<{ team: string }>;
 }) {
   const { team: teamSlug } = await params;
+  if (teamSlug === CLUB_OFFER_LEGACY_TEAM_SLUG) {
+    redirect("/club-offer/division-3-men");
+  }
   const team = getClubOfferTeam(teamSlug);
   if (!team) notFound();
 

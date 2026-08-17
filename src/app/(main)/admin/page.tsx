@@ -18,7 +18,6 @@ import {
   PartyPopper,
   Trophy,
   Package,
-  Shirt,
   ShoppingBag,
   UserCheck,
   Users,
@@ -55,13 +54,6 @@ const SECTIONS = [
     description: "Pricing and features",
     icon: CreditCard,
     countKey: "plans" as const,
-  },
-  {
-    href: "/admin/legea-products",
-    title: "Legea products store",
-    description: "Club kit catalog and store order form",
-    icon: Shirt,
-    countKey: null,
   },
   {
     href: "/admin/training",
@@ -215,7 +207,6 @@ export default async function AdminPage() {
       <AdminOverviewGrid>
         {SECTIONS.filter(
           (section) =>
-            section.href === "/admin/legea-products" ||
             SHOP_ENABLED ||
             (section.href !== "/admin/products" &&
               section.href !== "/admin/orders"),

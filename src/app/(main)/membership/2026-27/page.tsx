@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "2026/27 Membership",
   description:
-    "Jackals VC 2026/27 season membership — kit, fees by league, and what's included. National League and Regional League squads.",
+    "Jackals VC 2026/27 season membership — kit, fees by league, and what's included. National League squads.",
   path: "/membership/2026-27",
 });
 

@@ -81,6 +81,33 @@ export function trialSessionPublicPath(slug: string) {
   return `/trials/session/${slug}`;
 }
 
+export function trialSessionEndsAt(session: {
+  startDate: string | Date;
+  endDate?: string | Date | null;
+}) {
+  return new Date(session.endDate ?? session.startDate);
+}
+
+export function isTrialSessionInPast(
+  session: { startDate: string | Date; endDate?: string | Date | null },
+  now: Date = new Date(),
+) {
+  return trialSessionEndsAt(session) < now;
+}
+
+/** Prefer the upcoming/current session; callers should pass startDate desc. */
+export function pickLiveTrialSession<
+  T extends { startDate: string | Date; endDate?: string | Date | null },
+>(sessions: T[], now: Date = new Date()): T | null {
+  return sessions.find((session) => !isTrialSessionInPast(session, now)) ?? null;
+}
+
+export function pickPublicTrialSession<
+  T extends { startDate: string | Date; endDate?: string | Date | null },
+>(sessions: T[], now: Date = new Date()): T | null {
+  return pickLiveTrialSession(sessions, now) ?? sessions[0] ?? null;
+}
+
 export function normalizeTrialSessionEmail(email: string) {
   return email.trim().toLowerCase();
 }

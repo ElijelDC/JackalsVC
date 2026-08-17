@@ -576,7 +576,7 @@ model CoachOfferAcceptance {
 
 model TrialSession {
   id              String               @id @default(cuid())
-  slug            String               @unique
+  slug            String
   title           String
   description     String?
   startDate       DateTime
@@ -592,6 +592,8 @@ model TrialSession {
   updatedAt       DateTime             @updatedAt
   signups         TrialSessionSignup[]
   paymentProofs   TrialSessionPaymentProof[]
+
+  @@index([slug])
 }
 
 model TrialSessionPaymentProof {

@@ -1,8 +1,11 @@
 export const CLUB_OFFER_TEAM_SLUGS = [
   "division-2-men",
   "division-3-women",
-  "regional-men",
+  "division-3-men",
 ] as const;
+
+/** @deprecated Old offer URL slug — redirects to division-3-men */
+export const CLUB_OFFER_LEGACY_TEAM_SLUG = "regional-men";
 
 export type ClubOfferTeamSlug = (typeof CLUB_OFFER_TEAM_SLUGS)[number];
 
@@ -88,33 +91,33 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
     ],
     closingLine: "Confirm your place on Division 3 when you're ready.",
   },
-  "regional-men": {
-    slug: "regional-men",
-    shortName: "Regional Men",
-    fullName: "Regional Men",
-    league: "Regional League",
+  "division-3-men": {
+    slug: "division-3-men",
+    shortName: "Division 3 Men",
+    fullName: "Men's Division 3",
+    league: "National League",
     trainingNight: "",
     venue: "Meakstown",
-    heroEyebrow: "Club offer · Regional League",
+    heroEyebrow: "Club offer · National League",
     heroTitle: "Club Offer",
-    heroHighlight: "Regional Men",
+    heroHighlight: "Division 3 Men",
     heroSupport:
-      "Congratulations — you've been offered a place on Jackals Regional Men. Weekly training is at Meakstown.",
-    confirmLabel: "Confirm my Regional offer",
-    formHeading: "Accept your place",
+      "Congratulations — you've been offered a place on Jackals Men's Division 3. Weekly training is at Meakstown.",
+    confirmLabel: "Confirm my Division 3 offer",
+    formHeading: "Accept your Division 3 place",
     formSupport:
       "Share your details and preferred kit numbers so we can get you set for the season.",
-    accentWord: "REGIONAL",
+    accentWord: "DIVISION",
     accent: "red",
     benefits: [
       "Weekly training at Meakstown",
       "Optional extra training in Luttrellstown",
       "Coaching focused on your development",
       "Access to the seamless Jackals training web app",
-      "Member pricing on club fun sessions & merch",
+      "Member rates on club fun sessions & merch",
       "A hungry team looking to promote to the top",
     ],
-    closingLine: "Confirm your place on Regional Men when you're ready.",
+    closingLine: "Confirm your place on Division 3 when you're ready.",
   },
 };
 
@@ -123,10 +126,14 @@ export function isClubOfferTeamSlug(value: string): value is ClubOfferTeamSlug {
 }
 
 export function getClubOfferTeam(slug: string): ClubOfferTeam | null {
-  if (!isClubOfferTeamSlug(slug)) return null;
-  return CLUB_OFFER_TEAMS[slug];
+  const resolved =
+    slug === CLUB_OFFER_LEGACY_TEAM_SLUG ? "division-3-men" : slug;
+  if (!isClubOfferTeamSlug(resolved)) return null;
+  return CLUB_OFFER_TEAMS[resolved];
 }
 
-export function clubOfferTeamLabel(slug: ClubOfferTeamSlug) {
-  return CLUB_OFFER_TEAMS[slug].shortName;
+export function clubOfferTeamLabel(slug: string) {
+  if (isClubOfferTeamSlug(slug)) return CLUB_OFFER_TEAMS[slug].shortName;
+  if (slug === CLUB_OFFER_LEGACY_TEAM_SLUG) return "Division 3 Men";
+  return slug;
 }

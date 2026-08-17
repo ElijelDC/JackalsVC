@@ -1,8 +1,4 @@
-import {
-  CLUB_OFFER_TEAMS,
-  clubOfferTeamLabel,
-  type ClubOfferTeamSlug,
-} from "@/lib/club-offer-config";
+import { clubOfferTeamLabel } from "@/lib/club-offer-config";
 import {
   OFFER_RESPONSE_STATUSES,
   type OfferResponseStatus,
@@ -39,10 +35,7 @@ export function serializeClubOfferResponse(row: {
   status: string;
   createdAt: Date;
 }): ClubOfferResponseRecord {
-  const teamLabel =
-    row.teamSlug in CLUB_OFFER_TEAMS
-      ? clubOfferTeamLabel(row.teamSlug as ClubOfferTeamSlug)
-      : row.teamSlug;
+  const teamLabel = clubOfferTeamLabel(row.teamSlug);
 
   return {
     id: row.id,

@@ -1,9 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { format } from "date-fns";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, ExternalLink, Loader2, Mail, Users } from "lucide-react";
+import { Check, Copy, ExternalLink } from "lucide-react";
 import { useSyncedListState } from "@/hooks/useSyncedListState";
 import {
   AdminFormCard,
@@ -11,22 +10,22 @@ import {
   beginAdminEdit,
 } from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
-import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
+import { TrialSessionSignupsPanel } from "@/components/admin/TrialSessionSignupsPanel";
 import { DEFAULT_RECLUB_USERNAME } from "@/lib/club-payment-defaults";
 import {
   formatInClubTime,
   toClubDatetimeLocal,
 } from "@/lib/datetime-form";
-import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from "@/lib/client-api";
+import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import type {
   AdminTrialSessionListItem,
   TrialSessionReminderStats,
   TrialSessionSignupRecord,
 } from "@/lib/trial-session-types";
 import {
-  TRIAL_SESSION_SIGNUP_STATUS_LABELS,
+  isTrialSessionInPast,
   trialSessionPublicPath,
 } from "@/lib/trial-session-types";
 import { trialSessionReminderWindowOpensAt } from "@/lib/trial-session-reminder-window";
@@ -40,12 +39,8 @@ const TIME_FILTERS: { id: SessionTimeFilter; label: string }[] = [
   { id: "past", label: "Past" },
 ];
 
-function sessionEndsAt(session: AdminTrialSessionListItem) {
-  return new Date(session.endDate ?? session.startDate);
-}
-
 function isPastSession(session: AdminTrialSessionListItem, now = new Date()) {
-  return sessionEndsAt(session) < now;
+  return isTrialSessionInPast(session, now);
 }
 
 function formatSessionWhen(iso: string) {
@@ -146,15 +141,11 @@ export function TrialSessionsManager({
   const [loadingSignups, setLoadingSignups] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [removingSignupId, setRemovingSignupId] = useState<string | null>(null);
-  const [updatingSignupId, setUpdatingSignupId] = useState<string | null>(null);
   const [selectedSignupIds, setSelectedSignupIds] = useState<string[]>([]);
-  const [registrationsOpen, setRegistrationsOpen] = useState(true);
   const [timeFilter, setTimeFilter] = useState<SessionTimeFilter>("active");
   const [error, setError] = useState<string | null>(null);
   const [signupError, setSignupError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const lastLoadedSignupCountRef = useRef<number | null>(null);
 
   const resetForm = () => {
     setForm(createEmptyForm());
@@ -164,7 +155,6 @@ export function TrialSessionsManager({
     setReminderStats(null);
     setPublicPath(null);
     setSelectedSignupIds([]);
-    setRegistrationsOpen(true);
     setError(null);
     setSignupError(null);
   };
@@ -233,7 +223,10 @@ export function TrialSessionsManager({
       paymentUrl: session.paymentUrl ?? "",
       reclubUsername: session.reclubUsername ?? DEFAULT_RECLUB_USERNAME,
       sessionFee: session.sessionFee?.toString() ?? "",
-      slug: duplicate ? "" : session.slug,
+      slug:
+        duplicate && !isPastSession(session)
+          ? ""
+          : session.slug,
       active: session.active,
     };
   };
@@ -244,7 +237,6 @@ export function TrialSessionsManager({
       setIsDuplicating(false);
       setForm(formFromSession(session));
       setPublicPath(trialSessionPublicPath(session.slug));
-      setRegistrationsOpen(true);
       setError(null);
       setMessage(null);
       setSelectedSignupIds([]);
@@ -259,7 +251,6 @@ export function TrialSessionsManager({
       setSignups([]);
       setReminderStats(null);
       setPublicPath(null);
-      setRegistrationsOpen(true);
       setError(null);
       setMessage(null);
       setSelectedSignupIds([]);
@@ -278,48 +269,33 @@ export function TrialSessionsManager({
   }, [sessions, timeFilter]);
 
   useEffect(() => {
-    if (!editingId) {
-      lastLoadedSignupCountRef.current = null;
-      return;
-    }
+    if (!editingId) return;
     void loadSignups(editingId);
   }, [editingId, loadSignups]);
 
   const editingSession = sessions.find((session) => session.id === editingId);
-  const approvedCount =
-    signups.length > 0
-      ? signups.filter((signup) => signup.status === "APPROVED").length
-      : (editingSession?.signupCount ?? 0);
-  const awaitingApprovalCount =
-    signups.length > 0
-      ? signups.filter((signup) => signup.status === "PENDING").length
-      : (editingSession?.pendingApprovalCount ?? 0);
-  const registrationSummary =
-    awaitingApprovalCount > 0
-      ? `${approvedCount} approved, ${awaitingApprovalCount} awaiting approval`
-      : `${approvedCount} approved`;
 
-  useEffect(() => {
-    if (!editingId || !editingSession || loadingSignups) return;
+  const syncSignupCounts = (nextSignups: TrialSessionSignupRecord[]) => {
+    if (!editingId) return;
+    const signupCount = nextSignups.filter(
+      (signup) => signup.status === "APPROVED",
+    ).length;
+    const pendingApprovalCount = nextSignups.filter(
+      (signup) => signup.status === "PENDING",
+    ).length;
+    setSessions((current) =>
+      current.map((session) =>
+        session.id === editingId
+          ? { ...session, signupCount, pendingApprovalCount }
+          : session,
+      ),
+    );
+  };
 
-    const listCount =
-      (editingSession?.signupCount ?? 0) +
-      (editingSession?.pendingApprovalCount ?? 0);
-    if (
-      lastLoadedSignupCountRef.current !== null &&
-      lastLoadedSignupCountRef.current !== listCount
-    ) {
-      void loadSignups(editingId);
-    }
-    lastLoadedSignupCountRef.current = listCount;
-  }, [
-    editingId,
-    editingSession?.signupCount,
-    editingSession?.pendingApprovalCount,
-    editingSession,
-    loadingSignups,
-    loadSignups,
-  ]);
+  const handleSignupsChange = (nextSignups: TrialSessionSignupRecord[]) => {
+    setSignups(nextSignups);
+    syncSignupCounts(nextSignups);
+  };
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -356,9 +332,6 @@ export function TrialSessionsManager({
     setMessage(editingId ? "Session updated." : "Session created.");
     if (!editingId) {
       resetForm();
-    } else {
-      setRegistrationsOpen(false);
-      await loadSignups(editingId);
     }
     await loadSessions();
     router.refresh();
@@ -374,55 +347,6 @@ export function TrialSessionsManager({
       return;
     }
     if (editingId === id) resetForm();
-    await loadSessions();
-    router.refresh();
-  };
-
-  const handleUpdateSignupStatus = async (
-    signupId: string,
-    status: "APPROVED" | "REJECTED",
-  ) => {
-    if (!editingId) return;
-
-    setUpdatingSignupId(signupId);
-    setSignupError(null);
-
-    const result = await apiPatch<{ message: string }>(
-      `/api/admin/trial-sessions/${editingId}/signups/${signupId}`,
-      { status },
-      "update signup status",
-    );
-
-    setUpdatingSignupId(null);
-
-    if (!result.ok) {
-      setSignupError(result.error);
-      return;
-    }
-
-    setMessage(result.data.message);
-    await loadSignups(editingId);
-    await loadSessions();
-    router.refresh();
-  };
-
-  const handleRemoveSignup = async (signupId: string) => {
-    if (!editingId) return;
-    if (!confirm("Remove this registration from the session?")) return;
-
-    setRemovingSignupId(signupId);
-    const result = await apiDelete(
-      `/api/admin/trial-sessions/${editingId}/signups/${signupId}`,
-    );
-    setRemovingSignupId(null);
-
-    if (!result.ok) {
-      setError(result.error);
-      return;
-    }
-
-    setMessage("Registration removed.");
-    await loadSignups(editingId);
     await loadSessions();
     router.refresh();
   };
@@ -479,42 +403,6 @@ export function TrialSessionsManager({
     );
     setSelectedSignupIds([]);
     await loadSignups(editingId);
-    await loadSessions();
-    router.refresh();
-  };
-
-  const reminderEligibleSignups = signups.filter(
-    (signup) => signup.status === "APPROVED" && !signup.reminderSent,
-  );
-  const selectedPendingCount = reminderEligibleSignups.filter((signup) =>
-    selectedSignupIds.includes(signup.id),
-  ).length;
-  const allPendingSelected =
-    reminderEligibleSignups.length > 0 &&
-    reminderEligibleSignups.every((signup) =>
-      selectedSignupIds.includes(signup.id),
-    );
-
-  const toggleSignupSelection = (
-    signupId: string,
-    signup: TrialSessionSignupRecord,
-  ) => {
-    if (signup.reminderSent || signup.status !== "APPROVED") return;
-
-    setSelectedSignupIds((current) =>
-      current.includes(signupId)
-        ? current.filter((id) => id !== signupId)
-        : [...current, signupId],
-    );
-  };
-
-  const toggleSelectAllPending = () => {
-    if (allPendingSelected) {
-      setSelectedSignupIds([]);
-      return;
-    }
-
-    setSelectedSignupIds(reminderEligibleSignups.map((signup) => signup.id));
   };
 
   const reminderOpensAt = editingSession
@@ -710,7 +598,8 @@ export function TrialSessionsManager({
               placeholder="Auto-generated from title if left blank"
             />
             <p className="mt-1 text-xs text-zinc-500">
-              Link path: {publicPath ?? trialSessionPublicPath(form.slug || "your-slug")}
+              Link path: {publicPath ?? trialSessionPublicPath(form.slug || "your-slug")}.
+              Past sessions free this slug, so you can reuse it for the next one.
             </p>
           </div>
           <div className="sm:col-span-2">
@@ -747,225 +636,21 @@ export function TrialSessionsManager({
         ) : null}
       </AdminFormCard>
 
-      {editingId && !registrationsOpen ? (
-        <div className="mt-8">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => setRegistrationsOpen(true)}
-          >
-            Registrations ({registrationSummary})
-          </Button>
-        </div>
-      ) : null}
-
-      {editingId && registrationsOpen ? (
-        <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-950/40 p-5">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="flex items-center gap-2 text-sm font-semibold text-white">
-              <Users className="h-4 w-4 text-jackals-red-light" />
-              Registrations ({registrationSummary})
-            </div>
-            {(approvedCount > 0 || awaitingApprovalCount > 0) && reminderStats ? (
-              <button
-                type="button"
-                onClick={() => void handleSendReminders()}
-                disabled={
-                  sendingReminders ||
-                  !reminderStats.windowOpen ||
-                  selectedPendingCount === 0
-                }
-                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 px-3 py-2 text-sm text-zinc-300 transition-colors hover:border-jackals-red/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {sendingReminders ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="h-4 w-4" />
-                )}
-                Email reminders ({selectedPendingCount})
-              </button>
-            ) : null}
-          </div>
-          {signups.length > 0 && reminderStats ? (
-            <p className="mb-4 text-xs text-zinc-500">
-              {reminderStats.windowOpen
-                ? reminderStats.pending > 0
-                  ? "Select attendees below, then send reminders. Use Select all to include everyone who has not been emailed yet — useful for late sign-ups."
-                  : "All registered attendees have already received a reminder."
-                : reminderOpensAt
-                  ? `Reminders open on ${formatInClubTime(reminderOpensAt, {
-                      weekday: "short",
-                      day: "numeric",
-                      month: "short",
-                      year: "numeric",
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hourCycle: "h23",
-                    })}. Attendees are emailed automatically within 24 hours of the session.`
-                  : "Attendees are emailed automatically within 24 hours of the session."}
-            </p>
-          ) : null}
-          {signupError ? (
-            <p className="mb-4 text-sm text-rose-300">{signupError}</p>
-          ) : null}
-          {loadingSignups ? (
-            <p className="text-sm text-zinc-500">Loading registrations…</p>
-          ) : signups.length === 0 ? (
-            <p className="text-sm text-zinc-500">
-              {approvedCount > 0 || awaitingApprovalCount > 0
-                ? "Could not load registrations. Refresh the page or try again."
-                : "No registrations yet."}
-            </p>
-          ) : (
-            <div className="overflow-x-auto">
-              {reminderEligibleSignups.length > 0 && reminderStats?.windowOpen ? (
-                <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
-                  <button
-                    type="button"
-                    onClick={toggleSelectAllPending}
-                    className="text-jackals-red-light transition-colors hover:text-jackals-red"
-                  >
-                    {allPendingSelected ? "Clear selection" : "Select all"}
-                  </button>
-                  <span className="text-zinc-600">
-                    {selectedPendingCount} of {reminderEligibleSignups.length}{" "}
-                    reminder-eligible selected
-                  </span>
-                </div>
-              ) : null}
-              <table className="min-w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-zinc-800 text-zinc-500">
-                    <th className="px-3 py-2 font-medium">
-                      {reminderEligibleSignups.length > 0 &&
-                      reminderStats?.windowOpen ? (
-                        <label className="inline-flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={allPendingSelected}
-                            onChange={toggleSelectAllPending}
-                            aria-label="Select all pending attendees"
-                            className="rounded border-zinc-600"
-                          />
-                        </label>
-                      ) : null}
-                    </th>
-                    <th className="px-3 py-2 font-medium">Name</th>
-                    <th className="px-3 py-2 font-medium">Email</th>
-                    <th className="px-3 py-2 font-medium">Submitted</th>
-                    <th className="px-3 py-2 font-medium">Status</th>
-                    <th className="px-3 py-2 font-medium">Receipt</th>
-                    <th className="px-3 py-2 font-medium">Reminder</th>
-                    <th className="px-3 py-2 font-medium">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {signups.map((signup) => (
-                    <tr key={signup.id} className="border-b border-zinc-900/80">
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedSignupIds.includes(signup.id)}
-                          disabled={
-                            signup.reminderSent ||
-                            signup.status !== "APPROVED" ||
-                            !reminderStats?.windowOpen
-                          }
-                          onChange={() => toggleSignupSelection(signup.id, signup)}
-                          aria-label={`Select ${signup.displayName}`}
-                          className="rounded border-zinc-600 disabled:opacity-40"
-                        />
-                      </td>
-                      <td className="px-3 py-2 text-zinc-200">{signup.displayName}</td>
-                      <td className="px-3 py-2 text-zinc-400">{signup.email}</td>
-                      <td className="px-3 py-2 text-zinc-500">
-                        {format(new Date(signup.createdAt), "d MMM yyyy HH:mm")}
-                      </td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={
-                            signup.status === "APPROVED"
-                              ? "text-emerald-400"
-                              : signup.status === "PENDING"
-                                ? "text-amber-300"
-                                : "text-rose-300"
-                          }
-                        >
-                          {TRIAL_SESSION_SIGNUP_STATUS_LABELS[signup.status]}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-zinc-500">
-                        {signup.paymentProofUrl ? (
-                          <a
-                            href={signup.paymentProofUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-jackals-red-light hover:text-jackals-red"
-                          >
-                            View
-                          </a>
-                        ) : (
-                          "—"
-                        )}
-                      </td>
-                      <td className="px-3 py-2 text-zinc-500">
-                        {signup.reminderSent ? (
-                          <span className="text-emerald-400">Emailed</span>
-                        ) : (
-                          "Pending"
-                        )}
-                      </td>
-                      <td className="px-3 py-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {signup.status === "PENDING" ? (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void handleUpdateSignupStatus(
-                                    signup.id,
-                                    "APPROVED",
-                                  )
-                                }
-                                disabled={updatingSignupId === signup.id}
-                                className="text-sm text-emerald-300 transition-colors hover:text-emerald-200 disabled:opacity-50"
-                              >
-                                {updatingSignupId === signup.id
-                                  ? "Saving..."
-                                  : "Approve"}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  void handleUpdateSignupStatus(
-                                    signup.id,
-                                    "REJECTED",
-                                  )
-                                }
-                                disabled={updatingSignupId === signup.id}
-                                className="text-sm text-rose-300 transition-colors hover:text-rose-200 disabled:opacity-50"
-                              >
-                                Reject
-                              </button>
-                            </>
-                          ) : null}
-                          <button
-                            type="button"
-                            onClick={() => void handleRemoveSignup(signup.id)}
-                            disabled={removingSignupId === signup.id}
-                            className="text-sm text-zinc-400 transition-colors hover:text-zinc-200 disabled:opacity-50"
-                          >
-                            {removingSignupId === signup.id ? "Removing..." : "Remove"}
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
+      {editingId ? (
+        <TrialSessionSignupsPanel
+          sessionId={editingId}
+          signups={signups}
+          reminderStats={reminderStats}
+          reminderOpensAt={reminderOpensAt}
+          loading={loadingSignups}
+          error={signupError}
+          selectedSignupIds={selectedSignupIds}
+          sendingReminders={sendingReminders}
+          onSignupsChange={handleSignupsChange}
+          onError={setSignupError}
+          onSelectSignupIds={setSelectedSignupIds}
+          onSendReminders={() => void handleSendReminders()}
+        />
       ) : null}
 
       <div className="mt-10 space-y-3">

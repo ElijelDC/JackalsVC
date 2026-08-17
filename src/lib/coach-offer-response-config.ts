@@ -1,8 +1,4 @@
-import {
-  COACH_OFFER_TEAMS,
-  coachOfferTeamLabel,
-  type CoachOfferTeamSlug,
-} from "@/lib/coach-offer-config";
+import { coachOfferTeamLabel } from "@/lib/coach-offer-config";
 import {
   OFFER_RESPONSE_STATUSES,
   type OfferResponseStatus,
@@ -39,10 +35,7 @@ export function serializeCoachOfferResponse(row: {
   status: string;
   createdAt: Date;
 }): CoachOfferResponseRecord {
-  const teamLabel =
-    row.teamSlug in COACH_OFFER_TEAMS
-      ? coachOfferTeamLabel(row.teamSlug as CoachOfferTeamSlug)
-      : row.teamSlug;
+  const teamLabel = coachOfferTeamLabel(row.teamSlug);
 
   return {
     id: row.id,

@@ -1,6 +1,7 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { CoachOfferExperience } from "@/components/coach-offer/CoachOfferExperience";
 import {
+  COACH_OFFER_LEGACY_TEAM_SLUG,
   COACH_OFFER_TEAM_SLUGS,
   getCoachOfferTeam,
 } from "@/lib/coach-offer-config";
@@ -33,6 +34,9 @@ export default async function CoachOfferPage({
   params: Promise<{ team: string }>;
 }) {
   const { team: teamSlug } = await params;
+  if (teamSlug === COACH_OFFER_LEGACY_TEAM_SLUG) {
+    redirect("/coach-offer/division-3-men");
+  }
   const team = getCoachOfferTeam(teamSlug);
   if (!team) notFound();
 

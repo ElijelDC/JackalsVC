@@ -3,8 +3,11 @@ import { PUBLIC_PATHS } from "@/lib/public-paths";
 export const COACH_OFFER_TEAM_SLUGS = [
   "division-2-men",
   "division-3-women",
-  "regional-men",
+  "division-3-men",
 ] as const;
+
+/** @deprecated Old offer URL slug — redirects to division-3-men */
+export const COACH_OFFER_LEGACY_TEAM_SLUG = "regional-men";
 
 export type CoachOfferTeamSlug = (typeof COACH_OFFER_TEAM_SLUGS)[number];
 
@@ -135,27 +138,27 @@ export const COACH_OFFER_TEAMS: Record<CoachOfferTeamSlug, CoachOfferTeam> = {
     benefits: [...COACH_BENEFITS],
     closingLine: "Confirm your coaching role on Division 3 when you're ready.",
   },
-  "regional-men": {
-    slug: "regional-men",
-    shortName: "Regional Men",
-    fullName: "Regional Men",
-    league: "Regional League",
+  "division-3-men": {
+    slug: "division-3-men",
+    shortName: "Division 3 Men",
+    fullName: "Men's Division 3",
+    league: "National League",
     trainingNight: "",
     venue: "Meakstown",
-    heroEyebrow: "Coach offer · Regional League",
+    heroEyebrow: "Coach offer · National League",
     heroTitle: "Coach Offer",
-    heroHighlight: "Regional Men",
+    heroHighlight: "Division 3 Men",
     heroSupport:
-      "Congratulations — you've been offered a coaching role with Jackals Regional Men. Weekly training is at Meakstown.",
-    confirmLabel: "Confirm my coaching offer",
-    formHeading: "Accept your coaching role",
+      "Congratulations — you've been offered a coaching role with Jackals Men's Division 3. Weekly training is at Meakstown.",
+    confirmLabel: "Confirm my Division 3 coaching offer",
+    formHeading: "Accept your Division 3 coaching role",
     formSupport:
       "Share your details, coach polo material and size, and sign below so we can get you set up for the season.",
-    accentWord: "REGIONAL",
+    accentWord: "DIVISION",
     accent: "red",
     benefitsSectionLabel: "Coaching at Jackals",
     benefits: [...COACH_BENEFITS],
-    closingLine: "Confirm your coaching role on Regional Men when you're ready.",
+    closingLine: "Confirm your coaching role on Division 3 when you're ready.",
   },
 };
 
@@ -164,10 +167,14 @@ export function isCoachOfferTeamSlug(value: string): value is CoachOfferTeamSlug
 }
 
 export function getCoachOfferTeam(slug: string): CoachOfferTeam | null {
-  if (!isCoachOfferTeamSlug(slug)) return null;
-  return COACH_OFFER_TEAMS[slug];
+  const resolved =
+    slug === COACH_OFFER_LEGACY_TEAM_SLUG ? "division-3-men" : slug;
+  if (!isCoachOfferTeamSlug(resolved)) return null;
+  return COACH_OFFER_TEAMS[resolved];
 }
 
-export function coachOfferTeamLabel(slug: CoachOfferTeamSlug) {
-  return COACH_OFFER_TEAMS[slug].shortName;
+export function coachOfferTeamLabel(slug: string) {
+  if (isCoachOfferTeamSlug(slug)) return COACH_OFFER_TEAMS[slug].shortName;
+  if (slug === COACH_OFFER_LEGACY_TEAM_SLUG) return "Division 3 Men";
+  return slug;
 }

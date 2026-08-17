@@ -3,11 +3,13 @@ import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
 import {
   createUniqueTrialSessionSlug,
+  findTrialSessionSlugConflict,
   listTrialSessions,
   serializeTrialSession,
   slugifyTrialSessionTitle,
 } from "@/lib/trial-sessions";
 import { parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
+import { isTrialSessionInPast } from "@/lib/trial-session-types";
 import { trialSessionSchema } from "@/lib/validations";
 
 export const dynamic = "force-dynamic";
@@ -58,19 +60,25 @@ export async function POST(request: Request) {
   );
   if (parseError || !data) return parseError!;
 
+  const sessionData = toTrialSessionData(data);
   const slug = data.slug
     ? slugifyTrialSessionTitle(data.slug)
     : await createUniqueTrialSessionSlug(data.title);
 
-  const existingSlug = await prisma.trialSession.findUnique({ where: { slug } });
-  if (existingSlug) {
-    return jsonError("That link slug is already in use. Choose another.", 409);
+  if (!isTrialSessionInPast(sessionData)) {
+    const existingSlug = await findTrialSessionSlugConflict(slug);
+    if (existingSlug) {
+      return jsonError(
+        "That link slug is already in use by an active session. Choose another, or wait until the current session is past.",
+        409,
+      );
+    }
   }
 
   const session = await prisma.trialSession.create({
     data: {
       slug,
-      ...toTrialSessionData(data),
+      ...sessionData,
     },
   });
 

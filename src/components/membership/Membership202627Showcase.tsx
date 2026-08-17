@@ -126,10 +126,18 @@ function MembershipIncludesCard() {
 }
 
 function LeagueFeesComparison() {
+  const tiers = MEMBERSHIP_LEAGUE_TIERS_2026_27;
+
   return (
     <div className="mx-auto mt-10 max-w-4xl space-y-6">
-      <StaggerIn className="grid gap-6 md:grid-cols-2" stagger={100}>
-        {MEMBERSHIP_LEAGUE_TIERS_2026_27.map((tier) => (
+      <StaggerIn
+        className={cn(
+          "grid gap-6",
+          tiers.length > 1 ? "md:grid-cols-2" : "max-w-lg mx-auto",
+        )}
+        stagger={100}
+      >
+        {tiers.map((tier) => (
           <LeagueMembershipCard key={tier.id} tier={tier} />
         ))}
       </StaggerIn>

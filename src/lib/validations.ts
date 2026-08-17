@@ -505,7 +505,7 @@ export const trialsApplicationSchema = z
   });
 
 const offerTeamSlugSchema = z.enum(
-  ["division-2-men", "division-3-women", "regional-men"],
+  ["division-2-men", "division-3-women", "division-3-men"],
   { message: "Select a valid team offer" },
 );
 

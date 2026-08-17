@@ -107,7 +107,7 @@ export const MEMBERSHIP_LEAGUE_COVERAGE_COPY =
   "Full-court training sessions at Meakstown throughout the season for your squad, with dedicated coaching staff every training night. Members also get reduced pricing on club merchandise.";
 
 export const MEMBERSHIP_FEES_BY_LEAGUE_INTRO =
-  "Membership is priced by league tier. National League is for Division 2 Men and Division 3 Women; Regional League is for Regional Men. Amounts below are the full season total.";
+  "Membership is priced by league tier. National League covers Division 2 Men, Division 3 Women, and Division 3 Men. Amounts below are the full season total.";
 
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
@@ -140,17 +140,9 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     id: "national-league",
     league: "National League",
     name: "National League team",
-    squads: "Division 2 Men · Division 3 Women",
-    adultFee: 350,
-    studentFee: 305,
-  },
-  {
-    id: "regional-league",
-    league: "Regional League",
-    name: "Regional League team",
-    squads: "Regional Men",
-    adultFee: 310,
-    studentFee: 265,
+    squads: "Division 2 Men · Division 3 Women · Division 3 Men",
+    adultFee: 355,
+    studentFee: 310,
   },
 ];
 

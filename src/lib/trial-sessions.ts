@@ -15,6 +15,8 @@ import type {
 import {
   isTrialSessionSignupStatus,
   normalizeTrialSessionEmail,
+  pickLiveTrialSession,
+  pickPublicTrialSession,
   slugifyTrialSessionTitle,
   TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
   trialSessionRequiresPaymentProof,
@@ -42,12 +44,42 @@ export async function createUniqueTrialSessionSlug(title: string) {
   let slug = base;
   let suffix = 0;
 
-  while (await prisma.trialSession.findUnique({ where: { slug } })) {
+  while (await findLiveTrialSessionBySlug(slug)) {
     suffix += 1;
     slug = `${base}-${suffix}`;
   }
 
   return slug;
+}
+
+async function listTrialSessionsBySlug(slug: string) {
+  return prisma.trialSession.findMany({
+    where: { slug },
+    orderBy: { startDate: "desc" },
+  });
+}
+
+export async function findLiveTrialSessionBySlug(slug: string, now = new Date()) {
+  const sessions = await listTrialSessionsBySlug(slug);
+  return pickLiveTrialSession(sessions, now);
+}
+
+export async function findPublicTrialSessionBySlug(
+  slug: string,
+  now = new Date(),
+) {
+  const sessions = await listTrialSessionsBySlug(slug);
+  return pickPublicTrialSession(sessions, now);
+}
+
+export async function findTrialSessionSlugConflict(
+  slug: string,
+  excludeId?: string,
+  now = new Date(),
+) {
+  const live = await findLiveTrialSessionBySlug(slug, now);
+  if (live && live.id !== excludeId) return live;
+  return null;
 }
 
 function serializeTrialSession(session: {
@@ -127,7 +159,7 @@ export async function listTrialSessions() {
 }
 
 export async function getTrialSessionBySlug(slug: string) {
-  return prisma.trialSession.findUnique({ where: { slug } });
+  return findPublicTrialSessionBySlug(slug);
 }
 
 export const getPublicTrialSessionBySlug = cache(async function getPublicTrialSessionBySlug(
@@ -145,8 +177,13 @@ export const getPublicTrialSessionBySlug = cache(async function getPublicTrialSe
     }
   | { ok: false; reason: "not_found" | "inactive" }
 > {
+  const matched = await findPublicTrialSessionBySlug(slug);
+  if (!matched) {
+    return { ok: false, reason: "not_found" };
+  }
+
   const session = await prisma.trialSession.findUnique({
-    where: { slug },
+    where: { id: matched.id },
     include: {
       signups: {
         orderBy: { createdAt: "asc" },
@@ -489,7 +526,7 @@ export async function registerForTrialSession(
 }
 
 async function getOpenTrialSessionForSignup(slug: string) {
-  const session = await prisma.trialSession.findUnique({ where: { slug } });
+  const session = await findLiveTrialSessionBySlug(slug);
 
   if (!session) {
     return { ok: false as const, error: "This session could not be found." };
@@ -597,6 +634,33 @@ export async function setTrialSessionSignupStatus(
   };
 }
 
+export async function setTrialSessionSignupStatuses(
+  trialSessionId: string,
+  signupIds: string[],
+  status: TrialSessionSignupStatus,
+) {
+  const uniqueIds = [...new Set(signupIds)];
+  if (uniqueIds.length === 0) {
+    return { ok: true as const, updatedCount: 0 };
+  }
+
+  const matching = await prisma.trialSessionSignup.findMany({
+    where: { trialSessionId, id: { in: uniqueIds } },
+    select: { id: true },
+  });
+
+  if (matching.length !== uniqueIds.length) {
+    return { ok: false as const, error: "One or more registrations were not found." };
+  }
+
+  await prisma.trialSessionSignup.updateMany({
+    where: { trialSessionId, id: { in: uniqueIds } },
+    data: { status },
+  });
+
+  return { ok: true as const, updatedCount: uniqueIds.length };
+}
+
 export async function removeTrialSessionSignup(
   trialSessionId: string,
   signupId: string,
@@ -617,7 +681,7 @@ export async function getTrialSessionPaymentProofStatus(
   slug: string,
   proofId: string,
 ) {
-  const session = await prisma.trialSession.findUnique({ where: { slug } });
+  const session = await findLiveTrialSessionBySlug(slug);
   if (!session || !session.active) {
     return { ok: false as const, error: "This session could not be found." };
   }
@@ -702,7 +766,7 @@ export async function removeTrialSessionPaymentProof(
   slug: string,
   proofId: string,
 ) {
-  const session = await prisma.trialSession.findUnique({ where: { slug } });
+  const session = await findLiveTrialSessionBySlug(slug);
   if (!session) {
     return { ok: false as const, error: "This session could not be found." };
   }
