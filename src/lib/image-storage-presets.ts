@@ -4,7 +4,8 @@ export type ImageStoragePreset =
   | "gallery"
   | "galleryThumb"
   | "profile"
-  | "document";
+  | "document"
+  | "receipt";
 
 export const PRESET_SETTINGS = {
   /** Full-screen gallery lightbox — cap pixel count, keep detail. */
@@ -15,4 +16,6 @@ export const PRESET_SETTINGS = {
   profile: { maxEdge: 1600, jpegQuality: 90, webpQuality: 92 },
   /** Payment proofs, IDs — preserve text legibility. */
   document: { maxEdge: 2400, jpegQuality: 90, webpQuality: 92 },
+  /** One-off session receipts — tiny files, still readable for amount/IBAN. */
+  receipt: { maxEdge: 900, jpegQuality: 42, webpQuality: 45 },
 } as const;

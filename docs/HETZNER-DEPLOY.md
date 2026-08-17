@@ -147,6 +147,8 @@ Membership "payment due" reminders (a week ahead, then the day before) are sent 
 0 9 * * * curl -fsS -X POST https://jackalsvolleyball.com/api/cron/trial-session-reminders -H "x-cron-secret: $CRON_SECRET" >/dev/null 2>&1
 ```
 
+The trial-session-reminders job also deletes one-off session payment receipts older than 14 days. `POST /api/cron/trial-session-proofs` runs that cleanup on its own if you need it separately.
+
 (Replace `$CRON_SECRET` with the value you set in `.env.production`.)
 
 ### Reclub event sync

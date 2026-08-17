@@ -274,6 +274,9 @@ export function TrialSessionsManager({
   }, [editingId, loadSignups]);
 
   const editingSession = sessions.find((session) => session.id === editingId);
+  const editingIsPast = editingSession
+    ? isPastSession(editingSession)
+    : false;
 
   const syncSignupCounts = (nextSignups: TrialSessionSignupRecord[]) => {
     if (!editingId) return;
@@ -314,7 +317,7 @@ export function TrialSessionsManager({
       paymentUrl: form.paymentUrl || undefined,
       reclubUsername: form.reclubUsername || undefined,
       sessionFee: form.sessionFee ? Number(form.sessionFee) : undefined,
-      slug: form.slug || undefined,
+      slug: editingIsPast ? undefined : form.slug || undefined,
       active: form.active,
     };
 
@@ -596,31 +599,37 @@ export function TrialSessionsManager({
                 setForm((current) => ({ ...current, slug: event.target.value }))
               }
               placeholder="Auto-generated from title if left blank"
+              disabled={editingIsPast}
+              readOnly={editingIsPast}
             />
             <p className="mt-1 text-xs text-zinc-500">
-              Link path: {publicPath ?? trialSessionPublicPath(form.slug || "your-slug")}.
-              Past sessions free this slug, so you can reuse it for the next one.
+              {editingIsPast
+                ? "This session is in the past, so the private link is closed and the slug can no longer be changed. Duplicate the session to reuse the slug."
+                : `Link path: ${publicPath ?? trialSessionPublicPath(form.slug || "your-slug")}. Past sessions free this slug, so you can reuse it for the next one.`}
             </p>
           </div>
           <div className="sm:col-span-2">
             <label className="inline-flex items-center gap-2 text-sm text-zinc-300">
               <input
                 type="checkbox"
-                checked={form.active}
+                checked={editingIsPast ? false : form.active}
                 onChange={(event) =>
                   setForm((current) => ({
                     ...current,
                     active: event.target.checked,
                   }))
                 }
+                disabled={editingIsPast}
                 className="rounded border-zinc-600"
               />
-              Registration open
+              {editingIsPast
+                ? "Registration closed — session is in the past"
+                : "Registration open"}
             </label>
           </div>
         </div>
 
-        {editingId && publicPath ? (
+        {editingId && publicPath && !editingIsPast ? (
           <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-zinc-800 pt-6">
             <CopyLinkButton path={publicPath} />
             <a
@@ -709,7 +718,7 @@ export function TrialSessionsManager({
                     ? `, ${session.pendingApprovalCount} awaiting approval`
                     : ""
                 }`,
-                session.active ? "Open" : "Closed",
+                isPastSession(session) || !session.active ? "Closed" : "Open",
               ]
                 .filter(Boolean)
                 .join(" · ")}

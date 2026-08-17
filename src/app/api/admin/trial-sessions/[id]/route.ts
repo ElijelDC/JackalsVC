@@ -93,10 +93,22 @@ export async function PUT(
 
   let slug = existing.slug;
   if (data.slug) {
-    slug = slugifyTrialSessionTitle(data.slug);
+    const nextSlug = slugifyTrialSessionTitle(data.slug);
+    if (isTrialSessionInPast(existing) && nextSlug !== existing.slug) {
+      return jsonError(
+        "This session is in the past. The private link slug can no longer be changed.",
+        400,
+      );
+    }
+    if (!isTrialSessionInPast(existing)) {
+      slug = nextSlug;
+    }
   }
 
   const sessionData = toTrialSessionData(data);
+  if (isTrialSessionInPast(existing) && isTrialSessionInPast(sessionData)) {
+    sessionData.active = false;
+  }
   if (!isTrialSessionInPast(sessionData)) {
     const slugTaken = await findTrialSessionSlugConflict(slug, existing.id);
     if (slugTaken) {

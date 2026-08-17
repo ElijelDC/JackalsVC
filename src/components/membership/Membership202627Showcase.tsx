@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import {
   CalendarDays,
   Check,
+  Info,
   Shirt,
   Trophy,
   Volleyball,
@@ -26,6 +27,7 @@ import {
   MEMBERSHIP_LEAGUE_COVERAGE_COPY,
   MEMBERSHIP_LEAGUE_TIERS_2026_27,
   MEMBERSHIP_PAYMENT_OPTIONS,
+  MEMBERSHIP_PRICE_CHANGE_NOTICE,
   MEMBERSHIP_SEASON_LABEL,
   type MembershipLeagueTier202627,
 } from "@/lib/membership-2026-27";
@@ -238,6 +240,16 @@ export function Membership202627Showcase() {
             </h2>
             <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
               {MEMBERSHIP_FEES_BY_LEAGUE_INTRO}
+            </p>
+            <p
+              role="note"
+              className="mx-auto mt-5 flex max-w-xl items-start gap-2.5 rounded-lg border border-sky-500/30 bg-sky-500/10 px-4 py-3 text-left text-sm leading-relaxed text-sky-100"
+            >
+              <Info
+                className="mt-0.5 h-4 w-4 shrink-0 text-sky-300"
+                aria-hidden
+              />
+              <span>{MEMBERSHIP_PRICE_CHANGE_NOTICE}</span>
             </p>
           </AnimateIn>
           <AnimateIn variant="fade-up">

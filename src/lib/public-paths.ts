@@ -28,6 +28,15 @@ export const PUBLIC_PATHS = {
     coachOfferPoloPolyester:
       "/downloads/coach-offer/coach-polo-polyester.png",
     coachOfferPoloCotton: "/downloads/coach-offer/coach-polo-cotton.png",
+    kitOrderMensSizeGuide:
+      "/downloads/kit-order/mens-kit-classic-size-guide.png",
+    kitOrderWomensSizeGuide:
+      "/downloads/kit-order/womens-kit-classic-size-guide.png",
+    kitOrderTrainingTshirt: "/downloads/kit-order/training-tshirt.png",
+    kitOrderTshirtSizeGuide:
+      "/downloads/kit-order/legea-m1194-tshirt-size-guide.png",
+    kitOrderJacketSizeGuide:
+      "/downloads/kit-order/legea-m1166-jacket-size-guide.png",
   },
 } as const;
 

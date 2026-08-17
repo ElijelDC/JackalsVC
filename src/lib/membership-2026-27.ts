@@ -72,7 +72,7 @@ export const MEMBERSHIP_CLUB_JACKETS_2026_27: MembershipMerchItem202627[] = [
     title: "Quarter zip",
     subtitle: "Club jacket",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/jacket-quarter-zip.png`,
-    imageAlt: "Jackals club quarter-zip jacket in black with red accents — front and back",
+    imageAlt: "Jackals club quarter-zip in black with patterned sleeves — front and back",
     accent: "red",
   },
   {
@@ -80,7 +80,7 @@ export const MEMBERSHIP_CLUB_JACKETS_2026_27: MembershipMerchItem202627[] = [
     title: "Zip hoodie",
     subtitle: "Club jacket",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/jacket-hoodie.png`,
-    imageAlt: "Jackals club zip hoodie in black with red accents — front and back",
+    imageAlt: "Jackals club zip hoodie in black with patterned sleeves — front and back",
     accent: "red",
   },
   {
@@ -88,7 +88,17 @@ export const MEMBERSHIP_CLUB_JACKETS_2026_27: MembershipMerchItem202627[] = [
     title: "High collar zip",
     subtitle: "Club jacket",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/jacket-high-collar.png`,
-    imageAlt: "Jackals club high-collar zip jacket in black with red accents — front and back",
+    imageAlt:
+      "Jackals club high-collar full-zip jacket in black with patterned sleeves — front and back",
+    accent: "red",
+  },
+  {
+    id: "jacket-full-zip",
+    title: "Full zip",
+    subtitle: "Club jacket",
+    imageSrc: `${MEMBERSHIP_MERCH_BASE}/jacket-full-zip.png`,
+    imageAlt:
+      "Jackals club full-zip jacket in black with a white zipper and stand-up collar — front and back",
     accent: "red",
   },
 ];
@@ -108,6 +118,9 @@ export const MEMBERSHIP_LEAGUE_COVERAGE_COPY =
 
 export const MEMBERSHIP_FEES_BY_LEAGUE_INTRO =
   "Membership is priced by league tier. National League covers Division 2 Men, Division 3 Women, and Division 3 Men. Amounts below are the full season total.";
+
+export const MEMBERSHIP_PRICE_CHANGE_NOTICE =
+  "Fees have changed this season. The club is adding Division 3 Men instead of Regional League, so all three squads are on the National League price.";
 
 /** Matches payment schedules on the member checkout. */
 export const MEMBERSHIP_PAYMENT_OPTIONS = [
@@ -141,8 +154,8 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
     league: "National League",
     name: "National League team",
     squads: "Division 2 Men · Division 3 Women · Division 3 Men",
-    adultFee: 355,
-    studentFee: 310,
+    adultFee: 360,
+    studentFee: 315,
   },
 ];
 

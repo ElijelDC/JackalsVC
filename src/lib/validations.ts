@@ -1,6 +1,12 @@
 import { z } from "zod";
 import { parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
 import { COACH_PAYMENT_TYPES } from "@/lib/coach-payment-type";
+import {
+  hasAnyJersey,
+  hasAnyKitPiece,
+  hasAnyShorts,
+  isValidKitOrderSize,
+} from "@/lib/kit-order-config";
 
 /** Preprocess empty strings/null/undefined → undefined for optional Zod fields */
 const emptyToUndefined = (val: unknown) =>
@@ -804,3 +810,161 @@ export const trialSessionSignupSchema = z.object({
     .max(80, "Name is too long"),
   paymentProofId: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 });
+
+const kitOrderName = z
+  .string()
+  .trim()
+  .min(1, "This name is required")
+  .max(40, "Name is too long")
+  .regex(
+    /^[\p{L}][\p{L}'’\- ]*$/u,
+    "Use letters only — hyphens and apostrophes are fine",
+  );
+
+const kitOrderOptionalSize = z.preprocess(
+  (val) => (val == null ? "" : val),
+  z.string().max(8),
+);
+
+const kitOrderNumber = z.coerce
+  .number({ message: "Enter a kit number between 1 and 99" })
+  .int("Kit number must be a whole number")
+  .min(1, "Kit numbers are between 1 and 99")
+  .max(99, "Kit numbers are between 1 and 99");
+
+export const kitOrderSchema = z
+  .object({
+    firstName: kitOrderName,
+    lastName: kitOrderName.max(
+      18,
+      "Keep the jersey last name to 18 characters or fewer",
+    ),
+    email: z.string().trim().email("Enter a valid email address"),
+    phoneNumber: z
+      .string()
+      .trim()
+      .min(7, "Enter a valid phone number")
+      .max(30, "Phone number is too long"),
+    gender: z.enum(["men", "women"], { message: "Choose men's or women's" }),
+    playerJersey: z.boolean(),
+    playerShorts: z.boolean(),
+    liberoJersey: z.boolean(),
+    liberoShorts: z.boolean(),
+    jerseySize: kitOrderOptionalSize,
+    shortsSize: kitOrderOptionalSize,
+    preferredKitNumber1: kitOrderNumber,
+    preferredKitNumber2: kitOrderNumber,
+    trainingTshirt: z.boolean(),
+    trainingTshirtSize: kitOrderOptionalSize,
+    trainingTop: z.boolean(),
+    trainingTopSize: kitOrderOptionalSize,
+    jacketHoodie: z.boolean(),
+    jacketHoodieSize: kitOrderOptionalSize,
+    jacketHighCollar: z.boolean(),
+    jacketHighCollarSize: kitOrderOptionalSize,
+    jacketFullZip: z.boolean(),
+    jacketFullZipSize: kitOrderOptionalSize,
+  })
+  .superRefine((data, ctx) => {
+    const pieces = {
+      playerJersey: data.playerJersey,
+      playerShorts: data.playerShorts,
+      liberoJersey: data.liberoJersey,
+      liberoShorts: data.liberoShorts,
+    };
+
+    if (!hasAnyKitPiece(pieces)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["playerJersey"],
+        message: "Choose a match kit",
+      });
+    }
+
+    if (hasAnyJersey(pieces) && !isValidKitOrderSize(data.gender, data.jerseySize)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["jerseySize"],
+        message: "Select a jersey size",
+      });
+    }
+
+    if (hasAnyShorts(pieces) && !isValidKitOrderSize(data.gender, data.shortsSize)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["shortsSize"],
+        message: "Select a shorts size",
+      });
+    }
+
+    if (data.preferredKitNumber1 === data.preferredKitNumber2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["preferredKitNumber2"],
+        message: "Choose a different second kit number",
+      });
+    }
+
+    const extras: Array<{
+      included: boolean;
+      size: string;
+      path:
+        | "trainingTshirtSize"
+        | "trainingTopSize"
+        | "jacketHoodieSize"
+        | "jacketHighCollarSize"
+        | "jacketFullZipSize";
+      message: string;
+    }> = [
+      {
+        included: data.trainingTshirt,
+        size: data.trainingTshirtSize,
+        path: "trainingTshirtSize",
+        message: "Select a training t-shirt size",
+      },
+      {
+        included: data.trainingTop,
+        size: data.trainingTopSize,
+        path: "trainingTopSize",
+        message: "Select a quarter zip size",
+      },
+      {
+        included: data.jacketHoodie,
+        size: data.jacketHoodieSize,
+        path: "jacketHoodieSize",
+        message: "Select a zip hoodie size",
+      },
+      {
+        included: data.jacketHighCollar,
+        size: data.jacketHighCollarSize,
+        path: "jacketHighCollarSize",
+        message: "Select a high collar zip size",
+      },
+      {
+        included: data.jacketFullZip,
+        size: data.jacketFullZipSize,
+        path: "jacketFullZipSize",
+        message: "Select a full zip size",
+      },
+    ];
+
+    for (const extra of extras) {
+      if (!extra.included) continue;
+      if (!extra.size) {
+        ctx.addIssue({
+          code: "custom",
+          path: [extra.path],
+          message: extra.message,
+        });
+        continue;
+      }
+      if (!isValidKitOrderSize(data.gender, extra.size)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [extra.path],
+          message: "Select a valid size for this item",
+        });
+      }
+    }
+  });
+

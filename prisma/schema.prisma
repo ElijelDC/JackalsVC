@@ -634,3 +634,40 @@ model TrialSessionReminder {
   @@unique([signupId, kind])
   @@index([signupId])
 }
+
+model KitOrder {
+  id                   String   @id @default(cuid())
+  firstName            String
+  lastName             String
+  email                String
+  phoneNumber          String   @default("")
+  /// men | women
+  gender               String
+  /// player | libero | both — summary of selected pieces
+  kitType              String
+  kitSize              String
+  playerJersey         Boolean  @default(false)
+  playerShorts         Boolean  @default(false)
+  liberoJersey         Boolean  @default(false)
+  liberoShorts         Boolean  @default(false)
+  jerseySize           String   @default("")
+  shortsSize           String   @default("")
+  preferredKitNumber1  Int
+  preferredKitNumber2  Int
+  trainingTshirt       Boolean  @default(false)
+  trainingTshirtSize   String   @default("")
+  trainingTop          Boolean  @default(false)
+  trainingTopSize      String   @default("")
+  jacketHoodie         Boolean  @default(false)
+  jacketHoodieSize     String   @default("")
+  jacketHighCollar     Boolean  @default(false)
+  jacketHighCollarSize String   @default("")
+  jacketFullZip        Boolean  @default(false)
+  jacketFullZipSize    String   @default("")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([gender, createdAt])
+  @@index([kitType, createdAt])
+}

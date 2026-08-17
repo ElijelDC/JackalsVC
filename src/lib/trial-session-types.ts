@@ -61,6 +61,23 @@ export function trialSessionRequiresPaymentProof(session: {
 export const TRIAL_SESSION_NEW_RECEIPT_REQUIRED =
   "Upload a different payment receipt before submitting again.";
 
+/** One-off session receipts are deleted after this many days. */
+export const TRIAL_SESSION_PAYMENT_PROOF_RETENTION_DAYS = 14;
+
+export function trialSessionPaymentProofExpiryCutoff(now: Date = new Date()) {
+  return new Date(
+    now.getTime() -
+      TRIAL_SESSION_PAYMENT_PROOF_RETENTION_DAYS * 24 * 60 * 60 * 1000,
+  );
+}
+
+export function isTrialSessionPaymentProofExpired(
+  createdAt: Date,
+  now: Date = new Date(),
+) {
+  return createdAt.getTime() < trialSessionPaymentProofExpiryCutoff(now).getTime();
+}
+
 export type PublicTrialSession = Omit<TrialSessionRecord, "createdAt" | "updatedAt"> & {
   attendeeCount: number;
   attendees: Array<{ id: string; displayName: string }>;
@@ -95,7 +112,24 @@ export function isTrialSessionInPast(
   return trialSessionEndsAt(session) < now;
 }
 
-/** Prefer the upcoming/current session; callers should pass startDate desc. */
+/** Registration stays open only before the session starts. */
+export function isTrialSessionRegistrationOpen(
+  session: {
+    startDate: string | Date;
+    endDate?: string | Date | null;
+    active?: boolean;
+  },
+  now: Date = new Date(),
+) {
+  if (session.active === false) return false;
+  if (isTrialSessionInPast(session, now)) return false;
+  return new Date(session.startDate) > now;
+}
+
+/** Prefer the upcoming/current session; callers should pass startDate desc.
+ *  Public registration pages use pickLiveTrialSession — past slugs 404 unless
+ *  a new live session reuses the slug.
+ */
 export function pickLiveTrialSession<
   T extends { startDate: string | Date; endDate?: string | Date | null },
 >(sessions: T[], now: Date = new Date()): T | null {

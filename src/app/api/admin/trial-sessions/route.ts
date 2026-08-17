@@ -65,6 +65,10 @@ export async function POST(request: Request) {
     ? slugifyTrialSessionTitle(data.slug)
     : await createUniqueTrialSessionSlug(data.title);
 
+  if (isTrialSessionInPast(sessionData)) {
+    sessionData.active = false;
+  }
+
   if (!isTrialSessionInPast(sessionData)) {
     const existingSlug = await findTrialSessionSlugConflict(slug);
     if (existingSlug) {

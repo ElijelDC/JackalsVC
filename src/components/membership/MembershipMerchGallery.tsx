@@ -158,16 +158,18 @@ function MerchPreviewCard({
       <button
         type="button"
         onClick={onOpen}
-        className="group relative aspect-[5/4] w-full bg-zinc-950/80 p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-jackals-red sm:p-5"
+        className="group relative aspect-[7/6] w-full bg-zinc-950/80 p-5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-jackals-red sm:p-7"
         aria-label={`View full size: ${item.title}, ${item.subtitle}`}
       >
-        <Image
-          src={item.imageSrc}
-          alt={item.imageAlt}
-          fill
-          className="object-contain p-2 transition-opacity group-hover:opacity-90"
-          sizes="(max-width: 768px) 100vw, 50vw"
-        />
+        <span className="relative block h-full w-full">
+          <Image
+            src={item.imageSrc}
+            alt={item.imageAlt}
+            fill
+            className="object-contain object-center transition-opacity group-hover:opacity-90"
+            sizes="(max-width: 768px) 100vw, 50vw"
+          />
+        </span>
         <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 border border-white/20 bg-black/70 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-white backdrop-blur-sm transition-colors group-hover:border-jackals-red/50 group-hover:text-jackals-red-light sm:text-[11px]">
           <ZoomIn className="h-3 w-3 shrink-0" />
           View full size
@@ -422,7 +424,7 @@ export function MembershipMerchGallery({ embedded = false }: { embedded?: boolea
               Club jackets
             </h3>
             <p className="mt-2 text-sm text-zinc-400 sm:text-base">
-              Optional Legea off-court layer — 3 different variants. Prices below
+              Optional Legea off-court layer — 4 different variants. Prices below
               include the reduced member rate.
             </p>
           </div>

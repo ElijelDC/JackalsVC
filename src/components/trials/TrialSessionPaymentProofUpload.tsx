@@ -10,6 +10,7 @@ import {
   apiPostForm,
   apiRemoveTrialSessionPaymentProof,
 } from "@/lib/client-api";
+import { compressImageFileForUpload } from "@/lib/client-image-compress";
 
 type TrialSessionPaymentProofUploadProps = {
   slug: string;
@@ -109,8 +110,15 @@ export function TrialSessionPaymentProofUpload({
     setError(null);
     setMessage(null);
 
+    let screenshot = selectedFile;
+    try {
+      screenshot = await compressImageFileForUpload(selectedFile, "receipt");
+    } catch {
+      screenshot = selectedFile;
+    }
+
     const formData = new FormData();
-    formData.append("screenshot", selectedFile);
+    formData.append("screenshot", screenshot);
 
     const result = await apiPostForm<{
       proof: ProofStatus;
@@ -241,7 +249,8 @@ export function TrialSessionPaymentProofUpload({
           {selectedFile ? selectedFile.name : "Choose payment receipt"}
         </span>
         <span className="mt-1 text-xs text-zinc-500">
-          JPEG, PNG, WebP, GIF, or HEIC · max 5 MB
+          JPEG, PNG, WebP, GIF, or HEIC · max 5 MB. We shrink the photo
+          automatically.
         </span>
       </button>
 
@@ -272,7 +281,7 @@ export function TrialSessionPaymentProofUpload({
         disabled={disabled || loading}
         onClick={() => void submitProof()}
       >
-        {loading ? "Uploading..." : "Upload receipt"}
+        {loading ? "Compressing and uploading..." : "Upload receipt"}
       </Button>
     </div>
   );

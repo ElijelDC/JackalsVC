@@ -67,7 +67,12 @@ export async function compressImageFileForUpload(
     if (!blob) return file;
 
     // Keep the original when encoding barely helps and we did not resize.
-    if (scale === 1 && blob.size >= file.size * 0.92 && mime === "image/jpeg") {
+    if (
+      preset !== "receipt" &&
+      scale === 1 &&
+      blob.size >= file.size * 0.92 &&
+      mime === "image/jpeg"
+    ) {
       return file;
     }
 

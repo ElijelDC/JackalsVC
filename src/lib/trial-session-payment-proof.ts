@@ -22,7 +22,7 @@ export async function saveTrialSessionPaymentProofFile(
 ): Promise<string> {
   return saveManagedImageFile({
     file,
-    preset: "document",
+    preset: "receipt",
     relativeDir: ["trial-session-proofs"],
     urlPrefix: PUBLIC_PATHS.uploads.trialSessionProofs,
     maxBytes: IMAGE_UPLOAD_MAX_5MB,

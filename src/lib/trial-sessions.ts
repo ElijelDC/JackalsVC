@@ -13,10 +13,10 @@ import type {
   TrialSessionSignupRecord,
 } from "@/lib/trial-session-types";
 import {
+  isTrialSessionRegistrationOpen,
   isTrialSessionSignupStatus,
   normalizeTrialSessionEmail,
   pickLiveTrialSession,
-  pickPublicTrialSession,
   slugifyTrialSessionTitle,
   TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
   trialSessionRequiresPaymentProof,
@@ -68,8 +68,7 @@ export async function findPublicTrialSessionBySlug(
   slug: string,
   now = new Date(),
 ) {
-  const sessions = await listTrialSessionsBySlug(slug);
-  return pickPublicTrialSession(sessions, now);
+  return findLiveTrialSessionBySlug(slug, now);
 }
 
 export async function findTrialSessionSlugConflict(
@@ -177,7 +176,7 @@ export const getPublicTrialSessionBySlug = cache(async function getPublicTrialSe
     }
   | { ok: false; reason: "not_found" | "inactive" }
 > {
-  const matched = await findPublicTrialSessionBySlug(slug);
+  const matched = await findLiveTrialSessionBySlug(slug);
   if (!matched) {
     return { ok: false, reason: "not_found" };
   }
@@ -532,17 +531,10 @@ async function getOpenTrialSessionForSignup(slug: string) {
     return { ok: false as const, error: "This session could not be found." };
   }
 
-  if (!session.active) {
+  if (!isTrialSessionRegistrationOpen(session)) {
     return {
       ok: false as const,
       error: "Registration is closed for this session.",
-    };
-  }
-
-  if (session.startDate < new Date()) {
-    return {
-      ok: false as const,
-      error: "This session has already started.",
     };
   }
 

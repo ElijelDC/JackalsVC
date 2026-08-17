@@ -83,12 +83,14 @@ export async function compressRasterImage(
   mime: string,
   preset: ImageStoragePreset,
 ): Promise<{ buffer: Buffer; extension: string }> {
-  if (mime === "image/gif") {
+  if (mime === "image/gif" && preset !== "receipt") {
     return { buffer: input, extension: "gif" };
   }
 
-  const passthrough = await tryPassthroughOptimized(input, preset);
-  if (passthrough) return passthrough;
+  if (preset !== "receipt") {
+    const passthrough = await tryPassthroughOptimized(input, preset);
+    if (passthrough) return passthrough;
+  }
 
   const { maxEdge, jpegQuality, webpQuality } = PRESET_SETTINGS[preset];
   const image = sharp(input, { failOn: "none", unlimited: true });
@@ -103,6 +105,18 @@ export async function compressRasterImage(
       fit: "inside",
       withoutEnlargement: true,
     });
+  }
+
+  if (preset === "receipt") {
+    if (metadata.hasAlpha) {
+      pipeline = pipeline.flatten({ background: { r: 12, g: 12, b: 12 } });
+    }
+    return {
+      buffer: await pipeline
+        .jpeg({ quality: jpegQuality, mozjpeg: true })
+        .toBuffer(),
+      extension: "jpg",
+    };
   }
 
   if (mime === "image/png" && metadata.hasAlpha) {

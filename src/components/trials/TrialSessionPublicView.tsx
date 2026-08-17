@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import {
   CalendarDays,
   CheckCircle2,
@@ -25,6 +25,7 @@ import { formatEventDateTime } from "@/lib/event-display";
 import type { PublicTrialSession } from "@/lib/trial-session-types";
 import {
   TRIAL_SESSION_NEW_RECEIPT_REQUIRED,
+  isTrialSessionRegistrationOpen,
   trialSessionRequiresPaymentProof,
 } from "@/lib/trial-session-types";
 import { cn } from "@/lib/utils";
@@ -292,15 +293,14 @@ export function TrialSessionPublicView({
     !duplicatePrompt &&
     statusConfirmed;
 
-  const eventDate = useMemo(() => new Date(session.startDate), [session.startDate]);
-  const past = eventDate < new Date();
+  const registrationOpen = isTrialSessionRegistrationOpen(session);
   const { dateLabel, timeLabel } = formatEventDateTime(
     session.startDate,
     session.endDate,
     { timeZone: "club" },
   );
   const hasPaymentStep =
-    trialSessionRequiresPaymentProof(session) && !past;
+    trialSessionRequiresPaymentProof(session) && registrationOpen;
   const registerStep = hasPaymentStep ? 3 : 1;
   const hasNewReceiptForResubmit =
     Boolean(paymentProofId) &&
@@ -521,7 +521,7 @@ export function TrialSessionPublicView({
   }, [slug]);
 
   useEffect(() => {
-    if (past) return;
+    if (!registrationOpen) return;
 
     const refreshAttendees = () => {
       const email =
@@ -554,7 +554,7 @@ export function TrialSessionPublicView({
       document.removeEventListener("visibilitychange", onVisibilityChange);
       window.removeEventListener("focus", onWindowFocus);
     };
-  }, [form.email, past, slug, statusConfirmed, viewerPendingApproval]);
+  }, [form.email, registrationOpen, slug, statusConfirmed, viewerPendingApproval]);
 
   const handleRegister = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -841,11 +841,11 @@ export function TrialSessionPublicView({
           <Card>
             <CardTitle className="text-base">How to join</CardTitle>
             <CardDescription className="mt-2">
-              {past
-                ? "This session has already started."
-                : hasPaymentStep
+              {registrationOpen
+                ? hasPaymentStep
                   ? "Pay, upload your receipt, then submit your details for admin approval."
-                  : "Submit your details for admin approval."}
+                  : "Submit your details for admin approval."
+                : "Registration is closed for this session."}
             </CardDescription>
 
             <div className="mt-6">
@@ -910,7 +910,7 @@ export function TrialSessionPublicView({
                 </JoinFlowStep>
               )}
 
-              {!past && (
+              {registrationOpen && (
                 <JoinFlowStep
                   step={registerStep}
                   title={

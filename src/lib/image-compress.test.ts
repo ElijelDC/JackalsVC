@@ -21,5 +21,10 @@ describe("image-compress", () => {
       PRESET_SETTINGS.gallery.jpegQuality,
     );
     expect(PRESET_SETTINGS.gallery.maxEdge).toBeGreaterThan(2000);
+    expect(PRESET_SETTINGS.receipt.maxEdge).toBeLessThanOrEqual(900);
+    expect(PRESET_SETTINGS.receipt.jpegQuality).toBeLessThan(
+      PRESET_SETTINGS.document.jpegQuality,
+    );
+    expect(PRESET_SETTINGS.receipt.jpegQuality).toBeLessThanOrEqual(50);
   });
 });
