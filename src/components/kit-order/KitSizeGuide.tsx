@@ -43,19 +43,23 @@ function guideCopy(props: KitSizeGuideProps) {
     };
   }
 
-  const title =
-    props.gender === "women"
-      ? "Women's kit size guide"
-      : "Men's kit size guide";
+  if ("gender" in props) {
+    const title =
+      props.gender === "women"
+        ? "Women's kit size guide"
+        : "Men's kit size guide";
 
-  return {
-    title,
-    description:
-      "Legea Classic kit measurements in centimetres, with a ±5% tolerance. Pinch or double-tap to zoom the chart.",
-    imageSrc: kitOrderSizeGuideSrc(props.gender),
-    imageAlt: `${title} showing chest, back length, waist, and shorts length`,
-    chart: KIT_ORDER_SIZE_CHARTS[props.gender],
-  };
+    return {
+      title,
+      description:
+        "Legea Classic kit measurements in centimetres, with a ±5% tolerance. Pinch or double-tap to zoom the chart.",
+      imageSrc: kitOrderSizeGuideSrc(props.gender),
+      imageAlt: `${title} showing chest, back length, waist, and shorts length`,
+      chart: KIT_ORDER_SIZE_CHARTS[props.gender],
+    };
+  }
+
+  throw new Error("KitSizeGuide requires gender for match kit guides.");
 }
 
 export function KitSizeGuide(props: KitSizeGuideProps) {
