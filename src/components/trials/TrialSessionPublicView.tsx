@@ -230,14 +230,16 @@ function readClientBootstrap(slug: string): ClientBootstrap {
   const viewerMatches =
     Boolean(stored?.email) && storedViewer?.email === stored!.email;
   const cachedRegistered = Boolean(viewerMatches && storedViewer!.registered);
+  const cachedPending = Boolean(viewerMatches && storedViewer!.pending);
   const cachedRejected = Boolean(viewerMatches && storedViewer!.rejected);
   const cachedConfirmed = cachedRegistered || cachedRejected;
+  const canReuseStoredProof = cachedRegistered || cachedPending;
 
   return {
     form: stored ?? empty.form,
     hasStoredEmail: Boolean(stored?.email),
-    paymentProofId: storedProofId,
-    proofReady: Boolean(storedProofId),
+    paymentProofId: canReuseStoredProof ? storedProofId : null,
+    proofReady: Boolean(canReuseStoredProof && storedProofId),
     viewerRegistered: cachedRegistered,
     viewerRejected: cachedRejected,
     statusConfirmed: cachedConfirmed,
@@ -267,6 +269,7 @@ export function TrialSessionPublicView({
   const [previousRejectedProofId, setPreviousRejectedProofId] = useState<
     string | null
   >(null);
+  const [staleProofId, setStaleProofId] = useState<string | null>(null);
   const [proofReady, setProofReady] = useState(false);
   const [statusLoading, setStatusLoading] = useState(false);
   const [statusConfirmed, setStatusConfirmed] = useState(false);
@@ -302,18 +305,32 @@ export function TrialSessionPublicView({
   const hasPaymentStep =
     trialSessionRequiresPaymentProof(session) && registrationOpen;
   const registerStep = hasPaymentStep ? 3 : 1;
-  const hasNewReceiptForResubmit =
+  const needsFreshReceipt =
+    hasPaymentStep &&
+    (viewerCanResubmit || viewerRejected) &&
+    !duplicatePrompt &&
+    statusConfirmed;
+  const hasFreshReceipt =
     Boolean(paymentProofId) &&
+    proofReady &&
+    paymentProofId !== staleProofId &&
     paymentProofId !== previousRejectedProofId;
-  // Rejected users can always try to submit — we prompt if they reuse the old receipt.
-  const canRegister =
-    viewerRejected ||
+  const paymentRequirementMet =
     !hasPaymentStep ||
-    proofReady ||
-    Boolean(paymentProofId) ||
     viewerRegistered ||
-    viewerPendingApproval ||
-    duplicatePrompt;
+    showPendingApproval ||
+    duplicatePrompt ||
+    (!needsFreshReceipt && Boolean(paymentProofId && proofReady)) ||
+    (needsFreshReceipt && hasFreshReceipt);
+  const canRegister =
+    paymentRequirementMet &&
+    (viewerRegistered ||
+      viewerPendingApproval ||
+      duplicatePrompt ||
+      viewerRejected ||
+      viewerCanResubmit ||
+      !hasPaymentStep ||
+      Boolean(paymentProofId && proofReady));
 
   const handlePaymentProofChange = useCallback(
     (nextProofId: string | null) => {
@@ -361,6 +378,7 @@ export function TrialSessionPublicView({
         setProofReady(true);
         writeStoredPaymentProofId(slug, viewerPaymentProofId);
       } else if (rejected) {
+        setStaleProofId((current) => current ?? viewerPaymentProofId);
         // Keep a newly uploaded (unlinked) receipt; don't treat the old linked one as ready.
         if (storedProofId && storedProofId !== viewerPaymentProofId) {
           setPaymentProofId(storedProofId);
@@ -394,6 +412,15 @@ export function TrialSessionPublicView({
           Boolean(stored?.email === normalizedEmail),
       );
 
+      if (
+        Boolean(normalizedEmail) &&
+        !hasActiveSignup &&
+        Boolean(stored?.email === normalizedEmail)
+      ) {
+        const baselineProof = storedProofId || viewerPaymentProofId;
+        setStaleProofId((current) => current ?? baselineProof);
+      }
+
       if (!hasActiveSignup && normalizedEmail) {
         writeStoredRegistration(slug, {
           email: normalizedEmail,
@@ -418,9 +445,7 @@ export function TrialSessionPublicView({
         hasSessionSubmitted(slug) &&
         normalizedEmail
       ) {
-        setMessage(
-          "Your previous request is no longer active. Submit again below if you'd still like to join.",
-        );
+        setMessage(null);
       } else if (registered) {
         setMessage(null);
       }
@@ -561,6 +586,16 @@ export function TrialSessionPublicView({
     setLoading(true);
     setError(null);
     setMessage(null);
+
+    if (
+      (viewerRejected || viewerCanResubmit) &&
+      hasPaymentStep &&
+      !hasFreshReceipt
+    ) {
+      setLoading(false);
+      setError(TRIAL_SESSION_NEW_RECEIPT_REQUIRED);
+      return;
+    }
 
     if (
       viewerRejected &&
@@ -759,10 +794,15 @@ export function TrialSessionPublicView({
         />
       </div>
       {error && <FormError message={error} />}
-      {message && <SuccessBanner message={message} />}
+      {message && !needsFreshReceipt && <SuccessBanner message={message} />}
+      {needsFreshReceipt && !hasFreshReceipt ? (
+        <p className="text-sm text-amber-200/90">
+          Upload a new receipt in step 2 before submitting.
+        </p>
+      ) : null}
       <button
         type="submit"
-        disabled={loading || !canRegister}
+        disabled={loading || !canRegister || (needsFreshReceipt && !hasFreshReceipt)}
         className="inline-flex w-full items-center justify-center rounded-lg bg-jackals-red px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-jackals-red/90 disabled:opacity-60"
       >
         {loading
@@ -870,10 +910,27 @@ export function TrialSessionPublicView({
                 <JoinFlowStep
                   step={session.paymentUrl || session.sessionFee != null ? 2 : 1}
                   title={
-                    receiptOnFile ? "Payment receipt submitted" : "Upload payment receipt"
+                    needsFreshReceipt
+                      ? "Upload a new payment receipt"
+                      : receiptOnFile
+                        ? "Payment receipt submitted"
+                        : "Upload payment receipt"
                   }
                 >
-                  {receiptOnFile ? (
+                  {needsFreshReceipt ? (
+                    <TrialSessionPaymentProofUpload
+                      slug={slug}
+                      proofId={hasFreshReceipt ? paymentProofId : null}
+                      onProofChange={handlePaymentProofChange}
+                      disabled={awaitingViewerStatus}
+                      forceReupload={!hasFreshReceipt}
+                      forceReuploadMessage={
+                        viewerRejected
+                          ? "Your previous receipt cannot be reused. Upload a new screenshot from your banking app, then submit again in step 3."
+                          : "Your saved receipt from last time cannot be reused. Upload a new screenshot from your banking app, then submit again in step 3."
+                      }
+                    />
+                  ) : receiptOnFile ? (
                     <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
                       <div className="flex items-start gap-2">
                         <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
@@ -942,17 +999,42 @@ export function TrialSessionPublicView({
                       can update your name below while you wait.
                     </p>
                   ) : viewerRejected && !duplicatePrompt ? (
-                    <p className="mb-4 text-sm text-zinc-400">
-                      {hasPaymentStep && !hasNewReceiptForResubmit
-                        ? "Your previous request was not approved. Upload a different payment receipt above, then submit again."
-                        : "Your previous request was not approved. Submit again when you're ready."}
-                    </p>
+                    <>
+                      <p className="mb-4 text-sm text-zinc-400">
+                        Upload a new payment receipt in step 2, then submit again
+                        below.
+                      </p>
+                      {needsFreshReceipt && !hasFreshReceipt ? (
+                        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                          <p className="font-semibold text-amber-50">
+                            Upload a new receipt first
+                          </p>
+                          <p className="mt-1 text-amber-100/90">
+                            Your previous receipt cannot be reused. Go to step 2
+                            and upload a fresh screenshot before submitting.
+                          </p>
+                        </div>
+                      ) : null}
+                    </>
                   ) : viewerCanResubmit && !duplicatePrompt ? (
-                    <p className="mb-4 text-sm text-zinc-400">
-                      {canRegister
-                        ? "Your previous request is no longer active. Submit again below if you'd still like to join."
-                        : "Your previous request is no longer active. Upload your payment receipt above again, then submit below."}
-                    </p>
+                    <>
+                      <p className="mb-4 text-sm text-zinc-400">
+                        Upload your payment receipt again in step 2, then submit
+                        below if you&apos;d still like to join.
+                      </p>
+                      {needsFreshReceipt && !hasFreshReceipt ? (
+                        <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                          <p className="font-semibold text-amber-50">
+                            Upload a new receipt first
+                          </p>
+                          <p className="mt-1 text-amber-100/90">
+                            Your saved receipt from last time cannot be reused.
+                            Go to step 2 and upload a fresh screenshot before
+                            submitting.
+                          </p>
+                        </div>
+                      ) : null}
+                    </>
                   ) : awaitingViewerStatus && hasStoredEmail ? (
                     <p className="mb-4 text-sm text-zinc-400">
                       Checking your request status…

@@ -62,7 +62,7 @@ export async function PATCH(
     signup: result.signup,
     message:
       data.status === "APPROVED"
-        ? "Attendee approved."
+        ? "Attendee approved and confirmation email sent."
         : data.status === "REJECTED"
           ? "Request rejected."
           : "Moved back to awaiting approval.",

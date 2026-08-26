@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { GripVertical } from "lucide-react";
+import { Copy, GripVertical, Pencil, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
@@ -190,11 +190,11 @@ export function AdminListItem({
   deleting?: boolean;
 }) {
   return (
-    <Card
+    <div
       className={cn(
-        "flex flex-col gap-4 py-4 transition-all duration-200 sm:flex-row sm:items-start sm:justify-between",
+        "flex items-start justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-3 transition",
         draggable && "cursor-grab active:cursor-grabbing",
-        dragging && "scale-[0.99] border-jackals-red/40 bg-jackals-red/5",
+        dragging && "border-jackals-red/40 bg-jackals-red/5",
       )}
     >
       <div className="min-w-0 flex-1">
@@ -205,17 +205,18 @@ export function AdminListItem({
               aria-hidden
             />
           )}
-          <p className="font-medium text-white">{title}</p>
+          <p className="truncate font-medium text-white">{title}</p>
         </div>
-        <p className="mt-1 text-sm text-zinc-400">{subtitle}</p>
-        {note && <p className="mt-1 text-xs text-zinc-500">{note}</p>}
+        <p className="mt-0.5 line-clamp-2 text-sm text-zinc-500">{subtitle}</p>
+        {note ? <p className="mt-1 text-xs text-zinc-600">{note}</p> : null}
         {(formAction || (secondaryHref && secondaryLabel)) && (
-          <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1">
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1">
             {formAction && (
               <button
                 type="button"
+                draggable={false}
                 onClick={() => formAction.onClick()}
-                className="text-xs font-medium text-jackals-red-light hover:text-jackals-red"
+                className="text-xs font-medium text-jackals-gold hover:underline"
               >
                 {formAction.label}
               </button>
@@ -223,7 +224,8 @@ export function AdminListItem({
             {secondaryHref && secondaryLabel && (
               <Link
                 href={secondaryHref}
-                className="text-xs font-medium text-jackals-red-light hover:text-jackals-red"
+                draggable={false}
+                className="text-xs font-medium text-jackals-gold hover:underline"
               >
                 {secondaryLabel}
               </Link>
@@ -231,46 +233,172 @@ export function AdminListItem({
           </div>
         )}
       </div>
-      <div className="flex w-full shrink-0 flex-wrap gap-2 sm:w-auto sm:justify-end">
-        {actionHref && actionLabel && (
+      <div className="flex shrink-0 items-center gap-1">
+        {actionHref && actionLabel ? (
           <Link
             href={actionHref}
-            className="inline-flex items-center justify-center gap-2 rounded-sm border border-white/20 bg-transparent px-3 py-1.5 text-sm font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10"
+            draggable={false}
+            className="rounded px-2 py-1.5 text-xs font-medium text-zinc-300 hover:bg-white/5 hover:text-white"
           >
             {actionLabel}
           </Link>
-        )}
-        {onEdit && (
-          <Button
+        ) : null}
+        {onEdit ? (
+          <button
             type="button"
-            variant="outline"
-            size="sm"
+            title="Edit"
+            draggable={false}
             onClick={() => onEdit()}
+            className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
           >
-            Edit
-          </Button>
-        )}
-        {onDuplicate && (
-          <Button
+            <Pencil className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+        {onDuplicate ? (
+          <button
             type="button"
-            variant="outline"
-            size="sm"
+            title="Duplicate"
+            draggable={false}
             onClick={() => onDuplicate()}
+            className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
           >
-            Duplicate
-          </Button>
-        )}
-        <Button
+            <Copy className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
+          title="Delete"
+          draggable={false}
           disabled={deleting}
           onClick={onDelete}
-          className="text-red-400 hover:text-red-300"
+          className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
         >
-          {deleting ? "..." : "Delete"}
-        </Button>
+          {deleting ? (
+            <span className="px-1 text-xs">…</span>
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
+        </button>
       </div>
-    </Card>
+    </div>
+  );
+}
+
+/** List row that expands in place into an edit form (instead of scrolling to a top form). */
+export function AdminInlineEditCard({
+  isEditing,
+  title,
+  subtitle,
+  note,
+  secondaryHref,
+  secondaryLabel,
+  actionHref,
+  actionLabel,
+  formAction,
+  draggable,
+  dragging,
+  onEdit,
+  onDuplicate,
+  onDelete,
+  deleting,
+  editHeading,
+  onCancelEdit,
+  onSubmit,
+  loading,
+  submitLabel = "Save changes",
+  error,
+  children,
+  afterForm,
+}: {
+  isEditing: boolean;
+  title: string;
+  subtitle: string;
+  note?: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
+  actionHref?: string;
+  actionLabel?: string;
+  formAction?: { label: string; onClick: () => void };
+  draggable?: boolean;
+  dragging?: boolean;
+  onEdit?: () => void;
+  onDuplicate?: () => void;
+  onDelete: () => void;
+  deleting?: boolean;
+  editHeading?: string;
+  onCancelEdit: () => void;
+  onSubmit: (e: React.FormEvent) => void;
+  loading?: boolean;
+  submitLabel?: string;
+  error?: string | null;
+  children: React.ReactNode;
+  afterForm?: React.ReactNode;
+}) {
+  if (!isEditing) {
+    return (
+      <AdminListItem
+        title={title}
+        subtitle={subtitle}
+        note={note}
+        secondaryHref={secondaryHref}
+        secondaryLabel={secondaryLabel}
+        actionHref={actionHref}
+        actionLabel={actionLabel}
+        formAction={formAction}
+        draggable={draggable}
+        dragging={dragging}
+        onEdit={onEdit}
+        onDuplicate={onDuplicate}
+        onDelete={onDelete}
+        deleting={deleting}
+      />
+    );
+  }
+
+  return (
+    <div className="rounded-lg border border-jackals-red/40 bg-jackals-red/5 shadow-lg shadow-jackals-red/10">
+      <form onSubmit={onSubmit} className="space-y-4 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs font-medium uppercase tracking-wide text-jackals-red-light">
+              Editing
+            </p>
+            <h4 className="mt-0.5 truncate font-medium text-white">
+              {editHeading ?? title}
+            </h4>
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="shrink-0"
+            onClick={onCancelEdit}
+            disabled={loading}
+          >
+            <X className="h-4 w-4" />
+            Close
+          </Button>
+        </div>
+
+        {children}
+
+        <FormError message={error ?? null} />
+
+        <div className="flex flex-col gap-3 pt-1 sm:flex-row">
+          <Button type="submit" disabled={loading}>
+            {loading ? "Saving..." : submitLabel}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={onCancelEdit}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+        </div>
+      </form>
+      {afterForm}
+    </div>
   );
 }

@@ -11,6 +11,17 @@ export default async function AdminUsersPage() {
       email: true,
       role: true,
       createdAt: true,
+      memberships: {
+        select: {
+          id: true,
+          status: true,
+          paymentSchedule: true,
+          startDate: true,
+          endDate: true,
+          plan: { select: { name: true } },
+        },
+        orderBy: { startDate: "desc" },
+      },
       _count: {
         select: { memberships: true, orders: true, eventReminders: true },
       },
@@ -21,6 +32,14 @@ export default async function AdminUsersPage() {
   const serialized = users.map((u) => ({
     ...u,
     createdAt: u.createdAt.toISOString(),
+    memberships: u.memberships.map((membership) => ({
+      id: membership.id,
+      status: membership.status,
+      paymentSchedule: membership.paymentSchedule,
+      startDate: membership.startDate.toISOString(),
+      endDate: membership.endDate.toISOString(),
+      planName: membership.plan.name,
+    })),
   }));
 
   return <UsersManager initialUsers={serialized} />;

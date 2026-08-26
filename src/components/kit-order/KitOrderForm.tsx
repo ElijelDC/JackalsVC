@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, Shirt, ZoomIn } from "lucide-react";
 import { KitOrderCarousel, KitOrderCarouselDots } from "@/components/kit-order/KitOrderCarousel";
@@ -359,6 +360,7 @@ export function KitOrderForm() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
   const [lightbox, setLightbox] = useState<{
     items: MembershipMerchItem202627[];
@@ -554,7 +556,11 @@ export function KitOrderForm() {
     setError(null);
     setLoading(true);
 
-    const result = await apiPost<{ success: boolean; message: string }>(
+    const result = await apiPost<{
+      success: boolean;
+      message: string;
+      paymentUrl?: string;
+    }>(
       "/api/kit-order",
       {
         firstName,
@@ -593,6 +599,7 @@ export function KitOrderForm() {
 
     clearKitOrderDraft();
     setReviewOpen(false);
+    setPaymentUrl(result.data.paymentUrl ?? null);
     setSuccess(true);
   };
 
@@ -615,6 +622,20 @@ export function KitOrderForm() {
         <p className="mt-2 text-sm leading-relaxed text-zinc-400">
           {KIT_ORDER_NUMBER_CLASH_COPY}
         </p>
+        {paymentUrl ? (
+          <div className="mt-6">
+            <Link
+              href={paymentUrl}
+              className="inline-flex items-center justify-center rounded-lg bg-jackals-red px-6 py-3 text-sm font-semibold text-white transition hover:bg-jackals-red-light"
+            >
+              Pay & upload receipt
+            </Link>
+            <p className="mt-3 text-xs text-zinc-500">
+              You&apos;ll see your full order breakdown, the club IBAN, and where
+              to upload your bank transfer screenshot.
+            </p>
+          </div>
+        ) : null}
       </div>
     );
   }

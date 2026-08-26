@@ -7,6 +7,7 @@ import {
   deleteTrialSessionPaymentProofFile,
   saveTrialSessionPaymentProofFile,
 } from "@/lib/trial-session-payment-proof";
+import { notifyTrialSessionSignupApproved } from "@/lib/send-trial-session-signup-approved-email";
 import type {
   PublicTrialSession,
   TrialSessionRecord,
@@ -619,6 +620,10 @@ export async function setTrialSessionSignupStatus(
     },
   });
 
+  if (status === TRIAL_SESSION_SIGNUP_APPROVED && signup.status !== status) {
+    await notifyTrialSessionSignupApproved(signupId);
+  }
+
   return {
     ok: true as const,
     signup: serializeSignup(updated),
@@ -645,12 +650,93 @@ export async function setTrialSessionSignupStatuses(
     return { ok: false as const, error: "One or more registrations were not found." };
   }
 
+  const previouslyPending =
+    status === TRIAL_SESSION_SIGNUP_APPROVED
+      ? await prisma.trialSessionSignup.findMany({
+          where: {
+            trialSessionId,
+            id: { in: uniqueIds },
+            status: { not: TRIAL_SESSION_SIGNUP_APPROVED },
+          },
+          select: { id: true },
+        })
+      : [];
+
   await prisma.trialSessionSignup.updateMany({
     where: { trialSessionId, id: { in: uniqueIds } },
     data: { status },
   });
 
+  if (previouslyPending.length > 0) {
+    await Promise.all(
+      previouslyPending.map((signup) =>
+        notifyTrialSessionSignupApproved(signup.id),
+      ),
+    );
+  }
+
   return { ok: true as const, updatedCount: uniqueIds.length };
+}
+
+export async function adminAddTrialSessionSignup(
+  trialSessionId: string,
+  input: { email: string; displayName: string },
+) {
+  const session = await prisma.trialSession.findUnique({
+    where: { id: trialSessionId },
+  });
+
+  if (!session) {
+    return { ok: false as const, error: "Session not found." };
+  }
+
+  const email = normalizeTrialSessionEmail(input.email);
+  const displayName = input.displayName.trim();
+
+  const existing = await prisma.trialSessionSignup.findUnique({
+    where: {
+      trialSessionId_email: { trialSessionId, email },
+    },
+  });
+
+  if (existing?.status === TRIAL_SESSION_SIGNUP_APPROVED) {
+    return {
+      ok: false as const,
+      error: "This email is already approved for this session.",
+    };
+  }
+
+  const becomingApproved =
+    !existing || existing.status !== TRIAL_SESSION_SIGNUP_APPROVED;
+
+  const signup = existing
+    ? await prisma.trialSessionSignup.update({
+        where: { id: existing.id },
+        data: {
+          displayName,
+          status: TRIAL_SESSION_SIGNUP_APPROVED,
+        },
+      })
+    : await prisma.trialSessionSignup.create({
+        data: {
+          trialSessionId,
+          email,
+          displayName,
+          status: TRIAL_SESSION_SIGNUP_APPROVED,
+        },
+      });
+
+  if (becomingApproved) {
+    await notifyTrialSessionSignupApproved(signup.id);
+  }
+
+  return {
+    ok: true as const,
+    signup: serializeSignup(signup),
+    message: becomingApproved
+      ? "Player added to the session and confirmation email sent."
+      : "Player updated.",
+  };
 }
 
 export async function removeTrialSessionSignup(

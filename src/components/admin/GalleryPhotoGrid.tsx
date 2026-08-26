@@ -20,12 +20,14 @@ export function GalleryPhotoGrid({
   deletingPhotoId,
   onEdit,
   onDelete,
+  editForm,
 }: {
   photos: GalleryPhoto[];
   editingPhotoId: string | null;
   deletingPhotoId: string | null;
   onEdit: (photo: GalleryPhoto) => void;
   onDelete: (photoId: string) => void;
+  editForm?: React.ReactNode;
 }) {
   if (photos.length === 0) {
     return (
@@ -50,7 +52,7 @@ export function GalleryPhotoGrid({
             className={cn(
               "group relative overflow-hidden rounded-sm border bg-jackals-inset/50",
               isEditing
-                ? "border-jackals-red/60 ring-1 ring-jackals-red/40"
+                ? "col-span-2 border-jackals-red/60 ring-1 ring-jackals-red/40 sm:col-span-2 lg:col-span-2"
                 : "border-white/10",
             )}
           >
@@ -90,6 +92,7 @@ export function GalleryPhotoGrid({
             <div className="border-t border-white/10 px-2 py-2">
               <p className="truncate text-xs font-medium text-zinc-300">{label}</p>
             </div>
+            {isEditing ? editForm : null}
           </article>
         );
       })}

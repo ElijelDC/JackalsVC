@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { CheckCircle2, Upload } from "lucide-react";
+import { CheckCircle2, Upload, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import {
@@ -17,6 +17,9 @@ type TrialSessionPaymentProofUploadProps = {
   proofId: string | null;
   onProofChange: (proofId: string | null) => void;
   disabled?: boolean;
+  /** When true, hide any saved receipt and require a new upload. */
+  forceReupload?: boolean;
+  forceReuploadMessage?: string;
 };
 
 type ProofStatus = {
@@ -31,6 +34,8 @@ export function TrialSessionPaymentProofUpload({
   proofId,
   onProofChange,
   disabled = false,
+  forceReupload = false,
+  forceReuploadMessage = "Upload a new payment receipt before submitting again.",
 }: TrialSessionPaymentProofUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const confirmedProofIdRef = useRef<string | null>(null);
@@ -44,6 +49,13 @@ export function TrialSessionPaymentProofUpload({
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    if (forceReupload) {
+      setUploadedProof(null);
+      setCheckingProof(false);
+      confirmedProofIdRef.current = null;
+      return;
+    }
+
     if (!proofId) {
       setUploadedProof(null);
       setMessage(null);
@@ -83,7 +95,7 @@ export function TrialSessionPaymentProofUpload({
     return () => {
       cancelled = true;
     };
-  }, [onProofChange, proofId, slug]);
+  }, [forceReupload, onProofChange, proofId, slug]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -175,11 +187,11 @@ export function TrialSessionPaymentProofUpload({
     if (inputRef.current) inputRef.current.value = "";
   };
 
-  if (checkingProof) {
+  if (checkingProof && !forceReupload) {
     return <p className="text-sm text-zinc-500">Checking payment receipt…</p>;
   }
 
-  if (uploadedProof) {
+  if (uploadedProof && !forceReupload) {
     return (
       <div className="space-y-4">
         <div className="rounded-lg border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
@@ -230,6 +242,20 @@ export function TrialSessionPaymentProofUpload({
 
   return (
     <div className="space-y-4">
+      {forceReupload ? (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+          <div className="flex items-start gap-2">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+            <div>
+              <p className="font-semibold text-amber-50">
+                New receipt required
+              </p>
+              <p className="mt-1 text-amber-100/90">{forceReuploadMessage}</p>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <p className="text-sm text-zinc-400">
         After paying, upload a screenshot of your payment confirmation. You
         can register once this is uploaded.

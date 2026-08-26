@@ -176,11 +176,15 @@ function PortalSelect({
       Math.min(preferredMaxHeight, availableSpace - 4),
     );
 
+    // Keep the menu at least as wide as typical option labels so narrow
+    // triggers (e.g. captain) don't clip text like "Captain".
+    const width = Math.max(rect.width, 192);
+
     setMenuPosition({
       top: openUpward ? undefined : rect.bottom + 4,
       bottom: openUpward ? viewportHeight - rect.top + 4 : undefined,
-      left: rect.left,
-      width: rect.width,
+      left: Math.min(rect.left, window.innerWidth - width - margin),
+      width,
       maxHeight,
     });
   }, []);

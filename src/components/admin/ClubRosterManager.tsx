@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
+import { ChevronDown, Trash2, UserRoundCheck, UserRoundX } from "lucide-react";
 import { AdminFormCard } from "@/components/admin/AdminForm";
 import { AdminBulkCsvImport } from "@/components/admin/AdminBulkCsvImport";
 import { AdminSection } from "@/components/admin/AdminShell";
@@ -10,9 +11,7 @@ import {
 } from "@/components/admin/AdminSearchBar";
 import { AdminMemberProfileImage } from "@/components/admin/AdminMemberProfileImage";
 import { AdminMemberVlyPhoto } from "@/components/admin/AdminMemberVlyPhoto";
-import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client-api";
 import {
@@ -65,6 +64,36 @@ function memberSquadKeys(member: ClubMember) {
     : member.trainingTeamKey
       ? [member.trainingTeamKey]
       : [];
+}
+
+function memberSquadLabel(
+  member: ClubMember,
+  trainingTeams: TrainingTeam[],
+) {
+  const keys = memberSquadKeys(member);
+  if (keys.length === 0) return "Unassigned";
+  return keys
+    .map((key) => getTrainingTeamFromList(trainingTeams, key)?.name ?? key)
+    .join(", ");
+}
+
+function rosterPlanLabel(
+  member: ClubMember,
+  subscription: MemberSubscription | undefined,
+) {
+  if (member.rosterRole === "COACH") {
+    return member.coachPaymentType
+      ? COACH_PAYMENT_TYPE_LABELS[member.coachPaymentType]
+      : "Coach";
+  }
+  if (!subscription) {
+    return member.userId ? "No plan" : "Awaiting reg";
+  }
+  return formatMembershipSubscriptionOrCoachLabel(
+    subscription.planName,
+    subscription.paymentSchedule,
+    subscription.status,
+  );
 }
 
 function SquadCheckboxGroup({
@@ -139,6 +168,7 @@ export function ClubRosterManager({
   const [savingMemberNumberId, setSavingMemberNumberId] = useState<string | null>(null);
   const [savedMemberNumberById, setSavedMemberNumberById] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<"name_asc" | "name_desc">("name_asc");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const filteredMembers = useMemo(() => {
     const filtered = clubMembers.filter((member) => {
@@ -147,6 +177,9 @@ export function ClubRosterManager({
           return false;
         }
       }
+
+      if (memberFilter === "active" && !member.active) return false;
+      if (memberFilter === "inactive" && member.active) return false;
 
       if (roleFilter !== "all" && member.rosterRole !== roleFilter) {
         return false;
@@ -167,6 +200,10 @@ export function ClubRosterManager({
         member.name,
         member.user?.email ?? "",
         member.active ? "active" : "inactive",
+        member.rosterRole,
+        member.userId
+          ? subscriptionByUserId[member.userId]?.planName ?? ""
+          : "",
         memberSquadKeys(member)
           .map((key) => getTrainingTeamFromList(trainingTeams, key)?.name ?? "")
           .join(" "),
@@ -179,7 +216,7 @@ export function ClubRosterManager({
       });
       return sortBy === "name_asc" ? comparison : -comparison;
     });
-  }, [clubMembers, search, teamFilter, memberFilter, roleFilter, sortBy]);
+  }, [clubMembers, search, teamFilter, memberFilter, roleFilter, sortBy, trainingTeams, subscriptionByUserId]);
 
   const hasActiveFilters =
     search.trim().length > 0 ||
@@ -240,7 +277,7 @@ export function ClubRosterManager({
     setLoading(true);
     setError(null);
 
-    const result = await apiPatch(
+    const result = await apiPatch<{ clubMember: ClubMember }>(
       `/api/admin/club-members/${member.id}`,
       { active: !member.active },
       "Failed to update roster entry",
@@ -253,6 +290,13 @@ export function ClubRosterManager({
       return;
     }
 
+    setClubMembers((current) =>
+      current.map((row) =>
+        row.id === member.id
+          ? { ...row, ...result.data.clubMember, active: !member.active }
+          : row,
+      ),
+    );
     await loadClubMembers();
   };
 
@@ -557,9 +601,7 @@ export function ClubRosterManager({
         </div>
       </AdminFormCard>
 
-      <div className="mb-8 mt-6">
-        <AdminBulkCsvImport type="roster" />
-      </div>
+      <AdminBulkCsvImport type="roster" />
 
       <div className="mt-6">
         <div className="space-y-4">
@@ -594,8 +636,10 @@ export function ClubRosterManager({
                 onChange={(event) => setMemberFilter(event.target.value)}
               >
                 <option value="all">All members</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
                 <option value="awaiting-registration-players">
-                  Awaiting Registration players
+                  Awaiting registration
                 </option>
               </Select>
             </div>
@@ -651,287 +695,460 @@ export function ClubRosterManager({
           </div>
         </div>
 
-        <div className="mt-4 space-y-3">
-          {filteredMembers.map((member) => {
-            const subscription = member.userId
-              ? subscriptionByUserId[member.userId]
-              : undefined;
-            const subscriptionLabel = subscription
-              ? formatMembershipSubscriptionOrCoachLabel(
-                  subscription.planName,
-                  subscription.paymentSchedule,
-                  subscription.status,
-                )
-              : null;
-
-            return (
-              <Card
-                key={member.id}
-                className="overflow-hidden p-0 transition-colors hover:border-white/15"
-              >
-                <div className="flex flex-col gap-4 p-4 md:flex-row md:items-start md:gap-4">
-                  <div className="flex flex-wrap items-start gap-3 md:shrink-0 md:flex-nowrap">
-                    <AdminMemberProfileImage
-                      memberId={member.id}
-                      name={member.name}
-                      imageUrl={member.profileImageUrl}
-                      disabled={loading}
-                      onUpdated={loadClubMembers}
-                    />
-
-                    <AdminMemberVlyPhoto
-                      memberId={member.id}
-                      name={member.name}
-                      imageUrl={member.vlyMembershipPhotoUrl}
-                      disabled={loading}
-                      onUpdated={loadClubMembers}
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1 space-y-3">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
-                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <h3 className="truncate font-medium text-white">
-                            {member.name}
-                          </h3>
-                          <span className="shrink-0 rounded-md border border-white/10 bg-white/5 px-2 py-0.5 font-mono text-sm font-medium tracking-wide text-zinc-100">
-                            {member.vlyNumber}
-                          </span>
-                          <Badge
-                            className={
-                              member.rosterRole === "COACH"
-                                ? "border border-zinc-400/30 bg-zinc-500/10 text-zinc-200"
-                                : "border border-zinc-500/30 bg-zinc-500/10 text-zinc-300"
-                            }
-                          >
-                            {member.rosterRole === "COACH" ? "Coach" : "Player"}
-                          </Badge>
-                          {member.rosterRole === "COACH" && member.coachPaymentType && (
-                            <Badge
-                              className={
-                                member.coachPaymentType === "PAID"
-                                  ? "border border-zinc-400/30 bg-zinc-500/10 text-zinc-200"
-                                  : "border border-zinc-500/30 bg-zinc-500/10 text-zinc-300"
-                              }
-                            >
-                              {COACH_PAYMENT_TYPE_LABELS[member.coachPaymentType]}
-                            </Badge>
-                          )}
-                          <Badge
-                            className={
-                              member.active
-                                ? "border border-green-500/35 bg-green-500/15 text-green-300 font-semibold tracking-wide"
-                                : "border border-red-500/35 bg-red-500/15 text-red-300"
-                            }
-                          >
-                            {member.active ? "Active" : "Inactive"}
-                          </Badge>
-                        </div>
-                        <p className="mt-0.5 truncate text-sm text-zinc-400">
-                          {member.user ? (
-                            member.user.email
-                          ) : (
-                            <span className="italic text-zinc-500">
-                              Awaiting registration
-                            </span>
-                          )}
-                        </p>
-                        {subscriptionLabel && (
-                          <p
-                            className={cn(
-                              "mt-1 text-xs font-medium",
-                              "text-zinc-300",
-                            )}
-                          >
-                            {subscriptionLabel}
-                            {subscription?.status === "PENDING_PAYMENT"
-                              ? " · awaiting payment"
-                              : ""}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          disabled={loading}
-                          onClick={() => toggleActive(member)}
-                          className={cn(
-                            "border font-medium",
-                            member.active
-                              ? "px-2 py-1 text-xs border-red-500/40 bg-red-500/15 text-red-300 hover:border-red-500 hover:bg-red-500/25 hover:text-red-200"
-                              : "border-green-500/40 bg-green-500/15 text-green-300 hover:border-green-500 hover:bg-green-500/25 hover:text-green-200",
-                          )}
-                        >
-                          {member.active ? "Deactivate" : "Activate"}
-                        </Button>
-                        {!member.userId && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            disabled={loading}
-                            onClick={() => removeMember(member)}
-                            className="text-zinc-400 hover:text-zinc-200"
-                          >
-                            Remove
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-
-                    <div
-                      className={cn(
-                        "grid gap-3 md:max-w-xl",
-                        member.rosterRole === "COACH" ? "md:grid-cols-4" : "md:grid-cols-3",
-                      )}
-                    >
-                      <div className="flex flex-col gap-1.5">
-                        <Label
-                          htmlFor={`number-${member.id}`}
-                          className="mb-0 text-xs font-normal text-zinc-500"
-                        >
-                          {member.rosterRole === "COACH" ? "VLYC coach number" : "VLY number"}
-                        </Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            id={`number-${member.id}`}
-                            value={memberNumberDrafts[member.id] ?? member.vlyNumber}
-                            disabled={loading}
-                            onChange={(event) =>
-                              {
-                                setMemberNumberDrafts((current) => ({
-                                  ...current,
-                                  [member.id]: event.target.value.toUpperCase(),
-                                }));
-                                setSavedMemberNumberById((current) => {
-                                  if (!current[member.id]) return current;
-                                  const next = { ...current };
-                                  delete next[member.id];
-                                  return next;
-                                });
-                              }
-                            }
-                            placeholder={
-                              member.rosterRole === "COACH" ? "VLYC12345" : "VLY12345"
-                            }
-                            className="py-2 text-sm"
-                          />
-                          <Button
-                            type="button"
-                            size="sm"
-                            variant="outline"
-                            disabled={loading || savingMemberNumberId === member.id}
-                            onClick={() => saveMemberNumber(member)}
-                            className={cn(
-                              "shrink-0",
-                              savedMemberNumberById[member.id]
-                                ? "border border-green-500/40 bg-green-500/20 text-green-300 hover:border-green-500 hover:bg-green-500/25 hover:text-green-200"
-                                : "border border-zinc-400/35 bg-zinc-600/15 text-zinc-100 hover:border-zinc-300/45 hover:bg-zinc-600/25 hover:text-white",
-                            )}
-                          >
-                            {savingMemberNumberId === member.id
-                              ? "Saving..."
-                              : savedMemberNumberById[member.id]
-                                ? "Saved"
-                                : "Save"}
-                          </Button>
-                        </div>
-                      </div>
-                      <div className="flex flex-col gap-1.5">
-                        <Label
-                          htmlFor={`role-${member.id}`}
-                          className="mb-0 text-xs font-normal text-zinc-500"
-                        >
-                          Roster role
-                        </Label>
-                        <Select
-                          id={`role-${member.id}`}
-                          value={member.rosterRole}
-                          disabled={loading}
-                          onChange={(event) =>
-                            assignRosterRole(
-                              member,
-                              event.target.value as "PLAYER" | "COACH",
-                            )
-                          }
-                        >
-                          <option value="PLAYER">Player</option>
-                          <option value="COACH">Coach</option>
-                        </Select>
-                      </div>
-                      {member.rosterRole === "COACH" && (
-                        <div className="flex flex-col gap-1.5">
-                          <Label
-                            htmlFor={`coach-type-${member.id}`}
-                            className="mb-0 text-xs font-normal text-zinc-500"
-                          >
-                            Coach type
-                          </Label>
-                          <Select
-                            id={`coach-type-${member.id}`}
-                            value={member.coachPaymentType ?? "PAID"}
-                            disabled={loading}
-                            onChange={(event) =>
-                              assignCoachPaymentType(
-                                member,
-                                event.target.value as CoachPaymentType,
-                              )
-                            }
-                          >
-                            {COACH_PAYMENT_TYPES.map((type) => (
-                              <option key={type} value={type}>
-                                {COACH_PAYMENT_TYPE_LABELS[type]}
-                              </option>
-                            ))}
-                          </Select>
-                        </div>
-                      )}
-                      <div className="flex flex-col gap-1.5 sm:col-span-2">
-                        <Label className="mb-0 text-xs font-normal text-zinc-500">
-                          {member.rosterRole === "COACH" ? "Squads" : "Squad"}
-                        </Label>
-                        {member.rosterRole === "COACH" ? (
-                          <SquadCheckboxGroup
-                            idPrefix={`team-${member.id}`}
-                            selectedKeys={memberSquadKeys(member)}
-                            trainingTeams={trainingTeams}
-                            disabled={loading}
-                            onChange={(keys) => assignCoachSquads(member, keys)}
-                          />
-                        ) : (
-                          <Select
-                            id={`team-${member.id}`}
-                            value={member.trainingTeamKey ?? ""}
-                            disabled={loading}
-                            className="py-2 text-sm"
-                            onChange={(event) =>
-                              assignTeam(member, event.target.value)
-                            }
-                          >
-                            <option value="">No squad assigned</option>
-                            {trainingTeams.map((team) => (
-                              <option key={team.key} value={team.key}>
-                                {team.name}
-                              </option>
-                            ))}
-                          </Select>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
-
-          {filteredMembers.length === 0 && (
+        <div className="mt-4 space-y-2 lg:hidden">
+          {filteredMembers.length === 0 ? (
             <p className="py-8 text-center text-sm text-zinc-500">
               {search.trim() || teamFilter !== "all" || memberFilter !== "all" || roleFilter !== "all"
                 ? "No roster entries match your filters."
                 : "No roster entries yet."}
             </p>
+          ) : (
+            filteredMembers.map((member) => {
+              const subscription = member.userId
+                ? subscriptionByUserId[member.userId]
+                : undefined;
+              const subscriptionLabel = subscription
+                ? formatMembershipSubscriptionOrCoachLabel(
+                    subscription.planName,
+                    subscription.paymentSchedule,
+                    subscription.status,
+                  )
+                : null;
+              const planLabel = rosterPlanLabel(member, subscription);
+              const squadLabel = memberSquadLabel(member, trainingTeams);
+              const expanded = expandedId === member.id;
+              return (
+                <article
+                  key={member.id}
+                  className="rounded-lg border border-white/10 bg-white/[0.02] p-3"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setExpandedId(expanded ? null : member.id)
+                      }
+                      className="group flex min-w-0 flex-1 items-start gap-1.5 text-left"
+                    >
+                      <ChevronDown
+                        className={cn(
+                          "mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                          expanded && "rotate-180",
+                        )}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-medium text-white">{member.name}</p>
+                        <p className="mt-0.5 truncate text-xs text-zinc-500">
+                          {planLabel} · {squadLabel}
+                        </p>
+                        <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px]">
+                          <span className="text-zinc-400">
+                            {member.rosterRole === "COACH" ? "Coach" : "Player"}
+                          </span>
+                          <span className="text-zinc-700">·</span>
+                          <span
+                            className={
+                              member.active ? "text-emerald-400" : "text-rose-300"
+                            }
+                          >
+                            {member.active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      title={member.active ? "Deactivate" : "Activate"}
+                      disabled={loading}
+                      onClick={() => toggleActive(member)}
+                      className={cn(
+                        "rounded p-1.5",
+                        member.active
+                          ? "text-red-400 hover:bg-red-500/10"
+                          : "text-emerald-400 hover:bg-emerald-500/10",
+                      )}
+                    >
+                      {member.active ? (
+                        <UserRoundX className="h-3.5 w-3.5" />
+                      ) : (
+                        <UserRoundCheck className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  </div>
+                  {expanded ? (
+                    <div className="mt-3 space-y-3 border-t border-white/10 pt-3">
+                      <p className="truncate text-sm text-zinc-400">
+                        {member.user?.email ?? "Awaiting registration"}
+                      </p>
+                      {subscriptionLabel ? (
+                        <p className="text-xs text-zinc-500">{subscriptionLabel}</p>
+                      ) : null}
+                      <div className="flex flex-wrap gap-2">
+                        <AdminMemberProfileImage
+                          memberId={member.id}
+                          name={member.name}
+                          imageUrl={member.profileImageUrl}
+                          disabled={loading}
+                          onUpdated={loadClubMembers}
+                        />
+                        <AdminMemberVlyPhoto
+                          memberId={member.id}
+                          name={member.name}
+                          imageUrl={member.vlyMembershipPhotoUrl}
+                          disabled={loading}
+                          onUpdated={loadClubMembers}
+                        />
+                      </div>
+                      {!member.userId ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          disabled={loading}
+                          onClick={() => removeMember(member)}
+                          className="text-rose-300"
+                        >
+                          Remove from roster
+                        </Button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })
+          )}
+        </div>
+
+        <div className="mt-4 hidden overflow-hidden rounded-xl border border-white/10 lg:block">
+          {filteredMembers.length === 0 ? (
+            <p className="py-8 text-center text-sm text-zinc-500">
+              {search.trim() || teamFilter !== "all" || memberFilter !== "all" || roleFilter !== "all"
+                ? "No roster entries match your filters."
+                : "No roster entries yet."}
+            </p>
+          ) : (
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col />
+                <col className="w-[30%]" />
+                <col className="w-[4.75rem]" />
+                <col className="w-[5rem]" />
+                <col className="w-[4.5rem]" />
+              </colgroup>
+              <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
+                <tr>
+                  <th className="px-2 py-2.5 font-medium">Member</th>
+                  <th className="px-2 py-2.5 font-medium">Plan</th>
+                  <th className="px-2 py-2.5 font-medium">Role</th>
+                  <th className="px-2 py-2.5 font-medium">Status</th>
+                  <th className="px-2 py-2.5 text-right font-medium" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/8">
+                {filteredMembers.map((member) => {
+                  const subscription = member.userId
+                    ? subscriptionByUserId[member.userId]
+                    : undefined;
+                  const subscriptionLabel = subscription
+                    ? formatMembershipSubscriptionOrCoachLabel(
+                        subscription.planName,
+                        subscription.paymentSchedule,
+                        subscription.status,
+                      )
+                    : null;
+                  const planLabel = rosterPlanLabel(member, subscription);
+                  const expanded = expandedId === member.id;
+                  const squadLabel = memberSquadLabel(member, trainingTeams);
+
+                  return (
+                    <Fragment key={member.id}>
+                      <tr className="bg-white/[0.015] transition hover:bg-white/[0.03]">
+                        <td className="px-2 py-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedId(expanded ? null : member.id)
+                            }
+                            className="group flex min-w-0 items-center gap-1.5 text-left"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                                expanded && "rotate-180",
+                              )}
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate font-medium text-white group-hover:text-jackals-gold">
+                                {member.name}
+                              </span>
+                              <span className="block truncate text-[11px] text-zinc-600">
+                                {squadLabel}
+                              </span>
+                            </span>
+                          </button>
+                        </td>
+                        <td className="truncate px-2 py-2 text-zinc-400">
+                          {planLabel}
+                        </td>
+                        <td className="px-2 py-2 text-zinc-400">
+                          {member.rosterRole === "COACH" ? "Coach" : "Player"}
+                        </td>
+                        <td className="px-2 py-2">
+                          <span
+                            className={cn(
+                              "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
+                              member.active
+                                ? "bg-emerald-500/10 text-emerald-300"
+                                : "bg-rose-500/10 text-rose-300",
+                            )}
+                          >
+                            {member.active ? "Active" : "Inactive"}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="flex items-center justify-end gap-0.5">
+                            <button
+                              type="button"
+                              title={member.active ? "Deactivate" : "Activate"}
+                              disabled={loading}
+                              onClick={() => toggleActive(member)}
+                              className={cn(
+                                "rounded p-1.5 disabled:opacity-40",
+                                member.active
+                                  ? "text-red-400 hover:bg-red-500/10"
+                                  : "text-emerald-400 hover:bg-emerald-500/10",
+                              )}
+                            >
+                              {member.active ? (
+                                <UserRoundX className="h-3.5 w-3.5" />
+                              ) : (
+                                <UserRoundCheck className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                            {!member.userId ? (
+                              <button
+                                type="button"
+                                title="Remove"
+                                disabled={loading}
+                                onClick={() => removeMember(member)}
+                                className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            ) : null}
+                          </div>
+                        </td>
+                      </tr>
+                      {expanded ? (
+                        <tr className="bg-black/20">
+                          <td colSpan={5} className="px-4 py-4">
+                            <div className="grid gap-4 lg:grid-cols-[auto_1fr]">
+                              <div className="flex flex-wrap items-start gap-3">
+                                <AdminMemberProfileImage
+                                  memberId={member.id}
+                                  name={member.name}
+                                  imageUrl={member.profileImageUrl}
+                                  disabled={loading}
+                                  onUpdated={loadClubMembers}
+                                />
+                                <AdminMemberVlyPhoto
+                                  memberId={member.id}
+                                  name={member.name}
+                                  imageUrl={member.vlyMembershipPhotoUrl}
+                                  disabled={loading}
+                                  onUpdated={loadClubMembers}
+                                />
+                              </div>
+
+                              <div className="space-y-3">
+                                <p className="text-sm text-zinc-400">
+                                  <span className="text-zinc-500">VLY:</span>{" "}
+                                  {member.vlyNumber}
+                                </p>
+                                <p className="text-sm text-zinc-400">
+                                  <span className="text-zinc-500">Squad:</span>{" "}
+                                  {squadLabel}
+                                </p>
+                                <p className="text-sm text-zinc-400">
+                                  <span className="text-zinc-500">Email:</span>{" "}
+                                  {member.user?.email ?? "Awaiting registration"}
+                                </p>
+
+                                {subscriptionLabel ? (
+                                  <p className="text-xs font-medium text-zinc-300">
+                                    {subscriptionLabel}
+                                    {subscription?.status === "PENDING_PAYMENT"
+                                      ? " · awaiting payment"
+                                      : ""}
+                                  </p>
+                                ) : null}
+
+                                <div
+                                  className={cn(
+                                    "grid gap-3 md:max-w-3xl",
+                                    member.rosterRole === "COACH"
+                                      ? "md:grid-cols-2 lg:grid-cols-4"
+                                      : "md:grid-cols-3",
+                                  )}
+                                >
+                                  <div className="flex flex-col gap-1.5">
+                                    <Label
+                                      htmlFor={`number-${member.id}`}
+                                      className="mb-0 text-xs font-normal text-zinc-500"
+                                    >
+                                      {member.rosterRole === "COACH"
+                                        ? "VLYC coach number"
+                                        : "VLY number"}
+                                    </Label>
+                                    <div className="flex items-center gap-2">
+                                      <Input
+                                        id={`number-${member.id}`}
+                                        value={
+                                          memberNumberDrafts[member.id] ??
+                                          member.vlyNumber
+                                        }
+                                        disabled={loading}
+                                        onChange={(event) => {
+                                          setMemberNumberDrafts((current) => ({
+                                            ...current,
+                                            [member.id]:
+                                              event.target.value.toUpperCase(),
+                                          }));
+                                          setSavedMemberNumberById((current) => {
+                                            if (!current[member.id]) return current;
+                                            const next = { ...current };
+                                            delete next[member.id];
+                                            return next;
+                                          });
+                                        }}
+                                        placeholder={
+                                          member.rosterRole === "COACH"
+                                            ? "VLYC12345"
+                                            : "VLY12345"
+                                        }
+                                        className="py-2 text-sm"
+                                      />
+                                      <Button
+                                        type="button"
+                                        size="sm"
+                                        variant="outline"
+                                        disabled={
+                                          loading ||
+                                          savingMemberNumberId === member.id
+                                        }
+                                        onClick={() => saveMemberNumber(member)}
+                                        className={cn(
+                                          "shrink-0",
+                                          savedMemberNumberById[member.id]
+                                            ? "border border-green-500/40 bg-green-500/20 text-green-300 hover:border-green-500 hover:bg-green-500/25 hover:text-green-200"
+                                            : "border border-zinc-400/35 bg-zinc-600/15 text-zinc-100 hover:border-zinc-300/45 hover:bg-zinc-600/25 hover:text-white",
+                                        )}
+                                      >
+                                        {savingMemberNumberId === member.id
+                                          ? "Saving..."
+                                          : savedMemberNumberById[member.id]
+                                            ? "Saved"
+                                            : "Save"}
+                                      </Button>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-col gap-1.5">
+                                    <Label
+                                      htmlFor={`role-${member.id}`}
+                                      className="mb-0 text-xs font-normal text-zinc-500"
+                                    >
+                                      Roster role
+                                    </Label>
+                                    <Select
+                                      id={`role-${member.id}`}
+                                      value={member.rosterRole}
+                                      disabled={loading}
+                                      onChange={(event) =>
+                                        assignRosterRole(
+                                          member,
+                                          event.target.value as "PLAYER" | "COACH",
+                                        )
+                                      }
+                                    >
+                                      <option value="PLAYER">Player</option>
+                                      <option value="COACH">Coach</option>
+                                    </Select>
+                                  </div>
+
+                                  {member.rosterRole === "COACH" ? (
+                                    <div className="flex flex-col gap-1.5">
+                                      <Label
+                                        htmlFor={`coach-type-${member.id}`}
+                                        className="mb-0 text-xs font-normal text-zinc-500"
+                                      >
+                                        Coach type
+                                      </Label>
+                                      <Select
+                                        id={`coach-type-${member.id}`}
+                                        value={member.coachPaymentType ?? "PAID"}
+                                        disabled={loading}
+                                        onChange={(event) =>
+                                          assignCoachPaymentType(
+                                            member,
+                                            event.target.value as CoachPaymentType,
+                                          )
+                                        }
+                                      >
+                                        {COACH_PAYMENT_TYPES.map((type) => (
+                                          <option key={type} value={type}>
+                                            {COACH_PAYMENT_TYPE_LABELS[type]}
+                                          </option>
+                                        ))}
+                                      </Select>
+                                    </div>
+                                  ) : null}
+
+                                  <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-1">
+                                    <Label className="mb-0 text-xs font-normal text-zinc-500">
+                                      {member.rosterRole === "COACH"
+                                        ? "Squads"
+                                        : "Squad"}
+                                    </Label>
+                                    {member.rosterRole === "COACH" ? (
+                                      <SquadCheckboxGroup
+                                        idPrefix={`team-${member.id}`}
+                                        selectedKeys={memberSquadKeys(member)}
+                                        trainingTeams={trainingTeams}
+                                        disabled={loading}
+                                        onChange={(keys) =>
+                                          assignCoachSquads(member, keys)
+                                        }
+                                      />
+                                    ) : (
+                                      <Select
+                                        id={`team-${member.id}`}
+                                        value={member.trainingTeamKey ?? ""}
+                                        disabled={loading}
+                                        className="py-2 text-sm"
+                                        onChange={(event) =>
+                                          assignTeam(member, event.target.value)
+                                        }
+                                      >
+                                        <option value="">No squad assigned</option>
+                                        {trainingTeams.map((team) => (
+                                          <option key={team.key} value={team.key}>
+                                            {team.name}
+                                          </option>
+                                        ))}
+                                      </Select>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
         </div>
       </div>

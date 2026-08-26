@@ -811,6 +811,15 @@ export const trialSessionSignupSchema = z.object({
   paymentProofId: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 });
 
+export const adminTrialSessionAddSignupSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  displayName: z
+    .string()
+    .trim()
+    .min(1, "Enter a name")
+    .max(80, "Name is too long"),
+});
+
 const kitOrderName = z
   .string()
   .trim()

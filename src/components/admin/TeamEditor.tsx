@@ -113,16 +113,24 @@ function TeamEditorInner({
     if (result.ok) setTeam(result.data.team);
   }, [initialTeam.id]);
 
-  const handleTeamSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const saveTeamDetails = async () => {
+    if (
+      !teamForm.name.trim() ||
+      !teamForm.level.trim() ||
+      !teamForm.description.trim()
+    ) {
+      setTeamError("Name, level, and description are required.");
+      return false;
+    }
+
     setTeamLoading(true);
     setTeamError(null);
     setTeamMessage(null);
 
     const result = await apiPut(`/api/admin/teams/${team.id}`, {
-      name: teamForm.name,
-      level: teamForm.level,
-      description: teamForm.description,
+      name: teamForm.name.trim(),
+      level: teamForm.level.trim(),
+      description: teamForm.description.trim(),
       details: teamForm.details || undefined,
       trainingTeamKey: teamForm.trainingTeamKey || null,
       sortOrder: teamForm.sortOrder,
@@ -132,12 +140,29 @@ function TeamEditorInner({
 
     if (!result.ok) {
       setTeamError(result.error);
-      return;
+      return false;
     }
 
     setTeamMessage("Team details saved.");
     await loadTeam();
     router.refresh();
+    return true;
+  };
+
+  const handleTeamSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await saveTeamDetails();
+  };
+
+  const saveAndReturn = async () => {
+    if (savingMemberId || addingMember || deletingMemberId) {
+      setMemberError("Wait for roster changes to finish saving, then try again.");
+      return;
+    }
+
+    const ok = await saveTeamDetails();
+    if (!ok) return;
+    router.push("/admin/teams");
   };
 
   const saveMember = async (
@@ -294,13 +319,27 @@ function TeamEditorInner({
           : `${team.name} — update team details, coaches, and players.`
       }
     >
-      <Link
-        href="/admin/teams"
-        className="mb-6 inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to teams
-      </Link>
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <Link
+          href="/admin/teams"
+          className="inline-flex items-center gap-2 text-sm text-zinc-400 transition-colors hover:text-jackals-red-light"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to teams
+        </Link>
+        <Button
+          type="button"
+          disabled={
+            teamLoading ||
+            Boolean(savingMemberId) ||
+            addingMember ||
+            Boolean(deletingMemberId)
+          }
+          onClick={() => void saveAndReturn()}
+        >
+          {teamLoading ? "Saving…" : "Save & return to teams"}
+        </Button>
+      </div>
 
       <AdminFormCard
         collapsible
@@ -519,6 +558,27 @@ function TeamEditorInner({
           }
         />
       </div>
+
+      <div className="mt-8 flex flex-wrap items-center justify-end gap-3 border-t border-white/10 pt-6">
+        <Link
+          href="/admin/teams"
+          className="text-sm text-zinc-400 transition-colors hover:text-white"
+        >
+          Cancel
+        </Link>
+        <Button
+          type="button"
+          disabled={
+            teamLoading ||
+            Boolean(savingMemberId) ||
+            addingMember ||
+            Boolean(deletingMemberId)
+          }
+          onClick={() => void saveAndReturn()}
+        >
+          {teamLoading ? "Saving…" : "Save & return to teams"}
+        </Button>
+      </div>
     </AdminSection>
   );
 }
@@ -723,7 +783,7 @@ function MemberRow({
           )}
         </div>
 
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
           <PositionSelect
             role={memberRole}
             value={position}
@@ -803,7 +863,7 @@ function ManualAddRow({
 }) {
   return (
     <div className="space-y-3 rounded-lg border border-dashed border-white/15 bg-white/[0.02] p-3">
-      <div className="grid gap-3 sm:grid-cols-[1fr_minmax(0,11rem)_minmax(0,9rem)]">
+      <div className="grid gap-3 sm:grid-cols-[1fr_minmax(11rem,14rem)_minmax(9.5rem,10.5rem)]">
         <Input
           value={draft.name}
           onChange={(event) => onChange({ ...draft, name: event.target.value })}
@@ -872,7 +932,7 @@ function PositionSelect({
     <Select
       value={value}
       disabled={disabled}
-      className="w-full py-2 text-sm"
+      className="w-full min-w-[11rem] shrink-0 py-2 text-sm sm:w-[11rem]"
       aria-label={role === "COACH" ? "Coach role" : "Position"}
       onChange={(event) => onChange(event.target.value)}
     >
@@ -902,13 +962,13 @@ function CaptainSelect({
 }) {
   return (
     <Select
-      value={value ? "captain" : ""}
+      value={value ? "captain" : "player"}
       disabled={disabled}
-      className="w-full py-2 text-sm"
+      className="w-full min-w-[9.5rem] shrink-0 py-2 text-sm sm:w-[9.5rem]"
       aria-label="Captain"
       onChange={(event) => onChange(event.target.value === "captain")}
     >
-      <option value="">—</option>
+      <option value="player">Player</option>
       <option value="captain">Captain</option>
     </Select>
   );

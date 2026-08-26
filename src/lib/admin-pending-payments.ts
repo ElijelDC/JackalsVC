@@ -8,6 +8,13 @@ export function adminPendingPaymentWhere() {
   };
 }
 
+export function paymentHasUploadedProof(payment: {
+  proofSubmittedAt: Date | string | null;
+  proofScreenshotUrl: string | null;
+}) {
+  return Boolean(payment.proofSubmittedAt && payment.proofScreenshotUrl);
+}
+
 export type PendingPaymentDueState = "overdue" | "upcoming";
 
 export function getPendingPaymentDueState(

@@ -1,4 +1,5 @@
 import { jsonError, requireAdmin } from "@/lib/api";
+import { paymentHasUploadedProof } from "@/lib/admin-pending-payments";
 import { completeMatchedPayment } from "@/lib/payment-match";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -22,6 +23,9 @@ export async function POST(_request: Request, context: RouteContext) {
     if (!payment) return jsonError("Payment not found", 404);
     if (payment.status === "COMPLETED") {
       return jsonError("Payment is already marked as paid", 400);
+    }
+    if (!paymentHasUploadedProof(payment)) {
+      return jsonError("Upload a payment receipt before approving", 400);
     }
 
     await completeMatchedPayment(payment.id, {

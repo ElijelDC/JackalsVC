@@ -62,9 +62,7 @@ export function AdminMatchesEditor({
         </p>
       </div>
 
-      <div className="mb-8">
-        <AdminBulkCsvImport type="matches" />
-      </div>
+      <AdminBulkCsvImport type="matches" />
 
       {selectedTeam && selectedTeamKey ? (
         <CoachMatchesManager

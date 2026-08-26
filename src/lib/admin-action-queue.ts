@@ -11,6 +11,7 @@ export type AdminActionQueueEntry = {
   kind:
     | "registration"
     | "payment"
+    | "kit-payment"
     | "coach-payment"
     | "coaching-application"
     | "trials-application"
@@ -36,6 +37,11 @@ const REGISTRATION_REVIEW_WHERE = {
   vlyMembershipPhotoUrl: { not: null },
 };
 
+const KIT_PROOF_SUBMITTED_WHERE = {
+  paymentStatus: "PROOF_SUBMITTED" as const,
+  proofScreenshotUrl: { not: null },
+};
+
 function coachPaymentOverdueWhere(now = new Date()) {
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1;
@@ -58,6 +64,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     registrationCount,
     pendingPayments,
     paymentCount,
+    kitPaymentProofs,
+    kitPaymentProofCount,
     coachOverduePayments,
     coachOverdueCount,
     coachingApplications,
@@ -87,6 +95,13 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       take: 4,
     }),
     prisma.payment.count({ where: adminPendingPaymentWhere() }),
+    prisma.kitOrder.findMany({
+      where: KIT_PROOF_SUBMITTED_WHERE,
+      orderBy: { proofSubmittedAt: "desc" },
+      take: 4,
+      select: { firstName: true, lastName: true },
+    }),
+    prisma.kitOrder.count({ where: KIT_PROOF_SUBMITTED_WHERE }),
     prisma.coachSalaryPayment.findMany({
       where: coachPaymentOverdueWhere(now),
       include: {
@@ -168,6 +183,22 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     });
   }
 
+  if (kitPaymentProofCount > 0) {
+    entries.push({
+      kind: "kit-payment",
+      href: "/admin/kit-orders",
+      title: "Kit payments",
+      summary:
+        kitPaymentProofCount === 1
+          ? "1 kit payment receipt to verify"
+          : `${kitPaymentProofCount} kit payment receipts to verify`,
+      count: kitPaymentProofCount,
+      previews: kitPaymentProofs.map(
+        (order) => `${order.firstName} ${order.lastName}`.trim(),
+      ),
+    });
+  }
+
   if (coachOverdueCount > 0) {
     entries.push({
       kind: "coach-payment",
@@ -236,6 +267,9 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
   if (paymentCount > 0) {
     badgeCounts["/admin/payments"] = paymentCount;
   }
+  if (kitPaymentProofCount > 0) {
+    badgeCounts["/admin/kit-orders"] = kitPaymentProofCount;
+  }
   if (coachOverdueCount > 0) {
     badgeCounts["/admin/coach-payments"] = coachOverdueCount;
   }
@@ -254,6 +288,7 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     totalCount:
       registrationCount +
       paymentCount +
+      kitPaymentProofCount +
       coachOverdueCount +
       coachingApplicationCount +
       trialsApplicationCount +

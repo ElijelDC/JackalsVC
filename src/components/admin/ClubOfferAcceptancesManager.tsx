@@ -1,17 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
-  Clock3,
+  ChevronDown,
   Download,
-  LayoutGrid,
+  FileSignature,
   Loader2,
-  Mail,
-  Phone,
   RefreshCw,
-  Rows3,
   Search,
-  Shirt,
   Trash2,
 } from "lucide-react";
 import { OfferSignatureModal } from "@/components/admin/OfferSignatureModal";
@@ -32,7 +28,6 @@ import {
 } from "@/lib/offer-response-shared";
 import { cn } from "@/lib/utils";
 
-type LayoutMode = "cards" | "compact";
 type StatusFilter = "ALL" | ClubOfferResponseStatus;
 type TeamFilter = "ALL" | ClubOfferTeamSlug;
 
@@ -42,33 +37,16 @@ const STATUS_TABS = [
   { id: "DECLINED" as const, label: "Declined" },
 ];
 
-function ContactRow({
-  email,
-  phoneNumber,
-}: {
-  email: string;
-  phoneNumber: string;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-      <a
-        href={`mailto:${email}`}
-        className="inline-flex min-w-0 items-center gap-1.5 text-zinc-300 transition hover:text-jackals-gold"
-      >
-        <Mail className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-        <span className="truncate">{email}</span>
-      </a>
-      {phoneNumber ? (
-        <a
-          href={`tel:${phoneNumber}`}
-          className="inline-flex items-center gap-1.5 text-zinc-400 transition hover:text-white"
-        >
-          <Phone className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
-          {phoneNumber}
-        </a>
-      ) : null}
-    </div>
-  );
+function hasSignature(row: ClubOfferResponseRecord) {
+  return row.status === "ACCEPTED" && Boolean(row.signatureDataUrl);
+}
+
+function kitPrefsLabel(row: ClubOfferResponseRecord) {
+  if (row.status !== "ACCEPTED") return null;
+  if (row.preferredKitNumber1 == null && row.preferredKitNumber2 == null) {
+    return null;
+  }
+  return `#${row.preferredKitNumber1 ?? "—"} / #${row.preferredKitNumber2 ?? "—"}`;
 }
 
 export function ClubOfferAcceptancesManager({
@@ -77,10 +55,10 @@ export function ClubOfferAcceptancesManager({
   initialResponses: ClubOfferResponseRecord[];
 }) {
   const [responses, setResponses] = useState(initialResponses);
-  const [layout, setLayout] = useState<LayoutMode>("cards");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("ALL");
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -138,6 +116,13 @@ export function ClubOfferAcceptancesManager({
     setSearch("");
   };
 
+  const openSignature = (row: ClubOfferResponseRecord) => {
+    setSignaturePreview({
+      fullName: row.fullName,
+      signatureDataUrl: row.signatureDataUrl,
+    });
+  };
+
   const handleDelete = async (row: ClubOfferResponseRecord) => {
     if (
       !confirm(
@@ -161,12 +146,10 @@ export function ClubOfferAcceptancesManager({
     }
 
     setResponses((current) => current.filter((item) => item.id !== row.id));
+    if (expandedId === row.id) setExpandedId(null);
   };
 
-  const hasSecondaryFilters =
-    teamFilter !== "ALL" || search.trim() !== "";
-  const exportUsesFilters =
-    statusFilter !== "ALL" || teamFilter !== "ALL" || search.trim() !== "";
+  const hasSecondaryFilters = teamFilter !== "ALL" || search.trim() !== "";
 
   const downloadExcel = async () => {
     setExporting(true);
@@ -220,47 +203,18 @@ export function ClubOfferAcceptancesManager({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <div className="flex overflow-hidden rounded-lg border border-white/10">
-              {(
-                [
-                  { id: "cards" as const, icon: LayoutGrid, label: "Cards" },
-                  { id: "compact" as const, icon: Rows3, label: "Compact" },
-                ] as const
-              ).map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  title={option.label}
-                  onClick={() => setLayout(option.id)}
-                  className={cn(
-                    "inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium transition",
-                    layout === option.id
-                      ? "bg-white/10 text-white"
-                      : "bg-transparent text-zinc-500 hover:bg-white/5 hover:text-zinc-300",
-                  )}
-                >
-                  <option.icon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">{option.label}</span>
-                </button>
-              ))}
-            </div>
             <Button
               type="button"
               size="sm"
               variant="outline"
               disabled={exporting}
               onClick={() => void downloadExcel()}
+              title="Export Excel"
             >
               {exporting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Preparing…
-                </>
+                <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <>
-                  <Download className="mr-2 h-4 w-4" />
-                  {exportUsesFilters ? "Excel (filtered)" : "Excel"}
-                </>
+                <Download className="h-4 w-4" />
               )}
             </Button>
             <Button
@@ -269,11 +223,11 @@ export function ClubOfferAcceptancesManager({
               variant="outline"
               disabled={refreshing}
               onClick={() => void refresh()}
+              title="Refresh"
             >
               <RefreshCw
-                className={cn("mr-2 h-4 w-4", refreshing && "animate-spin")}
+                className={cn("h-4 w-4", refreshing && "animate-spin")}
               />
-              Refresh
             </Button>
           </div>
         </div>
@@ -338,144 +292,277 @@ export function ClubOfferAcceptancesManager({
               : "Try a different status tab or clear your filters."}
           </p>
         </div>
-      ) : layout === "compact" ? (
-        <div className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10">
-          {filtered.map((row) => (
-            <div
-              key={row.id}
-              className="flex flex-col gap-2 bg-white/[0.02] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <p className="font-medium text-white">{row.fullName}</p>
-                  <span
-                    className={cn(
-                      "rounded-full px-2 py-0.5 text-[11px] font-medium",
-                      offerResponseStatusBadgeClass(row.status),
-                    )}
-                  >
-                    {offerResponseStatusLabel(row.status)}
-                  </span>
-                  <span className="text-xs text-zinc-500">{row.teamLabel}</span>
-                </div>
-                <p className="mt-1 truncate text-xs text-zinc-500">
-                  {row.email}
-                  {row.phoneNumber ? ` · ${row.phoneNumber}` : ""}
-                  {row.status === "ACCEPTED" &&
-                  row.preferredKitNumber1 != null &&
-                  row.preferredKitNumber2 != null
-                    ? ` · #${row.preferredKitNumber1} / #${row.preferredKitNumber2}`
-                    : ""}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <p className="text-xs text-zinc-600">
-                  {formatOfferSubmittedAt(row.createdAt)}
-                </p>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="text-zinc-500 hover:text-rose-300"
-                  disabled={deletingId === row.id}
-                  onClick={() => void handleDelete(row)}
-                  aria-label={`Delete ${row.fullName}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
       ) : (
-        <div className="space-y-3">
-          {filtered.map((row) => {
-            const isAccepted = row.status === "ACCEPTED";
-            const showSignature =
-              isAccepted && Boolean(row.signatureDataUrl);
+        <>
+          <div className="hidden overflow-hidden rounded-xl border border-white/10 lg:block">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col />
+                <col className="w-[6.5rem]" />
+                <col className="w-[5.25rem]" />
+                <col className="w-[6.5rem]" />
+                <col className="w-[5rem]" />
+              </colgroup>
+              <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
+                <tr>
+                  <th className="px-2 py-2.5 font-medium">Name</th>
+                  <th className="px-2 py-2.5 font-medium">Team</th>
+                  <th className="px-2 py-2.5 font-medium">Status</th>
+                  <th className="px-2 py-2.5 font-medium">Date</th>
+                  <th className="px-2 py-2.5 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/8">
+                {filtered.map((row) => {
+                  const expanded = expandedId === row.id;
+                  const kitPrefs = kitPrefsLabel(row);
+                  const showSignature = hasSignature(row);
 
-            return (
-              <article
-                key={row.id}
-                className="rounded-xl border border-white/10 bg-white/[0.025] p-4 sm:p-5"
-              >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="min-w-0 flex-1 space-y-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <h2 className="text-base font-semibold tracking-tight text-white sm:text-lg">
-                        {row.fullName}
-                      </h2>
-                      <span
-                        className={cn(
-                          "rounded-full px-2.5 py-0.5 text-xs font-medium",
-                          offerResponseStatusBadgeClass(row.status),
-                        )}
-                      >
-                        {offerResponseStatusLabel(row.status)}
-                      </span>
-                      <span className="rounded-full bg-white/[0.04] px-2.5 py-0.5 text-xs text-zinc-400 ring-1 ring-inset ring-white/8">
-                        {row.teamLabel}
-                      </span>
-                    </div>
-
-                    <ContactRow
-                      email={row.email}
-                      phoneNumber={row.phoneNumber}
-                    />
-
-                    {isAccepted ? (
-                      <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-white/5 pt-3 text-sm">
-                        <div className="inline-flex items-center gap-2 text-zinc-300">
-                          <Shirt className="h-3.5 w-3.5 text-zinc-500" />
-                          <span className="text-zinc-500">Kit</span>
-                          <span className="font-medium text-white">
-                            #{row.preferredKitNumber1 ?? "—"}
-                          </span>
-                          <span className="text-zinc-600">/</span>
-                          <span className="font-medium text-white">
-                            #{row.preferredKitNumber2 ?? "—"}
-                          </span>
-                        </div>
-                        {showSignature ? (
+                  return (
+                    <Fragment key={row.id}>
+                      <tr className="bg-white/[0.015] transition hover:bg-white/[0.03]">
+                        <td className="px-2 py-2">
                           <button
                             type="button"
                             onClick={() =>
-                              setSignaturePreview({
-                                fullName: row.fullName,
-                                signatureDataUrl: row.signatureDataUrl,
-                              })
+                              setExpandedId(expanded ? null : row.id)
                             }
-                            className="text-xs font-medium text-zinc-400 underline-offset-2 transition hover:text-white hover:underline"
+                            className="group flex min-w-0 items-center gap-1.5 text-left"
                           >
-                            View signature
+                            <ChevronDown
+                              className={cn(
+                                "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                                expanded && "rotate-180",
+                              )}
+                            />
+                            <span className="truncate font-medium text-white group-hover:text-jackals-gold">
+                              {row.fullName}
+                            </span>
                           </button>
-                        ) : null}
-                      </div>
-                    ) : null}
-                  </div>
+                        </td>
+                        <td className="px-2 py-2">
+                          <span className="truncate text-xs text-zinc-400">
+                            {row.teamLabel}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2">
+                          <span
+                            className={cn(
+                              "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                              offerResponseStatusBadgeClass(row.status),
+                            )}
+                          >
+                            {offerResponseStatusLabel(row.status)}
+                          </span>
+                        </td>
+                        <td className="px-2 py-2 whitespace-nowrap text-xs text-zinc-500">
+                          {formatOfferSubmittedAt(row.createdAt)}
+                        </td>
+                        <td className="px-2 py-2">
+                          <div className="flex items-center justify-end gap-1">
+                            {showSignature ? (
+                              <button
+                                type="button"
+                                title="View signature"
+                                onClick={() => openSignature(row)}
+                                className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
+                              >
+                                <FileSignature className="h-3.5 w-3.5" />
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              title="Delete"
+                              disabled={deletingId === row.id}
+                              onClick={() => void handleDelete(row)}
+                              className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+                            >
+                              {deletingId === row.id ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Trash2 className="h-3.5 w-3.5" />
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {expanded ? (
+                        <tr className="bg-black/20">
+                          <td colSpan={5} className="px-4 py-4">
+                            <div className="space-y-2 text-sm text-zinc-400">
+                              <p>
+                                <span className="text-zinc-500">Email:</span>{" "}
+                                <a
+                                  href={`mailto:${row.email}`}
+                                  className="text-zinc-300 transition hover:text-jackals-gold"
+                                >
+                                  {row.email}
+                                </a>
+                              </p>
+                              <p>
+                                <span className="text-zinc-500">Phone:</span>{" "}
+                                {row.phoneNumber ? (
+                                  <a
+                                    href={`tel:${row.phoneNumber}`}
+                                    className="text-zinc-300 transition hover:text-white"
+                                  >
+                                    {row.phoneNumber}
+                                  </a>
+                                ) : (
+                                  "—"
+                                )}
+                              </p>
+                              {kitPrefs ? (
+                                <p>
+                                  <span className="text-zinc-500">
+                                    Kit prefs:
+                                  </span>{" "}
+                                  {kitPrefs}
+                                </p>
+                              ) : null}
+                              {showSignature ? (
+                                <div className="pt-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => openSignature(row)}
+                                    className="inline-flex items-center gap-1.5 text-xs font-medium text-jackals-gold hover:underline"
+                                  >
+                                    <FileSignature className="h-3.5 w-3.5" />
+                                    View signature
+                                  </button>
+                                </div>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
-                  <div className="flex shrink-0 items-center gap-2 sm:pt-1">
-                    <p className="inline-flex items-center gap-1.5 text-xs text-zinc-600">
-                      <Clock3 className="h-3.5 w-3.5" />
-                      {formatOfferSubmittedAt(row.createdAt)}
-                    </p>
-                    <Button
+          <div className="space-y-2 lg:hidden">
+            {filtered.map((row) => {
+              const kitPrefs = kitPrefsLabel(row);
+              const showSignature = hasSignature(row);
+              const expanded = expandedId === row.id;
+
+              return (
+                <article
+                  key={row.id}
+                  className="rounded-lg border border-white/10 bg-white/[0.02] p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <button
                       type="button"
-                      size="sm"
-                      variant="ghost"
-                      className="text-zinc-500 hover:text-rose-300"
-                      disabled={deletingId === row.id}
-                      onClick={() => void handleDelete(row)}
+                      onClick={() =>
+                        setExpandedId(expanded ? null : row.id)
+                      }
+                      className="group flex min-w-0 flex-1 items-start gap-1.5 text-left"
                     >
-                      <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                      {deletingId === row.id ? "Deleting…" : "Delete"}
-                    </Button>
+                      <ChevronDown
+                        className={cn(
+                          "mt-1 h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                          expanded && "rotate-180",
+                        )}
+                      />
+                      <div className="min-w-0">
+                        <p className="font-medium text-white group-hover:text-jackals-gold">
+                          {row.fullName}
+                        </p>
+                        <div className="mt-2 flex flex-wrap items-center gap-2">
+                          <span
+                            className={cn(
+                              "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
+                              offerResponseStatusBadgeClass(row.status),
+                            )}
+                          >
+                            {offerResponseStatusLabel(row.status)}
+                          </span>
+                          <span className="text-xs text-zinc-500">
+                            {row.teamLabel}
+                          </span>
+                          <span className="text-xs text-zinc-600">
+                            {formatOfferSubmittedAt(row.createdAt)}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                    <div className="flex shrink-0 gap-1">
+                      {showSignature ? (
+                        <button
+                          type="button"
+                          title="View signature"
+                          onClick={() => openSignature(row)}
+                          className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
+                        >
+                          <FileSignature className="h-3.5 w-3.5" />
+                        </button>
+                      ) : null}
+                      <button
+                        type="button"
+                        title="Delete"
+                        disabled={deletingId === row.id}
+                        onClick={() => void handleDelete(row)}
+                        className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+                      >
+                        {deletingId === row.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-3.5 w-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              </article>
-            );
-          })}
-        </div>
+                  {expanded ? (
+                    <div className="mt-3 space-y-2 border-t border-white/5 pt-3 text-sm text-zinc-400">
+                      <p>
+                        <span className="text-zinc-500">Email:</span>{" "}
+                        <a
+                          href={`mailto:${row.email}`}
+                          className="text-zinc-300 transition hover:text-jackals-gold"
+                        >
+                          {row.email}
+                        </a>
+                      </p>
+                      <p>
+                        <span className="text-zinc-500">Phone:</span>{" "}
+                        {row.phoneNumber ? (
+                          <a
+                            href={`tel:${row.phoneNumber}`}
+                            className="text-zinc-300 transition hover:text-white"
+                          >
+                            {row.phoneNumber}
+                          </a>
+                        ) : (
+                          "—"
+                        )}
+                      </p>
+                      {kitPrefs ? (
+                        <p>
+                          <span className="text-zinc-500">Kit prefs:</span>{" "}
+                          {kitPrefs}
+                        </p>
+                      ) : null}
+                      {showSignature ? (
+                        <button
+                          type="button"
+                          onClick={() => openSignature(row)}
+                          className="inline-flex items-center gap-1.5 text-xs font-medium text-jackals-gold hover:underline"
+                        >
+                          <FileSignature className="h-3.5 w-3.5" />
+                          View signature
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

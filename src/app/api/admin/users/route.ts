@@ -8,6 +8,17 @@ const userSelect = {
   email: true,
   role: true,
   createdAt: true,
+  memberships: {
+    select: {
+      id: true,
+      status: true,
+      paymentSchedule: true,
+      startDate: true,
+      endDate: true,
+      plan: { select: { name: true } },
+    },
+    orderBy: { startDate: "desc" as const },
+  },
   _count: {
     select: { memberships: true, orders: true, eventReminders: true },
   },
@@ -22,5 +33,18 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ users });
+  return NextResponse.json({
+    users: users.map((user) => ({
+      ...user,
+      createdAt: user.createdAt.toISOString(),
+      memberships: user.memberships.map((membership) => ({
+        id: membership.id,
+        status: membership.status,
+        paymentSchedule: membership.paymentSchedule,
+        startDate: membership.startDate.toISOString(),
+        endDate: membership.endDate.toISOString(),
+        planName: membership.plan.name,
+      })),
+    })),
+  });
 }

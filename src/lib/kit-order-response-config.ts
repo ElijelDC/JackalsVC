@@ -38,6 +38,11 @@ export type KitOrderRecord = {
   jacketHighCollarSize: string;
   jacketFullZip: boolean;
   jacketFullZipSize: string;
+  paymentToken: string;
+  paymentStatus: string;
+  proofScreenshotUrl: string | null;
+  proofSubmittedAt: string | null;
+  paymentEmailSentAt: string | null;
   createdAt: string;
 };
 
@@ -127,6 +132,11 @@ export function serializeKitOrder(row: {
   jacketFullZip: boolean;
   jacketFullZipSize: string;
   createdAt: Date;
+  paymentToken?: string;
+  paymentStatus?: string;
+  proofScreenshotUrl?: string | null;
+  proofSubmittedAt?: Date | null;
+  paymentEmailSentAt?: Date | null;
 }): KitOrderRecord {
   const pieces: KitOrderPieces = {
     playerJersey: row.playerJersey,
@@ -165,6 +175,11 @@ export function serializeKitOrder(row: {
     jacketHighCollarSize: row.jacketHighCollarSize,
     jacketFullZip: row.jacketFullZip,
     jacketFullZipSize: row.jacketFullZipSize,
+    paymentToken: row.paymentToken ?? "",
+    paymentStatus: row.paymentStatus ?? "AWAITING",
+    proofScreenshotUrl: row.proofScreenshotUrl ?? null,
+    proofSubmittedAt: row.proofSubmittedAt?.toISOString() ?? null,
+    paymentEmailSentAt: row.paymentEmailSentAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
   };
 }

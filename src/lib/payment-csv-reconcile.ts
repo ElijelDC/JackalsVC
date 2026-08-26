@@ -1,3 +1,8 @@
+import { completeKitOrderPayment } from "@/lib/complete-kit-order-payment";
+import {
+  buildKitOrderPaymentQuote,
+  buildKitOrderPaymentReference,
+} from "@/lib/kit-order-payment-summary";
 import { prisma } from "@/lib/prisma";
 import {
   amountsMatch,
@@ -5,23 +10,38 @@ import {
   referenceMatchesText,
 } from "@/lib/payment-match";
 import { parseBankTransferCsv, type ParsedBankTransferRow } from "@/lib/payment-csv-parse";
+import { serializeKitOrder } from "@/lib/kit-order-response-config";
 
-export type CsvImportResult = {
+export type BankStatementImportResult = {
   matched: number;
+  matchedMembership: number;
+  matchedKitOrders: number;
   scanned: number;
   skippedDuplicates: number;
   unmatchedRows: number;
   unmatchedPayments: number;
+  unmatchedKitOrders: number;
   fileName?: string;
 };
 
-async function matchRowToPayment(
+/** @deprecated Use BankStatementImportResult */
+export type CsvImportResult = BankStatementImportResult;
+
+type MatchablePayment = {
+  id: string;
+  amount: number;
+  paymentReference: string;
+};
+
+type MatchableKitOrder = {
+  id: string;
+  amount: number;
+  paymentReference: string;
+};
+
+function matchRowToPayment(
   row: ParsedBankTransferRow,
-  pendingPayments: Array<{
-    id: string;
-    amount: number;
-    paymentReference: string;
-  }>,
+  pendingPayments: MatchablePayment[],
   usedPaymentIds: Set<string>,
 ) {
   return pendingPayments.find(
@@ -33,29 +53,65 @@ async function matchRowToPayment(
   );
 }
 
+function matchRowToKitOrder(
+  row: ParsedBankTransferRow,
+  pendingKitOrders: MatchableKitOrder[],
+  usedKitOrderIds: Set<string>,
+) {
+  return pendingKitOrders.find(
+    (order) =>
+      !usedKitOrderIds.has(order.id) &&
+      amountsMatch(order.amount, row.amount) &&
+      (referenceMatchesText(row.reference, order.paymentReference) ||
+        referenceMatchesText(row.rawLine, order.paymentReference)),
+  );
+}
+
+async function loadPendingKitOrders(): Promise<MatchableKitOrder[]> {
+  const rows = await prisma.kitOrder.findMany({
+    where: { paymentStatus: { not: "PAID" } },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return rows.map((row) => {
+    const order = serializeKitOrder(row);
+    return {
+      id: row.id,
+      amount: buildKitOrderPaymentQuote(order).totalEur,
+      paymentReference: buildKitOrderPaymentReference(order),
+    };
+  });
+}
+
 export async function reconcileFromCsv(
   csvContent: string,
   fileName?: string,
-): Promise<CsvImportResult> {
+): Promise<BankStatementImportResult> {
   const rows = parseBankTransferCsv(csvContent);
   const pendingPayments = await prisma.payment.findMany({
     where: { status: "PENDING" },
     orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
   });
+  const pendingKitOrders = await loadPendingKitOrders();
 
   if (rows.length === 0) {
     return {
       matched: 0,
+      matchedMembership: 0,
+      matchedKitOrders: 0,
       scanned: 0,
       skippedDuplicates: 0,
       unmatchedRows: 0,
       unmatchedPayments: pendingPayments.length,
+      unmatchedKitOrders: pendingKitOrders.length,
       fileName,
     };
   }
 
   const usedPaymentIds = new Set<string>();
-  let matched = 0;
+  const usedKitOrderIds = new Set<string>();
+  let matchedMembership = 0;
+  let matchedKitOrders = 0;
   let skippedDuplicates = 0;
   let unmatchedRows = 0;
 
@@ -69,10 +125,17 @@ export async function reconcileFromCsv(
       continue;
     }
 
-    const payment = await matchRowToPayment(row, pendingPayments, usedPaymentIds);
+    const payment = matchRowToPayment(row, pendingPayments, usedPaymentIds);
 
-    if (!payment) {
-      unmatchedRows += 1;
+    if (payment) {
+      usedPaymentIds.add(payment.id);
+
+      await completeMatchedPayment(payment.id, {
+        externalId: `csv:${row.rowKey}`,
+        externalCode: row.reference,
+        paidAt: row.transactionDate,
+      });
+
       await prisma.paymentImportRecord.create({
         data: {
           rowKey: row.rowKey,
@@ -80,20 +143,39 @@ export async function reconcileFromCsv(
           amount: row.amount,
           reference: row.reference,
           transactionDate: row.transactionDate ?? null,
-          status: "NO_MATCH",
+          matchedPaymentId: payment.id,
+          status: "MATCHED",
         },
       });
+
+      matchedMembership += 1;
       continue;
     }
 
-    usedPaymentIds.add(payment.id);
+    const kitOrder = matchRowToKitOrder(row, pendingKitOrders, usedKitOrderIds);
 
-    await completeMatchedPayment(payment.id, {
-      externalId: `csv:${row.rowKey}`,
-      externalCode: row.reference,
-      paidAt: row.transactionDate,
-    });
+    if (kitOrder) {
+      usedKitOrderIds.add(kitOrder.id);
 
+      await completeKitOrderPayment(kitOrder.id);
+
+      await prisma.paymentImportRecord.create({
+        data: {
+          rowKey: row.rowKey,
+          fileName: fileName ?? null,
+          amount: row.amount,
+          reference: row.reference,
+          transactionDate: row.transactionDate ?? null,
+          matchedKitOrderId: kitOrder.id,
+          status: "KIT_MATCHED",
+        },
+      });
+
+      matchedKitOrders += 1;
+      continue;
+    }
+
+    unmatchedRows += 1;
     await prisma.paymentImportRecord.create({
       data: {
         rowKey: row.rowKey,
@@ -101,22 +183,25 @@ export async function reconcileFromCsv(
         amount: row.amount,
         reference: row.reference,
         transactionDate: row.transactionDate ?? null,
-        matchedPaymentId: payment.id,
-        status: "MATCHED",
+        status: "NO_MATCH",
       },
     });
-
-    matched += 1;
   }
 
   const unmatchedPayments = await prisma.payment.count({ where: { status: "PENDING" } });
+  const unmatchedKitOrders = await prisma.kitOrder.count({
+    where: { paymentStatus: { not: "PAID" } },
+  });
 
   return {
-    matched,
+    matched: matchedMembership + matchedKitOrders,
+    matchedMembership,
+    matchedKitOrders,
     scanned: rows.length,
     skippedDuplicates,
     unmatchedRows,
     unmatchedPayments,
+    unmatchedKitOrders,
     fileName,
   };
 }

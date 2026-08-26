@@ -349,15 +349,16 @@ model ProcessedPaymentEmail {
 }
 
 model PaymentImportRecord {
-  id               String   @id @default(cuid())
-  rowKey           String   @unique
-  fileName         String?
-  amount           Float
-  reference        String?
-  transactionDate  DateTime?
-  matchedPaymentId String?
-  status           String
-  createdAt        DateTime @default(now())
+  id                 String   @id @default(cuid())
+  rowKey             String   @unique
+  fileName           String?
+  amount             Float
+  reference          String?
+  transactionDate    DateTime?
+  matchedPaymentId   String?
+  matchedKitOrderId  String?
+  status             String
+  createdAt          DateTime @default(now())
 
   @@index([status, createdAt])
 }
@@ -664,10 +665,18 @@ model KitOrder {
   jacketHighCollarSize String   @default("")
   jacketFullZip        Boolean  @default(false)
   jacketFullZipSize    String   @default("")
+  /// Secret link token for the public payment page (no login required).
+  paymentToken         String   @unique @default(cuid())
+  /// AWAITING | PROOF_SUBMITTED | PAID
+  paymentStatus        String   @default("AWAITING")
+  proofScreenshotUrl   String?
+  proofSubmittedAt     DateTime?
+  paymentEmailSentAt   DateTime?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
   @@index([createdAt])
   @@index([gender, createdAt])
   @@index([kitType, createdAt])
+  @@index([paymentStatus, createdAt])
 }

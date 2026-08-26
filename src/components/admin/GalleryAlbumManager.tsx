@@ -5,7 +5,8 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
-import { AdminFormCard, beginAdminEdit } from "@/components/admin/AdminForm";
+import { X } from "lucide-react";
+import { AdminFormCard } from "@/components/admin/AdminForm";
 import { GalleryCoverField } from "@/components/admin/GalleryCoverField";
 import { AdminSection } from "@/components/admin/AdminShell";
 import {
@@ -15,8 +16,10 @@ import {
 import { Checkbox, Input, Label, Select } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import { Button } from "@/components/ui/Button";
+import { FormError } from "@/components/ui/FormMessage";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import { isGalleryPlaceholderCover } from "@/lib/gallery-config";
+import { cn } from "@/lib/utils";
 
 type AlbumItem = {
   id: string;
@@ -31,14 +34,121 @@ type AlbumItem = {
 
 import { GALLERY_CATEGORIES } from "@/lib/gallery-categories";
 
-const emptyForm = {
+type AlbumFormState = {
+  title: string;
+  description: string;
+  coverImageUrl: string;
+  category: (typeof GALLERY_CATEGORIES)[number];
+  featured: boolean;
+  position: number;
+};
+
+const emptyFormBase = {
   title: "",
   description: "",
   coverImageUrl: "",
   category: "TRAINING" as (typeof GALLERY_CATEGORIES)[number],
   featured: false,
-  position: 1,
 };
+
+function AlbumFields({
+  form,
+  setForm,
+  idPrefix,
+  showCover,
+  onCoverUploadError,
+}: {
+  form: AlbumFormState;
+  setForm: (next: AlbumFormState) => void;
+  idPrefix: string;
+  showCover?: boolean;
+  onCoverUploadError?: (message: string) => void;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2">
+        <Label htmlFor={`${idPrefix}-title`}>Album title</Label>
+        <Input
+          id={`${idPrefix}-title`}
+          value={form.title}
+          onChange={(event) =>
+            setForm({ ...form, title: event.target.value })
+          }
+          placeholder="e.g. Spring tournament 2026"
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor={`${idPrefix}-category`}>Category</Label>
+        <Select
+          id={`${idPrefix}-category`}
+          value={form.category}
+          onChange={(event) =>
+            setForm({
+              ...form,
+              category: event.target.value as (typeof GALLERY_CATEGORIES)[number],
+            })
+          }
+        >
+          {GALLERY_CATEGORIES.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </Select>
+      </div>
+      {showCover ? (
+        <div className="sm:col-span-2">
+          <GalleryCoverField
+            coverImageUrl={form.coverImageUrl}
+            onCoverChange={(url) => setForm({ ...form, coverImageUrl: url })}
+            onUpload={async () => {
+              onCoverUploadError?.(
+                "Upload a cover from the album photos page.",
+              );
+            }}
+          />
+        </div>
+      ) : null}
+      <div className="sm:col-span-2">
+        <Label htmlFor={`${idPrefix}-description`}>Description (optional)</Label>
+        <Textarea
+          id={`${idPrefix}-description`}
+          rows={3}
+          value={form.description}
+          onChange={(event) =>
+            setForm({ ...form, description: event.target.value })
+          }
+          placeholder="Short note shown on the gallery page"
+        />
+      </div>
+      <label className="sm:col-span-2 flex items-center gap-2 text-sm text-zinc-300">
+        <Checkbox
+          checked={form.featured}
+          onChange={(event) =>
+            setForm({ ...form, featured: event.target.checked })
+          }
+        />
+        Show on homepage
+      </label>
+      <div className="sm:col-span-2 sm:max-w-xs">
+        <Label htmlFor={`${idPrefix}-position`}>Position</Label>
+        <Input
+          id={`${idPrefix}-position`}
+          type="number"
+          min={1}
+          value={form.position}
+          onChange={(event) =>
+            setForm({
+              ...form,
+              position: Math.max(1, Number(event.target.value) || 1),
+            })
+          }
+        />
+      </div>
+    </div>
+  );
+}
 
 export function GalleryAlbumManager({
   initialAlbums,
@@ -47,16 +157,22 @@ export function GalleryAlbumManager({
 }) {
   const router = useRouter();
   const [albums, setAlbums] = useSyncedListState(initialAlbums);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    ...emptyForm,
+  const [createForm, setCreateForm] = useState<AlbumFormState>({
+    ...emptyFormBase,
     position: initialAlbums.length + 1,
   });
+  const [editForm, setEditForm] = useState<AlbumFormState>({
+    ...emptyFormBase,
+    position: 1,
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [savingOrder, setSavingOrder] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createMessage, setCreateMessage] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [listMessage, setListMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [albumOrder, setAlbumOrder] = useState<string[]>(
     initialAlbums.map((album) => album.id),
@@ -104,13 +220,9 @@ export function GalleryAlbumManager({
     return albumOrder.some((id, index) => albumsById[id]?.sortOrder !== index);
   }, [search, albumOrder, albumsById]);
 
-  const resetForm = () => {
-    setForm({
-      ...emptyForm,
-      position: albums.length + 1,
-    });
+  const cancelEdit = () => {
     setEditingId(null);
-    setError(null);
+    setEditError(null);
   };
 
   const loadAlbums = useCallback(async () => {
@@ -119,58 +231,70 @@ export function GalleryAlbumManager({
   }, [setAlbums]);
 
   const startEdit = (album: AlbumItem) => {
-    beginAdminEdit(() => {
-      setEditingId(album.id);
-      setForm({
-        title: album.title,
-        description: album.description ?? "",
-        coverImageUrl: album.coverImageUrl,
-        category: album.category as (typeof GALLERY_CATEGORIES)[number],
-        featured: album.featured,
-        position: album.sortOrder + 1,
-      });
-      setError(null);
-      setMessage(null);
+    setEditingId(album.id);
+    setEditForm({
+      title: album.title,
+      description: album.description ?? "",
+      coverImageUrl: album.coverImageUrl,
+      category: album.category as (typeof GALLERY_CATEGORIES)[number],
+      featured: album.featured,
+      position: album.sortOrder + 1,
     });
+    setEditError(null);
+    setListMessage(null);
+    setCreateMessage(null);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const payloadFrom = (form: AlbumFormState) => ({
+    title: form.title,
+    description: form.description || undefined,
+    coverImageUrl: form.coverImageUrl.trim() || undefined,
+    category: form.category,
+    featured: form.featured,
+    sortOrder: Math.max(0, form.position - 1),
+  });
+
+  const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
-    setError(null);
-    setMessage(null);
+    setCreateError(null);
+    setCreateMessage(null);
 
-    const payload = {
-      title: form.title,
-      description: form.description || undefined,
-      coverImageUrl: form.coverImageUrl.trim() || undefined,
-      category: form.category,
-      featured: form.featured,
-      sortOrder: Math.max(0, form.position - 1),
-    };
-
-    if (editingId) {
-      const result = await apiPut(`/api/admin/gallery/${editingId}`, payload);
-      setLoading(false);
-      if (!result.ok) {
-        setError(result.error);
-        return;
-      }
-      setMessage("Album updated.");
-      resetForm();
-      await loadAlbums();
-      router.refresh();
-      return;
-    }
-
-    const result = await apiPost<{ album: AlbumItem }>("/api/admin/gallery", payload);
+    const result = await apiPost<{ album: AlbumItem }>(
+      "/api/admin/gallery",
+      payloadFrom(createForm),
+    );
     setLoading(false);
     if (!result.ok) {
-      setError(result.error);
+      setCreateError(result.error);
       return;
     }
 
     router.push(`/admin/gallery/${result.data.album.id}`);
+  };
+
+  const handleUpdate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingId) return;
+
+    setLoading(true);
+    setEditError(null);
+    setListMessage(null);
+
+    const result = await apiPut(
+      `/api/admin/gallery/${editingId}`,
+      payloadFrom(editForm),
+    );
+    setLoading(false);
+    if (!result.ok) {
+      setEditError(result.error);
+      return;
+    }
+
+    setListMessage("Album updated.");
+    cancelEdit();
+    await loadAlbums();
+    router.refresh();
   };
 
   const handleDelete = async (id: string) => {
@@ -179,10 +303,11 @@ export function GalleryAlbumManager({
     const result = await apiDelete(`/api/admin/gallery/${id}`);
     setDeletingId(null);
     if (!result.ok) {
-      setError(result.error);
+      setEditError(result.error);
       return;
     }
-    if (editingId === id) resetForm();
+    if (editingId === id) cancelEdit();
+    setListMessage("Album deleted.");
     await loadAlbums();
     router.refresh();
   };
@@ -203,8 +328,8 @@ export function GalleryAlbumManager({
 
   const saveOrder = async () => {
     setSavingOrder(true);
-    setError(null);
-    setMessage(null);
+    setEditError(null);
+    setListMessage(null);
 
     for (const [index, id] of albumOrder.entries()) {
       const album = albumsById[id];
@@ -225,16 +350,18 @@ export function GalleryAlbumManager({
 
       if (!result.ok) {
         setSavingOrder(false);
-        setError(result.error);
+        setEditError(result.error);
         return;
       }
     }
 
     setSavingOrder(false);
-    setMessage("Album order updated.");
+    setListMessage("Album order updated.");
     await loadAlbums();
     router.refresh();
   };
+
+  const canDrag = !search.trim() && !editingId;
 
   return (
     <AdminSection
@@ -244,94 +371,18 @@ export function GalleryAlbumManager({
       <AdminFormCard
         collapsible
         openTriggerLabel="Create album"
-        title={editingId ? "Edit album" : "Create album"}
-        error={error}
-        message={message}
-        onSubmit={handleSubmit}
-        onCancel={editingId ? resetForm : undefined}
-        submitLabel={editingId ? "Save album" : "Create & add photos"}
-        loading={loading}
+        title="Create album"
+        error={createError}
+        message={createMessage}
+        onSubmit={handleCreate}
+        submitLabel="Create & add photos"
+        loading={loading && !editingId}
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="sm:col-span-2">
-            <Label htmlFor="album-title">Album title</Label>
-            <Input
-              id="album-title"
-              value={form.title}
-              onChange={(event) =>
-                setForm({ ...form, title: event.target.value })
-              }
-              placeholder="e.g. Spring tournament 2026"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="album-category">Category</Label>
-            <Select
-              id="album-category"
-              value={form.category}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  category: event.target.value as (typeof GALLERY_CATEGORIES)[number],
-                })
-              }
-            >
-              {GALLERY_CATEGORIES.map((category) => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </Select>
-          </div>
-          {editingId && (
-            <div className="sm:col-span-2">
-              <GalleryCoverField
-                coverImageUrl={form.coverImageUrl}
-                onCoverChange={(url) => setForm({ ...form, coverImageUrl: url })}
-                onUpload={async () => {
-                  setError("Upload a cover from the album photos page.");
-                }}
-              />
-            </div>
-          )}
-          <div className="sm:col-span-2">
-            <Label htmlFor="album-description">Description (optional)</Label>
-            <Textarea
-              id="album-description"
-              rows={3}
-              value={form.description}
-              onChange={(event) =>
-                setForm({ ...form, description: event.target.value })
-              }
-              placeholder="Short note shown on the gallery page"
-            />
-          </div>
-          <label className="sm:col-span-2 flex items-center gap-2 text-sm text-zinc-300">
-            <Checkbox
-              checked={form.featured}
-              onChange={(event) =>
-                setForm({ ...form, featured: event.target.checked })
-              }
-            />
-            Show on homepage
-          </label>
-          <div className="sm:col-span-2 sm:max-w-xs">
-            <Label htmlFor="album-position">Position</Label>
-            <Input
-              id="album-position"
-              type="number"
-              min={1}
-              value={form.position}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  position: Math.max(1, Number(event.target.value) || 1),
-                })
-              }
-            />
-          </div>
-        </div>
+        <AlbumFields
+          form={createForm}
+          setForm={setCreateForm}
+          idPrefix="album-create"
+        />
       </AdminFormCard>
 
       <div className="space-y-3">
@@ -348,6 +399,12 @@ export function GalleryAlbumManager({
             />
           </div>
         </div>
+        {listMessage ? (
+          <p className="text-sm text-emerald-300">{listMessage}</p>
+        ) : null}
+        {editError && !editingId ? (
+          <p className="text-sm text-jackals-red-light">{editError}</p>
+        ) : null}
         {visibleAlbums.length === 0 ? (
           <p className="text-sm text-zinc-400">
             {search.trim()
@@ -355,78 +412,155 @@ export function GalleryAlbumManager({
               : "No albums yet."}
           </p>
         ) : (
-          visibleAlbums.map((album) => (
-          <div
-            key={album.id}
-            draggable={!search.trim()}
-            onDragStart={() => setDraggingAlbumId(album.id)}
-            onDragEnd={() => setDraggingAlbumId(null)}
-            onDragOver={(event) => {
-              if (!search.trim()) event.preventDefault();
-            }}
-            onDrop={() => {
-              if (search.trim() || !draggingAlbumId) return;
-              moveAlbumBefore(draggingAlbumId, album.id);
-            }}
-            className="flex cursor-grab flex-col gap-3 rounded-sm border border-white/10 bg-jackals-inset/30 p-4 sm:flex-row sm:items-center"
-          >
-            <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-sm border border-white/10 bg-jackals-surface">
-              {!isGalleryPlaceholderCover(album.coverImageUrl) ? (
-                <Image
-                  src={album.coverImageUrl}
-                  alt=""
-                  fill
-                  unoptimized
-                  sizes="112px"
-                  className="object-cover"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-xs text-zinc-600">
-                  No cover
-                </div>
-              )}
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="font-medium text-white">{album.title}</p>
-              <p className="mt-1 text-sm text-zinc-500">
-                {album.category} · {album._count.photos} photo
-                {album._count.photos === 1 ? "" : "s"}
-                {album.featured ? " · Featured" : ""}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href={`/admin/gallery/${album.id}`}
-                className="rounded-sm border border-jackals-red/30 bg-jackals-red/10 px-3 py-2 text-sm font-medium text-jackals-red-light transition-colors hover:bg-jackals-red/20"
+          visibleAlbums.map((album) => {
+            const isEditing = editingId === album.id;
+
+            return (
+              <div
+                key={album.id}
+                draggable={canDrag}
+                onDragStart={() => {
+                  if (!canDrag) return;
+                  setDraggingAlbumId(album.id);
+                }}
+                onDragEnd={() => setDraggingAlbumId(null)}
+                onDragOver={(event) => {
+                  if (canDrag) event.preventDefault();
+                }}
+                onDrop={() => {
+                  if (!canDrag || !draggingAlbumId) return;
+                  moveAlbumBefore(draggingAlbumId, album.id);
+                }}
+                className={cn(
+                  "rounded-sm border p-4 transition",
+                  isEditing
+                    ? "border-jackals-red/40 bg-jackals-red/5 shadow-lg shadow-jackals-red/10"
+                    : "border-white/10 bg-jackals-inset/30",
+                  canDrag && "cursor-grab active:cursor-grabbing",
+                  draggingAlbumId === album.id &&
+                    "border-jackals-red/40 bg-jackals-red/5",
+                )}
               >
-                Manage photos
-              </Link>
-              <Button type="button" variant="outline" size="sm" onClick={() => startEdit(album)}>
-                Edit album
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                disabled={deletingId === album.id}
-                onClick={() => handleDelete(album.id)}
-                className="text-red-400 hover:text-red-300"
-              >
-                {deletingId === album.id ? "..." : "Delete"}
-              </Button>
-            </div>
-          </div>
-          ))
+                {isEditing ? (
+                  <form
+                    onSubmit={(e) => void handleUpdate(e)}
+                    className="space-y-4"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-medium uppercase tracking-wide text-jackals-red-light">
+                          Editing
+                        </p>
+                        <h4 className="mt-0.5 font-medium text-white">
+                          {album.title}
+                        </h4>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="shrink-0"
+                        onClick={cancelEdit}
+                        disabled={loading}
+                      >
+                        <X className="h-4 w-4" />
+                        Close
+                      </Button>
+                    </div>
+
+                    <AlbumFields
+                      form={editForm}
+                      setForm={setEditForm}
+                      idPrefix={`album-edit-${album.id}`}
+                      showCover
+                      onCoverUploadError={setEditError}
+                    />
+
+                    <FormError message={editError} />
+
+                    <div className="flex flex-col gap-3 sm:flex-row">
+                      <Button type="submit" disabled={loading}>
+                        {loading ? "Saving..." : "Save album"}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        onClick={cancelEdit}
+                        disabled={loading}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                    <div className="relative h-20 w-28 shrink-0 overflow-hidden rounded-sm border border-white/10 bg-jackals-surface">
+                      {!isGalleryPlaceholderCover(album.coverImageUrl) ? (
+                        <Image
+                          src={album.coverImageUrl}
+                          alt=""
+                          fill
+                          unoptimized
+                          sizes="112px"
+                          className="object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-xs text-zinc-600">
+                          No cover
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-white">{album.title}</p>
+                      <p className="mt-1 text-sm text-zinc-500">
+                        {album.category} · {album._count.photos} photo
+                        {album._count.photos === 1 ? "" : "s"}
+                        {album.featured ? " · Featured" : ""}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Link
+                        href={`/admin/gallery/${album.id}`}
+                        className="rounded-sm border border-jackals-red/30 bg-jackals-red/10 px-3 py-2 text-sm font-medium text-jackals-red-light transition-colors hover:bg-jackals-red/20"
+                      >
+                        Manage photos
+                      </Link>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => startEdit(album)}
+                      >
+                        Edit album
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={deletingId === album.id}
+                        onClick={() => void handleDelete(album.id)}
+                        className="text-red-400 hover:text-red-300"
+                      >
+                        {deletingId === album.id ? "..." : "Delete"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
         {!search.trim() && (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-xs text-zinc-500">
-              Drag album cards to change order.
+              {editingId
+                ? "Finish or cancel editing to reorder albums."
+                : "Drag album cards to change order."}
             </p>
             <Button
               type="button"
               size="sm"
-              disabled={!hasOrderChanges || savingOrder}
+              disabled={!hasOrderChanges || savingOrder || Boolean(editingId)}
               onClick={() => void saveOrder()}
             >
               {savingOrder ? "Saving..." : "Save order"}

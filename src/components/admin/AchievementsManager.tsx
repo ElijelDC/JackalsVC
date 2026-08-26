@@ -3,7 +3,10 @@
 import { useCallback, useMemo, useState } from "react";
 import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
-import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
+import {
+  AdminFormCard,
+  AdminInlineEditCard,
+} from "@/components/admin/AdminForm";
 import { AchievementImageField } from "@/components/admin/AchievementImageField";
 import { AdminSection } from "@/components/admin/AdminShell";
 import {
@@ -25,14 +28,113 @@ type AchievementItem = {
 
 const ACHIEVEMENT_TYPES = ["LEAGUE", "TOURNAMENT"] as const;
 
-const emptyForm = {
+type AchievementFormState = {
+  title: string;
+  season: string;
+  description: string;
+  imageUrl: string;
+  position: number;
+  type: (typeof ACHIEVEMENT_TYPES)[number];
+};
+
+const emptyFormBase = {
   title: "",
   season: "",
   description: "",
   imageUrl: "",
-  position: 1,
   type: "TOURNAMENT" as (typeof ACHIEVEMENT_TYPES)[number],
 };
+
+function AchievementFields({
+  form,
+  setForm,
+  idPrefix,
+  loading,
+}: {
+  form: AchievementFormState;
+  setForm: (next: AchievementFormState) => void;
+  idPrefix: string;
+  loading?: boolean;
+}) {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div>
+        <Label htmlFor={`${idPrefix}-season`}>Season</Label>
+        <Input
+          id={`${idPrefix}-season`}
+          value={form.season}
+          onChange={(event) =>
+            setForm({ ...form, season: event.target.value })
+          }
+          placeholder="2024/25"
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor={`${idPrefix}-type`}>Type</Label>
+        <Select
+          id={`${idPrefix}-type`}
+          value={form.type}
+          onChange={(event) =>
+            setForm({
+              ...form,
+              type: event.target.value as (typeof ACHIEVEMENT_TYPES)[number],
+            })
+          }
+        >
+          {ACHIEVEMENT_TYPES.map((type) => (
+            <option key={type} value={type}>
+              {type === "LEAGUE" ? "League title" : "Tournament"}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div className="sm:col-span-2">
+        <Label htmlFor={`${idPrefix}-title`}>Title</Label>
+        <Input
+          id={`${idPrefix}-title`}
+          value={form.title}
+          onChange={(event) => setForm({ ...form, title: event.target.value })}
+          required
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <AchievementImageField
+          imageUrl={form.imageUrl}
+          onChange={(imageUrl) => setForm({ ...form, imageUrl })}
+          disabled={loading}
+        />
+      </div>
+      <div className="sm:col-span-2">
+        <Label htmlFor={`${idPrefix}-description`}>Description</Label>
+        <Textarea
+          id={`${idPrefix}-description`}
+          rows={5}
+          value={form.description}
+          onChange={(event) =>
+            setForm({ ...form, description: event.target.value })
+          }
+          required
+        />
+      </div>
+      <div className="sm:col-span-2 sm:max-w-xs">
+        <Label htmlFor={`${idPrefix}-position`}>Position</Label>
+        <Input
+          id={`${idPrefix}-position`}
+          type="number"
+          min={1}
+          value={form.position}
+          onChange={(event) =>
+            setForm({
+              ...form,
+              position: Math.max(1, Number(event.target.value) || 1),
+            })
+          }
+        />
+      </div>
+    </div>
+  );
+}
 
 export function AchievementsManager({
   initialAchievements,
@@ -41,15 +143,21 @@ export function AchievementsManager({
 }) {
   const router = useRouter();
   const [achievements, setAchievements] = useSyncedListState(initialAchievements);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    ...emptyForm,
+  const [createForm, setCreateForm] = useState<AchievementFormState>({
+    ...emptyFormBase,
     position: initialAchievements.length + 1,
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<AchievementFormState>({
+    ...emptyFormBase,
+    position: 1,
   });
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createMessage, setCreateMessage] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [listMessage, setListMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
 
   const filteredAchievements = useMemo(
@@ -66,13 +174,9 @@ export function AchievementsManager({
     [achievements, search],
   );
 
-  const resetForm = () => {
-    setForm({
-      ...emptyForm,
-      position: achievements.length + 1,
-    });
+  const cancelEdit = () => {
     setEditingId(null);
-    setError(null);
+    setEditError(null);
   };
 
   const loadAchievements = useCallback(async () => {
@@ -83,48 +187,79 @@ export function AchievementsManager({
   }, [setAchievements]);
 
   const startEdit = (achievement: AchievementItem) => {
-    beginAdminEdit(() => {
-      setEditingId(achievement.id);
-      setForm({
-        title: achievement.title,
-        season: achievement.season,
-        description: achievement.description,
-        imageUrl: achievement.imageUrl ?? "",
-        position: achievement.sortOrder + 1,
-        type: (achievement.type as (typeof ACHIEVEMENT_TYPES)[number]) ?? "TOURNAMENT",
-      });
-      setError(null);
-      setMessage(null);
+    setEditingId(achievement.id);
+    setEditForm({
+      title: achievement.title,
+      season: achievement.season,
+      description: achievement.description,
+      imageUrl: achievement.imageUrl ?? "",
+      position: achievement.sortOrder + 1,
+      type:
+        (achievement.type as (typeof ACHIEVEMENT_TYPES)[number]) ??
+        "TOURNAMENT",
     });
+    setEditError(null);
+    setListMessage(null);
+    setCreateMessage(null);
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const payloadFrom = (form: AchievementFormState) => ({
+    title: form.title,
+    season: form.season,
+    description: form.description,
+    imageUrl: form.imageUrl || undefined,
+    sortOrder: Math.max(0, form.position - 1),
+    type: form.type,
+  });
+
+  const handleCreate = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
-    setError(null);
-    setMessage(null);
+    setCreateError(null);
+    setCreateMessage(null);
 
-    const payload = {
-      title: form.title,
-      season: form.season,
-      description: form.description,
-      imageUrl: form.imageUrl || undefined,
-      sortOrder: Math.max(0, form.position - 1),
-      type: form.type,
-    };
-
-    const result = editingId
-      ? await apiPut(`/api/admin/achievements/${editingId}`, payload)
-      : await apiPost("/api/admin/achievements", payload);
+    const result = await apiPost(
+      "/api/admin/achievements",
+      payloadFrom(createForm),
+    );
 
     setLoading(false);
     if (!result.ok) {
-      setError(result.error);
+      setCreateError(result.error);
       return;
     }
 
-    setMessage(editingId ? "Achievement updated." : "Achievement added.");
-    resetForm();
+    setCreateMessage("Achievement added.");
+    setCreateForm({
+      ...emptyFormBase,
+      position: achievements.length + 2,
+    });
+    cancelEdit();
+    await loadAchievements();
+    router.refresh();
+  };
+
+  const handleUpdate = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingId) return;
+
+    setLoading(true);
+    setEditError(null);
+    setListMessage(null);
+
+    const result = await apiPut(
+      `/api/admin/achievements/${editingId}`,
+      payloadFrom(editForm),
+    );
+
+    setLoading(false);
+    if (!result.ok) {
+      setEditError(result.error);
+      return;
+    }
+
+    setListMessage("Achievement updated.");
+    cancelEdit();
     await loadAchievements();
     router.refresh();
   };
@@ -135,10 +270,11 @@ export function AchievementsManager({
     const result = await apiDelete(`/api/admin/achievements/${id}`);
     setDeletingId(null);
     if (!result.ok) {
-      setError(result.error);
+      setEditError(result.error);
       return;
     }
-    if (editingId === id) resetForm();
+    if (editingId === id) cancelEdit();
+    setListMessage("Achievement deleted.");
     await loadAchievements();
     router.refresh();
   };
@@ -151,92 +287,19 @@ export function AchievementsManager({
       <AdminFormCard
         collapsible
         openTriggerLabel="Add achievement"
-        title={editingId ? "Edit achievement" : "Add achievement"}
-        error={error}
-        message={message}
-        onSubmit={handleSubmit}
-        onCancel={editingId ? resetForm : undefined}
-        submitLabel={editingId ? "Save changes" : "Add achievement"}
-        loading={loading}
+        title="Add achievement"
+        error={createError}
+        message={createMessage}
+        onSubmit={handleCreate}
+        submitLabel="Add achievement"
+        loading={loading && !editingId}
       >
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="achievement-season">Season</Label>
-            <Input
-              id="achievement-season"
-              value={form.season}
-              onChange={(event) =>
-                setForm({ ...form, season: event.target.value })
-              }
-              placeholder="2024/25"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="achievement-type">Type</Label>
-            <Select
-              id="achievement-type"
-              value={form.type}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  type: event.target.value as (typeof ACHIEVEMENT_TYPES)[number],
-                })
-              }
-            >
-              {ACHIEVEMENT_TYPES.map((type) => (
-                <option key={type} value={type}>
-                  {type === "LEAGUE" ? "League title" : "Tournament"}
-                </option>
-              ))}
-            </Select>
-          </div>
-          <div className="sm:col-span-2">
-            <Label htmlFor="achievement-title">Title</Label>
-            <Input
-              id="achievement-title"
-              value={form.title}
-              onChange={(event) =>
-                setForm({ ...form, title: event.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <AchievementImageField
-              imageUrl={form.imageUrl}
-              onChange={(imageUrl) => setForm({ ...form, imageUrl })}
-              disabled={loading}
-            />
-          </div>
-          <div className="sm:col-span-2">
-            <Label htmlFor="achievement-description">Description</Label>
-            <Textarea
-              id="achievement-description"
-              rows={5}
-              value={form.description}
-              onChange={(event) =>
-                setForm({ ...form, description: event.target.value })
-              }
-              required
-            />
-          </div>
-          <div className="sm:col-span-2 sm:max-w-xs">
-            <Label htmlFor="achievement-position">Position</Label>
-            <Input
-              id="achievement-position"
-              type="number"
-              min={1}
-              value={form.position}
-              onChange={(event) =>
-                setForm({
-                  ...form,
-                  position: Math.max(1, Number(event.target.value) || 1),
-                })
-              }
-            />
-          </div>
-        </div>
+        <AchievementFields
+          form={createForm}
+          setForm={setCreateForm}
+          idPrefix="achievement-create"
+          loading={loading && !editingId}
+        />
       </AdminFormCard>
 
       <div className="space-y-3">
@@ -253,6 +316,9 @@ export function AchievementsManager({
             />
           </div>
         </div>
+        {listMessage ? (
+          <p className="text-sm text-emerald-300">{listMessage}</p>
+        ) : null}
         {filteredAchievements.length === 0 ? (
           <p className="text-sm text-zinc-400">
             {search.trim()
@@ -261,14 +327,26 @@ export function AchievementsManager({
           </p>
         ) : (
           filteredAchievements.map((achievement) => (
-          <AdminListItem
-            key={achievement.id}
-            title={achievement.title}
-            subtitle={`${achievement.season} · ${achievement.type === "LEAGUE" ? "League" : "Tournament"}${achievement.imageUrl ? " · Image attached" : ""}`}
-            onEdit={() => startEdit(achievement)}
-            onDelete={() => handleDelete(achievement.id)}
-            deleting={deletingId === achievement.id}
-          />
+            <AdminInlineEditCard
+              key={achievement.id}
+              isEditing={editingId === achievement.id}
+              title={achievement.title}
+              subtitle={`${achievement.season} · ${achievement.type === "LEAGUE" ? "League" : "Tournament"}${achievement.imageUrl ? " · Image attached" : ""}`}
+              onEdit={() => startEdit(achievement)}
+              onDelete={() => void handleDelete(achievement.id)}
+              deleting={deletingId === achievement.id}
+              onCancelEdit={cancelEdit}
+              onSubmit={(e) => void handleUpdate(e)}
+              loading={loading && editingId === achievement.id}
+              error={editingId === achievement.id ? editError : null}
+            >
+              <AchievementFields
+                form={editForm}
+                setForm={setEditForm}
+                idPrefix={`achievement-edit-${achievement.id}`}
+                loading={loading && editingId === achievement.id}
+              />
+            </AdminInlineEditCard>
           ))
         )}
       </div>

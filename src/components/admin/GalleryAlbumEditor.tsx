@@ -4,11 +4,13 @@ import Link from "next/link";
 import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import { AdminFormCard, beginAdminEdit, ADMIN_SECONDARY_FORM_ID } from "@/components/admin/AdminForm";
+import { AdminFormCard } from "@/components/admin/AdminForm";
 import { GalleryBulkUpload } from "@/components/admin/GalleryBulkUpload";
 import { GalleryCoverField } from "@/components/admin/GalleryCoverField";
 import { GalleryPhotoGrid } from "@/components/admin/GalleryPhotoGrid";
 import { AdminSection } from "@/components/admin/AdminShell";
+import { Button } from "@/components/ui/Button";
+import { FormError } from "@/components/ui/FormMessage";
 import { Checkbox, Input, Label, Select } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import { GALLERY_PLACEHOLDER_COVER } from "@/lib/gallery-config";
@@ -74,7 +76,8 @@ function GalleryAlbumEditorInner({
     featured: initialAlbum.featured,
     sortOrder: initialAlbum.sortOrder,
   });
-  const [photoForm, setPhotoForm] = useState(emptyPhotoForm);
+  const [createPhotoForm, setCreatePhotoForm] = useState(emptyPhotoForm);
+  const [editPhotoForm, setEditPhotoForm] = useState(emptyPhotoForm);
   const [editingPhotoId, setEditingPhotoId] = useState<string | null>(null);
   const [albumLoading, setAlbumLoading] = useState(false);
   const [photoLoading, setPhotoLoading] = useState(false);
@@ -82,6 +85,7 @@ function GalleryAlbumEditorInner({
   const [coverUploading, setCoverUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [photoError, setPhotoError] = useState<string | null>(null);
 
   const loadAlbum = useCallback(async () => {
     const result = await apiGet<{ album: GalleryAlbum }>(
@@ -96,23 +100,23 @@ function GalleryAlbumEditorInner({
     }
   }, [initialAlbum.id]);
 
-  const resetPhotoForm = () => {
-    setPhotoForm(emptyPhotoForm);
+  const cancelEditPhoto = () => {
     setEditingPhotoId(null);
+    setEditPhotoForm(emptyPhotoForm);
+    setPhotoError(null);
   };
 
   const startEditPhoto = (photo: GalleryPhoto) => {
-    beginAdminEdit(() => {
-      setEditingPhotoId(photo.id);
-      setPhotoForm({
-        title: photo.title ?? "",
-        caption: photo.caption ?? "",
-        imageUrl: photo.imageUrl,
-        sortOrder: photo.sortOrder,
-      });
-      setError(null);
-      setMessage(null);
-    }, ADMIN_SECONDARY_FORM_ID);
+    setEditingPhotoId(photo.id);
+    setEditPhotoForm({
+      title: photo.title ?? "",
+      caption: photo.caption ?? "",
+      imageUrl: photo.imageUrl,
+      sortOrder: photo.sortOrder,
+    });
+    setPhotoError(null);
+    setError(null);
+    setMessage(null);
   };
 
   const handleAlbumSubmit = async (event: React.FormEvent) => {
@@ -143,25 +147,18 @@ function GalleryAlbumEditorInner({
     router.refresh();
   };
 
-  const handlePhotoSubmit = async (event: React.FormEvent) => {
+  const handleCreatePhoto = async (event: React.FormEvent) => {
     event.preventDefault();
     setPhotoLoading(true);
     setError(null);
     setMessage(null);
 
-    const payload = {
-      title: photoForm.title || undefined,
-      caption: photoForm.caption || undefined,
-      imageUrl: photoForm.imageUrl,
-      sortOrder: photoForm.sortOrder,
-    };
-
-    const result = editingPhotoId
-      ? await apiPut(
-          `/api/admin/gallery/${album.id}/photos/${editingPhotoId}`,
-          payload,
-        )
-      : await apiPost(`/api/admin/gallery/${album.id}/photos`, payload);
+    const result = await apiPost(`/api/admin/gallery/${album.id}/photos`, {
+      title: createPhotoForm.title || undefined,
+      caption: createPhotoForm.caption || undefined,
+      imageUrl: createPhotoForm.imageUrl,
+      sortOrder: createPhotoForm.sortOrder,
+    });
 
     setPhotoLoading(false);
 
@@ -170,8 +167,39 @@ function GalleryAlbumEditorInner({
       return;
     }
 
-    setMessage(editingPhotoId ? "Photo updated." : "Photo added.");
-    resetPhotoForm();
+    setMessage("Photo added.");
+    setCreatePhotoForm(emptyPhotoForm);
+    await loadAlbum();
+    router.refresh();
+  };
+
+  const handleUpdatePhoto = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingPhotoId) return;
+
+    setPhotoLoading(true);
+    setPhotoError(null);
+    setMessage(null);
+
+    const result = await apiPut(
+      `/api/admin/gallery/${album.id}/photos/${editingPhotoId}`,
+      {
+        title: editPhotoForm.title || undefined,
+        caption: editPhotoForm.caption || undefined,
+        imageUrl: editPhotoForm.imageUrl,
+        sortOrder: editPhotoForm.sortOrder,
+      },
+    );
+
+    setPhotoLoading(false);
+
+    if (!result.ok) {
+      setPhotoError(result.error);
+      return;
+    }
+
+    setMessage("Photo updated.");
+    cancelEditPhoto();
     await loadAlbum();
     router.refresh();
   };
@@ -222,7 +250,7 @@ function GalleryAlbumEditorInner({
       return;
     }
 
-    if (editingPhotoId === photoId) resetPhotoForm();
+    if (editingPhotoId === photoId) cancelEditPhoto();
     await loadAlbum();
     router.refresh();
   };
@@ -345,62 +373,69 @@ function GalleryAlbumEditorInner({
 
       <AdminFormCard
         collapsible
-        formId={ADMIN_SECONDARY_FORM_ID}
         openTriggerLabel="Advanced: add photo by URL"
-        title={editingPhotoId ? "Edit photo details" : "Advanced: add photo by URL"}
-        error={editingPhotoId ? error : null}
-        message={editingPhotoId ? message : null}
-        onSubmit={handlePhotoSubmit}
-        onCancel={editingPhotoId ? resetPhotoForm : undefined}
-        submitLabel={editingPhotoId ? "Save photo" : "Add photo"}
-        loading={photoLoading}
+        title="Advanced: add photo by URL"
+        error={editingPhotoId ? null : error}
+        message={editingPhotoId ? null : message}
+        onSubmit={handleCreatePhoto}
+        submitLabel="Add photo"
+        loading={photoLoading && !editingPhotoId}
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <Label htmlFor="photo-sort">Sort order</Label>
+            <Label htmlFor="photo-create-sort">Sort order</Label>
             <Input
-              id="photo-sort"
+              id="photo-create-sort"
               type="number"
               min={0}
-              value={photoForm.sortOrder}
+              value={createPhotoForm.sortOrder}
               onChange={(event) =>
-                setPhotoForm({
-                  ...photoForm,
+                setCreatePhotoForm({
+                  ...createPhotoForm,
                   sortOrder: Number(event.target.value) || 0,
                 })
               }
             />
           </div>
           <div>
-            <Label htmlFor="photo-title">Title (optional)</Label>
+            <Label htmlFor="photo-create-title">Title (optional)</Label>
             <Input
-              id="photo-title"
-              value={photoForm.title}
+              id="photo-create-title"
+              value={createPhotoForm.title}
               onChange={(event) =>
-                setPhotoForm({ ...photoForm, title: event.target.value })
+                setCreatePhotoForm({
+                  ...createPhotoForm,
+                  title: event.target.value,
+                })
               }
             />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="photo-url">Image URL</Label>
+            <Label htmlFor="photo-create-url">Image URL</Label>
             <Input
-              id="photo-url"
-              value={photoForm.imageUrl}
+              id="photo-create-url"
+              value={createPhotoForm.imageUrl}
               onChange={(event) =>
-                setPhotoForm({ ...photoForm, imageUrl: event.target.value })
+                setCreatePhotoForm({
+                  ...createPhotoForm,
+                  imageUrl: event.target.value,
+                })
               }
               placeholder="/uploads/gallery/photo.jpg"
               required
             />
           </div>
           <div className="sm:col-span-2">
-            <Label htmlFor="photo-caption">Caption (optional)</Label>
+            <Label htmlFor="photo-create-caption">Caption (optional)</Label>
             <Textarea
-              id="photo-caption"
+              id="photo-create-caption"
               rows={2}
-              value={photoForm.caption}
+              value={createPhotoForm.caption}
               onChange={(event) =>
-                setPhotoForm({ ...photoForm, caption: event.target.value })
+                setCreatePhotoForm({
+                  ...createPhotoForm,
+                  caption: event.target.value,
+                })
               }
             />
           </div>
@@ -419,12 +454,99 @@ function GalleryAlbumEditorInner({
         <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
           Photos in album ({album.photos.length})
         </h3>
+        {message && editingPhotoId ? (
+          <p className="text-sm text-emerald-300">{message}</p>
+        ) : null}
         <GalleryPhotoGrid
           photos={album.photos}
           editingPhotoId={editingPhotoId}
           deletingPhotoId={deletingPhotoId}
           onEdit={startEditPhoto}
           onDelete={handleDeletePhoto}
+          editForm={
+            editingPhotoId ? (
+              <form
+                onSubmit={(e) => void handleUpdatePhoto(e)}
+                className="space-y-3 border-t border-jackals-red/30 bg-jackals-red/5 p-3"
+              >
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <Label htmlFor="photo-edit-sort">Sort order</Label>
+                    <Input
+                      id="photo-edit-sort"
+                      type="number"
+                      min={0}
+                      value={editPhotoForm.sortOrder}
+                      onChange={(event) =>
+                        setEditPhotoForm({
+                          ...editPhotoForm,
+                          sortOrder: Number(event.target.value) || 0,
+                        })
+                      }
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="photo-edit-title">Title (optional)</Label>
+                    <Input
+                      id="photo-edit-title"
+                      value={editPhotoForm.title}
+                      onChange={(event) =>
+                        setEditPhotoForm({
+                          ...editPhotoForm,
+                          title: event.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="photo-edit-url">Image URL</Label>
+                    <Input
+                      id="photo-edit-url"
+                      value={editPhotoForm.imageUrl}
+                      onChange={(event) =>
+                        setEditPhotoForm({
+                          ...editPhotoForm,
+                          imageUrl: event.target.value,
+                        })
+                      }
+                      required
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="photo-edit-caption">
+                      Caption (optional)
+                    </Label>
+                    <Textarea
+                      id="photo-edit-caption"
+                      rows={2}
+                      value={editPhotoForm.caption}
+                      onChange={(event) =>
+                        setEditPhotoForm({
+                          ...editPhotoForm,
+                          caption: event.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+                <FormError message={photoError} />
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" size="sm" disabled={photoLoading}>
+                    {photoLoading ? "Saving..." : "Save photo"}
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={cancelEditPhoto}
+                    disabled={photoLoading}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </form>
+            ) : null
+          }
         />
       </div>
     </AdminSection>

@@ -125,6 +125,26 @@ async function authorizeTrialSessionPaymentProof(relativePath: string) {
   return proof.trialSession.active;
 }
 
+async function authorizeKitOrderProof(
+  relativePath: string,
+  request: Request,
+) {
+  const orderId = extractIdFromFilename(relativePath, "kit-order-proofs");
+  if (!orderId) return false;
+
+  const session = await auth();
+  if (session?.user?.role === "ADMIN") return true;
+
+  const paymentToken = new URL(request.url).searchParams.get("pt");
+  if (!paymentToken?.trim()) return false;
+
+  const order = await prisma.kitOrder.findFirst({
+    where: { id: orderId, paymentToken: paymentToken.trim() },
+    select: { id: true },
+  });
+  return Boolean(order);
+}
+
 export async function authorizeUploadAccess(
   relativePath: string,
   request: Request,
@@ -147,6 +167,10 @@ export async function authorizeUploadAccess(
 
   if (relativePath.startsWith("trial-session-proofs/")) {
     return authorizeTrialSessionPaymentProof(relativePath);
+  }
+
+  if (relativePath.startsWith("kit-order-proofs/")) {
+    return authorizeKitOrderProof(relativePath, request);
   }
 
   if (relativePath.startsWith("admin-docs/")) {

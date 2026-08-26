@@ -14,6 +14,7 @@ import { Input, Label, Select } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import type { TrainingTeam } from "@/lib/training-teams-config";
+import { cn } from "@/lib/utils";
 
 type TeamItem = {
   id: string;
@@ -99,10 +100,12 @@ export function TeamsManager({
       .filter((team): team is TeamItem => Boolean(team));
   }, [search, filteredTeams, teamOrder, teamsById]);
 
+  const canDrag = !search.trim();
+
   const hasOrderChanges = useMemo(() => {
-    if (search.trim()) return false;
+    if (!canDrag) return false;
     return teamOrder.some((id, index) => teamsById[id]?.sortOrder !== index);
-  }, [search, teamOrder, teamsById]);
+  }, [canDrag, teamOrder, teamsById]);
 
   const resetForm = () => {
     setForm({
@@ -326,40 +329,52 @@ export function TeamsManager({
           </p>
         ) : (
           visibleTeams.map((team) => {
-          const linkedSquad = trainingSquads.find(
-            (squad) => squad.key === team.trainingTeamKey,
-          );
+            const linkedSquad = trainingSquads.find(
+              (squad) => squad.key === team.trainingTeamKey,
+            );
 
-          return (
-          <div
-            key={team.id}
-            draggable={!search.trim()}
-            onDragStart={() => setDraggingTeamId(team.id)}
-            onDragEnd={() => setDraggingTeamId(null)}
-            onDragOver={(event) => {
-              if (!search.trim()) event.preventDefault();
-            }}
-            onDrop={() => {
-              if (search.trim() || !draggingTeamId) return;
-              moveTeamBefore(draggingTeamId, team.id);
-            }}
-            className="cursor-grab"
-          >
-            <AdminListItem
-              title={team.name}
-              subtitle={`${team.level}${linkedSquad ? ` · ${linkedSquad.name}` : ""}`}
-              actionHref={`/admin/teams/${team.id}`}
-              actionLabel="Manage team"
-              onDelete={() => handleDelete(team.id)}
-              deleting={deletingId === team.id}
-            />
-          </div>
-          );
-        })
+            return (
+              <div
+                key={team.id}
+                draggable={canDrag}
+                onDragStart={(event) => {
+                  if (!canDrag) return;
+                  event.dataTransfer.effectAllowed = "move";
+                  event.dataTransfer.setData("text/plain", team.id);
+                  setDraggingTeamId(team.id);
+                }}
+                onDragEnd={() => setDraggingTeamId(null)}
+                onDragOver={(event) => {
+                  if (canDrag) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (!canDrag || !draggingTeamId) return;
+                  moveTeamBefore(draggingTeamId, team.id);
+                }}
+                className={cn(
+                  canDrag && "cursor-grab active:cursor-grabbing",
+                )}
+              >
+                <AdminListItem
+                  title={team.name}
+                  subtitle={`${team.level}${linkedSquad ? ` · ${linkedSquad.name}` : ""}`}
+                  actionHref={`/admin/teams/${team.id}`}
+                  actionLabel="Manage team"
+                  draggable={canDrag}
+                  dragging={draggingTeamId === team.id}
+                  onDelete={() => handleDelete(team.id)}
+                  deleting={deletingId === team.id}
+                />
+              </div>
+            );
+          })
         )}
-        {!search.trim() && (
+        {canDrag && (
           <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-zinc-500">Drag team rows to change order.</p>
+            <p className="text-xs text-zinc-500">
+              Drag team rows to change order.
+            </p>
             <Button
               type="button"
               size="sm"

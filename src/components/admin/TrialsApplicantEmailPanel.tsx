@@ -257,60 +257,109 @@ export function TrialsApplicantEmailPanel({
             {selectedRecipients.length} of {recipients.length} selected
           </p>
           <div className="max-h-56 overflow-y-auto">
-            <table className="min-w-full text-left text-sm">
-              <thead className="sticky top-0 bg-zinc-950/95">
-                <tr className="border-b border-white/10 text-zinc-500">
-                  <th className="px-3 py-2 font-medium">
-                    <input
-                      type="checkbox"
-                      checked={allRecipientsSelected}
-                      onChange={toggleSelectAllRecipients}
-                      aria-label={`Select all ${trialsTeamLabel(activeTeam)} applicants`}
-                      className="rounded border-zinc-600"
-                    />
-                  </th>
-                  <th className="px-3 py-2 font-medium">Name</th>
-                  <th className="px-3 py-2 font-medium">Email</th>
-                  <th className="px-3 py-2 font-medium">Submitted</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recipients.map((application) => (
-                  <tr
-                    key={application.id}
-                    className="border-b border-white/5 last:border-b-0"
-                  >
-                    <td className="px-3 py-2">
+            <div className="hidden lg:block">
+              <table className="w-full table-fixed text-left text-sm">
+                <colgroup>
+                  <col className="w-10" />
+                  <col />
+                  <col className="w-[40%]" />
+                  <col className="w-[6.5rem]" />
+                </colgroup>
+                <thead className="sticky top-0 bg-zinc-950">
+                  <tr className="border-b border-white/10 text-zinc-500">
+                    <th className="px-3 py-2 font-medium">
                       <input
                         type="checkbox"
-                        checked={selectedApplicationIds.includes(application.id)}
+                        checked={allRecipientsSelected}
+                        onChange={toggleSelectAllRecipients}
+                        aria-label={`Select all ${trialsTeamLabel(activeTeam)} applicants`}
+                        className="rounded border-zinc-600"
+                      />
+                    </th>
+                    <th className="px-3 py-2 font-medium">Name</th>
+                    <th className="px-3 py-2 font-medium">Email</th>
+                    <th className="px-3 py-2 font-medium">Submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recipients.map((application) => (
+                    <tr
+                      key={application.id}
+                      className="border-b border-white/5 last:border-b-0"
+                    >
+                      <td className="px-3 py-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedApplicationIds.includes(
+                            application.id,
+                          )}
+                          onChange={() =>
+                            toggleApplicationSelection(application.id)
+                          }
+                          aria-label={`Select ${application.fullName}`}
+                          className="rounded border-zinc-600"
+                        />
+                      </td>
+                      <td className="truncate px-3 py-2 text-zinc-200">
+                        {application.fullName}
+                      </td>
+                      <td className="truncate px-3 py-2 text-zinc-400">
+                        {application.contactEmail}
+                      </td>
+                      <td className="whitespace-nowrap px-3 py-2 text-zinc-500">
+                        {new Date(application.createdAt).toLocaleDateString(
+                          "en-IE",
+                          {
+                            day: "numeric",
+                            month: "short",
+                            year: "numeric",
+                          },
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <ul className="divide-y divide-white/5 lg:hidden">
+              {recipients.map((application) => {
+                const selected = selectedApplicationIds.includes(application.id);
+                return (
+                  <li key={application.id}>
+                    <label className="flex cursor-pointer items-start gap-3 px-3 py-2.5">
+                      <input
+                        type="checkbox"
+                        checked={selected}
                         onChange={() =>
                           toggleApplicationSelection(application.id)
                         }
                         aria-label={`Select ${application.fullName}`}
-                        className="rounded border-zinc-600"
+                        className="mt-1 rounded border-zinc-600"
                       />
-                    </td>
-                    <td className="px-3 py-2 text-zinc-200">
-                      {application.fullName}
-                    </td>
-                    <td className="px-3 py-2 text-zinc-400">
-                      {application.contactEmail}
-                    </td>
-                    <td className="px-3 py-2 text-zinc-500">
-                      {new Date(application.createdAt).toLocaleDateString(
-                        "en-IE",
-                        {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        },
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                      <span className="min-w-0 flex-1">
+                        <span className="block font-medium text-zinc-200">
+                          {application.fullName}
+                        </span>
+                        <span className="mt-0.5 block break-all text-xs text-zinc-400">
+                          {application.contactEmail}
+                        </span>
+                        <span className="mt-1 block text-xs text-zinc-500">
+                          {new Date(application.createdAt).toLocaleDateString(
+                            "en-IE",
+                            {
+                              day: "numeric",
+                              month: "short",
+                              year: "numeric",
+                            },
+                          )}
+                        </span>
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+            </ul>
           </div>
         </div>
       ) : (

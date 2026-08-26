@@ -6,7 +6,10 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Images, Loader2, Upload } from "lucide-react";
-import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
+import {
+  AdminFormCard,
+  AdminInlineEditCard,
+} from "@/components/admin/AdminForm";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
@@ -98,8 +101,12 @@ export function TournamentWinnerPhotosManager({
     tournaments[0]?.slug ||
     "";
   const [slug, setSlug] = useState(initialSlug);
-  const [kind, setKind] = useState<TournamentWinnerPhotoKind>("PODIUM");
-  const [alt, setAlt] = useState("");
+  const [createKind, setCreateKind] =
+    useState<TournamentWinnerPhotoKind>("PODIUM");
+  const [createAlt, setCreateAlt] = useState("");
+  const [editKind, setEditKind] =
+    useState<TournamentWinnerPhotoKind>("PODIUM");
+  const [editAlt, setEditAlt] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [coverLoading, setCoverLoading] = useState(false);
@@ -108,6 +115,7 @@ export function TournamentWinnerPhotosManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
   const [cropSrc, setCropSrc] = useState<string | null>(null);
   const [cropTarget, setCropTarget] = useState<CropTarget | null>(null);
@@ -396,15 +404,15 @@ export function TournamentWinnerPhotosManager({
         "/api/admin/tournament-photos",
         {
           id: editingId,
-          kind,
-          alt: alt.trim() || null,
+          kind: editKind,
+          alt: editAlt.trim() || null,
           imageUrl: upload.data.imageUrl,
         },
         "Could not update photo.",
       );
       setLoading(false);
       if (!update.ok) {
-        setError(update.error);
+        setEditError(update.error);
         return;
       }
       setPhotos((current) =>
@@ -422,9 +430,9 @@ export function TournamentWinnerPhotosManager({
       "/api/admin/tournament-photos",
       {
         tournamentSlug: slug,
-        kind,
+        kind: createKind,
         imageUrl: upload.data.imageUrl,
-        alt: alt.trim() || undefined,
+        alt: createAlt.trim() || undefined,
       },
       "Could not save photo.",
     );
@@ -436,7 +444,7 @@ export function TournamentWinnerPhotosManager({
       return;
     }
 
-    setAlt("");
+    setCreateAlt("");
     clearCrop();
     setMessage("Photo added.");
     setPhotos((current) => [...current, create.data.photo]);
@@ -444,46 +452,45 @@ export function TournamentWinnerPhotosManager({
   };
 
   const startEdit = (photo: TournamentWinnerPhotoItem) => {
-    beginAdminEdit(() => {
-      setEditingId(photo.id);
-      selectTournament(photo.tournamentSlug);
-      setKind(
-        (TOURNAMENT_WINNER_PHOTO_KINDS as readonly string[]).includes(photo.kind)
-          ? (photo.kind as TournamentWinnerPhotoKind)
-          : "OTHER",
-      );
-      setAlt(photo.alt ?? "");
-      setError(null);
-      setMessage(null);
-    });
+    setEditingId(photo.id);
+    selectTournament(photo.tournamentSlug);
+    setEditKind(
+      (TOURNAMENT_WINNER_PHOTO_KINDS as readonly string[]).includes(photo.kind)
+        ? (photo.kind as TournamentWinnerPhotoKind)
+        : "OTHER",
+    );
+    setEditAlt(photo.alt ?? "");
+    setEditError(null);
+    setError(null);
+    setMessage(null);
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setKind("PODIUM");
-    setAlt("");
-    setError(null);
-    setMessage(null);
+    setEditKind("PODIUM");
+    setEditAlt("");
+    setEditError(null);
     if (cropTarget === "winner") clearCrop();
   };
 
-  const saveEdit = async () => {
+  const saveEdit = async (event: React.FormEvent) => {
+    event.preventDefault();
     if (!editingId) return;
     setLoading(true);
-    setError(null);
+    setEditError(null);
     setMessage(null);
     const result = await apiPatch<{ photo: TournamentWinnerPhotoItem }>(
       "/api/admin/tournament-photos",
       {
         id: editingId,
-        kind,
-        alt: alt.trim() || null,
+        kind: editKind,
+        alt: editAlt.trim() || null,
       },
       "Could not update photo.",
     );
     setLoading(false);
     if (!result.ok) {
-      setError(result.error);
+      setEditError(result.error);
       return;
     }
     setPhotos((current) =>
@@ -707,26 +714,13 @@ export function TournamentWinnerPhotosManager({
 
       <div className="grid gap-6 lg:grid-cols-[minmax(0,22rem)_1fr]">
         <AdminFormCard
-          title={editingId ? "Edit winner photo" : "Add winner photo"}
+          title="Add winner photo"
           error={error}
           message={message}
-          submitLabel={
-            loading
-              ? editingId
-                ? "Saving…"
-                : "Uploading…"
-              : editingId
-                ? "Save changes"
-                : "Choose image"
-          }
-          loading={loading}
-          onCancel={editingId ? cancelEdit : undefined}
+          submitLabel={loading && !editingId ? "Uploading…" : "Choose image"}
+          loading={loading && !editingId}
           onSubmit={(e) => {
             e.preventDefault();
-            if (editingId) {
-              void saveEdit();
-              return;
-            }
             inputRef.current?.click();
           }}
         >
@@ -740,7 +734,7 @@ export function TournamentWinnerPhotosManager({
               id="tournament-slug"
               value={slug}
               onChange={(e) => selectTournament(e.target.value)}
-              disabled={loading || Boolean(editingId) || tournaments.length === 0}
+              disabled={loading || tournaments.length === 0}
             >
               {tournaments.length === 0 ? (
                 <option value="">No tournaments configured</option>
@@ -755,14 +749,14 @@ export function TournamentWinnerPhotosManager({
           </div>
 
           <div>
-            <Label htmlFor="photo-kind">Photo type</Label>
+            <Label htmlFor="photo-kind-create">Photo type</Label>
             <Select
-              id="photo-kind"
-              value={kind}
+              id="photo-kind-create"
+              value={createKind}
               onChange={(e) =>
-                setKind(e.target.value as TournamentWinnerPhotoKind)
+                setCreateKind(e.target.value as TournamentWinnerPhotoKind)
               }
-              disabled={loading}
+              disabled={loading && !editingId}
             >
               {TOURNAMENT_WINNER_PHOTO_KINDS.map((value) => (
                 <option key={value} value={value}>
@@ -773,73 +767,54 @@ export function TournamentWinnerPhotosManager({
           </div>
 
           <div>
-            <Label htmlFor="photo-alt">Caption</Label>
+            <Label htmlFor="photo-alt-create">Caption</Label>
             <Input
-              id="photo-alt"
-              value={alt}
-              onChange={(e) => setAlt(e.target.value)}
+              id="photo-alt-create"
+              value={createAlt}
+              onChange={(e) => setCreateAlt(e.target.value)}
               placeholder={`e.g. ${selectedTitle} champions`}
-              disabled={loading}
+              disabled={loading && !editingId}
             />
           </div>
 
-          {editingId ? (
-            <div className="space-y-3">
-              <p className="text-sm text-zinc-400">
-                Update the photo type or caption, then save. To reframe heads and
-                feet, replace the image — you&apos;ll crop to{" "}
-                {TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL} before it uploads.
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={loading || !slug}
-                onClick={() => inputRef.current?.click()}
-              >
-                Replace &amp; crop image
-              </Button>
-            </div>
-          ) : (
-            <div
-              className={cn(
-                "relative flex flex-col items-center justify-center gap-3 border border-dashed border-white/20 bg-white/[0.02] px-4 py-8 text-center transition-colors",
-                dragging && "border-jackals-red/50 bg-jackals-red/5",
-                loading && "opacity-60",
-              )}
-              onDragEnter={(e) => {
-                e.preventDefault();
-                setDragging(true);
-              }}
-              onDragOver={(e) => e.preventDefault()}
-              onDragLeave={() => setDragging(false)}
-              onDrop={(e) => {
-                e.preventDefault();
-                setDragging(false);
-                const file = e.dataTransfer.files?.[0];
-                if (file) openWinnerCrop(file);
-              }}
+          <div
+            className={cn(
+              "relative flex flex-col items-center justify-center gap-3 border border-dashed border-white/20 bg-white/[0.02] px-4 py-8 text-center transition-colors",
+              dragging && "border-jackals-red/50 bg-jackals-red/5",
+              loading && !editingId && "opacity-60",
+            )}
+            onDragEnter={(e) => {
+              e.preventDefault();
+              setDragging(true);
+            }}
+            onDragOver={(e) => e.preventDefault()}
+            onDragLeave={() => setDragging(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragging(false);
+              const file = e.dataTransfer.files?.[0];
+              if (file) openWinnerCrop(file);
+            }}
+          >
+            {loading && !editingId ? (
+              <Loader2 className="h-6 w-6 animate-spin text-jackals-red-light" />
+            ) : (
+              <Upload className="h-6 w-6 text-jackals-red-light" />
+            )}
+            <p className="text-sm text-zinc-400">
+              Drop an image here to crop to {TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL}
+              , or browse below
+            </p>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={(loading && !editingId) || !slug}
+              onClick={() => inputRef.current?.click()}
             >
-              {loading ? (
-                <Loader2 className="h-6 w-6 animate-spin text-jackals-red-light" />
-              ) : (
-                <Upload className="h-6 w-6 text-jackals-red-light" />
-              )}
-              <p className="text-sm text-zinc-400">
-                Drop an image here to crop to {TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL}
-                , or browse below
-              </p>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={loading || !slug}
-                onClick={() => inputRef.current?.click()}
-              >
-                Browse files
-              </Button>
-            </div>
-          )}
+              Browse files
+            </Button>
+          </div>
           <input
             ref={inputRef}
             type="file"
@@ -875,25 +850,85 @@ export function TournamentWinnerPhotosManager({
               separate place photos.
             </p>
           ) : (
-            filtered.map((photo) => (
-              <AdminListItem
-                key={photo.id}
-                title={
-                  TOURNAMENT_WINNER_KIND_LABELS[
-                    photo.kind as TournamentWinnerPhotoKind
-                  ] ?? photo.kind
-                }
-                subtitle={photo.alt || "No caption"}
-                note={photo.imageUrl}
-                onEdit={() => startEdit(photo)}
-                onDelete={() => void onDelete(photo.id)}
-                deleting={deletingId === photo.id}
-                formAction={{
-                  label: "Preview",
-                  onClick: () => window.open(photo.imageUrl, "_blank"),
-                }}
-              />
-            ))
+            filtered.map((photo) => {
+              const isEditing = editingId === photo.id;
+              return (
+                <AdminInlineEditCard
+                  key={photo.id}
+                  isEditing={isEditing}
+                  title={
+                    TOURNAMENT_WINNER_KIND_LABELS[
+                      photo.kind as TournamentWinnerPhotoKind
+                    ] ?? photo.kind
+                  }
+                  subtitle={photo.alt || "No caption"}
+                  note={photo.imageUrl}
+                  onEdit={() => startEdit(photo)}
+                  onDelete={() => void onDelete(photo.id)}
+                  deleting={deletingId === photo.id}
+                  formAction={{
+                    label: "Preview",
+                    onClick: () => window.open(photo.imageUrl, "_blank"),
+                  }}
+                  onCancelEdit={cancelEdit}
+                  onSubmit={(e) => void saveEdit(e)}
+                  loading={loading && isEditing}
+                  error={isEditing ? editError : null}
+                >
+                  <div className="grid gap-4">
+                    <div>
+                      <Label htmlFor={`photo-kind-edit-${photo.id}`}>
+                        Photo type
+                      </Label>
+                      <Select
+                        id={`photo-kind-edit-${photo.id}`}
+                        value={editKind}
+                        onChange={(e) =>
+                          setEditKind(
+                            e.target.value as TournamentWinnerPhotoKind,
+                          )
+                        }
+                        disabled={loading}
+                      >
+                        {TOURNAMENT_WINNER_PHOTO_KINDS.map((value) => (
+                          <option key={value} value={value}>
+                            {TOURNAMENT_WINNER_KIND_LABELS[value]}
+                          </option>
+                        ))}
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor={`photo-alt-edit-${photo.id}`}>
+                        Caption
+                      </Label>
+                      <Input
+                        id={`photo-alt-edit-${photo.id}`}
+                        value={editAlt}
+                        onChange={(e) => setEditAlt(e.target.value)}
+                        placeholder={`e.g. ${selectedTitle} champions`}
+                        disabled={loading}
+                      />
+                    </div>
+                    <div className="space-y-3">
+                      <p className="text-sm text-zinc-400">
+                        Update the photo type or caption, then save. To reframe
+                        heads and feet, replace the image — you&apos;ll crop to{" "}
+                        {TOURNAMENT_WINNER_PHOTO_ASPECT_LABEL} before it uploads.
+                      </p>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={loading || !slug}
+                        onClick={() => inputRef.current?.click()}
+                      >
+                        Replace &amp; crop image
+                      </Button>
+                    </div>
+                  </div>
+                </AdminInlineEditCard>
+              );
+            })
           )}
 
           {filtered.length > 0 ? (

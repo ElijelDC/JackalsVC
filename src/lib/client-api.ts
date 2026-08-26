@@ -154,14 +154,20 @@ type PaymentProofResponse = {
   message: string;
 };
 
-export type CsvImportResult = {
+export type BankStatementImportResult = {
   matched: number;
+  matchedMembership: number;
+  matchedKitOrders: number;
   scanned: number;
   skippedDuplicates: number;
   unmatchedRows: number;
   unmatchedPayments: number;
+  unmatchedKitOrders: number;
   fileName?: string;
 };
+
+/** @deprecated Use BankStatementImportResult */
+export type CsvImportResult = BankStatementImportResult;
 
 export type BulkImportType =
   | "roster"
@@ -222,6 +228,35 @@ export async function apiRemovePaymentProof(
   );
 }
 
+type KitOrderProofResponse = {
+  message: string;
+};
+
+export async function apiUploadKitOrderProof(
+  paymentToken: string,
+  file: File,
+  fallbackError = "Failed to upload receipt",
+): Promise<ApiResult<KitOrderProofResponse>> {
+  const formData = new FormData();
+  formData.append("paymentToken", paymentToken);
+  formData.append("screenshot", file);
+  return apiPostForm<KitOrderProofResponse>(
+    "/api/kit-order/payment-proof",
+    formData,
+    fallbackError,
+  );
+}
+
+export async function apiRemoveKitOrderProof(
+  paymentToken: string,
+  fallbackError = "Failed to remove receipt",
+): Promise<ApiResult<KitOrderProofResponse>> {
+  return apiDelete<KitOrderProofResponse>(
+    `/api/kit-order/payment-proof?paymentToken=${encodeURIComponent(paymentToken)}`,
+    fallbackError,
+  );
+}
+
 export async function apiRemoveTrialSessionPaymentProof(
   slug: string,
   proofId: string,
@@ -236,11 +271,31 @@ export async function apiRemoveTrialSessionPaymentProof(
 export async function apiImportPaymentCsv(
   file: File,
   fallbackError = "Failed to import CSV",
-): Promise<ApiResult<CsvImportResult>> {
+): Promise<ApiResult<BankStatementImportResult>> {
+  return apiImportBankStatementCsv(file, fallbackError);
+}
+
+export async function apiImportBankStatementCsv(
+  file: File,
+  fallbackError = "Failed to import CSV",
+): Promise<ApiResult<BankStatementImportResult>> {
   const formData = new FormData();
   formData.append("file", file);
-  return apiPostForm<CsvImportResult>(
+  return apiPostForm<BankStatementImportResult>(
     "/api/admin/payments/import-csv",
+    formData,
+    fallbackError,
+  );
+}
+
+export async function apiImportKitOrderBankStatementCsv(
+  file: File,
+  fallbackError = "Failed to import CSV",
+): Promise<ApiResult<BankStatementImportResult>> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostForm<BankStatementImportResult>(
+    "/api/admin/kit-orders/import-csv",
     formData,
     fallbackError,
   );
@@ -251,4 +306,21 @@ export async function apiApprovePayment(
   fallbackError = "Failed to approve payment",
 ): Promise<ApiResult<{ payment: { id: string; status: string } }>> {
   return apiPost(`/api/admin/payments/${paymentId}/approve`, {}, fallbackError);
+}
+
+type KitOrderApproveResponse = {
+  order: { id: string; paymentStatus: string };
+  emailDelivered: boolean;
+  message: string;
+};
+
+export async function apiApproveKitOrderPayment(
+  orderId: string,
+  fallbackError = "Failed to approve kit payment",
+): Promise<ApiResult<KitOrderApproveResponse>> {
+  return apiPost<KitOrderApproveResponse>(
+    `/api/admin/kit-orders/${orderId}/approve`,
+    {},
+    fallbackError,
+  );
 }

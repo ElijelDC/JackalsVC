@@ -1,26 +1,44 @@
 import { AdminSection } from "@/components/admin/AdminShell";
-import { AdminCsvImport } from "@/components/admin/AdminCsvImport";
 import { AdminPaymentQueue } from "@/components/admin/AdminPaymentQueue";
-import { adminPendingPaymentWhere } from "@/lib/admin-pending-payments";
+import { getTrainingSquads } from "@/lib/training-squads";
 import { prisma } from "@/lib/prisma";
+import { subMonths } from "date-fns";
 
 export const metadata = {
   title: "Admin · Payments",
 };
 
 export default async function AdminPaymentsPage() {
-  const pendingPayments = await prisma.payment.findMany({
-    where: adminPendingPaymentWhere(),
-    include: {
-      user: { select: { name: true, email: true } },
-      membership: {
-        include: {
-          plan: { select: { name: true } },
+  const completedSince = subMonths(new Date(), 6);
+
+  const [payments, squads] = await Promise.all([
+    prisma.payment.findMany({
+      where: {
+        OR: [
+          { status: "PENDING" },
+          { status: "COMPLETED", paidAt: { gte: completedSince } },
+        ],
+      },
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true,
+            clubMember: { select: { trainingTeamKey: true } },
+          },
+        },
+        membership: {
+          include: {
+            plan: { select: { name: true } },
+          },
         },
       },
-    },
-    orderBy: [{ proofSubmittedAt: "desc" }, { dueDate: "asc" }, { createdAt: "asc" }],
-  });
+      orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "asc" }],
+    }),
+    getTrainingSquads(),
+  ]);
+
+  const squadNameByKey = new Map(squads.map((squad) => [squad.key, squad.name]));
 
   const recentImports = await prisma.paymentImportRecord.findMany({
     orderBy: { createdAt: "desc" },
@@ -32,32 +50,44 @@ export default async function AdminPaymentsPage() {
       title="Payments"
       description="Import bank CSV files and approve member transfer screenshots."
     >
-      <div className="space-y-8">
-        <AdminCsvImport />
-
+      <div className="space-y-4">
         <AdminPaymentQueue
-          payments={pendingPayments.map((payment) => ({
-            id: payment.id,
-            amount: payment.amount,
-            paymentReference: payment.paymentReference,
-            description: payment.description,
-            dueDate: payment.dueDate?.toISOString() ?? null,
-            proofSubmittedAt: payment.proofSubmittedAt?.toISOString() ?? null,
-            proofScreenshotUrl: payment.proofScreenshotUrl,
-            user: payment.user,
-            subscriptionLabel: payment.membership
-              ? {
-                  planName: payment.membership.plan.name,
-                  paymentSchedule: payment.membership.paymentSchedule,
-                }
-              : null,
-          }))}
+          teams={squads.map((squad) => ({ key: squad.key, name: squad.name }))}
+          payments={payments.map((payment) => {
+            const trainingTeamKey =
+              payment.user.clubMember?.trainingTeamKey ?? null;
+            return {
+              id: payment.id,
+              amount: payment.amount,
+              status: payment.status,
+              paymentReference: payment.paymentReference,
+              description: payment.description,
+              dueDate: payment.dueDate?.toISOString() ?? null,
+              proofSubmittedAt: payment.proofSubmittedAt?.toISOString() ?? null,
+              proofScreenshotUrl: payment.proofScreenshotUrl,
+              paidAt: payment.paidAt?.toISOString() ?? null,
+              user: {
+                name: payment.user.name,
+                email: payment.user.email,
+              },
+              trainingTeamKey,
+              teamLabel: trainingTeamKey
+                ? (squadNameByKey.get(trainingTeamKey) ?? trainingTeamKey)
+                : null,
+              subscriptionLabel: payment.membership
+                ? {
+                    planName: payment.membership.plan.name,
+                    paymentSchedule: payment.membership.paymentSchedule,
+                  }
+                : null,
+            };
+          })}
         />
 
         {recentImports.length > 0 && (
-          <section className="rounded-xl border border-white/10 bg-white/[0.03] p-6">
-            <h2 className="text-lg font-semibold text-white">Recent CSV imports</h2>
-            <ul className="mt-4 space-y-2 text-sm">
+          <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
+            <h2 className="text-sm font-semibold text-white">Recent CSV imports</h2>
+            <ul className="mt-3 space-y-2 text-sm">
               {recentImports.map((record) => (
                 <li
                   key={record.id}
@@ -67,7 +97,11 @@ export default async function AdminPaymentsPage() {
                     {record.reference ?? "No reference"} · {record.amount.toFixed(2)} EUR
                   </span>
                   <span className="text-zinc-500">
-                    {record.status} · {new Date(record.createdAt).toLocaleString("en-GB")}
+                    {record.status}
+                    {record.matchedKitOrderId ? " · kit" : ""}
+                    {record.matchedPaymentId ? " · membership" : ""}
+                    {" · "}
+                    {new Date(record.createdAt).toLocaleString("en-GB")}
                   </span>
                 </li>
               ))}

@@ -1,18 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import {
   Check,
+  ChevronDown,
   ImageIcon,
   Loader2,
   Mail,
+  UserPlus,
   Users,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { Input, Label } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { formatInClubTime } from "@/lib/datetime-form";
-import { apiPatch } from "@/lib/client-api";
+import { apiPatch, apiPost } from "@/lib/client-api";
 import type {
   TrialSessionReminderStats,
   TrialSessionSignupRecord,
@@ -40,10 +43,16 @@ function formatSubmittedAt(iso: string) {
   });
 }
 
-function statusClassName(status: TrialSessionSignupStatus) {
-  if (status === "APPROVED") return "text-emerald-400";
-  if (status === "PENDING") return "text-amber-300";
-  return "text-rose-300";
+function statusTone(status: TrialSessionSignupStatus) {
+  if (status === "APPROVED") return "text-emerald-300 bg-emerald-500/10";
+  if (status === "PENDING") return "text-amber-300 bg-amber-500/10";
+  return "text-rose-300 bg-rose-500/10";
+}
+
+function statusShort(status: TrialSessionSignupStatus) {
+  if (status === "APPROVED") return "Approved";
+  if (status === "PENDING") return "Awaiting";
+  return "Rejected";
 }
 
 export function TrialSessionSignupsPanel({
@@ -75,8 +84,13 @@ export function TrialSessionSignupsPanel({
 }) {
   const [filter, setFilter] = useState<SignupFilter>("PENDING");
   const [updatingIds, setUpdatingIds] = useState<string[]>([]);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [receiptSignup, setReceiptSignup] =
     useState<TrialSessionSignupRecord | null>(null);
+  const [addOpen, setAddOpen] = useState(false);
+  const [adding, setAdding] = useState(false);
+  const [addMessage, setAddMessage] = useState<string | null>(null);
+  const [addForm, setAddForm] = useState({ email: "", displayName: "" });
 
   const pendingSignups = useMemo(
     () => signups.filter((signup) => signup.status === "PENDING"),
@@ -106,6 +120,9 @@ export function TrialSessionSignupsPanel({
     reminderEligibleSignups.every((signup) =>
       selectedSignupIds.includes(signup.id),
     );
+
+  const showReminderCheckboxes =
+    filter === "APPROVED" && Boolean(reminderStats?.windowOpen);
 
   const busy = updatingIds.length > 0;
 
@@ -177,6 +194,156 @@ export function TrialSessionSignupsPanel({
     );
   };
 
+  const addPlayer = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setAdding(true);
+    onError(null);
+    setAddMessage(null);
+
+    const result = await apiPost<{
+      signup: TrialSessionSignupRecord;
+      message: string;
+    }>(
+      `/api/admin/trial-sessions/${sessionId}/signups`,
+      {
+        email: addForm.email.trim(),
+        displayName: addForm.displayName.trim(),
+      },
+      "add this player",
+    );
+
+    setAdding(false);
+
+    if (!result.ok) {
+      onError(result.error);
+      return;
+    }
+
+    const nextSignup = {
+      ...result.data.signup,
+      reminderSent: false,
+    };
+    onSignupsChange(
+      signups.some((signup) => signup.id === nextSignup.id)
+        ? signups.map((signup) =>
+            signup.id === nextSignup.id ? nextSignup : signup,
+          )
+        : [...signups, nextSignup],
+    );
+    setAddForm({ email: "", displayName: "" });
+    setAddMessage(result.data.message);
+    setFilter("APPROVED");
+  };
+
+  const renderActions = (signup: TrialSessionSignupRecord) => {
+    const updating = updatingIds.includes(signup.id);
+    if (signup.status !== "PENDING") return null;
+
+    return (
+      <div className="flex items-center justify-end gap-1">
+        <button
+          type="button"
+          title="Approve & email"
+          disabled={updating || busy}
+          onClick={() => void updateStatus([signup.id], "APPROVED")}
+          className="rounded p-1.5 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:opacity-40"
+        >
+          {updating ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Check className="h-3.5 w-3.5" />
+          )}
+        </button>
+        <button
+          type="button"
+          title="Reject"
+          disabled={updating || busy}
+          onClick={() => void updateStatus([signup.id], "REJECTED")}
+          className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+  };
+
+  const renderExpanded = (signup: TrialSessionSignupRecord) => {
+    const updating = updatingIds.includes(signup.id);
+    return (
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="space-y-2 text-sm text-zinc-400">
+          <p>
+            <span className="text-zinc-500">Email:</span> {signup.email}
+          </p>
+          <p>
+            <span className="text-zinc-500">Status:</span>{" "}
+            {TRIAL_SESSION_SIGNUP_STATUS_LABELS[signup.status]}
+          </p>
+          {signup.status === "APPROVED" ? (
+            <p>
+              <span className="text-zinc-500">Reminder:</span>{" "}
+              {signup.reminderSent ? "Emailed" : "Pending"}
+            </p>
+          ) : null}
+          <p className="text-xs text-zinc-600">
+            Submitted {formatSubmittedAt(signup.createdAt)}
+          </p>
+          {signup.status === "PENDING" ? (
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button
+                type="button"
+                size="sm"
+                disabled={updating || busy}
+                onClick={() => void updateStatus([signup.id], "APPROVED")}
+              >
+                {updating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="h-4 w-4" />
+                )}
+                Approve & email
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={updating || busy}
+                className="border-rose-500/30 text-rose-200 hover:border-rose-400/50 hover:bg-rose-500/10"
+                onClick={() => void updateStatus([signup.id], "REJECTED")}
+              >
+                <X className="h-4 w-4" />
+                Reject
+              </Button>
+            </div>
+          ) : null}
+        </div>
+        <div>
+          <p className="text-xs uppercase tracking-wide text-zinc-500">
+            Receipt
+          </p>
+          {signup.paymentProofUrl ? (
+            <button
+              type="button"
+              onClick={() => setReceiptSignup(signup)}
+              className="mt-2 block overflow-hidden rounded-lg border border-white/10 bg-black/40"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={signup.paymentProofUrl}
+                alt={`Receipt from ${signup.displayName}`}
+                className="max-h-48 w-full object-contain"
+              />
+            </button>
+          ) : (
+            <div className="mt-2 flex h-28 items-center justify-center rounded-lg border border-dashed border-white/10 text-zinc-600">
+              <ImageIcon className="h-5 w-5" />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="mt-8 rounded-xl border border-zinc-800 bg-zinc-950/40 p-5">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -211,7 +378,7 @@ export function TrialSessionSignupsPanel({
               ) : (
                 <Check className="h-4 w-4" />
               )}
-              Approve all awaiting
+              Approve all & email
             </Button>
           ) : null}
           {(approvedSignups.length > 0 || pendingSignups.length > 0) &&
@@ -258,6 +425,82 @@ export function TrialSessionSignupsPanel({
       ) : null}
 
       {error ? <p className="mb-4 text-sm text-rose-300">{error}</p> : null}
+      {addMessage ? (
+        <p className="mb-4 text-sm text-emerald-300">{addMessage}</p>
+      ) : null}
+
+      <details
+        open={addOpen}
+        onToggle={(event) => setAddOpen(event.currentTarget.open)}
+        className="mb-4 rounded-lg border border-white/10 bg-black/20"
+      >
+        <summary className="flex cursor-pointer list-none items-center gap-2 px-4 py-3 marker:content-none">
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-zinc-500 transition",
+              addOpen && "rotate-180",
+            )}
+          />
+          <UserPlus className="h-4 w-4 text-jackals-red-light" />
+          <span className="text-sm font-medium text-white">
+            Add player manually
+          </span>
+        </summary>
+        <form
+          onSubmit={(event) => void addPlayer(event)}
+          className="space-y-3 border-t border-white/10 px-4 py-4"
+        >
+          <p className="text-xs text-zinc-500">
+            Skip the public form — add someone directly to the attendee list.
+            They&apos;ll be approved immediately and emailed a confirmation (no
+            payment receipt required).
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <Label htmlFor={`add-name-${sessionId}`}>Name on the list</Label>
+              <Input
+                id={`add-name-${sessionId}`}
+                value={addForm.displayName}
+                onChange={(event) =>
+                  setAddForm((current) => ({
+                    ...current,
+                    displayName: event.target.value,
+                  }))
+                }
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor={`add-email-${sessionId}`}>Email</Label>
+              <Input
+                id={`add-email-${sessionId}`}
+                type="email"
+                value={addForm.email}
+                onChange={(event) =>
+                  setAddForm((current) => ({
+                    ...current,
+                    email: event.target.value,
+                  }))
+                }
+                required
+              />
+            </div>
+          </div>
+          <Button type="submit" size="sm" disabled={adding || busy}>
+            {adding ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Adding…
+              </>
+            ) : (
+              <>
+                <UserPlus className="h-4 w-4" />
+                Add & email player
+              </>
+            )}
+          </Button>
+        </form>
+      </details>
 
       {loading ? (
         <p className="text-sm text-zinc-500">Loading registrations…</p>
@@ -291,18 +534,16 @@ export function TrialSessionSignupsPanel({
             })}
           </div>
 
-          {filter === "APPROVED" &&
-          reminderEligibleSignups.length > 0 &&
-          reminderStats?.windowOpen ? (
-            <div className="mb-3 flex flex-wrap items-center gap-3 text-sm">
+          {showReminderCheckboxes && reminderEligibleSignups.length > 0 ? (
+            <div className="mb-3 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
               <button
                 type="button"
                 onClick={toggleSelectAllPending}
-                className="text-jackals-red-light transition-colors hover:text-jackals-red"
+                className="hover:text-zinc-300"
               >
-                {allPendingSelected ? "Clear selection" : "Select all"}
+                {allPendingSelected ? "Deselect all" : "Select all"}
               </button>
-              <span className="text-zinc-600">
+              <span>
                 {selectedPendingCount} of {reminderEligibleSignups.length}{" "}
                 reminder-eligible selected
               </span>
@@ -311,159 +552,227 @@ export function TrialSessionSignupsPanel({
 
           {visibleSignups.length === 0 ? (
             <p className="text-sm text-zinc-500">
-              No {filter === "ALL" ? "" : FILTERS.find((item) => item.id === filter)?.label.toLowerCase() + " "}
+              No{" "}
+              {filter === "ALL"
+                ? ""
+                : FILTERS.find((item) => item.id === filter)?.label.toLowerCase() +
+                  " "}
               requests.
             </p>
-          ) : filter === "PENDING" ? (
-            <div className="grid gap-3">
-              {visibleSignups.map((signup) => {
-                const updating = updatingIds.includes(signup.id);
-                return (
-                  <article
-                    key={signup.id}
-                    className="grid gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 sm:grid-cols-[minmax(0,1fr)_auto]"
-                  >
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <p className="truncate font-medium text-white">
-                            {signup.displayName}
-                          </p>
-                          <p className="truncate text-sm text-zinc-400">
-                            {signup.email}
-                          </p>
-                          <p className="mt-1 text-xs text-zinc-500">
-                            Submitted {formatSubmittedAt(signup.createdAt)}
-                          </p>
-                        </div>
-                        {signup.paymentProofUrl ? (
-                          <button
-                            type="button"
-                            onClick={() => setReceiptSignup(signup)}
-                            className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-black/40"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={signup.paymentProofUrl}
-                              alt={`Receipt from ${signup.displayName}`}
-                              className="h-full w-full object-cover"
-                            />
-                          </button>
-                        ) : (
-                          <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-lg border border-dashed border-white/10 text-zinc-600">
-                            <ImageIcon className="h-5 w-5" />
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                      <Button
-                        type="button"
-                        size="sm"
-                        disabled={updating || busy}
-                        onClick={() => void updateStatus([signup.id], "APPROVED")}
-                      >
-                        {updating ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4" />
-                        )}
-                        Approve
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={updating || busy}
-                        className="border-rose-500/30 text-rose-200 hover:border-rose-400/50 hover:bg-rose-500/10"
-                        onClick={() => void updateStatus([signup.id], "REJECTED")}
-                      >
-                        <X className="h-4 w-4" />
-                        Reject
-                      </Button>
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
           ) : (
-            <div className="divide-y divide-zinc-900 overflow-hidden rounded-xl border border-white/10">
-              {visibleSignups.map((signup) => {
-                const updating = updatingIds.includes(signup.id);
-                return (
-                  <div
-                    key={signup.id}
-                    className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex min-w-0 items-start gap-3">
-                      {filter === "APPROVED" && reminderStats?.windowOpen ? (
-                        <input
-                          type="checkbox"
-                          checked={selectedSignupIds.includes(signup.id)}
-                          disabled={
-                            signup.reminderSent || signup.status !== "APPROVED"
-                          }
-                          onChange={() => toggleSignupSelection(signup)}
-                          aria-label={`Select ${signup.displayName}`}
-                          className="mt-1 rounded border-zinc-600 disabled:opacity-40"
-                        />
+            <>
+              <div className="hidden overflow-hidden rounded-xl border border-white/10 lg:block">
+                <table className="w-full table-fixed text-left text-sm">
+                  <colgroup>
+                    {showReminderCheckboxes ? <col className="w-10" /> : null}
+                    <col />
+                    <col className="w-[5.5rem]" />
+                    <col className="w-[6.5rem]" />
+                    <col className="w-[5.5rem]" />
+                  </colgroup>
+                  <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
+                    <tr>
+                      {showReminderCheckboxes ? (
+                        <th className="px-2 py-2.5">
+                          <input
+                            type="checkbox"
+                            checked={allPendingSelected}
+                            onChange={toggleSelectAllPending}
+                            aria-label="Select all reminder-eligible"
+                            className="h-4 w-4 rounded border-white/20 bg-black/30"
+                          />
+                        </th>
                       ) : null}
-                      <div className="min-w-0">
-                        <p className="truncate font-medium text-zinc-200">
-                          {signup.displayName}
-                        </p>
-                        <p className="truncate text-sm text-zinc-500">
-                          {signup.email}
-                        </p>
+                      <th className="px-2 py-2.5 font-medium">Name</th>
+                      <th className="px-2 py-2.5 font-medium">Status</th>
+                      <th className="px-2 py-2.5 font-medium">Submitted</th>
+                      <th className="px-2 py-2.5 text-right font-medium">
+                        Actions
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/8">
+                    {visibleSignups.map((signup) => {
+                      const expanded = expandedId === signup.id;
+                      const colSpan = showReminderCheckboxes ? 5 : 4;
+                      return (
+                        <Fragment key={signup.id}>
+                          <tr
+                            className={cn(
+                              "bg-white/[0.015] transition hover:bg-white/[0.03]",
+                              selectedSignupIds.includes(signup.id) &&
+                                "bg-jackals-red/5",
+                            )}
+                          >
+                            {showReminderCheckboxes ? (
+                              <td className="px-2 py-2">
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSignupIds.includes(
+                                    signup.id,
+                                  )}
+                                  disabled={
+                                    signup.reminderSent ||
+                                    signup.status !== "APPROVED"
+                                  }
+                                  onChange={() =>
+                                    toggleSignupSelection(signup)
+                                  }
+                                  aria-label={`Select ${signup.displayName}`}
+                                  className="h-4 w-4 rounded border-white/20 bg-black/30 disabled:opacity-40"
+                                />
+                              </td>
+                            ) : null}
+                            <td className="px-2 py-2">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setExpandedId(expanded ? null : signup.id)
+                                }
+                                className="group flex min-w-0 items-center gap-1.5 text-left"
+                              >
+                                <ChevronDown
+                                  className={cn(
+                                    "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                                    expanded && "rotate-180",
+                                  )}
+                                />
+                                <span className="truncate font-medium text-white group-hover:text-jackals-gold">
+                                  {signup.displayName}
+                                </span>
+                              </button>
+                            </td>
+                            <td className="px-2 py-2">
+                              <span
+                                className={cn(
+                                  "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                                  statusTone(signup.status),
+                                )}
+                              >
+                                {statusShort(signup.status)}
+                              </span>
+                            </td>
+                            <td className="px-2 py-2 text-xs text-zinc-500 whitespace-nowrap">
+                              {formatSubmittedAt(signup.createdAt)}
+                            </td>
+                            <td className="px-2 py-2">
+                              {renderActions(signup)}
+                            </td>
+                          </tr>
+                          {expanded ? (
+                            <tr className="bg-black/20">
+                              <td colSpan={colSpan} className="px-4 py-4">
+                                {renderExpanded(signup)}
+                              </td>
+                            </tr>
+                          ) : null}
+                        </Fragment>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="space-y-2 lg:hidden">
+                {visibleSignups.map((signup) => {
+                  const expanded = expandedId === signup.id;
+                  const updating = updatingIds.includes(signup.id);
+                  return (
+                    <article
+                      key={signup.id}
+                      className="rounded-lg border border-white/10 bg-white/[0.02] p-4"
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3">
+                        <div className="flex min-w-0 items-start gap-3">
+                          {showReminderCheckboxes ? (
+                            <input
+                              type="checkbox"
+                              checked={selectedSignupIds.includes(signup.id)}
+                              disabled={
+                                signup.reminderSent ||
+                                signup.status !== "APPROVED"
+                              }
+                              onChange={() => toggleSignupSelection(signup)}
+                              className="mt-1 h-4 w-4 shrink-0 rounded border-white/20 disabled:opacity-40"
+                            />
+                          ) : null}
+                          <div className="min-w-0">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setExpandedId(expanded ? null : signup.id)
+                              }
+                              className="group flex min-w-0 items-center gap-1.5 text-left"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                                  expanded && "rotate-180",
+                                )}
+                              />
+                              <span className="truncate font-medium text-white group-hover:text-jackals-gold">
+                                {signup.displayName}
+                              </span>
+                            </button>
+                            <p className="mt-1 truncate text-sm text-zinc-500">
+                              {signup.email}
+                            </p>
+                            <div className="mt-2 flex flex-wrap items-center gap-2">
+                              <span
+                                className={cn(
+                                  "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
+                                  statusTone(signup.status),
+                                )}
+                              >
+                                {statusShort(signup.status)}
+                              </span>
+                              <span className="text-xs text-zinc-500">
+                                {formatSubmittedAt(signup.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        {signup.status === "PENDING" ? (
+                          <div className="flex shrink-0 gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              disabled={updating || busy}
+                              onClick={() =>
+                                void updateStatus([signup.id], "APPROVED")
+                              }
+                            >
+                              {updating ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <Check className="h-3.5 w-3.5" />
+                              )}
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              disabled={updating || busy}
+                              onClick={() =>
+                                void updateStatus([signup.id], "REJECTED")
+                              }
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : null}
                       </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 text-sm">
-                      <span className={statusClassName(signup.status)}>
-                        {TRIAL_SESSION_SIGNUP_STATUS_LABELS[signup.status]}
-                      </span>
-                      {signup.paymentProofUrl ? (
-                        <button
-                          type="button"
-                          onClick={() => setReceiptSignup(signup)}
-                          className="text-jackals-red-light hover:text-jackals-red"
-                        >
-                          Receipt
-                        </button>
+                      {expanded ? (
+                        <div className="mt-3 border-t border-white/10 pt-3">
+                          {renderExpanded(signup)}
+                        </div>
                       ) : null}
-                      {signup.status === "APPROVED" ? (
-                        <span className="text-zinc-500">
-                          {signup.reminderSent ? "Emailed" : "Reminder pending"}
-                        </span>
-                      ) : null}
-                      {signup.status === "PENDING" ? (
-                        <>
-                          <button
-                            type="button"
-                            disabled={updating || busy}
-                            onClick={() =>
-                              void updateStatus([signup.id], "APPROVED")
-                            }
-                            className="text-emerald-300 hover:text-emerald-200 disabled:opacity-50"
-                          >
-                            Approve
-                          </button>
-                          <button
-                            type="button"
-                            disabled={updating || busy}
-                            onClick={() =>
-                              void updateStatus([signup.id], "REJECTED")
-                            }
-                            className="text-rose-300 hover:text-rose-200 disabled:opacity-50"
-                          >
-                            Reject
-                          </button>
-                        </>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                    </article>
+                  );
+                })}
+              </div>
+            </>
           )}
         </>
       )}
@@ -471,7 +780,9 @@ export function TrialSessionSignupsPanel({
       <Modal
         open={Boolean(receiptSignup)}
         onClose={() => setReceiptSignup(null)}
-        title={receiptSignup ? `Receipt · ${receiptSignup.displayName}` : "Receipt"}
+        title={
+          receiptSignup ? `Receipt · ${receiptSignup.displayName}` : "Receipt"
+        }
         description={
           receiptSignup ? (
             <p className="text-sm text-zinc-400">{receiptSignup.email}</p>

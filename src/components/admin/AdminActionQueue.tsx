@@ -6,6 +6,7 @@ import {
   Calendar,
   CheckCircle2,
   GraduationCap,
+  Shirt,
   UserPlus,
   Volleyball,
   Wallet,
@@ -16,6 +17,7 @@ import { cn } from "@/lib/utils";
 const ENTRY_ICONS = {
   registration: UserPlus,
   payment: Banknote,
+  "kit-payment": Shirt,
   "coach-payment": Wallet,
   "coaching-application": GraduationCap,
   "trials-application": Volleyball,

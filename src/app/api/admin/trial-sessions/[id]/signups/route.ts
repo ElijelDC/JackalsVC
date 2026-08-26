@@ -3,11 +3,15 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { setTrialSessionSignupStatuses } from "@/lib/trial-sessions";
+import {
+  adminAddTrialSessionSignup,
+  setTrialSessionSignupStatuses,
+} from "@/lib/trial-sessions";
 import {
   isTrialSessionSignupStatus,
   trialSessionPublicPath,
 } from "@/lib/trial-session-types";
+import { adminTrialSessionAddSignupSchema } from "@/lib/validations";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +32,34 @@ async function revalidateTrialSessionViews(trialSessionId: string) {
   revalidatePath("/admin/one-off-sessions");
   revalidatePath("/admin/trial-sessions");
   revalidatePath(trialSessionPublicPath(session.slug));
+}
+
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const { response } = await requireAdmin();
+  if (response) return response;
+
+  const { id } = await params;
+  const { data, response: parseError } = await parseJsonBody(
+    request,
+    adminTrialSessionAddSignupSchema,
+  );
+  if (parseError || !data) return parseError!;
+
+  const result = await adminAddTrialSessionSignup(id, data);
+
+  if (!result.ok) {
+    return jsonError(result.error, 400);
+  }
+
+  await revalidateTrialSessionViews(id);
+
+  return NextResponse.json({
+    signup: result.signup,
+    message: result.message,
+  });
 }
 
 export async function PATCH(
@@ -64,7 +96,7 @@ export async function PATCH(
   const noun = count === 1 ? "request" : "requests";
   const message =
     data.status === "APPROVED"
-      ? `Approved ${count} ${noun}.`
+      ? `Approved ${count} ${noun} and sent confirmation emails.`
       : data.status === "REJECTED"
         ? `Rejected ${count} ${noun}.`
         : `Moved ${count} ${noun} back to awaiting approval.`;

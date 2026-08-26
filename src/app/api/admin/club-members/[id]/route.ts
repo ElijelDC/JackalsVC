@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import {
   handleClubMemberSquadChange,
+  resolveClubMemberTrainingTeamKeys,
   serializeClubMemberForAdmin,
   setClubMemberCoachSquads,
   syncClubTeamsForSquadKey,
@@ -104,6 +105,8 @@ export async function PATCH(request: Request, context: RouteContext) {
         ? (existing.coachPaymentType ?? "PAID")
         : null;
 
+  const previousSquadKeys = resolveClubMemberTrainingTeamKeys(existing);
+
   const clubMember = await prisma.clubMember.update({
     where: { id },
     data: {
@@ -123,11 +126,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     },
     include: { coachSquads: { select: { trainingTeamKey: true } } },
   });
-
-  const roleOrActiveChanged =
-    data.rosterRole !== undefined ||
-    data.active !== undefined ||
-    data.name !== undefined;
 
   if (nextRosterRole === "PLAYER" && existing.rosterRole === "COACH") {
     await prisma.clubMemberCoachSquad.deleteMany({ where: { clubMemberId: id } });
@@ -149,10 +147,6 @@ export async function PATCH(request: Request, context: RouteContext) {
     clubMember.trainingTeamKey
   ) {
     await setClubMemberCoachSquads(id, [clubMember.trainingTeamKey]);
-  } else if (roleOrActiveChanged && clubMember.trainingTeamKey) {
-    await syncClubTeamsForSquadKey(clubMember.trainingTeamKey);
-  } else if (data.active === false) {
-    await handleClubMemberSquadChange(id, existing.trainingTeamKey, null);
   }
 
   const updated = await prisma.clubMember.findUnique({
@@ -161,6 +155,22 @@ export async function PATCH(request: Request, context: RouteContext) {
       coachSquads: { select: { trainingTeamKey: true } },
     },
   });
+
+  // Keep published club teams in sync for every affected squad (coaches can have several).
+  if (
+    data.active !== undefined ||
+    data.rosterRole !== undefined ||
+    data.name !== undefined ||
+    squadKeysFromBody !== null
+  ) {
+    const nextKeys = updated
+      ? resolveClubMemberTrainingTeamKeys(updated)
+      : resolveClubMemberTrainingTeamKeys(clubMember);
+    const keysToSync = [...new Set([...previousSquadKeys, ...nextKeys])];
+    for (const key of keysToSync) {
+      await syncClubTeamsForSquadKey(key);
+    }
+  }
 
   return NextResponse.json({
     clubMember: updated ? serializeClubMemberForAdmin(updated) : clubMember,

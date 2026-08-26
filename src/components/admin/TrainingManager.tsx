@@ -4,7 +4,11 @@ import { useCallback, useMemo, useState } from "react";
 import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { AdminFormCard, AdminListItem, beginAdminEdit } from "@/components/admin/AdminForm";
+import {
+  AdminFormCard,
+  AdminInlineEditCard,
+  beginAdminEdit,
+} from "@/components/admin/AdminForm";
 import { AdminBulkCsvImport } from "@/components/admin/AdminBulkCsvImport";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { SquadTeamFilter } from "@/components/admin/SquadTeamFilter";
@@ -48,13 +52,35 @@ type TrainingSession = {
   sessionDate: string | null;
 };
 
+type SessionFormState = {
+  title: string;
+  trainingTeamKey: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  location: string;
+  level: string;
+  description: string;
+  coach: string;
+  attendanceUrl: string;
+  paymentUrl: string;
+  reclubUsername: string;
+  sessionFee: string;
+  recurring: boolean;
+  recurrenceWeeks: string;
+  recurringFrom: string;
+  recurringTo: string;
+  sessionDate: string;
+  notifyMembers: boolean;
+};
+
 const RECURRENCE_OPTIONS = [
   { value: "1", label: "Every week" },
   { value: "2", label: "Every 2 weeks" },
   { value: "4", label: "Every 4 weeks" },
 ] as const;
 
-function createEmptyForm() {
+function createEmptyForm(): SessionFormState {
   return {
     title: "",
     trainingTeamKey: "",
@@ -90,7 +116,7 @@ function normalizeSession(session: TrainingSession): TrainingSession {
   };
 }
 
-function toFormState(session: TrainingSession) {
+function toFormState(session: TrainingSession): SessionFormState {
   const normalized = normalizeSession(session);
   return {
     title: normalized.title,
@@ -122,6 +148,332 @@ function toFormState(session: TrainingSession) {
   };
 }
 
+function SessionFields({
+  form,
+  setForm,
+  idPrefix,
+  config,
+  trainingSquads,
+  showNotifyMembers,
+}: {
+  form: SessionFormState;
+  setForm: (
+    next: SessionFormState | ((prev: SessionFormState) => SessionFormState),
+  ) => void;
+  idPrefix: string;
+  config: SessionManagerConfig;
+  trainingSquads: TrainingTeam[];
+  showNotifyMembers?: boolean;
+}) {
+  return (
+    <>
+      <p className="rounded border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
+        Changes apply to the whole recurring series. To edit a single session
+        date, use{" "}
+        <a
+          href="/admin/events"
+          className="font-medium text-jackals-red-light hover:text-jackals-red"
+        >
+          Calendar
+        </a>
+        .
+      </p>
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        {config.category === SESSION_CATEGORIES.WEEKLY && (
+          <div className="sm:col-span-2">
+            <Label htmlFor={`${idPrefix}-trainingTeamKey`}>Training squad</Label>
+            <Select
+              id={`${idPrefix}-trainingTeamKey`}
+              value={form.trainingTeamKey}
+              onChange={(e) => {
+                const team = trainingSquads.find(
+                  (entry) => entry.key === e.target.value,
+                );
+                setForm((prev) => ({
+                  ...prev,
+                  trainingTeamKey: e.target.value,
+                  dayOfWeek: team ? String(team.dayOfWeek) : prev.dayOfWeek,
+                  level: team?.name ?? prev.level,
+                  title: team ? `${team.name} Training` : prev.title,
+                }));
+              }}
+            >
+              <option value="">Select squad</option>
+              {trainingSquads.map((team) => (
+                <option key={team.key} value={team.key}>
+                  {team.name}
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
+
+        <div className="sm:col-span-2 rounded border border-white/10 bg-jackals-inset p-4">
+          <label className="flex items-center gap-2 text-sm font-medium text-white">
+            <Checkbox
+              checked={form.recurring ?? false}
+              onChange={(e) => {
+                const recurring = e.target.checked;
+                setForm((prev) => ({
+                  ...prev,
+                  recurring,
+                  recurringFrom:
+                    recurring && !prev.recurringFrom
+                      ? defaultRecurringFrom()
+                      : prev.recurringFrom ?? "",
+                  recurringTo:
+                    recurring && !prev.recurringTo
+                      ? defaultRecurringTo()
+                      : prev.recurringTo ?? "",
+                }));
+              }}
+            />
+            Recurring session
+          </label>
+          <p className="mt-1 text-xs text-zinc-500">
+            {form.recurring
+              ? "Repeats between the from and to dates on the chosen schedule."
+              : "A single session on a specific date — appears once on the calendar."}
+          </p>
+
+          {form.recurring ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <Label htmlFor={`${idPrefix}-dayOfWeek`}>Day</Label>
+                <Select
+                  id={`${idPrefix}-dayOfWeek`}
+                  value={form.dayOfWeek}
+                  onChange={(e) =>
+                    setForm({ ...form, dayOfWeek: e.target.value })
+                  }
+                >
+                  {DAYS_OF_WEEK.map((day, index) => (
+                    <option key={day} value={index}>
+                      {day}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor={`${idPrefix}-recurrenceWeeks`}>Repeat</Label>
+                <Select
+                  id={`${idPrefix}-recurrenceWeeks`}
+                  value={form.recurrenceWeeks}
+                  onChange={(e) =>
+                    setForm({ ...form, recurrenceWeeks: e.target.value })
+                  }
+                >
+                  {RECURRENCE_OPTIONS.map(({ value, label }) => (
+                    <option key={value} value={value}>
+                      {label}
+                    </option>
+                  ))}
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor={`${idPrefix}-recurringFrom`}>From</Label>
+                <Input
+                  id={`${idPrefix}-recurringFrom`}
+                  type="date"
+                  value={form.recurringFrom ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, recurringFrom: e.target.value })
+                  }
+                  required={form.recurring}
+                />
+              </div>
+              <div>
+                <Label htmlFor={`${idPrefix}-recurringTo`}>To</Label>
+                <Input
+                  id={`${idPrefix}-recurringTo`}
+                  type="date"
+                  value={form.recurringTo ?? ""}
+                  onChange={(e) =>
+                    setForm({ ...form, recurringTo: e.target.value })
+                  }
+                  required={form.recurring}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="mt-4">
+              <Label htmlFor={`${idPrefix}-sessionDate`}>Session date</Label>
+              <Input
+                id={`${idPrefix}-sessionDate`}
+                type="date"
+                value={form.sessionDate ?? ""}
+                onChange={(e) =>
+                  setForm({ ...form, sessionDate: e.target.value })
+                }
+                required={!form.recurring}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="sm:col-span-2">
+          <Label htmlFor={`${idPrefix}-title`}>Title</Label>
+          <Input
+            id={`${idPrefix}-title`}
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+            placeholder="e.g. Intermediate Training"
+            required
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <Label htmlFor={`${idPrefix}-location`}>Location</Label>
+          <Input
+            id={`${idPrefix}-location`}
+            value={form.location}
+            onChange={(e) => setForm({ ...form, location: e.target.value })}
+            placeholder="Sports Hall A"
+            required
+          />
+        </div>
+
+        <div className="sm:col-span-2">
+          <Label htmlFor={`${idPrefix}-level`}>Level</Label>
+          <Input
+            id={`${idPrefix}-level`}
+            value={form.level}
+            onChange={(e) => setForm({ ...form, level: e.target.value })}
+            placeholder="Beginner, Intermediate, Advanced..."
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor={`${idPrefix}-startTime`}>Start time</Label>
+          <Input
+            id={`${idPrefix}-startTime`}
+            type="time"
+            value={form.startTime}
+            onChange={(e) => setForm({ ...form, startTime: e.target.value })}
+            required
+          />
+        </div>
+        <div>
+          <Label htmlFor={`${idPrefix}-endTime`}>End time</Label>
+          <Input
+            id={`${idPrefix}-endTime`}
+            type="time"
+            value={form.endTime}
+            onChange={(e) => setForm({ ...form, endTime: e.target.value })}
+            required
+          />
+        </div>
+
+        <div>
+          <Label htmlFor={`${idPrefix}-coach`}>Coach (optional)</Label>
+          <Input
+            id={`${idPrefix}-coach`}
+            value={form.coach}
+            onChange={(e) => setForm({ ...form, coach: e.target.value })}
+          />
+        </div>
+        <div>
+          <Label htmlFor={`${idPrefix}-attendanceUrl`}>
+            Reclub / attendance link (optional)
+          </Label>
+          <Input
+            id={`${idPrefix}-attendanceUrl`}
+            type="url"
+            value={form.attendanceUrl}
+            onChange={(e) =>
+              setForm({ ...form, attendanceUrl: e.target.value })
+            }
+            placeholder="https://reclub.co/..."
+          />
+        </div>
+        {config.category === SESSION_CATEGORIES.FUN && (
+          <div>
+            <Label htmlFor={`${idPrefix}-reclubUsername`}>
+              ReClub username (for payment reference)
+            </Label>
+            <Input
+              id={`${idPrefix}-reclubUsername`}
+              value={form.reclubUsername}
+              onChange={(e) =>
+                setForm({ ...form, reclubUsername: e.target.value })
+              }
+              placeholder="e.g. JackalsVC"
+            />
+          </div>
+        )}
+        {config.category === SESSION_CATEGORIES.FUN && (
+          <div>
+            <Label htmlFor={`${idPrefix}-sessionFee`}>Session fee (EUR)</Label>
+            <Input
+              id={`${idPrefix}-sessionFee`}
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={form.sessionFee}
+              onChange={(e) =>
+                setForm({ ...form, sessionFee: e.target.value })
+              }
+              placeholder="10"
+              required
+            />
+          </div>
+        )}
+        {config.category === SESSION_CATEGORIES.FUN && (
+          <div>
+            <Label htmlFor={`${idPrefix}-paymentUrl`}>
+              Payment link (optional)
+            </Label>
+            <Input
+              id={`${idPrefix}-paymentUrl`}
+              type="url"
+              value={form.paymentUrl}
+              onChange={(e) =>
+                setForm({ ...form, paymentUrl: e.target.value })
+              }
+              placeholder="https://..."
+            />
+          </div>
+        )}
+
+        <div className="sm:col-span-2">
+          <Label htmlFor={`${idPrefix}-description`}>
+            Description (optional)
+          </Label>
+          <Textarea
+            id={`${idPrefix}-description`}
+            rows={3}
+            value={form.description}
+            onChange={(e) => setForm({ ...form, description: e.target.value })}
+          />
+        </div>
+        {showNotifyMembers && (
+          <div className="sm:col-span-2">
+            <label className="flex items-start gap-2.5 text-sm text-zinc-300">
+              <input
+                type="checkbox"
+                className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/20 accent-jackals-red"
+                checked={form.notifyMembers ?? true}
+                onChange={(e) =>
+                  setForm({ ...form, notifyMembers: e.target.checked })
+                }
+              />
+              <span>
+                Email opted-in subscribers about this fun session
+                <span className="mt-0.5 block text-xs text-zinc-500">
+                  Sends to everyone who subscribed to event emails (members and
+                  guests). Training and payment emails are unaffected.
+                </span>
+              </span>
+            </label>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export function TrainingManager({
   initialSessions,
   config,
@@ -137,14 +489,17 @@ export function TrainingManager({
     [initialSessions],
   );
   const [sessions, setSessions] = useSyncedListState(normalizedInitialSessions);
+  const [createForm, setCreateForm] = useState(createEmptyForm);
+  const [editForm, setEditForm] = useState(createEmptyForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isDuplicating, setIsDuplicating] = useState(false);
-  const [form, setForm] = useState(createEmptyForm);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createMessage, setCreateMessage] = useState<string | null>(null);
+  const [editError, setEditError] = useState<string | null>(null);
   const [listError, setListError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const [listMessage, setListMessage] = useState<string | null>(null);
   const [teamFilter, setTeamFilter] = useState("");
   const [search, setSearch] = useState("");
 
@@ -173,11 +528,16 @@ export function TrainingManager({
     });
   }, [sessions, showTeamFilter, teamFilter, search, squadNameByKey]);
 
-  const resetForm = () => {
-    setForm(createEmptyForm());
+  const cancelEdit = () => {
     setEditingId(null);
+    setEditForm(createEmptyForm());
+    setEditError(null);
+  };
+
+  const resetCreateForm = () => {
+    setCreateForm(createEmptyForm());
     setIsDuplicating(false);
-    setError(null);
+    setCreateError(null);
   };
 
   const loadSessions = useCallback(async () => {
@@ -188,18 +548,17 @@ export function TrainingManager({
   }, [config.apiBasePath, setSessions]);
 
   const startEdit = (session: TrainingSession) => {
-    beginAdminEdit(() => {
-      setEditingId(session.id);
-      setIsDuplicating(false);
-      setForm(toFormState(session));
-      setError(null);
-      setMessage(null);
-    });
+    setEditingId(session.id);
+    setEditForm(toFormState(session));
+    setEditError(null);
+    setListError(null);
+    setListMessage(null);
+    setCreateMessage(null);
   };
 
   const startDuplicate = (session: TrainingSession) => {
     beginAdminEdit(() => {
-      setEditingId(null);
+      cancelEdit();
       setIsDuplicating(true);
       const duplicateForm = toFormState(session);
       if (!session.recurring) {
@@ -208,13 +567,14 @@ export function TrainingManager({
       duplicateForm.title = duplicateForm.title.endsWith(" (copy)")
         ? duplicateForm.title
         : `${duplicateForm.title} (copy)`;
-      setForm(duplicateForm);
-      setError(null);
-      setMessage(null);
+      setCreateForm(duplicateForm);
+      setCreateError(null);
+      setCreateMessage(null);
+      setListMessage(null);
     });
   };
 
-  const buildPayload = () => {
+  const buildPayload = (form: SessionFormState, isCreate: boolean) => {
     const recurring = form.recurring;
     const sessionDate = form.sessionDate || undefined;
     const dayOfWeek = recurring
@@ -254,35 +614,60 @@ export function TrainingManager({
       recurringFrom: recurring ? form.recurringFrom : undefined,
       recurringTo: recurring ? form.recurringTo : undefined,
       sessionDate: recurring ? undefined : sessionDate,
-      ...(config.category === SESSION_CATEGORIES.FUN && !editingId
+      ...(config.category === SESSION_CATEGORIES.FUN && isCreate
         ? { notifyMembers: form.notifyMembers ?? true }
         : {}),
     };
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
-    setMessage(null);
+    setCreateError(null);
+    setCreateMessage(null);
+    setListMessage(null);
 
-    const payload = buildPayload();
-
-    const result = editingId
-      ? await apiPut(`${config.apiBasePath}/${editingId}`, payload)
-      : await apiPost(config.apiBasePath, payload);
+    const result = await apiPost(
+      config.apiBasePath,
+      buildPayload(createForm, true),
+    );
 
     setLoading(false);
 
     if (!result.ok) {
-      setError(result.error);
+      setCreateError(result.error);
       return;
     }
 
-    setMessage(
-      editingId ? "Session updated." : "Session added.",
+    setCreateMessage("Session added.");
+    resetCreateForm();
+    cancelEdit();
+    await loadSessions();
+    router.refresh();
+  };
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingId) return;
+
+    setLoading(true);
+    setEditError(null);
+    setListMessage(null);
+
+    const result = await apiPut(
+      `${config.apiBasePath}/${editingId}`,
+      buildPayload(editForm, false),
     );
-    resetForm();
+
+    setLoading(false);
+
+    if (!result.ok) {
+      setEditError(result.error);
+      return;
+    }
+
+    setListMessage("Session updated.");
+    cancelEdit();
     await loadSessions();
     router.refresh();
   };
@@ -301,11 +686,13 @@ export function TrainingManager({
       return;
     }
 
-    if (editingId === id) resetForm();
+    if (editingId === id) cancelEdit();
     setSessions((current) => current.filter((session) => session.id !== id));
     await loadSessions();
     router.refresh();
   };
+
+  const showNotifyOnCreate = config.category === SESSION_CATEGORIES.FUN;
 
   return (
     <AdminSection
@@ -315,324 +702,25 @@ export function TrainingManager({
       <AdminFormCard
         collapsible
         openTriggerLabel="Add new session"
-        title={
-          editingId
-            ? "Edit session"
-            : isDuplicating
-              ? "Duplicate session"
-              : "Add new session"
-        }
-        error={error}
-        message={message}
-        onSubmit={handleSubmit}
-        onCancel={editingId || isDuplicating ? resetForm : undefined}
-        submitLabel={editingId ? "Save changes" : config.addLabel}
-        loading={loading}
+        title={isDuplicating ? "Duplicate session" : "Add new session"}
+        error={createError}
+        message={createMessage}
+        onSubmit={handleCreate}
+        onCancel={isDuplicating ? resetCreateForm : undefined}
+        submitLabel={config.addLabel}
+        loading={loading && !editingId}
       >
-        <p className="rounded border border-blue-500/20 bg-blue-500/10 px-4 py-3 text-sm text-blue-200">
-          Changes apply to the whole recurring series. To edit a single session
-          date, use{" "}
-          <a
-            href="/admin/events"
-            className="font-medium text-jackals-red-light hover:text-jackals-red"
-          >
-            Calendar
-          </a>
-          .
-        </p>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {config.category === SESSION_CATEGORIES.WEEKLY && (
-            <div className="sm:col-span-2">
-              <Label htmlFor="trainingTeamKey">Training squad</Label>
-              <Select
-                id="trainingTeamKey"
-                value={form.trainingTeamKey}
-                onChange={(e) => {
-                  const team = trainingSquads.find(
-                    (entry) => entry.key === e.target.value,
-                  );
-                  setForm((prev) => ({
-                    ...prev,
-                    trainingTeamKey: e.target.value,
-                    dayOfWeek: team
-                      ? String(team.dayOfWeek)
-                      : prev.dayOfWeek,
-                    level: team?.name ?? prev.level,
-                    title: team ? `${team.name} Training` : prev.title,
-                  }));
-                }}
-              >
-                <option value="">Select squad</option>
-                {trainingSquads.map((team) => (
-                  <option key={team.key} value={team.key}>
-                    {team.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          )}
-
-          <div className="sm:col-span-2 rounded border border-white/10 bg-jackals-inset p-4">
-            <label className="flex items-center gap-2 text-sm font-medium text-white">
-              <Checkbox
-                checked={form.recurring ?? false}
-                onChange={(e) => {
-                  const recurring = e.target.checked;
-                  setForm((prev) => ({
-                    ...prev,
-                    recurring,
-                    recurringFrom:
-                      recurring && !prev.recurringFrom
-                        ? defaultRecurringFrom()
-                        : prev.recurringFrom ?? "",
-                    recurringTo:
-                      recurring && !prev.recurringTo
-                        ? defaultRecurringTo()
-                        : prev.recurringTo ?? "",
-                  }));
-                }}
-              />
-              Recurring session
-            </label>
-            <p className="mt-1 text-xs text-zinc-500">
-              {form.recurring
-                ? "Repeats between the from and to dates on the chosen schedule."
-                : "A single session on a specific date — appears once on the calendar."}
-            </p>
-
-            {form.recurring ? (
-              <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <Label htmlFor="dayOfWeek">Day</Label>
-                  <Select
-                    id="dayOfWeek"
-                    value={form.dayOfWeek}
-                    onChange={(e) =>
-                      setForm({ ...form, dayOfWeek: e.target.value })
-                    }
-                  >
-                    {DAYS_OF_WEEK.map((day, index) => (
-                      <option key={day} value={index}>
-                        {day}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="recurrenceWeeks">Repeat</Label>
-                  <Select
-                    id="recurrenceWeeks"
-                    value={form.recurrenceWeeks}
-                    onChange={(e) =>
-                      setForm({ ...form, recurrenceWeeks: e.target.value })
-                    }
-                  >
-                    {RECURRENCE_OPTIONS.map(({ value, label }) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="recurringFrom">From</Label>
-                  <Input
-                    id="recurringFrom"
-                    type="date"
-                    value={form.recurringFrom ?? ""}
-                    onChange={(e) =>
-                      setForm({ ...form, recurringFrom: e.target.value })
-                    }
-                    required={form.recurring}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="recurringTo">To</Label>
-                  <Input
-                    id="recurringTo"
-                    type="date"
-                    value={form.recurringTo ?? ""}
-                    onChange={(e) =>
-                      setForm({ ...form, recurringTo: e.target.value })
-                    }
-                    required={form.recurring}
-                  />
-                </div>
-              </div>
-            ) : (
-              <div className="mt-4">
-                <Label htmlFor="sessionDate">Session date</Label>
-                <Input
-                  id="sessionDate"
-                  type="date"
-                  value={form.sessionDate ?? ""}
-                  onChange={(e) =>
-                    setForm({ ...form, sessionDate: e.target.value })
-                  }
-                  required={!form.recurring}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="sm:col-span-2">
-            <Label htmlFor="title">Title</Label>
-            <Input
-              id="title"
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="e.g. Intermediate Training"
-              required
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <Label htmlFor="location">Location</Label>
-            <Input
-              id="location"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="Sports Hall A"
-              required
-            />
-          </div>
-
-          <div className="sm:col-span-2">
-            <Label htmlFor="level">Level</Label>
-            <Input
-              id="level"
-              value={form.level}
-              onChange={(e) => setForm({ ...form, level: e.target.value })}
-              placeholder="Beginner, Intermediate, Advanced..."
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="startTime">Start time</Label>
-            <Input
-              id="startTime"
-              type="time"
-              value={form.startTime}
-              onChange={(e) => setForm({ ...form, startTime: e.target.value })}
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="endTime">End time</Label>
-            <Input
-              id="endTime"
-              type="time"
-              value={form.endTime}
-              onChange={(e) => setForm({ ...form, endTime: e.target.value })}
-              required
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="coach">Coach (optional)</Label>
-            <Input
-              id="coach"
-              value={form.coach}
-              onChange={(e) => setForm({ ...form, coach: e.target.value })}
-            />
-          </div>
-          <div>
-            <Label htmlFor="attendanceUrl">Reclub / attendance link (optional)</Label>
-            <Input
-              id="attendanceUrl"
-              type="url"
-              value={form.attendanceUrl}
-              onChange={(e) =>
-                setForm({ ...form, attendanceUrl: e.target.value })
-              }
-              placeholder="https://reclub.co/..."
-            />
-          </div>
-          {config.category === SESSION_CATEGORIES.FUN && (
-            <div>
-              <Label htmlFor="reclubUsername">
-                ReClub username (for payment reference)
-              </Label>
-              <Input
-                id="reclubUsername"
-                value={form.reclubUsername}
-                onChange={(e) =>
-                  setForm({ ...form, reclubUsername: e.target.value })
-                }
-                placeholder="e.g. JackalsVC"
-              />
-            </div>
-          )}
-          {config.category === SESSION_CATEGORIES.FUN && (
-            <div>
-              <Label htmlFor="sessionFee">Session fee (EUR)</Label>
-              <Input
-                id="sessionFee"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={form.sessionFee}
-                onChange={(e) =>
-                  setForm({ ...form, sessionFee: e.target.value })
-                }
-                placeholder="10"
-                required
-              />
-            </div>
-          )}
-          {config.category === SESSION_CATEGORIES.FUN && (
-            <div>
-              <Label htmlFor="paymentUrl">Payment link (optional)</Label>
-              <Input
-                id="paymentUrl"
-                type="url"
-                value={form.paymentUrl}
-                onChange={(e) =>
-                  setForm({ ...form, paymentUrl: e.target.value })
-                }
-                placeholder="https://..."
-              />
-            </div>
-          )}
-
-          <div className="sm:col-span-2">
-            <Label htmlFor="description">Description (optional)</Label>
-            <Textarea
-              id="description"
-              rows={3}
-              value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
-            />
-          </div>
-          {config.category === SESSION_CATEGORIES.FUN && !editingId && (
-            <div className="sm:col-span-2">
-              <label className="flex items-start gap-2.5 text-sm text-zinc-300">
-                <input
-                  type="checkbox"
-                  className="mt-0.5 h-4 w-4 rounded border-white/20 bg-black/20 accent-jackals-red"
-                  checked={form.notifyMembers ?? true}
-                  onChange={(e) =>
-                    setForm({ ...form, notifyMembers: e.target.checked })
-                  }
-                />
-                <span>
-                  Email opted-in subscribers about this fun session
-                  <span className="mt-0.5 block text-xs text-zinc-500">
-                    Sends to everyone who subscribed to event emails (members
-                    and guests). Training and payment emails are unaffected.
-                  </span>
-                </span>
-              </label>
-            </div>
-          )}
-        </div>
+        <SessionFields
+          form={createForm}
+          setForm={setCreateForm}
+          idPrefix="session-create"
+          config={config}
+          trainingSquads={trainingSquads}
+          showNotifyMembers={showNotifyOnCreate}
+        />
       </AdminFormCard>
 
-      <div className="mb-8">
-        <AdminBulkCsvImport type={config.bulkImportType} />
-      </div>
+      <AdminBulkCsvImport type={config.bulkImportType} />
 
       <div className="space-y-3">
         {listError && (
@@ -640,6 +728,9 @@ export function TrainingManager({
             {listError}
           </p>
         )}
+        {listMessage ? (
+          <p className="text-sm text-emerald-300">{listMessage}</p>
+        ) : null}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h3 className="font-display text-sm font-semibold uppercase tracking-wider text-zinc-500">
             Current sessions ({filteredSessions.length}
@@ -690,8 +781,9 @@ export function TrainingManager({
           </p>
         ) : (
           filteredSessions.map((session) => (
-            <AdminListItem
+            <AdminInlineEditCard
               key={session.id}
+              isEditing={editingId === session.id}
               title={session.title}
               subtitle={`${session.trainingTeamKey ? `${squadNameByKey.get(session.trainingTeamKey) ?? session.trainingTeamKey} · ` : ""}${formatRecurrenceLabel(
                 {
@@ -712,9 +804,21 @@ export function TrainingManager({
               )} · ${session.startTime}–${session.endTime} · ${session.location} · ${session.level}`}
               onEdit={() => startEdit(session)}
               onDuplicate={() => startDuplicate(session)}
-              onDelete={() => handleDelete(session.id)}
+              onDelete={() => void handleDelete(session.id)}
               deleting={deletingId === session.id}
-            />
+              onCancelEdit={cancelEdit}
+              onSubmit={(e) => void handleUpdate(e)}
+              loading={loading && editingId === session.id}
+              error={editingId === session.id ? editError : null}
+            >
+              <SessionFields
+                form={editForm}
+                setForm={setEditForm}
+                idPrefix={`session-edit-${session.id}`}
+                config={config}
+                trainingSquads={trainingSquads}
+              />
+            </AdminInlineEditCard>
           ))
         )}
       </div>

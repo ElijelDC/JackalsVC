@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useMemo, useState } from "react";
 import { useSyncedListState } from "@/hooks/useSyncedListState";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { AdminFormCard, beginAdminEdit } from "@/components/admin/AdminForm";
+import { ChevronDown, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { AdminSection } from "@/components/admin/AdminShell";
 import {
   AdminSearchBar,
@@ -12,10 +12,16 @@ import {
 } from "@/components/admin/AdminSearchBar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
+import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label, Select, Textarea } from "@/components/ui/Input";
 import { Checkbox } from "@/components/ui/InputFields";
 import { apiDelete, apiGet, apiPut } from "@/lib/client-api";
+import {
+  formatMembershipPlanShortName,
+  formatPaymentScheduleLabel,
+  type PaymentSchedule,
+  PAYMENT_SCHEDULES,
+} from "@/lib/membership-config";
 import {
   ADMIN_MEMBERSHIP_STATUSES,
   formatMembershipStatusLabel,
@@ -173,52 +179,482 @@ function getMembershipStatusBadges(membership: Membership): StatusBadge[] {
   return badges;
 }
 
-function getMembershipAccentClass(membership: Membership) {
-  if (membership.status === "COACH") {
-    return "border-l-blue-500/70";
+function scheduleLabel(paymentSchedule: string) {
+  const schedule = PAYMENT_SCHEDULES.includes(paymentSchedule as PaymentSchedule)
+    ? (paymentSchedule as PaymentSchedule)
+    : null;
+  return schedule ? formatPaymentScheduleLabel(schedule) : paymentSchedule;
+}
+
+function getMembershipPaymentSummary(membership: Membership) {
+  const payments = membership.payments ?? [];
+  if (payments.length === 0) {
+    return isInstallmentSchedule(membership.paymentSchedule)
+      ? "No instalment records"
+      : "Full payment · no instalment schedule";
   }
 
-  if (membership.status === "EXPIRED") {
-    return "border-l-amber-500/80";
-  }
+  const completed = payments.filter((payment) => payment.status === "COMPLETED");
+  const pending = payments.filter((payment) => payment.status === "PENDING");
+  const paidAmount = completed.reduce((sum, payment) => sum + payment.amount, 0);
+  const totalAmount = payments.reduce((sum, payment) => sum + payment.amount, 0);
 
-  if (membership.status === "CANCELLED") {
-    return "border-l-zinc-600";
-  }
+  return `${completed.length} paid · ${pending.length} pending · ${formatPrice(paidAmount)} / ${formatPrice(totalAmount)}`;
+}
 
-  if (
-    membership.status === "ACTIVE" &&
-    isInstallmentSchedule(membership.paymentSchedule)
-  ) {
-    const access = getMembershipPaymentAccess(membership);
+function MembershipExpandDetails({ membership }: { membership: Membership }) {
+  const statusBadges = getMembershipStatusBadges(membership);
+  const access = getMembershipPaymentAccess(membership);
+  const overrideActive = isOverrideActive(membership);
 
-    if (
-      !isOverrideActive(membership) &&
-      (access.isOverdue || access.isPastDue)
-    ) {
-      return access.isOverdue
-        ? "border-l-red-500/80"
-        : "border-l-amber-500/80";
-    }
-  }
+  return (
+    <div className="grid gap-4 lg:grid-cols-2">
+      <div className="space-y-2 text-sm text-zinc-400">
+        <p>
+          <span className="text-zinc-500">Email:</span> {membership.user.email}
+        </p>
+        <p>
+          <span className="text-zinc-500">Schedule:</span>{" "}
+          {scheduleLabel(membership.paymentSchedule)}
+        </p>
+        <p>
+          <span className="text-zinc-500">Starts:</span>{" "}
+          {format(new Date(membership.startDate), "d MMM yyyy")}
+        </p>
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          {statusBadges.map((badge) => (
+            <Badge
+              key={badge.label}
+              className={cn("border px-2 py-0.5", badge.className)}
+            >
+              {badge.label}
+            </Badge>
+          ))}
+        </div>
+      </div>
 
-  if (membership.status === "ACTIVE") {
-    return "border-l-green-500/70";
-  }
+      <div className="space-y-3 text-sm text-zinc-400">
+        <div>
+          <p className="text-xs uppercase tracking-wide text-zinc-500">
+            Payment summary
+          </p>
+          <p className="mt-1">{getMembershipPaymentSummary(membership)}</p>
+        </div>
 
-  return "border-l-white/10";
+        {isInstallmentSchedule(membership.paymentSchedule) ? (
+          <div className="space-y-2">
+            {overrideActive ? (
+              <div className="rounded-lg border border-blue-500/30 bg-blue-500/10 p-3">
+                <p className="text-sm font-medium text-blue-300">
+                  Overdue override active
+                </p>
+                <p className="mt-1 text-xs text-zinc-400">
+                  {membership.paymentOverdueOverrideUntil
+                    ? `Until ${format(new Date(membership.paymentOverdueOverrideUntil), "d MMM yyyy")}`
+                    : "No end date set"}
+                  {membership.paymentOverdueOverrideNote
+                    ? ` · ${membership.paymentOverdueOverrideNote}`
+                    : ""}
+                </p>
+              </div>
+            ) : null}
+
+            {membership.paymentDeferralExcuse &&
+            membership.paymentDeferralDueDate ? (
+              <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-3">
+                <p className="text-sm font-medium text-amber-200">
+                  Extension request
+                </p>
+                <p className="mt-1 text-xs text-zinc-400">
+                  Pay-by{" "}
+                  {format(
+                    new Date(membership.paymentDeferralDueDate),
+                    "d MMM yyyy",
+                  )}
+                  {membership.paymentDeferralRequestedAt
+                    ? ` · sent ${format(new Date(membership.paymentDeferralRequestedAt), "d MMM yyyy")}`
+                    : ""}
+                </p>
+                <p className="mt-2 whitespace-pre-wrap text-xs leading-relaxed text-zinc-500">
+                  {membership.paymentDeferralExcuse}
+                </p>
+              </div>
+            ) : null}
+
+            {!overrideActive && access.isOverdue ? (
+              <p className="text-xs text-red-300">
+                Overdue ·{" "}
+                {access.overduePayment
+                  ? `instalment ${access.overduePayment.installmentNumber ?? "—"} was due ${format(access.overduePayment.dueDate, "d MMM yyyy")}`
+                  : "instalment past grace"}
+              </p>
+            ) : null}
+
+            {!overrideActive && access.isPastDue && !access.isOverdue ? (
+              <p className="text-xs text-amber-300">
+                Past due · {access.graceDaysRemaining ?? 0}d grace remaining
+              </p>
+            ) : null}
+
+            {(membership.payments ?? []).length > 0 ? (
+              <ul className="space-y-1 text-xs text-zinc-500">
+                {membership.payments.map((payment, index) => (
+                  <li key={`${payment.installmentNumber ?? index}-${payment.dueDate}`}>
+                    {payment.installmentNumber
+                      ? `Instalment ${payment.installmentNumber}`
+                      : `Payment ${index + 1}`}
+                    {" · "}
+                    {formatPrice(payment.amount)}
+                    {" · "}
+                    {payment.status === "COMPLETED" ? "Paid" : "Pending"}
+                    {payment.dueDate
+                      ? ` · due ${format(new Date(payment.dueDate), "d MMM yyyy")}`
+                      : ""}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 const STATUSES = ADMIN_MEMBERSHIP_STATUSES;
 
-const emptyEditForm = {
+type MembershipEditFormState = {
+  planId: string;
+  status: (typeof STATUSES)[number];
+  endDate: string;
+  paymentOverdueOverride: boolean;
+  paymentOverdueOverrideNote: string;
+  paymentOverdueOverrideUntil: string;
+};
+
+const emptyEditForm: MembershipEditFormState = {
   planId: "",
-  status: "ACTIVE" as (typeof STATUSES)[number],
+  status: "ACTIVE",
   endDate: "",
   paymentOverdueOverride: false,
   paymentOverdueOverrideNote: "",
   paymentOverdueOverrideUntil: "",
 };
+
+function MembershipEditFields({
+  membership,
+  form,
+  setForm,
+  idPrefix,
+  plans,
+}: {
+  membership: Membership;
+  form: MembershipEditFormState;
+  setForm: (next: MembershipEditFormState) => void;
+  idPrefix: string;
+  plans: Plan[];
+}) {
+  const editingPaymentAccess = assessMembershipPaymentAccess({
+    membershipStatus: membership.status,
+    paymentSchedule: membership.paymentSchedule,
+    paymentOverdueOverride: form.paymentOverdueOverride,
+    paymentOverdueOverrideUntil: form.paymentOverdueOverrideUntil || null,
+    payments: membership.payments ?? [],
+  });
+
+  const underlyingPaymentAccess = assessMembershipPaymentAccess({
+    membershipStatus: membership.status,
+    paymentSchedule: membership.paymentSchedule,
+    paymentOverdueOverride: false,
+    paymentOverdueOverrideUntil: null,
+    payments: membership.payments ?? [],
+  });
+
+  return (
+    <div className="grid gap-4 sm:grid-cols-2">
+      <div className="sm:col-span-2">
+        <Label>Member</Label>
+        <p className="mt-1 text-sm font-medium text-white">
+          {membership.user.name} · {membership.user.email}
+        </p>
+      </div>
+      <div className="sm:col-span-2">
+        <Label>Subscription</Label>
+        <p className="mt-1 text-sm font-medium text-white">
+          {formatMembershipSubscriptionOrCoachLabel(
+            membership.plan.name,
+            membership.paymentSchedule,
+            membership.status,
+          )}
+        </p>
+        <p className="mt-1 text-xs text-zinc-500">
+          Payment schedule is set at checkout and cannot be changed here.
+        </p>
+      </div>
+      <div>
+        <Label htmlFor={`${idPrefix}-plan`}>Plan</Label>
+        <Select
+          id={`${idPrefix}-plan`}
+          value={form.planId}
+          onChange={(event) =>
+            setForm({ ...form, planId: event.target.value })
+          }
+          required
+        >
+          {plans.map((plan) => (
+            <option key={plan.id} value={plan.id}>
+              {plan.name}
+            </option>
+          ))}
+        </Select>
+      </div>
+      <div>
+        <Label htmlFor={`${idPrefix}-end`}>Expiry date</Label>
+        <Input
+          id={`${idPrefix}-end`}
+          type="date"
+          value={form.endDate}
+          onChange={(event) =>
+            setForm({ ...form, endDate: event.target.value })
+          }
+          required
+        />
+      </div>
+      <div>
+        <Label htmlFor={`${idPrefix}-status`}>Membership status</Label>
+        <Select
+          id={`${idPrefix}-status`}
+          value={form.status}
+          onChange={(event) =>
+            setForm({
+              ...form,
+              status: event.target.value as (typeof STATUSES)[number],
+            })
+          }
+          required
+        >
+          {STATUSES.map((status) => (
+            <option key={status} value={status}>
+              {formatMembershipStatusLabel(status)}
+            </option>
+          ))}
+        </Select>
+        <p className="mt-1 text-xs text-zinc-500">
+          Membership lifecycle only. Payment overdue is tracked separately below
+          for monthly and instalment plans.
+        </p>
+      </div>
+      <div className="sm:col-span-2">
+        <Label>Payment status</Label>
+        {!isInstallmentSchedule(membership.paymentSchedule) ? (
+          <p className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-400">
+            Not applicable — this member is on a{" "}
+            <span className="text-white">Full payment</span> plan. Instalment
+            overdue tracking only applies to Monthly and Instalment
+            subscriptions.
+          </p>
+        ) : form.paymentOverdueOverride ? (
+          <div className="mt-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
+            <p className="text-sm font-medium text-blue-300">
+              Overridden by admin
+            </p>
+            <p className="mt-1 text-sm text-zinc-400">
+              Training and match access is allowed despite overdue instalment
+              rules.
+              {form.paymentOverdueOverrideUntil && (
+                <>
+                  {" "}
+                  Override runs until{" "}
+                  {format(
+                    new Date(form.paymentOverdueOverrideUntil),
+                    "d MMM yyyy",
+                  )}
+                  .
+                </>
+              )}
+              {underlyingPaymentAccess.isOverdue &&
+                underlyingPaymentAccess.overduePayment && (
+                  <>
+                    {" "}
+                    Instalment{" "}
+                    {underlyingPaymentAccess.overduePayment.installmentNumber ??
+                      "—"}{" "}
+                    ·{" "}
+                    {formatPrice(
+                      underlyingPaymentAccess.overduePayment.amount,
+                    )}{" "}
+                    was due{" "}
+                    {format(
+                      underlyingPaymentAccess.overduePayment.dueDate,
+                      "d MMM yyyy",
+                    )}{" "}
+                    ({underlyingPaymentAccess.daysPastDue} days ago).
+                  </>
+                )}
+              {underlyingPaymentAccess.isPastDue &&
+                !underlyingPaymentAccess.isOverdue && (
+                  <>
+                    {" "}
+                    An instalment is in the {PAYMENT_OVERDUE_GRACE_DAYS}-day
+                    grace period.
+                  </>
+                )}
+            </p>
+          </div>
+        ) : editingPaymentAccess.isOverdue ? (
+          <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+            <p className="text-sm font-medium text-red-300">Payment overdue</p>
+            <p className="mt-1 text-sm text-zinc-400">
+              {editingPaymentAccess.overduePayment && (
+                <>
+                  Instalment{" "}
+                  {editingPaymentAccess.overduePayment.installmentNumber ?? "—"}{" "}
+                  · {formatPrice(editingPaymentAccess.overduePayment.amount)}{" "}
+                  was due{" "}
+                  {format(
+                    editingPaymentAccess.overduePayment.dueDate,
+                    "d MMM yyyy",
+                  )}{" "}
+                  ({editingPaymentAccess.daysPastDue} days ago). Training and
+                  match access is blocked after the{" "}
+                  {PAYMENT_OVERDUE_GRACE_DAYS}-day grace period.
+                </>
+              )}
+            </p>
+          </div>
+        ) : editingPaymentAccess.isPastDue ? (
+          <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
+            <p className="text-sm font-medium text-amber-300">
+              Past due (in grace period)
+            </p>
+            <p className="mt-1 text-sm text-zinc-400">
+              {editingPaymentAccess.graceDaysRemaining ?? 0} day
+              {(editingPaymentAccess.graceDaysRemaining ?? 0) === 1 ? "" : "s"}{" "}
+              left before access is blocked.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-2 rounded-lg border border-green-500/20 bg-green-500/5 p-4">
+            <p className="text-sm font-medium text-green-300">
+              Payments up to date
+            </p>
+            <p className="mt-1 text-sm text-zinc-400">
+              No overdue instalments for this subscription.
+            </p>
+          </div>
+        )}
+      </div>
+      {isInstallmentSchedule(membership.paymentSchedule) && (
+        <div className="space-y-4 sm:col-span-2">
+          {membership.paymentDeferralExcuse &&
+            membership.paymentDeferralDueDate && (
+              <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-4">
+                <p className="text-sm font-medium text-amber-200">
+                  Member extension request
+                </p>
+                <p className="mt-1 text-sm text-zinc-300">
+                  Pay-by date requested:{" "}
+                  <span className="font-medium text-white">
+                    {format(
+                      new Date(membership.paymentDeferralDueDate),
+                      "d MMM yyyy",
+                    )}
+                  </span>
+                  {membership.paymentDeferralRequestedAt && (
+                    <span className="text-zinc-500">
+                      {" "}
+                      · sent{" "}
+                      {format(
+                        new Date(membership.paymentDeferralRequestedAt),
+                        "d MMM yyyy",
+                      )}
+                    </span>
+                  )}
+                </p>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-400">
+                  {membership.paymentDeferralExcuse}
+                </p>
+              </div>
+            )}
+          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-4">
+            <Checkbox
+              checked={form.paymentOverdueOverride}
+              onChange={(event) =>
+                setForm({
+                  ...form,
+                  paymentOverdueOverride: event.target.checked,
+                  paymentOverdueOverrideUntil: event.target.checked
+                    ? form.paymentOverdueOverrideUntil ||
+                      (membership.paymentDeferralDueDate
+                        ? format(
+                            new Date(membership.paymentDeferralDueDate),
+                            "yyyy-MM-dd",
+                          )
+                        : "")
+                    : "",
+                })
+              }
+              className="mt-0.5"
+            />
+            <span>
+              <span className="block text-sm font-medium text-white">
+                Overdue payment override
+              </span>
+              <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
+                Allow training and match access until the date below, even when
+                an instalment is overdue.
+              </span>
+            </span>
+          </label>
+          {form.paymentOverdueOverride && (
+            <>
+              <div>
+                <Label htmlFor={`${idPrefix}-override-until`}>
+                  Override until
+                </Label>
+                <Input
+                  id={`${idPrefix}-override-until`}
+                  type="date"
+                  value={form.paymentOverdueOverrideUntil}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      paymentOverdueOverrideUntil: event.target.value,
+                    })
+                  }
+                  required
+                  className="mt-1"
+                />
+                <p className="mt-1 text-xs text-zinc-500">
+                  Access returns to normal after this date if payment is still
+                  outstanding.
+                </p>
+              </div>
+              <div>
+                <Label htmlFor={`${idPrefix}-override-note`}>
+                  Admin note (optional)
+                </Label>
+                <Textarea
+                  id={`${idPrefix}-override-note`}
+                  value={form.paymentOverdueOverrideNote}
+                  onChange={(event) =>
+                    setForm({
+                      ...form,
+                      paymentOverdueOverrideNote: event.target.value,
+                    })
+                  }
+                  rows={3}
+                  placeholder="e.g. Agreed extension until payday — discussed with treasurer"
+                  className="mt-1"
+                />
+              </div>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function MembersManager({
   initialMemberships,
@@ -233,6 +669,7 @@ export function MembersManager({
   const [form, setForm] = useState(emptyEditForm);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -269,31 +706,7 @@ export function MembersManager({
   const hasActiveFilters =
     Boolean(search.trim()) || statusFilter !== "all";
 
-  const editingMembership = editingId
-    ? memberships.find((membership) => membership.id === editingId)
-    : null;
-
-  const editingPaymentAccess = editingMembership
-    ? assessMembershipPaymentAccess({
-        membershipStatus: editingMembership.status,
-        paymentSchedule: editingMembership.paymentSchedule,
-        paymentOverdueOverride: form.paymentOverdueOverride,
-        paymentOverdueOverrideUntil: form.paymentOverdueOverrideUntil || null,
-        payments: editingMembership.payments ?? [],
-      })
-    : null;
-
-  const underlyingPaymentAccess = editingMembership
-    ? assessMembershipPaymentAccess({
-        membershipStatus: editingMembership.status,
-        paymentSchedule: editingMembership.paymentSchedule,
-        paymentOverdueOverride: false,
-        paymentOverdueOverrideUntil: null,
-        payments: editingMembership.payments ?? [],
-      })
-    : null;
-
-  const resetForm = () => {
+  const cancelEdit = () => {
     setForm(emptyEditForm);
     setEditingId(null);
     setError(null);
@@ -307,23 +720,22 @@ export function MembersManager({
   }, [setMemberships]);
 
   const startEdit = (membership: Membership) => {
-    beginAdminEdit(() => {
-      setEditingId(membership.id);
-      setForm({
-        planId: membership.plan.id,
-        status: membership.status as (typeof STATUSES)[number],
-        endDate: format(new Date(membership.endDate), "yyyy-MM-dd"),
-        paymentOverdueOverride: isOverrideActive(membership),
-        paymentOverdueOverrideNote: membership.paymentOverdueOverrideNote ?? "",
-        paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil
-          ? format(new Date(membership.paymentOverdueOverrideUntil), "yyyy-MM-dd")
-          : membership.paymentDeferralDueDate
-            ? format(new Date(membership.paymentDeferralDueDate), "yyyy-MM-dd")
-            : "",
-      });
-      setError(null);
-      setMessage(null);
+    setEditingId(membership.id);
+    setExpandedId(membership.id);
+    setForm({
+      planId: membership.plan.id,
+      status: membership.status as (typeof STATUSES)[number],
+      endDate: format(new Date(membership.endDate), "yyyy-MM-dd"),
+      paymentOverdueOverride: isOverrideActive(membership),
+      paymentOverdueOverrideNote: membership.paymentOverdueOverrideNote ?? "",
+      paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil
+        ? format(new Date(membership.paymentOverdueOverrideUntil), "yyyy-MM-dd")
+        : membership.paymentDeferralDueDate
+          ? format(new Date(membership.paymentDeferralDueDate), "yyyy-MM-dd")
+          : "",
     });
+    setError(null);
+    setMessage(null);
   };
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -355,7 +767,7 @@ export function MembersManager({
     }
 
     setMessage("Membership updated.");
-    resetForm();
+    cancelEdit();
     await loadMemberships();
     router.refresh();
   };
@@ -372,9 +784,78 @@ export function MembersManager({
       return;
     }
 
-    if (editingId === id) resetForm();
+    if (editingId === id) cancelEdit();
+    if (expandedId === id) setExpandedId(null);
+    setMessage("Membership removed.");
     await loadMemberships();
     router.refresh();
+  };
+
+  const toggleExpand = (id: string) => {
+    if (expandedId === id) {
+      setExpandedId(null);
+      if (editingId === id) cancelEdit();
+      return;
+    }
+    setExpandedId(id);
+  };
+
+  const renderExpandPanel = (membership: Membership) => {
+    const isEditing = editingId === membership.id;
+
+    if (isEditing) {
+      return (
+        <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-jackals-red-light">
+                Editing
+              </p>
+              <h4 className="mt-0.5 font-medium text-white">
+                {membership.user.name}
+              </h4>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="shrink-0"
+              onClick={cancelEdit}
+              disabled={loading}
+            >
+              <X className="h-4 w-4" />
+              Close
+            </Button>
+          </div>
+
+          <MembershipEditFields
+            membership={membership}
+            form={form}
+            setForm={setForm}
+            idPrefix={`member-edit-${membership.id}`}
+            plans={plans}
+          />
+
+          <FormError message={error} />
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button type="submit" disabled={loading}>
+              {loading ? "Saving..." : "Save changes"}
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={cancelEdit}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      );
+    }
+
+    return <MembershipExpandDetails membership={membership} />;
   };
 
   return (
@@ -382,278 +863,6 @@ export function MembersManager({
       title="Member subscriptions"
       description="View active memberships and update expiry dates, statuses, or overdue overrides."
     >
-      {editingId && editingMembership && (
-        <AdminFormCard
-          title="Edit membership"
-          error={error}
-          message={message}
-          onSubmit={handleSubmit}
-          onCancel={resetForm}
-          submitLabel={loading ? "Saving..." : "Save changes"}
-          loading={loading}
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="sm:col-span-2">
-              <Label>Member</Label>
-              <p className="mt-1 text-sm font-medium text-white">
-                {editingMembership.user.name} · {editingMembership.user.email}
-              </p>
-            </div>
-            <div className="sm:col-span-2">
-              <Label>Subscription</Label>
-              <p className="mt-1 text-sm font-medium text-white">
-                {formatMembershipSubscriptionOrCoachLabel(
-                  editingMembership.plan.name,
-                  editingMembership.paymentSchedule,
-                  editingMembership.status,
-                )}
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Payment schedule is set at checkout and cannot be changed here.
-              </p>
-            </div>
-            <div>
-              <Label htmlFor="member-plan-edit">Plan</Label>
-              <Select
-                id="member-plan-edit"
-                value={form.planId}
-                onChange={(event) =>
-                  setForm({ ...form, planId: event.target.value })
-                }
-                required
-              >
-                {plans.map((plan) => (
-                  <option key={plan.id} value={plan.id}>
-                    {plan.name}
-                  </option>
-                ))}
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="member-end">Expiry date</Label>
-              <Input
-                id="member-end"
-                type="date"
-                value={form.endDate}
-                onChange={(event) =>
-                  setForm({ ...form, endDate: event.target.value })
-                }
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="member-status">Membership status</Label>
-              <Select
-                id="member-status"
-                value={form.status}
-                onChange={(event) =>
-                  setForm({
-                    ...form,
-                    status: event.target.value as (typeof STATUSES)[number],
-                  })
-                }
-                required
-              >
-                {STATUSES.map((status) => (
-                  <option key={status} value={status}>
-                    {formatMembershipStatusLabel(status)}
-                  </option>
-                ))}
-              </Select>
-              <p className="mt-1 text-xs text-zinc-500">
-                Membership lifecycle only. Payment overdue is tracked separately below for
-                monthly and instalment plans.
-              </p>
-            </div>
-            <div className="sm:col-span-2">
-              <Label>Payment status</Label>
-              {!isInstallmentSchedule(editingMembership.paymentSchedule) ? (
-                <p className="mt-2 rounded-lg border border-white/10 bg-white/[0.02] p-4 text-sm text-zinc-400">
-                  Not applicable — this member is on a{" "}
-                  <span className="text-white">Full payment</span> plan. Instalment overdue
-                  tracking only applies to Monthly and Instalment subscriptions.
-                </p>
-              ) : form.paymentOverdueOverride ? (
-                <div className="mt-2 rounded-lg border border-blue-500/30 bg-blue-500/10 p-4">
-                  <p className="text-sm font-medium text-blue-300">
-                    Overridden by admin
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    Training and match access is allowed despite overdue instalment rules.
-                    {form.paymentOverdueOverrideUntil && (
-                      <>
-                        {" "}
-                        Override runs until{" "}
-                        {format(new Date(form.paymentOverdueOverrideUntil), "d MMM yyyy")}.
-                      </>
-                    )}
-                    {underlyingPaymentAccess?.isOverdue &&
-                      underlyingPaymentAccess.overduePayment && (
-                        <>
-                          {" "}
-                          Instalment{" "}
-                          {underlyingPaymentAccess.overduePayment.installmentNumber ?? "—"} ·{" "}
-                          {formatPrice(underlyingPaymentAccess.overduePayment.amount)} was due{" "}
-                          {format(
-                            underlyingPaymentAccess.overduePayment.dueDate,
-                            "d MMM yyyy",
-                          )}{" "}
-                          ({underlyingPaymentAccess.daysPastDue} days ago).
-                        </>
-                      )}
-                    {underlyingPaymentAccess?.isPastDue &&
-                      !underlyingPaymentAccess.isOverdue && (
-                        <>
-                          {" "}
-                          An instalment is in the {PAYMENT_OVERDUE_GRACE_DAYS}-day grace period.
-                        </>
-                      )}
-                  </p>
-                </div>
-              ) : editingPaymentAccess?.isOverdue ? (
-                <div className="mt-2 rounded-lg border border-red-500/30 bg-red-500/10 p-4">
-                  <p className="text-sm font-medium text-red-300">Payment overdue</p>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    {editingPaymentAccess.overduePayment && (
-                      <>
-                        Instalment {editingPaymentAccess.overduePayment.installmentNumber ?? "—"}{" "}
-                        · {formatPrice(editingPaymentAccess.overduePayment.amount)} was due{" "}
-                        {format(
-                          editingPaymentAccess.overduePayment.dueDate,
-                          "d MMM yyyy",
-                        )}{" "}
-                        ({editingPaymentAccess.daysPastDue} days ago). Training and match access
-                        is blocked after the {PAYMENT_OVERDUE_GRACE_DAYS}-day grace period.
-                      </>
-                    )}
-                  </p>
-                </div>
-              ) : editingPaymentAccess?.isPastDue ? (
-                <div className="mt-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-4">
-                  <p className="text-sm font-medium text-amber-300">Past due (in grace period)</p>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    {editingPaymentAccess.graceDaysRemaining ?? 0} day
-                    {(editingPaymentAccess.graceDaysRemaining ?? 0) === 1 ? "" : "s"} left before
-                    access is blocked.
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-2 rounded-lg border border-green-500/20 bg-green-500/5 p-4">
-                  <p className="text-sm font-medium text-green-300">Payments up to date</p>
-                  <p className="mt-1 text-sm text-zinc-400">
-                    No overdue instalments for this subscription.
-                  </p>
-                </div>
-              )}
-            </div>
-            {isInstallmentSchedule(editingMembership.paymentSchedule) && (
-              <div className="space-y-4 sm:col-span-2">
-                {editingMembership.paymentDeferralExcuse &&
-                  editingMembership.paymentDeferralDueDate && (
-                    <div className="rounded-lg border border-amber-500/25 bg-amber-500/5 p-4">
-                      <p className="text-sm font-medium text-amber-200">
-                        Member extension request
-                      </p>
-                      <p className="mt-1 text-sm text-zinc-300">
-                        Pay-by date requested:{" "}
-                        <span className="font-medium text-white">
-                          {format(
-                            new Date(editingMembership.paymentDeferralDueDate),
-                            "d MMM yyyy",
-                          )}
-                        </span>
-                        {editingMembership.paymentDeferralRequestedAt && (
-                          <span className="text-zinc-500">
-                            {" "}
-                            · sent{" "}
-                            {format(
-                              new Date(editingMembership.paymentDeferralRequestedAt),
-                              "d MMM yyyy",
-                            )}
-                          </span>
-                        )}
-                      </p>
-                      <p className="mt-3 whitespace-pre-wrap text-sm leading-relaxed text-zinc-400">
-                        {editingMembership.paymentDeferralExcuse}
-                      </p>
-                    </div>
-                  )}
-                <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-white/[0.02] p-4">
-                  <Checkbox
-                    checked={form.paymentOverdueOverride}
-                    onChange={(event) =>
-                      setForm({
-                        ...form,
-                        paymentOverdueOverride: event.target.checked,
-                        paymentOverdueOverrideUntil: event.target.checked
-                          ? form.paymentOverdueOverrideUntil ||
-                            (editingMembership.paymentDeferralDueDate
-                              ? format(
-                                  new Date(editingMembership.paymentDeferralDueDate),
-                                  "yyyy-MM-dd",
-                                )
-                              : "")
-                          : "",
-                      })
-                    }
-                    className="mt-0.5"
-                  />
-                  <span>
-                    <span className="block text-sm font-medium text-white">
-                      Overdue payment override
-                    </span>
-                    <span className="mt-1 block text-xs leading-relaxed text-zinc-500">
-                      Allow training and match access until the date below, even when an
-                      instalment is overdue.
-                    </span>
-                  </span>
-                </label>
-                {form.paymentOverdueOverride && (
-                  <>
-                    <div>
-                      <Label htmlFor="member-override-until">Override until</Label>
-                      <Input
-                        id="member-override-until"
-                        type="date"
-                        value={form.paymentOverdueOverrideUntil}
-                        onChange={(event) =>
-                          setForm({
-                            ...form,
-                            paymentOverdueOverrideUntil: event.target.value,
-                          })
-                        }
-                        required
-                        className="mt-1"
-                      />
-                      <p className="mt-1 text-xs text-zinc-500">
-                        Access returns to normal after this date if payment is still
-                        outstanding.
-                      </p>
-                    </div>
-                    <div>
-                      <Label htmlFor="member-override-note">Admin note (optional)</Label>
-                      <Textarea
-                        id="member-override-note"
-                        value={form.paymentOverdueOverrideNote}
-                        onChange={(event) =>
-                          setForm({
-                            ...form,
-                            paymentOverdueOverrideNote: event.target.value,
-                          })
-                        }
-                        rows={3}
-                        placeholder="e.g. Agreed extension until payday — discussed with treasurer"
-                        className="mt-1"
-                      />
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </AdminFormCard>
-      )}
-
       <div className="space-y-3">
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -699,78 +908,242 @@ export function MembersManager({
             )}
           </div>
         </div>
-        {filteredMemberships.length === 0 ? (
-          <p className="text-sm text-zinc-400">
-            {hasActiveFilters
-              ? "No memberships match your filters."
-              : "No memberships yet."}
-          </p>
-        ) : (
-          filteredMemberships.map((membership) => {
-            const subscriptionLabel = formatMembershipSubscriptionOrCoachLabel(
-              membership.plan.name,
-              membership.paymentSchedule,
-              membership.status,
-            );
-            const statusBadges = getMembershipStatusBadges(membership);
-            const accentClass = getMembershipAccentClass(membership);
 
-            return (
-              <Card
-                key={membership.id}
-                className={cn(
-                  "flex flex-col gap-4 border-l-4 py-4 sm:flex-row sm:items-center sm:justify-between",
-                  accentClass,
-                )}
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-white">
-                      {membership.user.name}
-                    </p>
-                    <span className="text-sm text-zinc-500">·</span>
-                    <p className="text-sm text-zinc-300">{subscriptionLabel}</p>
-                  </div>
-                  <p className="mt-1 truncate text-sm text-zinc-400">
-                    {membership.user.email}
-                  </p>
-                  <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                    {statusBadges.map((badge) => (
-                      <Badge
-                        key={badge.label}
-                        className={cn("border px-2 py-0.5", badge.className)}
+        {message ? (
+          <p className="text-sm text-emerald-300">{message}</p>
+        ) : null}
+        {!editingId && error ? (
+          <p className="text-sm text-jackals-red-light">{error}</p>
+        ) : null}
+
+        {filteredMemberships.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-white/10 px-6 py-12 text-center">
+            <p className="font-semibold text-white">
+              {hasActiveFilters
+                ? "No memberships match your filters."
+                : "No memberships yet."}
+            </p>
+          </div>
+        ) : (
+          <>
+            <div className="hidden overflow-hidden rounded-xl border border-white/10 lg:block">
+              <table className="w-full table-fixed text-left text-sm">
+                <colgroup>
+                  <col />
+                  <col className="w-[7.5rem]" />
+                  <col className="w-[6.5rem]" />
+                  <col className="w-[6.5rem]" />
+                  <col className="w-[4.5rem]" />
+                </colgroup>
+                <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
+                  <tr>
+                    <th className="px-2 py-2.5 font-medium">Name</th>
+                    <th className="px-2 py-2.5 font-medium">Plan</th>
+                    <th className="px-2 py-2.5 font-medium">Status</th>
+                    <th className="px-2 py-2.5 font-medium">Expires</th>
+                    <th className="px-2 py-2.5 text-right font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/8">
+                  {filteredMemberships.map((membership) => {
+                    const expanded = expandedId === membership.id;
+                    const isEditing = editingId === membership.id;
+                    const planShort = isCoachMembershipStatus(membership.status)
+                      ? "Coach"
+                      : formatMembershipPlanShortName(membership.plan.name);
+
+                    return (
+                      <Fragment key={membership.id}>
+                        <tr
+                          className={cn(
+                            "transition",
+                            isEditing
+                              ? "bg-jackals-red/5"
+                              : "bg-white/[0.015] hover:bg-white/[0.03]",
+                          )}
+                        >
+                          <td className="px-2 py-2">
+                            <button
+                              type="button"
+                              onClick={() => toggleExpand(membership.id)}
+                              className="group flex min-w-0 items-center gap-1.5 text-left"
+                            >
+                              <ChevronDown
+                                className={cn(
+                                  "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                                  expanded && "rotate-180",
+                                )}
+                              />
+                              <span className="truncate font-medium text-white group-hover:text-jackals-gold">
+                                {membership.user.name}
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-2 py-2">
+                            <span className="block truncate text-zinc-300">
+                              {planShort}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2">
+                            <span
+                              className={cn(
+                                "inline-block rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                                membershipStatusBadgeClass(membership.status),
+                              )}
+                            >
+                              {formatMembershipStatusLabel(membership.status)}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2 text-xs text-zinc-500 whitespace-nowrap">
+                            {format(new Date(membership.endDate), "d MMM yyyy")}
+                          </td>
+                          <td className="px-2 py-2">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                title="Edit"
+                                onClick={() => startEdit(membership)}
+                                className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
+                              >
+                                <Pencil className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                title="Delete"
+                                disabled={deletingId === membership.id}
+                                onClick={() => void handleDelete(membership.id)}
+                                className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+                              >
+                                {deletingId === membership.id ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Trash2 className="h-3.5 w-3.5" />
+                                )}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                        {expanded ? (
+                          <tr
+                            className={cn(
+                              isEditing
+                                ? "bg-jackals-red/5"
+                                : "bg-black/20",
+                            )}
+                          >
+                            <td
+                              colSpan={5}
+                              className={cn(
+                                "px-4 py-4",
+                                isEditing &&
+                                  "border-y border-jackals-red/40 shadow-lg shadow-jackals-red/10",
+                              )}
+                            >
+                              {renderExpandPanel(membership)}
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="space-y-2 lg:hidden">
+              {filteredMemberships.map((membership) => {
+                const expanded = expandedId === membership.id;
+                const isEditing = editingId === membership.id;
+                const subscriptionLabel =
+                  formatMembershipSubscriptionOrCoachLabel(
+                    membership.plan.name,
+                    membership.paymentSchedule,
+                    membership.status,
+                  );
+
+                return (
+                  <article
+                    key={membership.id}
+                    className={cn(
+                      "rounded-lg border p-4 transition",
+                      isEditing
+                        ? "border-jackals-red/40 bg-jackals-red/5 shadow-lg shadow-jackals-red/10"
+                        : "border-white/10 bg-white/[0.02]",
+                    )}
+                  >
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleExpand(membership.id)}
+                        className="group flex min-w-0 flex-1 items-start gap-1.5 text-left"
                       >
-                        {badge.label}
-                      </Badge>
-                    ))}
-                    <span className="text-xs text-zinc-500">
-                      Expires {format(new Date(membership.endDate), "d MMM yyyy")}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex shrink-0 gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => startEdit(membership)}
-                  >
-                    Edit
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    disabled={deletingId === membership.id}
-                    onClick={() => handleDelete(membership.id)}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    {deletingId === membership.id ? "..." : "Delete"}
-                  </Button>
-                </div>
-              </Card>
-            );
-          })
+                        <ChevronDown
+                          className={cn(
+                            "mt-1 h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                            expanded && "rotate-180",
+                          )}
+                        />
+                        <div className="min-w-0">
+                          <p className="font-medium text-white group-hover:text-jackals-gold">
+                            {membership.user.name}
+                          </p>
+                          <p className="truncate text-sm text-zinc-500">
+                            {subscriptionLabel}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-2">
+                            <span
+                              className={cn(
+                                "inline-block rounded-full border px-2 py-0.5 text-[11px] font-medium",
+                                membershipStatusBadgeClass(membership.status),
+                              )}
+                            >
+                              {formatMembershipStatusLabel(membership.status)}
+                            </span>
+                            <span className="text-xs text-zinc-500">
+                              Expires{" "}
+                              {format(
+                                new Date(membership.endDate),
+                                "d MMM yyyy",
+                              )}
+                            </span>
+                          </div>
+                        </div>
+                      </button>
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          type="button"
+                          title="Edit"
+                          onClick={() => startEdit(membership)}
+                          className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
+                        >
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete"
+                          disabled={deletingId === membership.id}
+                          onClick={() => void handleDelete(membership.id)}
+                          className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+                        >
+                          {deletingId === membership.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Trash2 className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+
+                    {expanded ? (
+                      <div className="mt-3 border-t border-white/10 pt-3">
+                        {renderExpandPanel(membership)}
+                      </div>
+                    ) : null}
+                  </article>
+                );
+              })}
+            </div>
+          </>
         )}
       </div>
     </AdminSection>

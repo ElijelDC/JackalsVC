@@ -88,7 +88,7 @@ export function CoachShell({
 
       <div className="flex flex-col gap-8 lg:flex-row">
         <aside className="lg:w-56 lg:shrink-0">
-          <nav className="flex gap-2 overflow-x-auto pb-1 lg:flex-col lg:overflow-visible lg:pb-0">
+          <nav className="flex flex-wrap gap-2 lg:flex-col lg:flex-nowrap">
             {COACH_NAV_LINKS.map((link) => {
               const active = pathname.startsWith(link.href);
 

@@ -1,4 +1,5 @@
 import { jsonServerError, parseJsonBody } from "@/lib/api";
+import { kitOrderPaymentPath } from "@/lib/kit-order-payment-access";
 import { submitKitOrder } from "@/lib/submit-kit-order";
 import { kitOrderSchema } from "@/lib/validations";
 import { NextResponse } from "next/server";
@@ -8,10 +9,12 @@ export async function POST(request: Request) {
   if (response || !data) return response!;
 
   try {
-    await submitKitOrder(data);
+    const order = await submitKitOrder(data);
     return NextResponse.json({
       success: true,
-      message: "Kit order received — thanks. We'll follow up by email if needed.",
+      message:
+        "Kit order received — thanks. Use the link below to pay and upload your receipt.",
+      paymentUrl: kitOrderPaymentPath(order.paymentToken),
     });
   } catch (error) {
     return jsonServerError(

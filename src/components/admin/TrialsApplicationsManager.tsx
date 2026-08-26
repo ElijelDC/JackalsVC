@@ -1,11 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { TrialsApplicantEmailPanel } from "@/components/admin/TrialsApplicantEmailPanel";
 import {
   CheckCircle2,
-  Clock3,
+  ChevronDown,
   Download,
   Loader2,
   Mail,
@@ -62,146 +62,21 @@ function formatSubmittedAt(value: string) {
 
 function teamAccent(tryingOutFor: string) {
   if (tryingOutFor === "MENS_DIVISION_2") {
-    return "bg-jackals-red/20 text-jackals-red-light";
+    return "text-jackals-red-light bg-jackals-red/15";
   }
   if (tryingOutFor === "WOMENS_DIVISION_3") {
-    return "bg-purple-500/20 text-purple-300";
+    return "text-purple-300 bg-purple-500/15";
   }
-  return "bg-zinc-500/20 text-zinc-300";
+  return "text-zinc-400 bg-white/[0.06]";
 }
 
 function statusAccent(status: TrialsApplicationStatus) {
-  if (status === "NEW") return "bg-amber-500/15 text-amber-300";
-  if (status === "REVIEWED") return "bg-green-500/15 text-green-300";
-  return "bg-zinc-500/15 text-zinc-300";
+  if (status === "NEW") return "text-amber-300 bg-amber-500/10";
+  if (status === "REVIEWED") return "text-emerald-300 bg-emerald-500/10";
+  return "text-zinc-400 bg-white/[0.06]";
 }
 
-function ApplicationDetails({
-  application,
-}: {
-  application: TrialsApplicationRecord;
-}) {
-  return (
-    <dl className="mt-4 grid gap-2 border-t border-white/5 pt-4 text-sm sm:grid-cols-2">
-      <div>
-        <dt className="text-zinc-500">INL division 25/26</dt>
-        <dd className="text-zinc-200">
-          {trialsInlDivisionLabel(application.inlDivision)}
-          {application.inlDivisionOther
-            ? ` — ${application.inlDivisionOther}`
-            : ""}
-        </dd>
-      </div>
-      {application.inlTeamName ? (
-        <div>
-          <dt className="text-zinc-500">INL team</dt>
-          <dd className="text-zinc-200">{application.inlTeamName}</dd>
-        </div>
-      ) : null}
-    </dl>
-  );
-}
-
-function ActionButtons({
-  application,
-  loading,
-  onAct,
-}: {
-  application: TrialsApplicationRecord;
-  loading: boolean;
-  onAct: (id: string, action: "review" | "dismiss") => void;
-}) {
-  if (application.status !== "NEW") return null;
-
-  return (
-    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:shrink-0 sm:gap-2">
-      <Button
-        type="button"
-        size="sm"
-        className="w-full sm:w-auto"
-        disabled={loading}
-        onClick={() => onAct(application.id, "review")}
-      >
-        {loading ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <>
-            <CheckCircle2 className="mr-1.5 h-4 w-4" />
-            Reviewed
-          </>
-        )}
-      </Button>
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="w-full sm:w-auto"
-        disabled={loading}
-        onClick={() => onAct(application.id, "dismiss")}
-      >
-        <XCircle className="mr-1.5 h-4 w-4" />
-        Dismiss
-      </Button>
-    </div>
-  );
-}
-
-function ProcessedActionButtons({
-  application,
-  loading,
-  onReview,
-  onDelete,
-}: {
-  application: TrialsApplicationRecord;
-  loading: boolean;
-  onReview: (id: string) => void;
-  onDelete: (id: string) => void;
-}) {
-  if (application.status !== "REVIEWED" && application.status !== "DISMISSED") {
-    return null;
-  }
-
-  return (
-    <div
-      className={cn(
-        "grid w-full gap-2 sm:flex sm:w-auto sm:shrink-0 sm:gap-2",
-        application.status === "DISMISSED" ? "grid-cols-2" : "grid-cols-1",
-      )}
-    >
-      {application.status === "DISMISSED" ? (
-        <Button
-          type="button"
-          size="sm"
-          className="w-full sm:w-auto"
-          disabled={loading}
-          onClick={() => onReview(application.id)}
-        >
-          {loading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <>
-              <CheckCircle2 className="mr-1.5 h-4 w-4" />
-              Mark reviewed
-            </>
-          )}
-        </Button>
-      ) : null}
-      <Button
-        type="button"
-        size="sm"
-        variant="outline"
-        className="w-full border-rose-500/30 text-rose-200 hover:bg-rose-500/10 sm:w-auto"
-        disabled={loading}
-        onClick={() => onDelete(application.id)}
-      >
-        <Trash2 className="mr-1.5 h-4 w-4" />
-        Delete
-      </Button>
-    </div>
-  );
-}
-
-function ApplicationCard({
+function RowActions({
   application,
   loading,
   canDeleteApplications,
@@ -217,86 +92,140 @@ function ApplicationCard({
   onDeleteApplication: (id: string) => void;
 }) {
   return (
-    <article className="rounded-xl border border-white/10 bg-white/[0.02] p-4">
-      <div className="min-w-0">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-base font-semibold text-white">
-            {application.fullName}
-          </h2>
-          <span
-            className={cn(
-              "rounded-full px-2.5 py-0.5 text-[11px] font-medium",
-              teamAccent(application.tryingOutFor),
-            )}
-          >
-            {trialsTeamLabel(application.tryingOutFor)}
-          </span>
-          {application.status !== "NEW" ? (
-            <span
-              className={cn(
-                "rounded-full px-2.5 py-0.5 text-[11px] font-medium",
-                statusAccent(application.status),
-              )}
-            >
-              {TRIALS_APPLICATION_STATUS_LABELS[application.status]}
-            </span>
-          ) : null}
-        </div>
-
-        <p className="mt-1 text-sm text-zinc-400">
-          {trialsPositionLabel(application.preferredPosition1)} /{" "}
-          {trialsPositionLabel(application.preferredPosition2)} ·{" "}
-          {application.yearsExperience} yrs · age {application.age}
-        </p>
-
-        <p className="mt-2 flex items-center gap-1.5 text-xs text-zinc-500">
-          <Clock3 className="h-3.5 w-3.5 shrink-0" />
-          {formatSubmittedAt(application.createdAt)}
-        </p>
-
-        <div className="mt-3 space-y-1.5 text-sm sm:flex sm:flex-wrap sm:gap-x-4 sm:gap-y-1 sm:space-y-0">
-          <a
-            href={`mailto:${application.contactEmail}`}
-            className="flex items-center gap-1.5 break-all text-jackals-gold hover:underline"
-          >
-            <Mail className="h-3.5 w-3.5 shrink-0" />
-            {application.contactEmail}
-          </a>
-          <a
-            href={`tel:${application.contactNumber}`}
-            className="flex items-center gap-1.5 text-zinc-400 hover:text-white"
-          >
-            <Phone className="h-3.5 w-3.5 shrink-0" />
-            {application.contactNumber}
-          </a>
-        </div>
-
-        <ApplicationDetails application={application} />
-      </div>
-
+    <div className="flex items-center justify-end gap-1">
       {application.status === "NEW" ? (
-        <div className="mt-4 border-t border-white/5 pt-4">
-          <ActionButtons
-            application={application}
-            loading={loading}
-            onAct={onAct}
-          />
-        </div>
+        <>
+          <button
+            type="button"
+            title="Mark reviewed"
+            disabled={loading}
+            onClick={() => onAct(application.id, "review")}
+            className="rounded p-1.5 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:opacity-40"
+          >
+            {loading ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-3.5 w-3.5" />
+            )}
+          </button>
+          <button
+            type="button"
+            title="Dismiss"
+            disabled={loading}
+            onClick={() => onAct(application.id, "dismiss")}
+            className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white disabled:opacity-40"
+          >
+            <XCircle className="h-3.5 w-3.5" />
+          </button>
+        </>
+      ) : null}
+
+      {canDeleteApplications && application.status === "DISMISSED" ? (
+        <button
+          type="button"
+          title="Mark reviewed"
+          disabled={loading}
+          onClick={() => onReviewDismissed(application.id)}
+          className="rounded p-1.5 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:opacity-40"
+        >
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
+        </button>
       ) : null}
 
       {canDeleteApplications &&
       (application.status === "REVIEWED" ||
         application.status === "DISMISSED") ? (
-        <div className="mt-4 border-t border-white/5 pt-4">
-          <ProcessedActionButtons
-            application={application}
-            loading={loading}
-            onReview={onReviewDismissed}
-            onDelete={onDeleteApplication}
-          />
-        </div>
+        <button
+          type="button"
+          title="Delete"
+          disabled={loading}
+          onClick={() => onDeleteApplication(application.id)}
+          className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+        >
+          {loading ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <Trash2 className="h-3.5 w-3.5" />
+          )}
+        </button>
       ) : null}
-    </article>
+
+      <a
+        href={`mailto:${application.contactEmail}`}
+        title="Email"
+        className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-jackals-gold"
+      >
+        <Mail className="h-3.5 w-3.5" />
+      </a>
+      <a
+        href={`tel:${application.contactNumber}`}
+        title="Call"
+        className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
+      >
+        <Phone className="h-3.5 w-3.5" />
+      </a>
+    </div>
+  );
+}
+
+function ExpandDetails({
+  application,
+}: {
+  application: TrialsApplicationRecord;
+}) {
+  return (
+    <div className="grid gap-3 text-sm text-zinc-400 sm:grid-cols-2">
+      <p>
+        <span className="text-zinc-500">Email:</span>{" "}
+        <a
+          href={`mailto:${application.contactEmail}`}
+          className="text-jackals-gold hover:underline"
+        >
+          {application.contactEmail}
+        </a>
+      </p>
+      <p>
+        <span className="text-zinc-500">Phone:</span>{" "}
+        <a
+          href={`tel:${application.contactNumber}`}
+          className="text-zinc-300 hover:text-white"
+        >
+          {application.contactNumber}
+        </a>
+      </p>
+      <p>
+        <span className="text-zinc-500">Age:</span> {application.age}
+      </p>
+      <p>
+        <span className="text-zinc-500">Years:</span>{" "}
+        {application.yearsExperience}
+      </p>
+      <p>
+        <span className="text-zinc-500">Positions:</span>{" "}
+        {trialsPositionLabel(application.preferredPosition1)} /{" "}
+        {trialsPositionLabel(application.preferredPosition2)}
+      </p>
+      <p>
+        <span className="text-zinc-500">INL division 25/26:</span>{" "}
+        {trialsInlDivisionLabel(application.inlDivision)}
+        {application.inlDivisionOther
+          ? ` — ${application.inlDivisionOther}`
+          : ""}
+      </p>
+      {application.inlTeamName ? (
+        <p>
+          <span className="text-zinc-500">INL team:</span>{" "}
+          {application.inlTeamName}
+        </p>
+      ) : null}
+      <p className="text-xs text-zinc-600 sm:col-span-2">
+        Submitted {formatSubmittedAt(application.createdAt)}
+      </p>
+    </div>
   );
 }
 
@@ -321,6 +250,7 @@ export function TrialsApplicationsManager({
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
   const [positionFilter, setPositionFilter] = useState<PositionFilter>("ALL");
   const [search, setSearch] = useState("");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -421,6 +351,7 @@ export function TrialsApplicationsManager({
     }
 
     setApplications((current) => current.filter((item) => item.id !== id));
+    if (expandedId === id) setExpandedId(null);
     router.refresh();
   };
 
@@ -572,15 +503,24 @@ export function TrialsApplicationsManager({
           </div>
         </div>
 
-        {hasSecondaryFilters ? (
-          <button
-            type="button"
-            onClick={clearSecondaryFilters}
-            className="text-xs text-zinc-500 transition hover:text-zinc-300"
-          >
-            Clear search and filters
-          </button>
-        ) : null}
+        <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+          <span>
+            {filtered.length}{" "}
+            {filtered.length === 1 ? "signup" : "signups"}
+            {filtered.length !== applications.length
+              ? ` of ${applications.length}`
+              : ""}
+          </span>
+          {hasSecondaryFilters ? (
+            <button
+              type="button"
+              onClick={clearSecondaryFilters}
+              className="hover:text-zinc-300"
+            >
+              Clear search and filters
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <FormError message={error} />
@@ -599,23 +539,180 @@ export function TrialsApplicationsManager({
           </p>
         </div>
       ) : (
-        <div className="space-y-3">
-          <p className="text-xs text-zinc-500">
-            {filtered.length}{" "}
-            {filtered.length === 1 ? "signup" : "signups"}
-          </p>
-          {filtered.map((application) => (
-            <ApplicationCard
-              key={application.id}
-              application={application}
-              loading={loadingId === application.id}
-              canDeleteApplications={canDeleteApplications}
-              onAct={(id, action) => void act(id, action)}
-              onReviewDismissed={(id) => void reviewDismissed(id)}
-              onDeleteApplication={(id) => void deleteApplication(id)}
-            />
-          ))}
-        </div>
+        <>
+          <div className="hidden overflow-hidden rounded-xl border border-white/10 lg:block">
+            <table className="w-full table-fixed text-left text-sm">
+              <colgroup>
+                <col />
+                <col className="w-[7.5rem]" />
+                <col className="w-[6.5rem]" />
+                <col className="w-[5.5rem]" />
+                <col className="w-[7.5rem]" />
+              </colgroup>
+              <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
+                <tr>
+                  <th className="px-2 py-2.5 font-medium">Name</th>
+                  <th className="px-2 py-2.5 font-medium">Team</th>
+                  <th className="px-2 py-2.5 font-medium">Position</th>
+                  <th className="px-2 py-2.5 font-medium">Status</th>
+                  <th className="px-2 py-2.5 text-right font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/8">
+                {filtered.map((application) => {
+                  const expanded = expandedId === application.id;
+                  const loading = loadingId === application.id;
+
+                  return (
+                    <Fragment key={application.id}>
+                      <tr className="bg-white/[0.015] transition hover:bg-white/[0.03]">
+                        <td className="px-2 py-2">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedId(expanded ? null : application.id)
+                            }
+                            className="group flex min-w-0 items-center gap-1.5 text-left"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                                expanded && "rotate-180",
+                              )}
+                            />
+                            <span className="truncate font-medium text-white group-hover:text-jackals-gold">
+                              {application.fullName}
+                            </span>
+                          </button>
+                        </td>
+                        <td className="px-2 py-2">
+                          <span
+                            className={cn(
+                              "inline-block max-w-full truncate rounded-full px-2 py-0.5 text-[11px] font-medium",
+                              teamAccent(application.tryingOutFor),
+                            )}
+                          >
+                            {trialsTeamLabel(application.tryingOutFor)}
+                          </span>
+                        </td>
+                        <td className="truncate px-2 py-2 text-zinc-400">
+                          {trialsPositionLabel(application.preferredPosition1)}
+                        </td>
+                        <td className="px-2 py-2">
+                          <span
+                            className={cn(
+                              "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                              statusAccent(application.status),
+                            )}
+                          >
+                            {
+                              TRIALS_APPLICATION_STATUS_LABELS[
+                                application.status
+                              ]
+                            }
+                          </span>
+                        </td>
+                        <td className="px-2 py-2">
+                          <RowActions
+                            application={application}
+                            loading={loading}
+                            canDeleteApplications={canDeleteApplications}
+                            onAct={(id, action) => void act(id, action)}
+                            onReviewDismissed={(id) => void reviewDismissed(id)}
+                            onDeleteApplication={(id) =>
+                              void deleteApplication(id)
+                            }
+                          />
+                        </td>
+                      </tr>
+                      {expanded ? (
+                        <tr className="bg-black/20">
+                          <td colSpan={5} className="px-4 py-4">
+                            <ExpandDetails application={application} />
+                          </td>
+                        </tr>
+                      ) : null}
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="space-y-2 lg:hidden">
+            {filtered.map((application) => {
+              const expanded = expandedId === application.id;
+              const loading = loadingId === application.id;
+
+              return (
+                <article
+                  key={application.id}
+                  className="rounded-lg border border-white/10 bg-white/[0.02] p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedId(expanded ? null : application.id)
+                        }
+                        className="group flex min-w-0 items-center gap-1.5 text-left"
+                      >
+                        <ChevronDown
+                          className={cn(
+                            "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                            expanded && "rotate-180",
+                          )}
+                        />
+                        <span className="truncate font-medium text-white group-hover:text-jackals-gold">
+                          {application.fullName}
+                        </span>
+                      </button>
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        <span
+                          className={cn(
+                            "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
+                            teamAccent(application.tryingOutFor),
+                          )}
+                        >
+                          {trialsTeamLabel(application.tryingOutFor)}
+                        </span>
+                        <span
+                          className={cn(
+                            "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
+                            statusAccent(application.status),
+                          )}
+                        >
+                          {
+                            TRIALS_APPLICATION_STATUS_LABELS[
+                              application.status
+                            ]
+                          }
+                        </span>
+                        <span className="text-xs text-zinc-500">
+                          {trialsPositionLabel(application.preferredPosition1)}
+                        </span>
+                      </div>
+                    </div>
+                    <RowActions
+                      application={application}
+                      loading={loading}
+                      canDeleteApplications={canDeleteApplications}
+                      onAct={(id, action) => void act(id, action)}
+                      onReviewDismissed={(id) => void reviewDismissed(id)}
+                      onDeleteApplication={(id) => void deleteApplication(id)}
+                    />
+                  </div>
+                  {expanded ? (
+                    <div className="mt-3 border-t border-white/5 pt-3">
+                      <ExpandDetails application={application} />
+                    </div>
+                  ) : null}
+                </article>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );
