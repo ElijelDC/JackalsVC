@@ -73,7 +73,7 @@ export function KitOrderCarousel({
 
   return (
     <div className={cn("mx-auto w-full max-w-xl", className)}>
-      <div className="relative flex-1">
+      <div className="relative min-h-0 flex-1">
         {hasMultiple ? (
           <>
             <button
@@ -96,7 +96,7 @@ export function KitOrderCarousel({
         ) : null}
 
         <div
-          className="touch-pan-y"
+          className="h-full touch-pan-y"
           onTouchStart={(event) => {
             if (!hasMultiple) return;
             touchStartX.current = event.touches[0]!.clientX;
@@ -122,7 +122,7 @@ export function KitOrderCarousel({
           aria-label={ariaLabel}
         >
           <div
-            className="transition-transform duration-200"
+            className="h-full transition-transform duration-200"
             style={{ transform: `translateX(${dragOffset * 0.35}px)` }}
           >
             {children}
