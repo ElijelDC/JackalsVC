@@ -72,6 +72,15 @@ function memberSquadKeys(member: ClubMember) {
       : [];
 }
 
+/** Only squads currently shown in the roster UI (active). Drops deactivated keys. */
+function memberAssignableSquadKeys(
+  member: ClubMember,
+  trainingTeams: TrainingTeam[],
+) {
+  const available = new Set(trainingTeams.map((team) => team.key));
+  return memberSquadKeys(member).filter((key) => available.has(key));
+}
+
 function memberCoachPriorities(member: ClubMember): Record<string, number> {
   return member.coachSquadPriorities ?? {};
 }
@@ -347,9 +356,12 @@ export function ClubRosterManager({
       if (member.rosterRole !== "COACH") continue;
       // Don't clobber in-flight optimistic keys with a slower server refresh.
       if (pendingCoachSquadSaveRef.current[member.id]) continue;
-      latestCoachSquadKeysRef.current[member.id] = memberSquadKeys(member);
+      latestCoachSquadKeysRef.current[member.id] = memberAssignableSquadKeys(
+        member,
+        trainingTeams,
+      );
     }
-  }, [clubMembers]);
+  }, [clubMembers, trainingTeams]);
 
   const filteredMembers = useMemo(() => {
     const filtered = clubMembers.filter((member) => {
@@ -622,7 +634,8 @@ export function ClubRosterManager({
 
   const toggleCoachSquad = (member: ClubMember, trainingTeamKey: string) => {
     const current =
-      latestCoachSquadKeysRef.current[member.id] ?? memberSquadKeys(member);
+      latestCoachSquadKeysRef.current[member.id] ??
+      memberAssignableSquadKeys(member, trainingTeams);
     const next = current.includes(trainingTeamKey)
       ? current.filter((key) => key !== trainingTeamKey)
       : [...current, trainingTeamKey];
@@ -646,7 +659,8 @@ export function ClubRosterManager({
     priority: number,
   ) => {
     const keys =
-      latestCoachSquadKeysRef.current[member.id] ?? memberSquadKeys(member);
+      latestCoachSquadKeysRef.current[member.id] ??
+      memberAssignableSquadKeys(member, trainingTeams);
     if (!keys.includes(trainingTeamKey)) return;
 
     const nextPriorities = {
@@ -1229,7 +1243,10 @@ export function ClubRosterManager({
                           </Label>
                           <SquadCheckboxGroup
                             idPrefix={`mobile-team-${member.id}`}
-                            selectedKeys={memberSquadKeys(member)}
+                            selectedKeys={memberAssignableSquadKeys(
+                              member,
+                              trainingTeams,
+                            )}
                             priorities={memberCoachPriorities(member)}
                             trainingTeams={trainingTeams}
                             disabled={loading}
@@ -1615,7 +1632,10 @@ export function ClubRosterManager({
                                   </Label>
                                   <SquadCheckboxGroup
                                     idPrefix={`team-${member.id}`}
-                                    selectedKeys={memberSquadKeys(member)}
+                                    selectedKeys={memberAssignableSquadKeys(
+                              member,
+                              trainingTeams,
+                            )}
                                     priorities={memberCoachPriorities(member)}
                                     trainingTeams={trainingTeams}
                                     disabled={loading}

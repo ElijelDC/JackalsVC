@@ -134,6 +134,7 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
   const [createMessage, setCreateMessage] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
   const [listMessage, setListMessage] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
 
   const cancelEdit = () => {
     setEditingId(null);
@@ -158,6 +159,7 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
     });
     setEditError(null);
     setListMessage(null);
+    setListError(null);
     setCreateMessage(null);
   };
 
@@ -166,6 +168,7 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
     setLoading(true);
     setCreateError(null);
     setCreateMessage(null);
+    setListError(null);
 
     const result = await apiPost("/api/admin/training-squads", {
       name: createForm.name,
@@ -194,6 +197,7 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
     setLoading(true);
     setEditError(null);
     setListMessage(null);
+    setListError(null);
 
     const result = await apiPut(`/api/admin/training-squads/${editingId}`, {
       name: editForm.name,
@@ -217,10 +221,14 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this squad?")) return;
     setDeletingId(id);
+    setListError(null);
+    setListMessage(null);
     const result = await apiDelete(`/api/admin/training-squads/${id}`);
     setDeletingId(null);
     if (!result.ok) {
-      setEditError(result.error);
+      // Always show on the list — delete runs from the row, not only edit mode.
+      setListError(result.error);
+      if (editingId === id) setEditError(result.error);
       return;
     }
     if (editingId === id) cancelEdit();
@@ -254,6 +262,9 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
       <div className="mt-6 space-y-3">
         {listMessage ? (
           <p className="text-sm text-emerald-300">{listMessage}</p>
+        ) : null}
+        {listError ? (
+          <p className="text-sm text-rose-300">{listError}</p>
         ) : null}
         {squads.map((squad) => (
           <AdminInlineEditCard

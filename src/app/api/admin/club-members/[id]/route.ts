@@ -7,7 +7,6 @@ import {
   setClubMemberCoachSquads,
   syncClubTeamsForSquadKey,
 } from "@/lib/club-team-roster-sync";
-import { isTrainingSquadKey } from "@/lib/training-squads";
 import { clubMemberUpdateSchema } from "@/lib/validations";
 import {
   isValidClubMemberNumberForRole,
@@ -32,11 +31,23 @@ function resolveSquadKeysFromBody(data: {
   return null;
 }
 
-async function validateSquadKeys(keys: string[]) {
+/**
+ * Unknown keys fail. Newly added keys must be active.
+ * Already-assigned inactive keys are allowed so edits don't break when a squad
+ * was deactivated (e.g. old Regional / DIV4 after creating Division 3 Mens).
+ */
+async function validateSquadKeys(
+  keys: string[],
+  previousKeys: string[] = [],
+) {
+  const previous = new Set(previousKeys);
   for (const key of keys) {
-    if (!(await isTrainingSquadKey(key))) {
-      return false;
-    }
+    const squad = await prisma.trainingSquad.findUnique({
+      where: { key },
+      select: { active: true },
+    });
+    if (!squad) return false;
+    if (!squad.active && !previous.has(key)) return false;
   }
   return true;
 }
@@ -65,6 +76,7 @@ export async function PATCH(request: Request, context: RouteContext) {
     data.vlyNumber !== undefined
       ? normalizeOptionalVlyNumber(data.vlyNumber)
       : existing.vlyNumber;
+  const previousSquadKeys = resolveClubMemberTrainingTeamKeys(existing);
   const squadKeysFromBody = resolveSquadKeysFromBody(data);
 
   // Changing role with an incompatible stored number (e.g. VLY → coach): clear it.
@@ -78,7 +90,7 @@ export async function PATCH(request: Request, context: RouteContext) {
   }
 
   if (squadKeysFromBody !== null) {
-    if (!(await validateSquadKeys(squadKeysFromBody))) {
+    if (!(await validateSquadKeys(squadKeysFromBody, previousSquadKeys))) {
       return jsonError("Invalid squad", 400);
     }
 
@@ -119,7 +131,6 @@ export async function PATCH(request: Request, context: RouteContext) {
         ? (existing.coachPaymentType ?? "PAID")
         : null;
 
-  const previousSquadKeys = resolveClubMemberTrainingTeamKeys(existing);
   const vlyNumberChanged = nextVlyNumber !== existing.vlyNumber;
 
   const clubMember = await prisma.clubMember.update({

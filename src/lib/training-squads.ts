@@ -73,11 +73,21 @@ export async function syncTrainingSquadDayFromSession(session: {
 }
 
 export async function getTrainingSquadUsageCounts(key: string) {
-  const [members, sessions, matches] = await Promise.all([
-    prisma.clubMember.count({ where: { trainingTeamKey: key } }),
-    prisma.trainingSession.count({ where: { trainingTeamKey: key } }),
-    prisma.teamMatch.count({ where: { trainingTeamKey: key } }),
-  ]);
+  const [members, coachLinks, sessions, matches, clubTeams] =
+    await Promise.all([
+      prisma.clubMember.count({ where: { trainingTeamKey: key } }),
+      prisma.clubMemberCoachSquad.count({ where: { trainingTeamKey: key } }),
+      prisma.trainingSession.count({ where: { trainingTeamKey: key } }),
+      prisma.teamMatch.count({ where: { trainingTeamKey: key } }),
+      prisma.clubTeam.count({ where: { trainingTeamKey: key } }),
+    ]);
 
-  return { members, sessions, matches, total: members + sessions + matches };
+  return {
+    members,
+    coachLinks,
+    sessions,
+    matches,
+    clubTeams,
+    total: members + coachLinks + sessions + matches + clubTeams,
+  };
 }
