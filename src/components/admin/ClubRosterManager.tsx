@@ -152,7 +152,14 @@ function SquadCheckboxGroup({
         many cover coaches as you need. Leave all unchecked if they should not
         cover any team yet.
       </p>
-      <div className="space-y-2">
+      <div
+        className={cn(
+          "gap-2",
+          showHeadCoachControls
+            ? "grid sm:grid-cols-2 xl:grid-cols-3"
+            : "space-y-2",
+        )}
+      >
         {trainingTeams.map((team) => {
           const checked = selectedKeys.includes(team.key);
           const isHead =
@@ -1408,57 +1415,62 @@ export function ClubRosterManager({
                       {expanded ? (
                         <tr className="bg-black/20">
                           <td colSpan={5} className="px-4 py-4">
-                            <div className="grid gap-4 lg:grid-cols-[auto_1fr]">
-                              <div className="flex flex-wrap items-start gap-3">
-                                <AdminMemberProfileImage
-                                  memberId={member.id}
-                                  name={member.name}
-                                  imageUrl={member.profileImageUrl}
-                                  disabled={loading}
-                                  onUpdated={loadClubMembers}
-                                />
-                                <AdminMemberVlyPhoto
-                                  memberId={member.id}
-                                  name={member.name}
-                                  imageUrl={member.vlyMembershipPhotoUrl}
-                                  disabled={loading}
-                                  onUpdated={loadClubMembers}
-                                />
+                            <div className="space-y-4">
+                              <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                                <div className="flex shrink-0 flex-wrap items-start gap-3">
+                                  <AdminMemberProfileImage
+                                    memberId={member.id}
+                                    name={member.name}
+                                    imageUrl={member.profileImageUrl}
+                                    disabled={loading}
+                                    onUpdated={loadClubMembers}
+                                  />
+                                  <AdminMemberVlyPhoto
+                                    memberId={member.id}
+                                    name={member.name}
+                                    imageUrl={member.vlyMembershipPhotoUrl}
+                                    disabled={loading}
+                                    onUpdated={loadClubMembers}
+                                  />
+                                </div>
+
+                                <div className="min-w-0 flex-1 space-y-1.5">
+                                  <p className="text-sm text-zinc-400">
+                                    <span className="text-zinc-500">VLY:</span>{" "}
+                                    {member.vlyNumber ?? (
+                                      <span className="text-zinc-500">
+                                        Not set yet
+                                      </span>
+                                    )}
+                                  </p>
+                                  <p className="text-sm text-zinc-400">
+                                    <span className="text-zinc-500">Squad:</span>{" "}
+                                    {squadLabel}
+                                  </p>
+                                  <p className="text-sm text-zinc-400">
+                                    <span className="text-zinc-500">Email:</span>{" "}
+                                    {member.user?.email ??
+                                      "Awaiting registration"}
+                                  </p>
+                                  {subscriptionLabel ? (
+                                    <p className="text-xs font-medium text-zinc-300">
+                                      {subscriptionLabel}
+                                      {subscription?.status === "PENDING_PAYMENT"
+                                        ? " · awaiting payment"
+                                        : ""}
+                                    </p>
+                                  ) : null}
+                                </div>
                               </div>
 
-                              <div className="space-y-3">
-                                <p className="text-sm text-zinc-400">
-                                  <span className="text-zinc-500">VLY:</span>{" "}
-                                  {member.vlyNumber ?? (
-                                    <span className="text-zinc-500">Not set yet</span>
-                                  )}
-                                </p>
-                                <p className="text-sm text-zinc-400">
-                                  <span className="text-zinc-500">Squad:</span>{" "}
-                                  {squadLabel}
-                                </p>
-                                <p className="text-sm text-zinc-400">
-                                  <span className="text-zinc-500">Email:</span>{" "}
-                                  {member.user?.email ?? "Awaiting registration"}
-                                </p>
-
-                                {subscriptionLabel ? (
-                                  <p className="text-xs font-medium text-zinc-300">
-                                    {subscriptionLabel}
-                                    {subscription?.status === "PENDING_PAYMENT"
-                                      ? " · awaiting payment"
-                                      : ""}
-                                  </p>
-                                ) : null}
-
-                                <div
-                                  className={cn(
-                                    "grid gap-3 md:max-w-3xl",
-                                    member.rosterRole === "COACH"
-                                      ? "md:grid-cols-2 lg:grid-cols-4"
-                                      : "md:grid-cols-3",
-                                  )}
-                                >
+                              <div
+                                className={cn(
+                                  "grid gap-3",
+                                  member.rosterRole === "COACH"
+                                    ? "sm:grid-cols-2 lg:grid-cols-3"
+                                    : "sm:grid-cols-2 lg:grid-cols-3",
+                                )}
+                              >
                                   <div className="flex flex-col gap-1.5">
                                     <Label
                                       htmlFor={`number-${member.id}`}
@@ -1571,43 +1583,11 @@ export function ClubRosterManager({
                                         ))}
                                       </Select>
                                     </div>
-                                  ) : null}
-
-                                  <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-1">
-                                    <Label className="mb-0 text-xs font-normal text-zinc-500">
-                                      {member.rosterRole === "COACH"
-                                        ? "Training squads (head & cover)"
-                                        : "Squad"}
-                                    </Label>
-                                    {member.rosterRole === "COACH" ? (
-                                      <>
-                                        <SquadCheckboxGroup
-                                          idPrefix={`team-${member.id}`}
-                                          selectedKeys={memberSquadKeys(member)}
-                                          priorities={memberCoachPriorities(member)}
-                                          trainingTeams={trainingTeams}
-                                          disabled={loading}
-                                          showHeadCoachControls
-                                          headBySquad={headBySquad}
-                                          currentMemberId={member.id}
-                                          onToggle={(key) =>
-                                            toggleCoachSquad(member, key)
-                                          }
-                                          onPriorityChange={(key, priority) =>
-                                            void assignCoachSquadPriority(
-                                              member,
-                                              key,
-                                              priority,
-                                            )
-                                          }
-                                        />
-                                        {savingSquadMemberId === member.id ? (
-                                          <p className="text-[11px] text-zinc-500">
-                                            Saving squads…
-                                          </p>
-                                        ) : null}
-                                      </>
-                                    ) : (
+                                  ) : (
+                                    <div className="flex flex-col gap-1.5">
+                                      <Label className="mb-0 text-xs font-normal text-zinc-500">
+                                        Squad
+                                      </Label>
                                       <Select
                                         id={`team-${member.id}`}
                                         value={member.trainingTeamKey ?? ""}
@@ -1624,10 +1604,42 @@ export function ClubRosterManager({
                                           </option>
                                         ))}
                                       </Select>
-                                    )}
-                                  </div>
-                                </div>
+                                    </div>
+                                  )}
                               </div>
+
+                              {member.rosterRole === "COACH" ? (
+                                <div className="space-y-2 border-t border-white/10 pt-4">
+                                  <Label className="mb-0 text-xs font-normal text-zinc-500">
+                                    Training squads (head & cover)
+                                  </Label>
+                                  <SquadCheckboxGroup
+                                    idPrefix={`team-${member.id}`}
+                                    selectedKeys={memberSquadKeys(member)}
+                                    priorities={memberCoachPriorities(member)}
+                                    trainingTeams={trainingTeams}
+                                    disabled={loading}
+                                    showHeadCoachControls
+                                    headBySquad={headBySquad}
+                                    currentMemberId={member.id}
+                                    onToggle={(key) =>
+                                      toggleCoachSquad(member, key)
+                                    }
+                                    onPriorityChange={(key, priority) =>
+                                      void assignCoachSquadPriority(
+                                        member,
+                                        key,
+                                        priority,
+                                      )
+                                    }
+                                  />
+                                  {savingSquadMemberId === member.id ? (
+                                    <p className="text-[11px] text-zinc-500">
+                                      Saving squads…
+                                    </p>
+                                  ) : null}
+                                </div>
+                              ) : null}
                             </div>
                           </td>
                         </tr>
