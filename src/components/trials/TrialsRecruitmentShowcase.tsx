@@ -23,10 +23,10 @@ export function TrialsRecruitmentShowcase() {
             <span className="mb-4 block text-sm font-semibold uppercase tracking-[0.2em] text-jackals-red-light">
               August 2026 National League trials
             </span>
-            Jackals Volleyball is holding trials for our Men&apos;s Division 2
-            and Women&apos;s Division 3 teams in August. If you&apos;re ready to
-            compete in the Irish National League with a committed Dublin based
-            Volleyball Club, we want to hear from you.
+            Jackals Volleyball is holding trials for our Men&apos;s Division 2,
+            Men&apos;s Division 3, and Women&apos;s Division 3 teams in August.
+            If you&apos;re ready to compete in the Irish National League with a
+            committed Dublin based Volleyball Club, we want to hear from you.
           </>
         }
         action={

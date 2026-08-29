@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format, isPast } from "date-fns";
+import { Fragment } from "react";
+import { format, isPast, isSameMonth } from "date-fns";
 import {
   ChevronRight as RowChevron,
   Clock,
@@ -232,24 +233,19 @@ export function TeamMatchesMonthView({
     ),
   ).length;
 
-  const sortedUpcomingMatches = [...upcomingMatches].sort((a, b) => {
-    const aNeedsResponse =
-      !a.cancelled &&
-      sessionNeedsPlayerResponse(
-        attendanceByMatchId[a.id] ?? "UNANSWERED",
-        new Date(a.matchStart),
-        now,
-      );
-    const bNeedsResponse =
-      !b.cancelled &&
-      sessionNeedsPlayerResponse(
-        attendanceByMatchId[b.id] ?? "UNANSWERED",
-        new Date(b.matchStart),
-        now,
-      );
-    if (aNeedsResponse !== bNeedsResponse) return aNeedsResponse ? -1 : 1;
-    return new Date(a.matchStart).getTime() - new Date(b.matchStart).getTime();
-  });
+  const sortedUpcomingMatches = [...upcomingMatches].sort(
+    (a, b) =>
+      new Date(a.matchStart).getTime() - new Date(b.matchStart).getTime(),
+  );
+
+  const hasNextMonthSpillover = sortedUpcomingMatches.some(
+    (match) => !isSameMonth(new Date(match.matchStart), month),
+  );
+  const pastLabel = pastMatches.some(
+    (match) => !isSameMonth(new Date(match.matchStart), month),
+  )
+    ? "Earlier"
+    : "Earlier this month";
 
   const navigateMonth = (target: Date) => {
     router.push(buildMatchesQuery(target, selectedTeamKey, returnFrom));
@@ -373,19 +369,31 @@ export function TeamMatchesMonthView({
                 {monthLabel} schedule
               </p>
               <p className="mt-1 text-xs text-zinc-600">
-                {needsResponseCount > 0
-                  ? `${needsResponseCount} match${needsResponseCount === 1 ? "" : "es"} ${needsResponseCount === 1 ? "needs" : "need"} your response this week — highlighted below.`
-                  : unansweredUpcoming > 0
-                    ? `${unansweredUpcoming} match${unansweredUpcoming === 1 ? "" : "es"} still ${unansweredUpcoming === 1 ? "needs" : "need"} a response.`
-                    : hasUpcomingNotYetOpen
-                      ? "Responses open 2 weeks before each match."
-                      : "Open a match to respond and see who else is playing."}
+                {hasNextMonthSpillover
+                  ? needsResponseCount > 0
+                    ? `Includes the rest of this week into next month. ${needsResponseCount} match${needsResponseCount === 1 ? "" : "es"} ${needsResponseCount === 1 ? "needs" : "need"} your response — highlighted below.`
+                    : "Includes the rest of this week into next month so you don’t miss nearby matches."
+                  : needsResponseCount > 0
+                    ? `${needsResponseCount} match${needsResponseCount === 1 ? "" : "es"} ${needsResponseCount === 1 ? "needs" : "need"} your response this week — highlighted below.`
+                    : unansweredUpcoming > 0
+                      ? `${unansweredUpcoming} match${unansweredUpcoming === 1 ? "" : "es"} still ${unansweredUpcoming === 1 ? "needs" : "need"} a response.`
+                      : hasUpcomingNotYetOpen
+                        ? "Responses open 2 weeks before each match."
+                        : "Open a match to respond and see who else is playing."}
               </p>
             </div>
 
             <StaggerIn className="divide-y divide-white/10" stagger={50}>
-              {sortedUpcomingMatches.map((match) => {
+              {sortedUpcomingMatches.map((match, index) => {
                 const matchDate = new Date(match.matchStart);
+                const previousDate =
+                  index > 0
+                    ? new Date(sortedUpcomingMatches[index - 1]!.matchStart)
+                    : null;
+                const showWeekSpilloverDivider =
+                  previousDate != null &&
+                  isSameMonth(previousDate, month) &&
+                  !isSameMonth(matchDate, month);
                 const userStatus = attendanceByMatchId[match.id] ?? "UNANSWERED";
                 const isCancelled = match.cancelled === true;
                 const canRespond =
@@ -501,25 +509,32 @@ export function TeamMatchesMonthView({
                   </>
                 );
 
-                return isLocked || isCancelled ? (
-                  <div
-                    key={match.id}
-                    className={rowClassName}
-                    aria-disabled="true"
-                  >
-                    {rowContent}
-                  </div>
-                ) : (
-                  <Link key={match.id} href={href} className={rowClassName}>
-                    {rowContent}
-                  </Link>
+                return (
+                  <Fragment key={match.id}>
+                    {showWeekSpilloverDivider ? (
+                      <div className="bg-jackals-inset/50 px-5 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                          Continues into {format(matchDate, "MMMM")}
+                        </p>
+                      </div>
+                    ) : null}
+                    {isLocked || isCancelled ? (
+                      <div className={rowClassName} aria-disabled="true">
+                        {rowContent}
+                      </div>
+                    ) : (
+                      <Link href={href} className={rowClassName}>
+                        {rowContent}
+                      </Link>
+                    )}
+                  </Fragment>
                 );
               })}
 
               {pastMatches.length > 0 && sortedUpcomingMatches.length > 0 && (
                 <div className="bg-jackals-inset/50 px-5 py-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
-                    Earlier this month
+                    {pastLabel}
                   </p>
                 </div>
               )}

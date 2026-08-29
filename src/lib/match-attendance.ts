@@ -9,6 +9,7 @@ import {
   type TrainingRosterMember,
 } from "@/lib/training-attendance-config";
 import type { CoachReminderStatus } from "@/lib/coach-unanswered-config";
+import { listSquadCoaches } from "@/lib/coach-session-coverage";
 import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
@@ -79,22 +80,26 @@ export async function getMatchDetail(
   const team = await getTrainingTeamByKey(match.trainingTeamKey);
   if (!team) notFound();
 
-  const teammates = await prisma.clubMember.findMany({
-    where: {
-      trainingTeamKey: match.trainingTeamKey,
-      active: true,
-      userId: { not: null },
-    },
-    include: {
-      user: { select: { id: true, name: true } },
-    },
-    orderBy: { name: "asc" },
-  });
+  const [teammates, squadCoaches, signups] = await Promise.all([
+    prisma.clubMember.findMany({
+      where: {
+        trainingTeamKey: match.trainingTeamKey,
+        active: true,
+        userId: { not: null },
+        rosterRole: { not: "COACH" },
+      },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
+      orderBy: { name: "asc" },
+    }),
+    listSquadCoaches(match.trainingTeamKey),
+    prisma.matchSignup.findMany({
+      where: { matchId },
+      select: { userId: true, status: true },
+    }),
+  ]);
 
-  const signups = await prisma.matchSignup.findMany({
-    where: { matchId },
-    select: { userId: true, status: true },
-  });
   const signupMap = new Map(
     signups.map((signup) => [
       signup.userId,
@@ -110,38 +115,30 @@ export async function getMatchDetail(
     };
   }
 
-  const linkedMembers = teammates
+  const playerMembers: TrainingRosterMember[] = teammates
     .filter((member) => member.user)
-    .map((member) => {
-      const rawStatus = signupMap.get(member.userId!) ?? "UNANSWERED";
-      const status =
-        member.rosterRole === "COACH"
-          ? resolveCoachAttendanceStatus(rawStatus, match.matchStart)
-          : rawStatus;
+    .map((member) => ({
+      userId: member.userId!,
+      name: member.user!.name,
+      status: signupMap.get(member.userId!) ?? "UNANSWERED",
+      isCurrentUser: member.userId === userId,
+    }));
 
-      return {
-        rosterRole: member.rosterRole,
-        member: {
-          userId: member.userId!,
-          name: member.user!.name,
-          status,
-          isCurrentUser: member.userId === userId,
-        } satisfies TrainingRosterMember,
-      };
-    });
-
-  const playerMembers = linkedMembers
-    .filter((entry) => entry.rosterRole !== "COACH")
-    .map((entry) => entry.member);
-
-  const coachMembers = linkedMembers
-    .filter((entry) => entry.rosterRole === "COACH")
-    .map((entry) => entry.member);
+  const coachMembers: TrainingRosterMember[] = squadCoaches.map((coach) => {
+    const rawStatus = signupMap.get(coach.userId) ?? "UNANSWERED";
+    return {
+      userId: coach.userId,
+      name: coach.name,
+      status: resolveCoachAttendanceStatus(rawStatus, match.matchStart),
+      isCurrentUser: coach.userId === userId,
+      isHeadCoach: coach.isHeadCoach,
+      coachPriority: coach.priority,
+    };
+  });
 
   const roster = groupByStatus(playerMembers);
   const coaches = groupByStatus(coachMembers);
-  const isCoachUser =
-    teammates.find((member) => member.userId === userId)?.rosterRole === "COACH";
+  const isCoachUser = squadCoaches.some((coach) => coach.userId === userId);
 
   const rawUserStatus = signupMap.get(userId) ?? "UNANSWERED";
   const userStatus = isCoachUser

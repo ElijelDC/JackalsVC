@@ -11,7 +11,7 @@ import { isTrainingSquadKey } from "@/lib/training-squads";
 import { clubMemberUpdateSchema } from "@/lib/validations";
 import {
   isValidClubMemberNumberForRole,
-  normalizeVlyNumber,
+  normalizeOptionalVlyNumber,
 } from "@/lib/vly-number";
 import { prisma } from "@/lib/prisma";
 
@@ -54,24 +54,32 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   const existing = await prisma.clubMember.findUnique({
     where: { id },
-    include: { coachSquads: { select: { trainingTeamKey: true } } },
+    include: {
+      coachSquads: { select: { trainingTeamKey: true, priority: true } },
+    },
   });
   if (!existing) return jsonError("Roster entry not found", 404);
 
   const nextRosterRole = (data.rosterRole ?? existing.rosterRole) as "PLAYER" | "COACH";
-  const nextVlyNumber =
+  let nextVlyNumber =
     data.vlyNumber !== undefined
-      ? normalizeVlyNumber(data.vlyNumber)
+      ? normalizeOptionalVlyNumber(data.vlyNumber)
       : existing.vlyNumber;
   const squadKeysFromBody = resolveSquadKeysFromBody(data);
+
+  // Changing role with an incompatible stored number (e.g. VLY → coach): clear it.
+  if (
+    data.rosterRole !== undefined &&
+    data.vlyNumber === undefined &&
+    nextVlyNumber !== null &&
+    !isValidClubMemberNumberForRole(nextVlyNumber, nextRosterRole)
+  ) {
+    nextVlyNumber = null;
+  }
 
   if (squadKeysFromBody !== null) {
     if (!(await validateSquadKeys(squadKeysFromBody))) {
       return jsonError("Invalid squad", 400);
-    }
-
-    if (nextRosterRole === "COACH" && squadKeysFromBody.length === 0) {
-      return jsonError("Coaches need at least one squad", 400);
     }
 
     if (nextRosterRole === "PLAYER" && squadKeysFromBody.length > 1) {
@@ -79,16 +87,22 @@ export async function PATCH(request: Request, context: RouteContext) {
     }
   }
 
-  if (!isValidClubMemberNumberForRole(nextVlyNumber, nextRosterRole)) {
+  // Only validate format when the client is explicitly setting the number.
+  // Do not block squad / role / other edits on a legacy mismatched value.
+  if (
+    data.vlyNumber !== undefined &&
+    nextVlyNumber !== null &&
+    !isValidClubMemberNumberForRole(nextVlyNumber, nextRosterRole)
+  ) {
     return jsonError(
       nextRosterRole === "COACH"
-        ? "Enter a valid VLYC coach number (e.g. VLYC12345)"
-        : "Enter a valid VLY number (e.g. VLY12345)",
+        ? "Enter a valid VLYC coach number (e.g. VLYC12345), or leave blank for now"
+        : "Enter a valid VLY number (e.g. VLY12345), or leave blank for now",
       400,
     );
   }
 
-  if (nextVlyNumber !== existing.vlyNumber) {
+  if (nextVlyNumber !== existing.vlyNumber && nextVlyNumber !== null) {
     const duplicate = await prisma.clubMember.findUnique({
       where: { vlyNumber: nextVlyNumber },
       select: { id: true },
@@ -106,14 +120,18 @@ export async function PATCH(request: Request, context: RouteContext) {
         : null;
 
   const previousSquadKeys = resolveClubMemberTrainingTeamKeys(existing);
+  const vlyNumberChanged = nextVlyNumber !== existing.vlyNumber;
 
   const clubMember = await prisma.clubMember.update({
     where: { id },
     data: {
-      ...(data.vlyNumber !== undefined ? { vlyNumber: nextVlyNumber } : {}),
+      ...(data.vlyNumber !== undefined || vlyNumberChanged
+        ? { vlyNumber: nextVlyNumber }
+        : {}),
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(data.active !== undefined ? { active: data.active } : {}),
       ...(data.rosterRole !== undefined ? { rosterRole: data.rosterRole } : {}),
+      ...(data.rosterRole === "COACH" ? { playerNumber: null } : {}),
       ...(data.coachPaymentType !== undefined ||
       data.rosterRole !== undefined
         ? { coachPaymentType: nextCoachPaymentType }
@@ -124,7 +142,9 @@ export async function PATCH(request: Request, context: RouteContext) {
         ? { trainingTeamKey: squadKeysFromBody[0] ?? null }
         : {}),
     },
-    include: { coachSquads: { select: { trainingTeamKey: true } } },
+    include: {
+      coachSquads: { select: { trainingTeamKey: true, priority: true } },
+    },
   });
 
   if (nextRosterRole === "PLAYER" && existing.rosterRole === "COACH") {
@@ -133,7 +153,11 @@ export async function PATCH(request: Request, context: RouteContext) {
 
   if (squadKeysFromBody !== null) {
     if (nextRosterRole === "COACH") {
-      await setClubMemberCoachSquads(id, squadKeysFromBody);
+      await setClubMemberCoachSquads(
+        id,
+        squadKeysFromBody,
+        data.coachSquadPriorities,
+      );
     } else {
       await handleClubMemberSquadChange(
         id,
@@ -141,27 +165,39 @@ export async function PATCH(request: Request, context: RouteContext) {
         squadKeysFromBody[0] ?? null,
       );
     }
+  } else if (nextRosterRole === "COACH" && data.coachSquadPriorities) {
+    const keys = resolveClubMemberTrainingTeamKeys({
+      ...existing,
+      rosterRole: nextRosterRole,
+    });
+    if (keys.length > 0) {
+      await setClubMemberCoachSquads(id, keys, data.coachSquadPriorities);
+    }
   } else if (
     nextRosterRole === "COACH" &&
     existing.rosterRole === "PLAYER" &&
     clubMember.trainingTeamKey
   ) {
-    await setClubMemberCoachSquads(id, [clubMember.trainingTeamKey]);
+    await setClubMemberCoachSquads(
+      id,
+      [clubMember.trainingTeamKey],
+      data.coachSquadPriorities,
+    );
   }
 
   const updated = await prisma.clubMember.findUnique({
     where: { id },
     include: {
-      coachSquads: { select: { trainingTeamKey: true } },
+      coachSquads: { select: { trainingTeamKey: true, priority: true } },
     },
   });
 
-  // Keep published club teams in sync for every affected squad (coaches can have several).
+  // Squad handlers already sync published teams. Re-sync only for non-squad field edits.
   if (
-    data.active !== undefined ||
-    data.rosterRole !== undefined ||
-    data.name !== undefined ||
-    squadKeysFromBody !== null
+    squadKeysFromBody === null &&
+    (data.active !== undefined ||
+      data.rosterRole !== undefined ||
+      data.name !== undefined)
   ) {
     const nextKeys = updated
       ? resolveClubMemberTrainingTeamKeys(updated)

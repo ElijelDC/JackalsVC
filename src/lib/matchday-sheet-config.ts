@@ -1,6 +1,6 @@
 export type MatchdaySheetEntry = {
   name: string;
-  vlyNumber: string;
+  vlyNumber: string | null;
   playerNumber: number | null;
   vlyMembershipPhotoUrl: string | null;
   role: "PLAYER" | "COACH";

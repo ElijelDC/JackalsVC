@@ -31,12 +31,13 @@ import {
 import { trialSessionReminderWindowOpensAt } from "@/lib/trial-session-reminder-window";
 import { cn } from "@/lib/utils";
 
-type SessionTimeFilter = "all" | "active" | "past";
+type SessionTimeFilter = "all" | "active" | "past" | "awaiting";
 
 const TIME_FILTERS: { id: SessionTimeFilter; label: string }[] = [
-  { id: "all", label: "All" },
+  { id: "awaiting", label: "Awaiting approval" },
   { id: "active", label: "Active" },
   { id: "past", label: "Past" },
+  { id: "all", label: "All" },
 ];
 
 function isPastSession(session: AdminTrialSessionListItem, now = new Date()) {
@@ -353,7 +354,11 @@ export function TrialSessionsManager({
   const [sendingReminders, setSendingReminders] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedSignupIds, setSelectedSignupIds] = useState<string[]>([]);
-  const [timeFilter, setTimeFilter] = useState<SessionTimeFilter>("active");
+  const [timeFilter, setTimeFilter] = useState<SessionTimeFilter>(() =>
+    initialSessions.some((session) => session.pendingApprovalCount > 0)
+      ? "awaiting"
+      : "active",
+  );
   const [createError, setCreateError] = useState<string | null>(null);
   const [createMessage, setCreateMessage] = useState<string | null>(null);
   const [editError, setEditError] = useState<string | null>(null);
@@ -441,14 +446,32 @@ export function TrialSessionsManager({
     });
   };
 
+  const awaitingApprovalCount = useMemo(
+    () =>
+      sessions.reduce(
+        (sum, session) => sum + (session.pendingApprovalCount || 0),
+        0,
+      ),
+    [sessions],
+  );
+
   const filteredSessions = useMemo(() => {
     const now = new Date();
-    return sessions.filter((session) => {
+    const filtered = sessions.filter((session) => {
       const past = isPastSession(session, now);
       if (timeFilter === "past") return past;
       if (timeFilter === "active") return !past;
+      if (timeFilter === "awaiting") return session.pendingApprovalCount > 0;
       return true;
     });
+
+    if (timeFilter === "awaiting") {
+      return [...filtered].sort(
+        (a, b) => b.pendingApprovalCount - a.pendingApprovalCount,
+      );
+    }
+
+    return filtered;
   }, [sessions, timeFilter]);
 
   useEffect(() => {
@@ -641,15 +664,16 @@ export function TrialSessionsManager({
       session.coachName ? `Coach ${session.coachName}` : null,
       sessionFeeLabel(session),
       session.paymentUrl ? "Payment link set" : "No payment link",
-      `${session.signupCount} approved${
-        session.pendingApprovalCount > 0
-          ? `, ${session.pendingApprovalCount} awaiting approval`
-          : ""
-      }`,
+      `${session.signupCount} approved`,
       isPastSession(session) || !session.active ? "Closed" : "Open",
     ]
       .filter(Boolean)
       .join(" · ");
+
+  const sessionNote = (session: AdminTrialSessionListItem) =>
+    session.pendingApprovalCount > 0
+      ? `${session.pendingApprovalCount} awaiting approval`
+      : undefined;
 
   return (
     <AdminSection
@@ -676,22 +700,45 @@ export function TrialSessionsManager({
 
       <div className="mt-10 space-y-3">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="grid grid-cols-3 gap-1 rounded-lg bg-black/20 p-1 sm:w-auto sm:inline-grid">
-            {TIME_FILTERS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                onClick={() => setTimeFilter(option.id)}
-                className={cn(
-                  "rounded-md px-3 py-2 text-sm font-medium transition sm:py-1.5",
-                  timeFilter === option.id
-                    ? "bg-jackals-red text-white shadow-sm"
-                    : "text-zinc-400 hover:text-white",
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="flex flex-wrap gap-1 rounded-lg bg-black/20 p-1">
+            {TIME_FILTERS.map((option) => {
+              const awaitingBadge =
+                option.id === "awaiting" && awaitingApprovalCount > 0
+                  ? awaitingApprovalCount
+                  : null;
+
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  onClick={() => setTimeFilter(option.id)}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium transition sm:py-1.5",
+                    timeFilter === option.id
+                      ? option.id === "awaiting"
+                        ? "bg-amber-500/20 text-amber-100 shadow-sm ring-1 ring-amber-500/40"
+                        : "bg-jackals-red text-white shadow-sm"
+                      : option.id === "awaiting" && awaitingBadge
+                        ? "text-amber-200 hover:text-amber-100"
+                        : "text-zinc-400 hover:text-white",
+                  )}
+                >
+                  {option.label}
+                  {awaitingBadge ? (
+                    <span
+                      className={cn(
+                        "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-xs font-semibold",
+                        timeFilter === "awaiting"
+                          ? "bg-amber-400/30 text-amber-50"
+                          : "bg-amber-500/25 text-amber-100",
+                      )}
+                    >
+                      {awaitingBadge}
+                    </span>
+                  ) : null}
+                </button>
+              );
+            })}
           </div>
           <p className="text-sm text-zinc-500">
             Showing {filteredSessions.length} of {sessions.length}
@@ -706,7 +753,13 @@ export function TrialSessionsManager({
           <p className="text-sm text-zinc-500">No one-off sessions yet.</p>
         ) : filteredSessions.length === 0 ? (
           <p className="text-sm text-zinc-500">
-            No {timeFilter === "past" ? "past" : "active"} sessions.
+            {timeFilter === "awaiting"
+              ? "No sessions have people awaiting approval."
+              : timeFilter === "past"
+                ? "No past sessions."
+                : timeFilter === "active"
+                  ? "No active sessions."
+                  : "No sessions match this filter."}
           </p>
         ) : (
           filteredSessions.map((session) => {
@@ -719,6 +772,15 @@ export function TrialSessionsManager({
                 isEditing={isEditing}
                 title={session.title}
                 subtitle={sessionSubtitle(session)}
+                note={sessionNote(session)}
+                formAction={
+                  session.pendingApprovalCount > 0 && !isEditing
+                    ? {
+                        label: `Review ${session.pendingApprovalCount} awaiting`,
+                        onClick: () => startEdit(session),
+                      }
+                    : undefined
+                }
                 onEdit={() => startEdit(session)}
                 onDuplicate={() => startDuplicate(session)}
                 onDelete={() => void handleDelete(session.id)}

@@ -5,7 +5,6 @@ import {
   CalendarDays,
   Camera,
   ClipboardList,
-  ClipboardPen,
   Dumbbell,
   Handshake,
   Home,
@@ -84,14 +83,6 @@ export const NAV_ITEMS: NavItem[] = [
     paidCoachOnly: true,
   },
   {
-    href: "/coach/trials-applications",
-    label: "Signups",
-    icon: ClipboardPen,
-    description: "Review trial sign-ups and export the spreadsheet.",
-    requiresAuth: true,
-    coachOnly: true,
-  },
-  {
     href: "/dashboard",
     label: "Dashboard",
     icon: LayoutDashboard,
@@ -135,7 +126,6 @@ const COACH_PAID_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
-  "/coach/trials-applications",
   "/payments",
 ] as const;
 
@@ -144,20 +134,17 @@ const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
-  "/coach/trials-applications",
 ] as const;
 
 const COACH_PAID_MOBILE_QUICK_NAV_HREFS = [
   "/training",
   "/matches",
-  "/coach/trials-applications",
   "/payments",
 ] as const;
 
 const COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS = [
   "/training",
   "/matches",
-  "/coach/trials-applications",
 ] as const;
 
 const ADMIN_MOBILE_QUICK_NAV_HREFS = [
@@ -195,7 +182,6 @@ const ADMIN_MORE_HIDE_HREFS = new Set(["/", "/training", "/matches"]);
 
 const COACH_MORE_HIDE_HREFS = new Set([
   "/coach/training",
-  "/coach/trials-applications",
 ]);
 
 export { ADMIN_MOBILE_MENU_HIDE_HREFS, ADMIN_MORE_HIDE_HREFS, COACH_MORE_HIDE_HREFS };
@@ -300,7 +286,7 @@ export const INFO_NAV_ITEMS: NavItem[] = [
     label: "Trials",
     icon: Megaphone,
     description:
-      "August 2026 trials for Men's Division 2 and Women's Division 3 — apply now.",
+      "August 2026 trials for Men's Division 2, Men's Division 3, and Women's Division 3 — apply now.",
   },
 ];
 

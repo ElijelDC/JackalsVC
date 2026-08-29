@@ -11,7 +11,7 @@ export default async function AdminRosterPage() {
     prisma.clubMember.findMany({
       include: {
         user: { select: { id: true, email: true } },
-        coachSquads: { select: { trainingTeamKey: true } },
+        coachSquads: { select: { trainingTeamKey: true, priority: true } },
       },
       orderBy: { vlyNumber: "asc" },
     }),

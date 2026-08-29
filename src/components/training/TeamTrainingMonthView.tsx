@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format, isPast } from "date-fns";
+import { Fragment } from "react";
+import { format, isPast, isSameMonth } from "date-fns";
 import {
   CalendarDays,
   ChevronRight as RowChevron,
@@ -212,20 +213,19 @@ export function TeamTrainingMonthView({
     ),
   ).length;
 
-  const sortedUpcomingEvents = [...upcomingEvents].sort((a, b) => {
-    const aNeedsResponse = sessionNeedsPlayerResponse(
-      attendanceByEventId[a.id] ?? "UNANSWERED",
-      new Date(a.startDate),
-      now,
-    );
-    const bNeedsResponse = sessionNeedsPlayerResponse(
-      attendanceByEventId[b.id] ?? "UNANSWERED",
-      new Date(b.startDate),
-      now,
-    );
-    if (aNeedsResponse !== bNeedsResponse) return aNeedsResponse ? -1 : 1;
-    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-  });
+  const sortedUpcomingEvents = [...upcomingEvents].sort(
+    (a, b) =>
+      new Date(a.startDate).getTime() - new Date(b.startDate).getTime(),
+  );
+
+  const hasNextMonthSpillover = sortedUpcomingEvents.some(
+    (event) => !isSameMonth(new Date(event.startDate), month),
+  );
+  const pastLabel = pastEvents.some(
+    (event) => !isSameMonth(new Date(event.startDate), month),
+  )
+    ? "Earlier"
+    : "Earlier this month";
 
   const navigateMonth = (target: Date) => {
     router.push(buildTrainingQuery(target, selectedTeamKey, returnFrom));
@@ -364,19 +364,31 @@ export function TeamTrainingMonthView({
                 {monthLabel} schedule
               </p>
               <p className="mt-1 text-xs text-zinc-600">
-                {needsResponseCount > 0
-                  ? `${needsResponseCount} session${needsResponseCount === 1 ? "" : "s"} ${needsResponseCount === 1 ? "needs" : "need"} your response this week — highlighted below.`
-                  : unansweredUpcoming > 0
-                    ? `${unansweredUpcoming} session${unansweredUpcoming === 1 ? "" : "s"} still ${unansweredUpcoming === 1 ? "needs" : "need"} a response.`
-                    : hasUpcomingNotYetOpen
-                      ? "Responses open 2 weeks before each session."
-                      : "Open a session to respond and see who else is coming."}
+                {hasNextMonthSpillover
+                  ? needsResponseCount > 0
+                    ? `Includes the rest of this week into next month. ${needsResponseCount} session${needsResponseCount === 1 ? "" : "s"} ${needsResponseCount === 1 ? "needs" : "need"} your response — highlighted below.`
+                    : "Includes the rest of this week into next month so you don’t miss nearby sessions."
+                  : needsResponseCount > 0
+                    ? `${needsResponseCount} session${needsResponseCount === 1 ? "" : "s"} ${needsResponseCount === 1 ? "needs" : "need"} your response this week — highlighted below.`
+                    : unansweredUpcoming > 0
+                      ? `${unansweredUpcoming} session${unansweredUpcoming === 1 ? "" : "s"} still ${unansweredUpcoming === 1 ? "needs" : "need"} a response.`
+                      : hasUpcomingNotYetOpen
+                        ? "Responses open 2 weeks before each session."
+                        : "Open a session to respond and see who else is coming."}
               </p>
             </div>
 
             <StaggerIn className="divide-y divide-white/10" stagger={50}>
-              {sortedUpcomingEvents.map((event) => {
+              {sortedUpcomingEvents.map((event, index) => {
                 const eventDate = new Date(event.startDate);
+                const previousDate =
+                  index > 0
+                    ? new Date(sortedUpcomingEvents[index - 1]!.startDate)
+                    : null;
+                const showWeekSpilloverDivider =
+                  previousDate != null &&
+                  isSameMonth(previousDate, month) &&
+                  !isSameMonth(eventDate, month);
                 const { timeLabel } = formatEventDateTime(
                   event.startDate,
                   event.endDate,
@@ -500,25 +512,32 @@ export function TeamTrainingMonthView({
                   </>
                 );
 
-                return isLocked || isCancelled ? (
-                  <div
-                    key={event.id}
-                    className={rowClassName}
-                    aria-disabled="true"
-                  >
-                    {rowContent}
-                  </div>
-                ) : (
-                  <Link key={event.id} href={href} className={rowClassName}>
-                    {rowContent}
-                  </Link>
+                return (
+                  <Fragment key={event.id}>
+                    {showWeekSpilloverDivider ? (
+                      <div className="bg-jackals-inset/50 px-5 py-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+                          Continues into {format(eventDate, "MMMM")}
+                        </p>
+                      </div>
+                    ) : null}
+                    {isLocked || isCancelled ? (
+                      <div className={rowClassName} aria-disabled="true">
+                        {rowContent}
+                      </div>
+                    ) : (
+                      <Link href={href} className={rowClassName}>
+                        {rowContent}
+                      </Link>
+                    )}
+                  </Fragment>
                 );
               })}
 
               {pastEvents.length > 0 && upcomingEvents.length > 0 && (
                 <div className="bg-jackals-inset/50 px-5 py-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-600">
-                    Earlier this month
+                    {pastLabel}
                   </p>
                 </div>
               )}

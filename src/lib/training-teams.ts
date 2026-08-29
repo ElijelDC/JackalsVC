@@ -1,6 +1,6 @@
 import "server-only";
 
-import { endOfMonth, startOfMonth } from "date-fns";
+import { getScheduleMonthWindow } from "@/lib/schedule-month-groups";
 import { prisma } from "@/lib/prisma";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
 
@@ -89,14 +89,13 @@ export async function getMonthlyTeamTrainingEvents(
     return { session: null, events: [] };
   }
 
-  const monthStart = startOfMonth(month);
-  const monthEnd = endOfMonth(month);
+  const { rangeStart, rangeEnd } = getScheduleMonthWindow(month);
 
   const events = await prisma.event.findMany({
     where: {
       type: "TRAINING",
       trainingSessionId: session.id,
-      startDate: { gte: monthStart, lte: monthEnd },
+      startDate: { gte: rangeStart, lte: rangeEnd },
     },
     orderBy: { startDate: "asc" },
   });

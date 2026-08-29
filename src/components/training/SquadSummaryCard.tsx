@@ -7,6 +7,7 @@ import {
   TRAINING_ATTENDANCE_BADGE_STYLES,
   TRAINING_ATTENDANCE_LABELS,
   getCoachesVisibleToUser,
+  sortCoachesForDisplay,
   type TrainingRosterGroups,
 } from "@/lib/training-attendance-config";
 import { cn } from "@/lib/utils";
@@ -59,11 +60,11 @@ function CoachAttendanceList({
   coaches: TrainingRosterGroups;
   showStatusBadges: boolean;
 }) {
-  const allCoaches = [
+  const allCoaches = sortCoachesForDisplay([
     ...coaches.attending,
     ...coaches.notAttending,
     ...coaches.unanswered,
-  ];
+  ]);
 
   if (allCoaches.length === 0) return null;
 
@@ -83,20 +84,27 @@ function CoachAttendanceList({
                   "ring-2 ring-jackals-red ring-offset-2 ring-offset-jackals-surface",
               )}
             />
-            <span
-              className={cn(
-                "min-w-0 flex-1 truncate text-sm",
-                coach.isCurrentUser
-                  ? "font-medium text-jackals-red-light"
-                  : "text-zinc-300",
-              )}
-              title={coach.isCurrentUser ? `${coach.name} (you)` : coach.name}
-            >
-              {coach.name}
-              {coach.isCurrentUser ? (
-                <span className="font-normal text-zinc-500"> · you</span>
+            <div className="min-w-0 flex-1">
+              <p
+                className={cn(
+                  "truncate text-sm",
+                  coach.isCurrentUser
+                    ? "font-medium text-jackals-red-light"
+                    : "text-zinc-300",
+                )}
+                title={coach.isCurrentUser ? `${coach.name} (you)` : coach.name}
+              >
+                {coach.name}
+                {coach.isCurrentUser ? (
+                  <span className="font-normal text-zinc-500"> · you</span>
+                ) : null}
+              </p>
+              {coach.isHeadCoach ? (
+                <p className="text-[11px] font-medium tracking-wide text-amber-300/90">
+                  Head coach
+                </p>
               ) : null}
-            </span>
+            </div>
             {showStatusBadges ? (
               <span
                 className={cn(

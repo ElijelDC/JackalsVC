@@ -30,11 +30,14 @@ export type AdminActionQueue = {
   badgeCounts: Record<string, number>;
 };
 
+/** Pending registration reviews: awaiting photo approval (VLY may be blank). */
 const REGISTRATION_REVIEW_WHERE = {
   userId: null,
   active: true,
   registrationReviewStatus: "PENDING" as const,
-  vlyMembershipPhotoUrl: { not: null },
+  // Avoid `{ not: null }` / `NOT: [{ vlyNumber: null }]` — breaks with some Prisma clients
+  // after vlyNumber became optional. Require a submitted photo path instead.
+  vlyMembershipPhotoUrl: { startsWith: "/" },
 };
 
 const KIT_PROOF_SUBMITTED_WHERE = {
@@ -163,7 +166,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
           : `${registrationCount} members waiting for VLY photo approval`,
       count: registrationCount,
       previews: registrationReviews.map(
-        (review) => `${review.name} · ${review.vlyNumber}`,
+        (review) =>
+          `${review.name} · ${review.vlyNumber ?? "VLY pending"}`,
       ),
     });
   }

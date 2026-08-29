@@ -215,6 +215,9 @@ export type TrainingRosterMember = {
   name: string;
   status: TrainingAttendanceStatus;
   isCurrentUser: boolean;
+  /** Priority 0 = head coach for this squad. */
+  isHeadCoach?: boolean;
+  coachPriority?: number;
 };
 
 export type TrainingRosterGroups = {
@@ -222,6 +225,21 @@ export type TrainingRosterGroups = {
   notAttending: TrainingRosterMember[];
   unanswered: TrainingRosterMember[];
 };
+
+/** Head coach first, then by name. */
+export function sortCoachesForDisplay(
+  coaches: TrainingRosterMember[],
+): TrainingRosterMember[] {
+  return [...coaches].sort((a, b) => {
+    const aHead = a.isHeadCoach ? 0 : 1;
+    const bHead = b.isHeadCoach ? 0 : 1;
+    if (aHead !== bHead) return aHead - bHead;
+    const aPriority = a.coachPriority ?? 100;
+    const bPriority = b.coachPriority ?? 100;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+    return a.name.localeCompare(b.name);
+  });
+}
 
 /** Players only see coaches who marked attending; coaches see the full coach list. */
 export function getCoachesVisibleToUser(
@@ -256,6 +274,8 @@ export type TrainingSessionDetailData = {
   };
   userStatus: TrainingAttendanceStatus;
   isCoachUser: boolean;
+  /** Cover coaches wait for head decline; locked if head already accepted. */
+  coachResponseGate: import("@/lib/coach-session-coverage-config").CoachResponseGate | null;
   coachReminder: CoachReminderStatus | null;
   roster: TrainingRosterGroups;
   coaches: TrainingRosterGroups;

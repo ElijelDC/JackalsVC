@@ -147,8 +147,11 @@ export async function getClubMemberSquadKeys(clubMemberId: string) {
 
   if (member.rosterRole === "COACH") {
     const fromJoin = member.coachSquads.map((row) => row.trainingTeamKey);
-    const keys = [...new Set([...fromJoin, member.trainingTeamKey].filter(Boolean))] as string[];
-    return keys;
+    if (fromJoin.length > 0) {
+      return [...new Set(fromJoin)];
+    }
+    // Legacy rows before coachSquads join was populated.
+    return member.trainingTeamKey ? [member.trainingTeamKey] : [];
   }
 
   return member.trainingTeamKey ? [member.trainingTeamKey] : [];
@@ -157,31 +160,94 @@ export async function getClubMemberSquadKeys(clubMemberId: string) {
 export async function setClubMemberCoachSquads(
   clubMemberId: string,
   trainingTeamKeys: string[],
+  priorities?: Record<string, number>,
 ) {
   const uniqueKeys = [...new Set(trainingTeamKeys.filter(Boolean))];
   const previousKeys = await getClubMemberSquadKeys(clubMemberId);
-  const primaryKey = uniqueKeys[0] ?? null;
 
-  await prisma.$transaction([
-    prisma.clubMemberCoachSquad.deleteMany({ where: { clubMemberId } }),
-    ...(uniqueKeys.length > 0
-      ? [
-          prisma.clubMemberCoachSquad.createMany({
-            data: uniqueKeys.map((trainingTeamKey) => ({
-              clubMemberId,
-              trainingTeamKey,
-            })),
-          }),
-        ]
-      : []),
-    prisma.clubMember.update({
+  const existingPriorities =
+    priorities ??
+    Object.fromEntries(
+      (
+        await prisma.clubMemberCoachSquad.findMany({
+          where: { clubMemberId },
+          select: { trainingTeamKey: true, priority: true },
+        })
+      ).map((row) => [row.trainingTeamKey, row.priority]),
+    );
+
+  const resolved = Object.fromEntries(
+    uniqueKeys.map((trainingTeamKey) => [
+      trainingTeamKey,
+      Math.max(0, Math.floor(existingPriorities[trainingTeamKey] ?? 100)),
+    ]),
+  );
+
+  // Prefer head-coach squad as primary; else first assigned key.
+  const headKey =
+    uniqueKeys.find((key) => (resolved[key] ?? 100) === 0) ?? null;
+  const primaryKey = headKey ?? uniqueKeys[0] ?? null;
+
+  await prisma.$transaction(async (tx) => {
+    await tx.clubMemberCoachSquad.deleteMany({ where: { clubMemberId } });
+    if (uniqueKeys.length > 0) {
+      await tx.clubMemberCoachSquad.createMany({
+        data: uniqueKeys.map((trainingTeamKey) => ({
+          clubMemberId,
+          trainingTeamKey,
+          priority: resolved[trainingTeamKey] ?? 100,
+        })),
+      });
+    }
+    await tx.clubMember.update({
       where: { id: clubMemberId },
       data: { trainingTeamKey: primaryKey },
-    }),
-  ]);
+    });
+
+    // Only one head coach (priority 0) per squad.
+    for (const trainingTeamKey of uniqueKeys) {
+      if ((resolved[trainingTeamKey] ?? 100) !== 0) continue;
+      await tx.clubMemberCoachSquad.updateMany({
+        where: {
+          trainingTeamKey,
+          clubMemberId: { not: clubMemberId },
+          priority: 0,
+        },
+        data: { priority: 100 },
+      });
+    }
+  });
 
   await handleClubMemberSquadKeysChange(clubMemberId, previousKeys, uniqueKeys);
   return { previousKeys, nextKeys: uniqueKeys, primaryKey };
+}
+
+export async function setCoachSquadPriority(
+  clubMemberId: string,
+  trainingTeamKey: string,
+  priority: number,
+) {
+  const nextPriority = Math.max(0, Math.floor(priority));
+
+  await prisma.$transaction(async (tx) => {
+    if (nextPriority === 0) {
+      await tx.clubMemberCoachSquad.updateMany({
+        where: {
+          trainingTeamKey,
+          clubMemberId: { not: clubMemberId },
+          priority: 0,
+        },
+        data: { priority: 100 },
+      });
+    }
+
+    await tx.clubMemberCoachSquad.update({
+      where: {
+        clubMemberId_trainingTeamKey: { clubMemberId, trainingTeamKey },
+      },
+      data: { priority: nextPriority },
+    });
+  });
 }
 
 export async function syncClubTeamsForClubMember(clubMemberId: string) {
@@ -212,7 +278,7 @@ export async function handleClubMemberSquadChange(
 type ClubMemberWithCoachSquads = {
   trainingTeamKey: string | null;
   rosterRole: string;
-  coachSquads?: { trainingTeamKey: string }[];
+  coachSquads?: { trainingTeamKey: string; priority?: number }[];
 };
 
 export function resolveClubMemberTrainingTeamKeys(
@@ -220,10 +286,24 @@ export function resolveClubMemberTrainingTeamKeys(
 ): string[] {
   if (member.rosterRole === "COACH") {
     const fromJoin = member.coachSquads?.map((row) => row.trainingTeamKey) ?? [];
-    return [...new Set([...fromJoin, member.trainingTeamKey].filter(Boolean))] as string[];
+    if (fromJoin.length > 0) {
+      return [...new Set(fromJoin)];
+    }
+    // Legacy rows before coachSquads join was populated.
+    return member.trainingTeamKey ? [member.trainingTeamKey] : [];
   }
 
   return member.trainingTeamKey ? [member.trainingTeamKey] : [];
+}
+
+export function resolveClubMemberCoachSquadPriorities(
+  member: ClubMemberWithCoachSquads,
+): Record<string, number> {
+  const priorities: Record<string, number> = {};
+  for (const row of member.coachSquads ?? []) {
+    priorities[row.trainingTeamKey] = row.priority ?? 100;
+  }
+  return priorities;
 }
 
 export function serializeClubMemberForAdmin<
@@ -232,6 +312,7 @@ export function serializeClubMemberForAdmin<
   return {
     ...member,
     trainingTeamKeys: resolveClubMemberTrainingTeamKeys(member),
+    coachSquadPriorities: resolveClubMemberCoachSquadPriorities(member),
   };
 }
 
@@ -243,7 +324,7 @@ export async function handleClubMemberSquadKeysChange(
   const previous = [...new Set(previousKeys.filter(Boolean))];
   const next = [...new Set(nextKeys.filter(Boolean))];
   const removed = previous.filter((key) => !next.includes(key));
-  const addedOrKept = next;
+  const added = next.filter((key) => !previous.includes(key));
 
   for (const key of removed) {
     await prisma.clubTeamMember.deleteMany({
@@ -255,12 +336,13 @@ export async function handleClubMemberSquadKeysChange(
     await syncClubTeamsForSquadKey(key);
   }
 
-  if (addedOrKept.length === 0) {
+  if (next.length === 0) {
     await prisma.clubTeamMember.deleteMany({ where: { clubMemberId } });
     return;
   }
 
-  for (const key of addedOrKept) {
+  // Only re-sync squads that gained this member (kept squads are unchanged).
+  for (const key of added) {
     await syncClubTeamsForSquadKey(key);
   }
 }

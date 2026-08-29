@@ -11,7 +11,7 @@ export async function GET() {
       userId: null,
       active: true,
       registrationReviewStatus: "PENDING",
-      vlyMembershipPhotoUrl: { not: null },
+      vlyMembershipPhotoUrl: { startsWith: "/" },
     },
     orderBy: { registrationPhotoSubmittedAt: "asc" },
     select: {

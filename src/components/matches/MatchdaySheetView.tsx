@@ -31,7 +31,9 @@ function SheetEntryCard({ entry }: { entry: MatchdaySheetEntry }) {
       </div>
       <div className="p-3">
         <p className="text-sm font-semibold">{name}</p>
-        <p className="mt-1 font-mono text-xs text-red-700">{vlyNumber}</p>
+        <p className="mt-1 font-mono text-xs text-red-700">
+          {vlyNumber ?? "VLY pending"}
+        </p>
         <p className="mt-1 text-xs text-zinc-600">{roleLabel}</p>
       </div>
     </article>
@@ -54,7 +56,10 @@ function SheetSection({
       </h2>
       <div className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 print:grid-cols-4">
         {entries.map((entry) => (
-          <SheetEntryCard key={`${title}-${entry.vlyNumber}`} entry={entry} />
+          <SheetEntryCard
+            key={`${title}-${entry.vlyNumber ?? entry.name}`}
+            entry={entry}
+          />
         ))}
       </div>
     </section>

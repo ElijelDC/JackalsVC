@@ -48,6 +48,7 @@ export function buildKitOrderPaymentQuote(order: KitOrderRecord) {
     jacketHighCollarSize: order.jacketHighCollarSize,
     jacketFullZip: order.jacketFullZip,
     jacketFullZipSize: order.jacketFullZipSize,
+    freeLineItemIds: order.freeLineItemIds,
   });
 }
 
@@ -63,7 +64,7 @@ export function buildKitOrderPaymentEmailDetails(
       item.details.length > 0 ? ` (${item.details.join(", ")})` : "";
     details.push({
       label: item.label,
-      value: `${formatMembershipEuro(item.amountEur)}${suffix}`,
+      value: `${item.amountEur <= 0 ? "Free" : formatMembershipEuro(item.amountEur)}${suffix}`,
     });
   }
 

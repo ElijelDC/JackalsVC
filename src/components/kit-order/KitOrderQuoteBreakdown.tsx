@@ -40,7 +40,7 @@ export function KitOrderQuoteBreakdown({
               ) : null}
             </div>
             <p className="shrink-0 font-semibold text-white">
-              {formatMembershipEuro(item.amountEur)}
+              {item.amountEur <= 0 ? "Free" : formatMembershipEuro(item.amountEur)}
             </p>
           </li>
         ))}

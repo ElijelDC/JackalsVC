@@ -169,7 +169,7 @@ function renderEntryCard(
       </div>
       <div class="meta">
         <p class="name">${escapeHtml(entry.name)}</p>
-        <p class="vly">${escapeHtml(entry.vlyNumber)}</p>
+        <p class="vly">${escapeHtml(entry.vlyNumber ?? "VLY pending")}</p>
         <p class="number">${escapeHtml(numberLabel)}</p>
       </div>
     </article>

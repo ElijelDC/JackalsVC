@@ -256,6 +256,57 @@ export type KitOrderLineItem = {
   amountEur: number;
 };
 
+/** Stable quote line ids — used for admin free/waive overrides. */
+export const KIT_ORDER_QUOTE_LINE_IDS = [
+  "match-kit",
+  "training-tshirt",
+  "quarter-zip",
+  "zip-hoodie",
+  "high-collar",
+  "full-zip",
+] as const;
+
+export type KitOrderQuoteLineId = (typeof KIT_ORDER_QUOTE_LINE_IDS)[number];
+
+export function parseKitOrderFreeLineItemIds(
+  value: string | null | undefined,
+): string[] {
+  if (!value?.trim()) return [];
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((id): id is string => typeof id === "string" && id.trim().length > 0)
+      .map((id) => id.trim());
+  } catch {
+    return [];
+  }
+}
+
+export function serializeKitOrderFreeLineItemIds(ids: string[]): string {
+  const unique = [...new Set(ids.map((id) => id.trim()).filter(Boolean))];
+  return JSON.stringify(unique);
+}
+
+export function applyKitOrderFreeLineItems(
+  items: KitOrderLineItem[],
+  freeLineItemIds: string[] | null | undefined,
+): KitOrderLineItem[] {
+  const free = new Set(freeLineItemIds ?? []);
+  if (free.size === 0) return items;
+
+  return items.map((item) => {
+    if (!free.has(item.id) || item.amountEur <= 0) return item;
+    return {
+      ...item,
+      amountEur: 0,
+      details: item.details.includes("Free")
+        ? item.details
+        : [...item.details, "Free"],
+    };
+  });
+}
+
 export function kitOrderQuote(input: {
   kitType: KitOrderKitType;
   jerseySize: string;
@@ -270,6 +321,7 @@ export function kitOrderQuote(input: {
   jacketHighCollarSize: string;
   jacketFullZip: boolean;
   jacketFullZipSize: string;
+  freeLineItemIds?: string[] | null;
 }): { items: KitOrderLineItem[]; totalEur: number } {
   const kitCount = kitOrderKitCount(input.kitType);
   const kitDetails = [
@@ -342,9 +394,11 @@ export function kitOrderQuote(input: {
     });
   }
 
+  const priced = applyKitOrderFreeLineItems(items, input.freeLineItemIds);
+
   return {
-    items,
-    totalEur: items.reduce((sum, item) => sum + item.amountEur, 0),
+    items: priced,
+    totalEur: priced.reduce((sum, item) => sum + item.amountEur, 0),
   };
 }
 

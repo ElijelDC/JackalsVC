@@ -4,6 +4,7 @@ import { endOfMonth, startOfMonth } from "date-fns";
 import { getUserMatchAttendanceStatuses } from "@/lib/match-attendance";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
+import { getScheduleMonthWindow } from "@/lib/schedule-month-groups";
 import {
   getResponseWindowEndDate,
   resolveCoachAttendanceStatus,
@@ -65,13 +66,12 @@ export async function getMonthlyTeamMatches(
   trainingTeamKey: string,
   month: Date,
 ) {
-  const monthStart = startOfMonth(month);
-  const monthEnd = endOfMonth(month);
+  const { rangeStart, rangeEnd } = getScheduleMonthWindow(month);
 
   return prisma.teamMatch.findMany({
     where: {
       trainingTeamKey,
-      matchStart: { gte: monthStart, lte: monthEnd },
+      matchStart: { gte: rangeStart, lte: rangeEnd },
     },
     orderBy: { matchStart: "asc" },
   });
@@ -81,13 +81,12 @@ export async function getMonthlyMatchesForTeams(
   trainingTeamKeys: string[],
   month: Date,
 ) {
-  const monthStart = startOfMonth(month);
-  const monthEnd = endOfMonth(month);
+  const { rangeStart, rangeEnd } = getScheduleMonthWindow(month);
 
   return prisma.teamMatch.findMany({
     where: {
       trainingTeamKey: { in: trainingTeamKeys },
-      matchStart: { gte: monthStart, lte: monthEnd },
+      matchStart: { gte: rangeStart, lte: rangeEnd },
     },
     orderBy: { matchStart: "asc" },
   });

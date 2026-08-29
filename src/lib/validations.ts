@@ -6,6 +6,7 @@ import {
   hasAnyKitPiece,
   hasAnyShorts,
   isValidKitOrderSize,
+  KIT_ORDER_QUOTE_LINE_IDS,
 } from "@/lib/kit-order-config";
 
 /** Preprocess empty strings/null/undefined → undefined for optional Zod fields */
@@ -279,6 +280,13 @@ export const profilePlayerNumberSchema = z.object({
     .nullable(),
 });
 
+export const profileVlyNumberSchema = z.object({
+  vlyNumber: z
+    .string()
+    .trim()
+    .min(3, "Enter your VLY or VLYC number."),
+});
+
 export const profileEmailSchema = z.object({
   email: z
     .string()
@@ -364,18 +372,29 @@ export const paymentDeferralRequestSchema = z.object({
   dueDate: z.string().min(1, "Choose when you expect to pay"),
 });
 
+const coachSquadPrioritiesSchema = z
+  .record(z.string().min(1), z.number().int().min(0).max(10_000))
+  .optional();
+
 export const clubMemberCreateSchema = z
   .object({
-    vlyNumber: z.string().min(3, "VLY number is required"),
+    vlyNumber: z
+      .string()
+      .trim()
+      .transform((value) => (value.length === 0 ? null : value))
+      .nullable()
+      .optional(),
     name: z.string().min(2, "Full name is required"),
     trainingTeamKey: z.string().min(1, "Team is required").optional(),
-    trainingTeamKeys: z.array(z.string().min(1)).min(1).optional(),
+    trainingTeamKeys: z.array(z.string().min(1)).optional(),
+    coachSquadPriorities: coachSquadPrioritiesSchema,
     rosterRole: z.enum(["PLAYER", "COACH"]).default("PLAYER"),
     coachPaymentType: z.enum(COACH_PAYMENT_TYPES).optional(),
     active: z.boolean().optional(),
   })
   .refine(
     (data) =>
+      data.rosterRole === "COACH" ||
       Boolean(data.trainingTeamKey) ||
       Boolean(data.trainingTeamKeys && data.trainingTeamKeys.length > 0),
     { message: "Team is required", path: ["trainingTeamKey"] },
@@ -389,13 +408,19 @@ export const clubMemberCreateSchema = z
   );
 
 export const clubMemberUpdateSchema = z.object({
-  vlyNumber: z.string().min(3).optional(),
+  vlyNumber: z
+    .string()
+    .trim()
+    .transform((value) => (value.length === 0 ? null : value))
+    .nullable()
+    .optional(),
   name: z.string().min(2).optional(),
   active: z.boolean().optional(),
   rosterRole: z.enum(["PLAYER", "COACH"]).optional(),
   coachPaymentType: z.enum(COACH_PAYMENT_TYPES).nullable().optional(),
   trainingTeamKey: z.string().nullable().optional(),
   trainingTeamKeys: z.array(z.string().min(1)).optional(),
+  coachSquadPriorities: coachSquadPrioritiesSchema,
 });
 
 export const orderUpdateSchema = z.object({
@@ -445,9 +470,12 @@ const trialsPositionEnum = z.enum(
 
 export const trialsApplicationSchema = z
   .object({
-    tryingOutFor: z.enum(["MENS_DIVISION_2", "WOMENS_DIVISION_3"], {
-      message: "Select which team you are trying out for",
-    }),
+    tryingOutFor: z.enum(
+      ["MENS_DIVISION_2", "MENS_DIVISION_3", "WOMENS_DIVISION_3"],
+      {
+        message: "Select which team you are trying out for",
+      },
+    ),
     fullName: z.string().min(2, "Enter your name"),
     age: z.coerce
       .number({ message: "Enter your age" })
@@ -976,4 +1004,10 @@ export const kitOrderSchema = z
       }
     }
   });
+
+export const kitOrderFreeLineItemsSchema = z.object({
+  freeLineItemIds: z
+    .array(z.enum(KIT_ORDER_QUOTE_LINE_IDS))
+    .max(KIT_ORDER_QUOTE_LINE_IDS.length),
+});
 

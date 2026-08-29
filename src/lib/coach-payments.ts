@@ -98,28 +98,49 @@ function computePayrollFromEvents(
     string,
     { trainingTeamKey: string; teamName: string | null }
   >,
+  headSquadKeys: Set<string> = new Set(),
   now: Date = new Date(),
 ): CoachMonthPayrollBreakdown {
   if (enrichedEvents.length === 0) return EMPTY_BREAKDOWN;
 
-  const sessions: CoachTrainingPayItem[] = enrichedEvents.map((event) => {
+  const sessions: CoachTrainingPayItem[] = [];
+
+  for (const event of enrichedEvents) {
     const cancelled = event.occurrenceCancelled;
-    const coachStatus = cancelled
-      ? ("CANCELLED" as const)
-      : resolveCoachAttendanceStatus(
-          normalizeSignupStatus(signupMap.get(event.id)),
-          event.startDate,
-          now,
-        );
-    const hasOccurred = event.startDate.getTime() <= now.getTime();
-    const countsTowardPay = !cancelled && coachStatus !== "NOT_ATTENDING";
-    const payable = countsTowardPay && hasOccurred;
-    const expected = countsTowardPay && !hasOccurred;
     const meta = event.trainingSessionId
       ? teamMetaBySessionId?.get(event.trainingSessionId)
       : undefined;
+    const teamKey = meta?.trainingTeamKey ?? null;
+    const isHeadForSquad = Boolean(teamKey && headSquadKeys.has(teamKey));
+    const rawStatus = normalizeSignupStatus(signupMap.get(event.id));
 
-    return {
+    // Cover coaches only appear when they accept a session — no automatic expected.
+    if (!cancelled && !isHeadForSquad && rawStatus !== "ATTENDING") {
+      continue;
+    }
+
+    const coachStatus = cancelled
+      ? ("CANCELLED" as const)
+      : isHeadForSquad
+        ? resolveCoachAttendanceStatus(rawStatus, event.startDate, now)
+        : rawStatus;
+    const hasOccurred = event.startDate.getTime() <= now.getTime();
+
+    let payable = false;
+    let expected = false;
+    if (!cancelled) {
+      if (isHeadForSquad) {
+        const countsTowardPay = coachStatus !== "NOT_ATTENDING";
+        payable = countsTowardPay && hasOccurred;
+        expected = countsTowardPay && !hasOccurred;
+      } else {
+        // Cover: only paid / expected when they accepted.
+        payable = rawStatus === "ATTENDING" && hasOccurred;
+        expected = rawStatus === "ATTENDING" && !hasOccurred;
+      }
+    }
+
+    sessions.push({
       eventId: event.id,
       startDate: event.startDate.toISOString(),
       location: event.location,
@@ -128,10 +149,10 @@ function computePayrollFromEvents(
       payable,
       expected,
       amount: payable || expected ? COACH_SESSION_RATE_EUR : 0,
-      trainingTeamKey: meta?.trainingTeamKey ?? null,
+      trainingTeamKey: teamKey,
       teamName: meta?.teamName ?? null,
-    };
-  });
+    });
+  }
 
   const billableCount = sessions.filter((item) => item.payable).length;
   const expectedCount = sessions.filter((item) => item.expected).length;
@@ -148,6 +169,35 @@ function computePayrollFromEvents(
     cancelledCount,
     totalScheduled: sessions.length,
   };
+}
+
+async function getHeadSquadKeysForCoachUser(
+  coachUserId: string,
+): Promise<Set<string>> {
+  const member = await prisma.clubMember.findFirst({
+    where: { userId: coachUserId, rosterRole: "COACH", active: true },
+    select: {
+      trainingTeamKey: true,
+      coachSquads: { select: { trainingTeamKey: true, priority: true } },
+    },
+  });
+
+  if (!member) return new Set();
+
+  const headKeys = (member.coachSquads ?? [])
+    .filter((row) => row.priority === 0)
+    .map((row) => row.trainingTeamKey);
+
+  if (headKeys.length > 0) {
+    return new Set(headKeys);
+  }
+
+  // Legacy coaches with no priority rows: primary squad is treated as head.
+  if (member.coachSquads.length === 0 && member.trainingTeamKey) {
+    return new Set([member.trainingTeamKey]);
+  }
+
+  return new Set();
 }
 
 export async function getCoachMonthPayrollFromCache(
@@ -169,8 +219,15 @@ export async function getCoachMonthPayrollFromCache(
     select: { eventId: true, status: true },
   });
   const signupMap = new Map(signups.map((s) => [s.eventId, s.status]));
+  const headSquadKeys = await getHeadSquadKeysForCoachUser(coachUserId);
 
-  return computePayrollFromEvents(events, coachUserId, signupMap);
+  return computePayrollFromEvents(
+    events,
+    coachUserId,
+    signupMap,
+    undefined,
+    headSquadKeys,
+  );
 }
 
 export async function getCoachMonthPayroll(
@@ -231,12 +288,14 @@ export async function getCoachMonthPayroll(
     select: { eventId: true, status: true },
   });
   const signupMap = new Map(signups.map((signup) => [signup.eventId, signup.status]));
+  const headSquadKeys = await getHeadSquadKeysForCoachUser(coachUserId);
 
   return computePayrollFromEvents(
     enriched,
     coachUserId,
     signupMap,
     teamMetaBySessionId,
+    headSquadKeys,
   );
 }
 
@@ -468,6 +527,7 @@ export async function getCoachSalaryPaymentsWithCache(
         })
       : [];
   const globalSignupMap = new Map(allSignups.map((s) => [s.eventId, s.status]));
+  const headSquadKeys = await getHeadSquadKeysForCoachUser(coachUserId);
 
   const payments = await Promise.all(
     periods.map(async ({ year, month }) => {
@@ -479,6 +539,7 @@ export async function getCoachSalaryPaymentsWithCache(
         coachUserId,
         globalSignupMap,
         teamMetaBySessionId,
+        headSquadKeys,
       );
 
       const ratePerSession = COACH_SESSION_RATE_EUR;

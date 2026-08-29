@@ -10,7 +10,7 @@ export default async function AdminRegistrationReviewsPage() {
       userId: null,
       active: true,
       registrationReviewStatus: "PENDING",
-      vlyMembershipPhotoUrl: { not: null },
+      vlyMembershipPhotoUrl: { startsWith: "/" },
     },
     orderBy: { registrationPhotoSubmittedAt: "asc" },
     select: {
@@ -26,6 +26,7 @@ export default async function AdminRegistrationReviewsPage() {
 
   const items = reviews.map((review) => ({
     ...review,
+    vlyNumber: review.vlyNumber,
     vlyMembershipPhotoUrl: review.vlyMembershipPhotoUrl!,
     registrationPhotoSubmittedAt:
       review.registrationPhotoSubmittedAt?.toISOString() ?? null,

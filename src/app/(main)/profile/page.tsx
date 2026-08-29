@@ -91,17 +91,6 @@ export default async function ProfilePage() {
               </dd>
             </div>
 
-            {clubMember && (
-              <div>
-                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
-                  VLY number
-                </dt>
-                <dd className="mt-1 font-mono text-base text-jackals-red-light">
-                  {clubMember.vlyNumber}
-                </dd>
-              </div>
-            )}
-
             {membershipStatusLabel && (
               <div>
                 <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
@@ -127,6 +116,7 @@ export default async function ProfilePage() {
 
           {clubMember && (
             <ProfileMatchdaySection
+              initialVlyNumber={clubMember.vlyNumber}
               initialVlyPhotoUrl={clubMember.vlyMembershipPhotoUrl}
               initialPlayerNumber={clubMember.playerNumber}
               isCoach={isCoach}

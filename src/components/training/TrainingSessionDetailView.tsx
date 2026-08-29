@@ -137,7 +137,11 @@ export function TrainingSessionDetailView({
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the session — from ${format(responseOpensOn, "d MMMM")}.`
                     : detail.isCoachUser
-                      ? "Let your squad know if you're attending this session."
+                      ? detail.coachResponseGate?.kind === "waiting_for_head"
+                        ? `Waiting for ${detail.coachResponseGate.headCoachName} (head coach) to respond first.`
+                        : detail.coachResponseGate?.kind === "head_accepted"
+                          ? `${detail.coachResponseGate.headCoachName} accepted — no cover needed.`
+                          : "Let your squad know if you're attending this session."
                       : "Let coaches and teammates know if you're coming."}
             </CardDescription>
 
@@ -153,6 +157,7 @@ export function TrainingSessionDetailView({
                   layout="stack"
                   showLockedNotice={false}
                   coachMode={detail.isCoachUser}
+                  coachResponseGate={detail.coachResponseGate}
                 />
               </div>
             )}

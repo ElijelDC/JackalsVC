@@ -178,7 +178,12 @@ async function loadExistingRosterFingerprints(): Promise<Set<string>> {
   const members = await prisma.clubMember.findMany({
     select: { vlyNumber: true },
   });
-  return new Set(members.map((member) => rosterFingerprint(member.vlyNumber)));
+  return new Set(
+    members
+      .map((member) => member.vlyNumber)
+      .filter((value): value is string => Boolean(value?.trim()))
+      .map((value) => rosterFingerprint(value)),
+  );
 }
 
 async function loadExistingTrainingSessionFingerprints(

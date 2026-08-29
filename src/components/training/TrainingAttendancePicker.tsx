@@ -15,6 +15,7 @@ import {
   type TrainingAttendanceStatus,
 } from "@/lib/training-attendance-config";
 import { apiDelete, apiPost } from "@/lib/client-api";
+import type { CoachResponseGate } from "@/lib/coach-session-coverage-config";
 import { cn } from "@/lib/utils";
 
 const RESPONSE_OPTIONS: TrainingAttendanceResponseStatus[] = [
@@ -39,6 +40,7 @@ export function TrainingAttendancePicker({
   showLockedNotice = true,
   itemLabel = "session",
   coachMode = false,
+  coachResponseGate = null,
   className,
 }: {
   eventId?: string;
@@ -50,13 +52,14 @@ export function TrainingAttendancePicker({
   showLockedNotice?: boolean;
   itemLabel?: string;
   coachMode?: boolean;
+  coachResponseGate?: CoachResponseGate | null;
   className?: string;
 }) {
   const targetId = matchId ?? eventId;
 
   return (
     <TrainingAttendancePickerInner
-      key={`${targetId}-${initialStatus}`}
+      key={`${targetId}-${initialStatus}-${coachResponseGate?.kind ?? "open"}`}
       eventId={eventId}
       matchId={matchId}
       sessionStartDate={sessionStartDate}
@@ -66,6 +69,7 @@ export function TrainingAttendancePicker({
       showLockedNotice={showLockedNotice}
       itemLabel={itemLabel}
       coachMode={coachMode}
+      coachResponseGate={coachResponseGate}
       className={className}
     />
   );
@@ -81,6 +85,7 @@ function TrainingAttendancePickerInner({
   showLockedNotice = true,
   itemLabel = "session",
   coachMode = false,
+  coachResponseGate = null,
   className,
 }: {
   eventId?: string;
@@ -92,12 +97,14 @@ function TrainingAttendancePickerInner({
   showLockedNotice?: boolean;
   itemLabel?: string;
   coachMode?: boolean;
+  coachResponseGate?: CoachResponseGate | null;
   className?: string;
 }) {
   const router = useRouter();
   const sessionDate = new Date(sessionStartDate);
   const canRespond = canRespondToTrainingSession(sessionDate);
   const responseOpensOn = getTrainingResponseOpensOn(sessionDate);
+  const coverLocked = coachResponseGate !== null;
   const [status, setStatus] = useState(initialStatus);
   const [loading, setLoading] = useState<TrainingAttendanceResponseStatus | null>(
     null,
@@ -108,7 +115,9 @@ function TrainingAttendancePickerInner({
   const targetId = matchId ?? eventId;
 
   const setAttendance = async (next: TrainingAttendanceResponseStatus) => {
-    if (disabled || !canRespond || !targetId || next === status) return;
+    if (disabled || !canRespond || coverLocked || !targetId || next === status) {
+      return;
+    }
 
     setLoading(next);
     setMessage(null);
@@ -131,7 +140,14 @@ function TrainingAttendancePickerInner({
   };
 
   const clearAttendance = async () => {
-    if (disabled || status === "UNANSWERED" || loading !== null || clearing || !targetId) {
+    if (
+      disabled ||
+      coverLocked ||
+      status === "UNANSWERED" ||
+      loading !== null ||
+      clearing ||
+      !targetId
+    ) {
       return;
     }
 
@@ -156,9 +172,9 @@ function TrainingAttendancePickerInner({
     router.refresh();
   };
 
-  const pickerDisabled = disabled || !canRespond;
+  const pickerDisabled = disabled || !canRespond || coverLocked;
   const responseOptions = RESPONSE_OPTIONS;
-  const showClear = status !== "UNANSWERED";
+  const showClear = status !== "UNANSWERED" && !coverLocked;
 
   return (
     <div className={cn("space-y-2", className)}>
@@ -166,11 +182,33 @@ function TrainingAttendancePickerInner({
       {!canRespond && status === "UNANSWERED" && showLockedNotice && (
         <TrainingResponsesLockedNotice opensOn={responseOpensOn} itemLabel={itemLabel} />
       )}
+      {canRespond && coachResponseGate?.kind === "waiting_for_head" && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm font-medium text-amber-100">
+            Waiting for head coach
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-amber-100/70">
+            {coachResponseGate.headCoachName} responds first. After they decline,
+            you can cover this session.
+          </p>
+        </div>
+      )}
+      {canRespond && coachResponseGate?.kind === "head_accepted" && (
+        <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm font-medium text-amber-100">
+            Head coach accepted
+          </p>
+          <p className="mt-0.5 text-xs leading-relaxed text-amber-100/70">
+            {coachResponseGate.headCoachName} is covering this session — no cover
+            needed.
+          </p>
+        </div>
+      )}
       <div
         className={cn(
           "flex gap-2",
           layout === "stack" ? "flex-col" : "flex-wrap",
-          !canRespond && "pointer-events-none opacity-40",
+          (!canRespond || coverLocked) && "pointer-events-none opacity-40",
         )}
         role="group"
         aria-label="Your attendance response"
@@ -201,7 +239,8 @@ function TrainingAttendancePickerInner({
         })}
       </div>
       {status === "UNANSWERED" ? (
-        canRespond && (
+        canRespond &&
+        !coverLocked && (
           <p className="text-xs text-zinc-500">
             {coachMode
               ? "Choose Attend or Can't attend — your squad will see whether you're coaching."

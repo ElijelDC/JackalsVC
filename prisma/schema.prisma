@@ -43,7 +43,8 @@ model EventNewsletterSubscription {
 
 model ClubMember {
   id              String           @id @default(cuid())
-  vlyNumber       String           @unique
+  /// Optional until VLY/VLYC is issued; members can set later on profile.
+  vlyNumber       String?          @unique
   name            String
   active          Boolean          @default(true)
   rosterRole      String           @default("PLAYER")
@@ -71,10 +72,13 @@ model ClubMemberCoachSquad {
   clubMemberId    String
   clubMember      ClubMember @relation(fields: [clubMemberId], references: [id], onDelete: Cascade)
   trainingTeamKey String
+  /// Lower = higher priority. 0 = head coach for this squad.
+  priority        Int        @default(100)
   createdAt       DateTime   @default(now())
 
   @@unique([clubMemberId, trainingTeamKey])
   @@index([trainingTeamKey])
+  @@index([trainingTeamKey, priority])
 }
 
 model CoachSalaryPayment {
@@ -665,6 +669,8 @@ model KitOrder {
   jacketHighCollarSize String   @default("")
   jacketFullZip        Boolean  @default(false)
   jacketFullZipSize    String   @default("")
+  /// JSON string array of quote line ids waived to €0 (e.g. ["training-tshirt","quarter-zip"]).
+  freeLineItemIds      String   @default("[]")
   /// Secret link token for the public payment page (no login required).
   paymentToken         String   @unique @default(cuid())
   /// AWAITING | PROOF_SUBMITTED | PAID

@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useCallback, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronDown, Trash2, UserRoundCheck, UserRoundX } from "lucide-react";
 import { AdminFormCard } from "@/components/admin/AdminForm";
 import { AdminBulkCsvImport } from "@/components/admin/AdminBulkCsvImport";
@@ -13,6 +13,7 @@ import { AdminMemberProfileImage } from "@/components/admin/AdminMemberProfileIm
 import { AdminMemberVlyPhoto } from "@/components/admin/AdminMemberVlyPhoto";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Input";
+import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client-api";
 import {
   formatMembershipSubscriptionOrCoachLabel,
@@ -30,13 +31,14 @@ import { cn } from "@/lib/utils";
 
 type ClubMember = {
   id: string;
-  vlyNumber: string;
+  vlyNumber: string | null;
   name: string;
   active: boolean;
   rosterRole: string;
   coachPaymentType: CoachPaymentType | null;
   trainingTeamKey: string | null;
   trainingTeamKeys: string[];
+  coachSquadPriorities?: Record<string, number>;
   profileImageUrl: string | null;
   vlyMembershipPhotoUrl: string | null;
   userId: string | null;
@@ -49,11 +51,15 @@ type MemberSubscription = {
   status: string;
 };
 
+const HEAD_COACH_PRIORITY = 0;
+const COVER_COACH_PRIORITY = 100;
+
 const emptyForm = {
   vlyNumber: "",
   name: "",
   trainingTeamKey: "",
   trainingTeamKeys: [] as string[],
+  coachSquadPriorities: {} as Record<string, number>,
   rosterRole: "PLAYER",
   coachPaymentType: "PAID" as CoachPaymentType,
 };
@@ -66,14 +72,31 @@ function memberSquadKeys(member: ClubMember) {
       : [];
 }
 
+function memberCoachPriorities(member: ClubMember): Record<string, number> {
+  return member.coachSquadPriorities ?? {};
+}
+
+function isHeadCoachForSquad(member: ClubMember, trainingTeamKey: string) {
+  return (memberCoachPriorities(member)[trainingTeamKey] ?? COVER_COACH_PRIORITY) ===
+    HEAD_COACH_PRIORITY;
+}
+
 function memberSquadLabel(
   member: ClubMember,
   trainingTeams: TrainingTeam[],
 ) {
   const keys = memberSquadKeys(member);
-  if (keys.length === 0) return "Unassigned";
+  if (keys.length === 0) {
+    return member.rosterRole === "COACH" ? "No squads (not covering)" : "Unassigned";
+  }
   return keys
-    .map((key) => getTrainingTeamFromList(trainingTeams, key)?.name ?? key)
+    .map((key) => {
+      const name = getTrainingTeamFromList(trainingTeams, key)?.name ?? key;
+      if (member.rosterRole !== "COACH") return name;
+      return isHeadCoachForSquad(member, key)
+        ? `${name} · head`
+        : `${name} · cover`;
+    })
     .join(", ");
 }
 
@@ -98,52 +121,166 @@ function rosterPlanLabel(
 
 function SquadCheckboxGroup({
   selectedKeys,
+  priorities,
   trainingTeams,
   disabled,
-  onChange,
+  onToggle,
+  onPriorityChange,
   idPrefix,
+  showHeadCoachControls,
+  headBySquad = {},
+  currentMemberId,
 }: {
   selectedKeys: string[];
+  priorities?: Record<string, number>;
   trainingTeams: TrainingTeam[];
   disabled?: boolean;
-  onChange: (keys: string[]) => void;
+  /** Toggle one squad on/off — parent should derive next keys from latest state. */
+  onToggle: (trainingTeamKey: string) => void;
+  onPriorityChange?: (trainingTeamKey: string, priority: number) => void;
   idPrefix: string;
+  showHeadCoachControls?: boolean;
+  /** Current head coach per squad key (at most one). */
+  headBySquad?: Record<string, { id: string; name: string } | null>;
+  /** When editing an existing coach, their id — used to label “you”. */
+  currentMemberId?: string;
 }) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {trainingTeams.map((team) => {
-        const checked = selectedKeys.includes(team.key);
-        return (
-          <label
-            key={team.key}
-            htmlFor={`${idPrefix}-${team.key}`}
-            className={cn(
-              "inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-sm transition",
-              checked
-                ? "border-jackals-red/40 bg-jackals-red/10 text-white"
-                : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-white",
-              disabled && "cursor-not-allowed opacity-60",
-            )}
-          >
-            <input
-              id={`${idPrefix}-${team.key}`}
-              type="checkbox"
-              className="h-4 w-4 rounded border-white/20 bg-black/20 text-jackals-red focus:ring-jackals-red/40"
-              checked={checked}
-              disabled={disabled}
-              onChange={() => {
-                const next = checked
-                  ? selectedKeys.filter((key) => key !== team.key)
-                  : [...selectedKeys, team.key];
-                onChange(next);
-              }}
-            />
-            {team.name}
-          </label>
-        );
-      })}
+    <div className="space-y-3">
+      <p className="text-xs text-zinc-500">
+        Tick squads this coach is on. Each squad can have one head coach and as
+        many cover coaches as you need. Leave all unchecked if they should not
+        cover any team yet.
+      </p>
+      <div className="space-y-2">
+        {trainingTeams.map((team) => {
+          const checked = selectedKeys.includes(team.key);
+          const isHead =
+            (priorities?.[team.key] ?? COVER_COACH_PRIORITY) ===
+            HEAD_COACH_PRIORITY;
+          const currentHead = headBySquad[team.key] ?? null;
+          const otherHead =
+            currentHead && currentHead.id !== currentMemberId
+              ? currentHead
+              : null;
+
+          return (
+            <div
+              key={team.key}
+              className={cn(
+                "rounded-md border px-3 py-2.5 transition",
+                checked
+                  ? "border-jackals-red/40 bg-jackals-red/10"
+                  : "border-white/10 bg-white/[0.02]",
+                disabled && "opacity-60",
+              )}
+            >
+              <label
+                htmlFor={`${idPrefix}-${team.key}`}
+                className={cn(
+                  "inline-flex cursor-pointer items-center gap-2 text-sm",
+                  checked ? "text-white" : "text-zinc-400",
+                  disabled && "cursor-not-allowed",
+                )}
+              >
+                <input
+                  id={`${idPrefix}-${team.key}`}
+                  type="checkbox"
+                  className="h-4 w-4 rounded border-white/20 bg-black/20 text-jackals-red focus:ring-jackals-red/40"
+                  checked={checked}
+                  disabled={disabled}
+                  onChange={() => {
+                    if (disabled) return;
+                    onToggle(team.key);
+                  }}
+                />
+                <span className="font-medium">{team.name}</span>
+              </label>
+
+              {showHeadCoachControls && checked && onPriorityChange ? (
+                <div className="mt-2 ml-6 space-y-2">
+                  <div
+                    className="flex flex-wrap gap-2"
+                    role="group"
+                    aria-label={`Role on ${team.name}`}
+                  >
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() =>
+                        onPriorityChange(team.key, HEAD_COACH_PRIORITY)
+                      }
+                      className={cn(
+                        "rounded-md border px-2.5 py-1 text-xs font-medium transition",
+                        isHead
+                          ? "border-amber-400/50 bg-amber-500/15 text-amber-100"
+                          : "border-white/15 text-zinc-400 hover:border-white/25 hover:text-white",
+                        disabled && "cursor-not-allowed",
+                      )}
+                    >
+                      Head coach
+                    </button>
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() =>
+                        onPriorityChange(team.key, COVER_COACH_PRIORITY)
+                      }
+                      className={cn(
+                        "rounded-md border px-2.5 py-1 text-xs font-medium transition",
+                        !isHead
+                          ? "border-sky-400/50 bg-sky-500/15 text-sky-100"
+                          : "border-white/15 text-zinc-400 hover:border-white/25 hover:text-white",
+                        disabled && "cursor-not-allowed",
+                      )}
+                    >
+                      Cover coach
+                    </button>
+                  </div>
+                  <p className="text-[11px] leading-relaxed text-zinc-500">
+                    {isHead
+                      ? "This coach is the head for this squad (only one allowed)."
+                      : otherHead
+                        ? `Current head: ${otherHead.name}. Choosing Head coach moves them to cover.`
+                        : "No head coach set for this squad yet."}
+                  </p>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+      {showHeadCoachControls && selectedKeys.length > 0 ? (
+        <p className="text-[11px] leading-relaxed text-zinc-500">
+          Head coach responds first for that squad. If they decline, cover
+          coaches get an email and can accept (only one cover at a time).
+        </p>
+      ) : null}
+      {showHeadCoachControls && selectedKeys.length === 0 ? (
+        <p className="text-[11px] leading-relaxed text-zinc-500">
+          Not assigned to any squad — they will not appear in session cover
+          flows until you add them to a team.
+        </p>
+      ) : null}
     </div>
   );
+}
+
+function buildHeadBySquad(
+  clubMembers: ClubMember[],
+): Record<string, { id: string; name: string } | null> {
+  const heads: Record<string, { id: string; name: string }> = {};
+  for (const member of clubMembers) {
+    if (member.rosterRole !== "COACH" || !member.active) continue;
+    for (const key of memberSquadKeys(member)) {
+      if (!isHeadCoachForSquad(member, key)) continue;
+      // Keep the first head found; backend enforces uniqueness.
+      if (!heads[key]) {
+        heads[key] = { id: member.id, name: member.name };
+      }
+    }
+  }
+  return heads;
 }
 
 export function ClubRosterManager({
@@ -158,6 +295,11 @@ export function ClubRosterManager({
   const [clubMembers, setClubMembers] = useState(initialClubMembers);
   const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
+  const [savingSquadMemberId, setSavingSquadMemberId] = useState<string | null>(
+    null,
+  );
+  const [formError, setFormError] = useState<string | null>(null);
+  const [formMessage, setFormMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -169,6 +311,38 @@ export function ClubRosterManager({
   const [savedMemberNumberById, setSavedMemberNumberById] = useState<Record<string, boolean>>({});
   const [sortBy, setSortBy] = useState<"name_asc" | "name_desc">("name_asc");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  /** Latest squad keys per coach — avoids stale checkbox races when ticking several teams quickly. */
+  const latestCoachSquadKeysRef = useRef<Record<string, string[]>>({});
+  const coachSquadSaveChainRef = useRef<
+    Partial<Record<string, Promise<void>>>
+  >({});
+  const pendingCoachSquadSaveRef = useRef<
+    Partial<
+      Record<
+        string,
+        {
+          keys: string[];
+          priorities: Record<string, number>;
+          successMessage?: string;
+        }
+      >
+    >
+  >({});
+
+  const headBySquad = useMemo(
+    () => buildHeadBySquad(clubMembers),
+    [clubMembers],
+  );
+
+  useEffect(() => {
+    for (const member of clubMembers) {
+      if (member.rosterRole !== "COACH") continue;
+      // Don't clobber in-flight optimistic keys with a slower server refresh.
+      if (pendingCoachSquadSaveRef.current[member.id]) continue;
+      latestCoachSquadKeysRef.current[member.id] = memberSquadKeys(member);
+    }
+  }, [clubMembers]);
 
   const filteredMembers = useMemo(() => {
     const filtered = clubMembers.filter((member) => {
@@ -196,7 +370,7 @@ export function ClubRosterManager({
 
       return matchesAdminSearch(
         search,
-        member.vlyNumber,
+        member.vlyNumber ?? "",
         member.name,
         member.user?.email ?? "",
         member.active ? "active" : "inactive",
@@ -237,14 +411,10 @@ export function ClubRosterManager({
   const addMember = async (event: React.FormEvent) => {
     event.preventDefault();
     setLoading(true);
+    setFormError(null);
+    setFormMessage(null);
     setError(null);
     setMessage(null);
-
-    if (form.rosterRole === "COACH" && form.trainingTeamKeys.length === 0) {
-      setLoading(false);
-      setError("Select at least one squad for this coach.");
-      return;
-    }
 
     const payload =
       form.rosterRole === "COACH"
@@ -252,8 +422,19 @@ export function ClubRosterManager({
             ...form,
             trainingTeamKeys: form.trainingTeamKeys,
             trainingTeamKey: undefined,
+            coachSquadPriorities: Object.fromEntries(
+              form.trainingTeamKeys.map((key) => [
+                key,
+                form.coachSquadPriorities[key] ?? COVER_COACH_PRIORITY,
+              ]),
+            ),
           }
-        : form;
+        : {
+            vlyNumber: form.vlyNumber,
+            name: form.name,
+            trainingTeamKey: form.trainingTeamKey,
+            rosterRole: form.rosterRole,
+          };
 
     const result = await apiPost(
       "/api/admin/club-members",
@@ -264,12 +445,12 @@ export function ClubRosterManager({
     setLoading(false);
 
     if (!result.ok) {
-      setError(result.error);
+      setFormError(result.error);
       return;
     }
 
     setForm(emptyForm);
-    setMessage("Club member added");
+    setFormMessage("Club member added");
     await loadClubMembers();
   };
 
@@ -320,24 +501,183 @@ export function ClubRosterManager({
     await loadClubMembers();
   };
 
-  const assignCoachSquads = async (member: ClubMember, trainingTeamKeys: string[]) => {
-    setLoading(true);
-    setError(null);
+  const assignCoachSquads = async (
+    member: ClubMember,
+    trainingTeamKeys: string[],
+    coachSquadPriorities?: Record<string, number>,
+    successMessage?: string,
+  ) => {
+    const priorities =
+      coachSquadPriorities ??
+      Object.fromEntries(
+        trainingTeamKeys.map((key) => [
+          key,
+          memberCoachPriorities(member)[key] ??
+            pendingCoachSquadSaveRef.current[member.id]?.priorities[key] ??
+            COVER_COACH_PRIORITY,
+        ]),
+      );
 
-    const result = await apiPatch(
-      `/api/admin/club-members/${member.id}`,
-      { trainingTeamKeys },
-      "Failed to assign coach squads",
+    latestCoachSquadKeysRef.current[member.id] = trainingTeamKeys;
+    pendingCoachSquadSaveRef.current[member.id] = {
+      keys: trainingTeamKeys,
+      priorities,
+      successMessage,
+    };
+
+    // Optimistic UI so ticks respond immediately.
+    setClubMembers((current) =>
+      current.map((row) =>
+        row.id !== member.id
+          ? row
+          : {
+              ...row,
+              trainingTeamKeys,
+              trainingTeamKey: trainingTeamKeys[0] ?? null,
+              coachSquadPriorities: priorities,
+            },
+      ),
     );
+    setError(null);
+    if (successMessage) setMessage(successMessage);
+    else setMessage(null);
+    setSavingSquadMemberId(member.id);
 
-    setLoading(false);
-
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    if (coachSquadSaveChainRef.current[member.id]) {
+      return coachSquadSaveChainRef.current[member.id];
     }
 
-    await loadClubMembers();
+    const run = async () => {
+      while (pendingCoachSquadSaveRef.current[member.id]) {
+        const payload = pendingCoachSquadSaveRef.current[member.id]!;
+        const snapshot = {
+          keys: [...payload.keys],
+          priorities: { ...payload.priorities },
+          successMessage: payload.successMessage,
+        };
+
+        const result = await apiPatch(
+          `/api/admin/club-members/${member.id}`,
+          {
+            trainingTeamKeys: snapshot.keys,
+            coachSquadPriorities: snapshot.priorities,
+          },
+          "Failed to assign coach squads",
+        );
+
+        const latest = pendingCoachSquadSaveRef.current[member.id];
+        const changedWhileSaving =
+          latest &&
+          (latest.keys.join("\0") !== snapshot.keys.join("\0") ||
+            JSON.stringify(latest.priorities) !==
+              JSON.stringify(snapshot.priorities));
+
+        if (!result.ok) {
+          const latestAfterFail = pendingCoachSquadSaveRef.current[member.id];
+          const stillSameSnapshot =
+            latestAfterFail &&
+            latestAfterFail.keys.join("\0") === snapshot.keys.join("\0") &&
+            JSON.stringify(latestAfterFail.priorities) ===
+              JSON.stringify(snapshot.priorities);
+          if (stillSameSnapshot) {
+            delete pendingCoachSquadSaveRef.current[member.id];
+          }
+          setError(result.error);
+          await loadClubMembers();
+          // Newer toggles queued during the failed request — keep looping.
+          if (!stillSameSnapshot && pendingCoachSquadSaveRef.current[member.id]) {
+            continue;
+          }
+          return;
+        }
+
+        if (snapshot.successMessage) setMessage(snapshot.successMessage);
+
+        if (changedWhileSaving) {
+          continue;
+        }
+
+        delete pendingCoachSquadSaveRef.current[member.id];
+        await loadClubMembers();
+        return;
+      }
+    };
+
+    const next = run().finally(() => {
+      delete coachSquadSaveChainRef.current[member.id];
+      setSavingSquadMemberId((current) =>
+        current === member.id ? null : current,
+      );
+    });
+    coachSquadSaveChainRef.current[member.id] = next;
+    await next;
+  };
+
+  const toggleCoachSquad = (member: ClubMember, trainingTeamKey: string) => {
+    const current =
+      latestCoachSquadKeysRef.current[member.id] ?? memberSquadKeys(member);
+    const next = current.includes(trainingTeamKey)
+      ? current.filter((key) => key !== trainingTeamKey)
+      : [...current, trainingTeamKey];
+    latestCoachSquadKeysRef.current[member.id] = next;
+
+    const priorities = Object.fromEntries(
+      next.map((key) => [
+        key,
+        memberCoachPriorities(member)[key] ??
+          pendingCoachSquadSaveRef.current[member.id]?.priorities[key] ??
+          COVER_COACH_PRIORITY,
+      ]),
+    );
+
+    void assignCoachSquads(member, next, priorities);
+  };
+
+  const assignCoachSquadPriority = async (
+    member: ClubMember,
+    trainingTeamKey: string,
+    priority: number,
+  ) => {
+    const keys =
+      latestCoachSquadKeysRef.current[member.id] ?? memberSquadKeys(member);
+    if (!keys.includes(trainingTeamKey)) return;
+
+    const nextPriorities = {
+      ...Object.fromEntries(
+        keys.map((key) => [
+          key,
+          memberCoachPriorities(member)[key] ??
+            pendingCoachSquadSaveRef.current[member.id]?.priorities[key] ??
+            COVER_COACH_PRIORITY,
+        ]),
+      ),
+      [trainingTeamKey]: priority,
+    };
+
+    const teamName =
+      getTrainingTeamFromList(trainingTeams, trainingTeamKey)?.name ??
+      trainingTeamKey;
+    const previousHead = headBySquad[trainingTeamKey];
+    let successMessage: string | undefined;
+
+    if (priority === HEAD_COACH_PRIORITY) {
+      successMessage =
+        previousHead && previousHead.id !== member.id
+          ? `${member.name} is now head coach for ${teamName}. ${previousHead.name} moved to cover.`
+          : `${member.name} is now head coach for ${teamName}.`;
+    } else {
+      const wasHead =
+        (memberCoachPriorities(member)[trainingTeamKey] ??
+          COVER_COACH_PRIORITY) === HEAD_COACH_PRIORITY ||
+        (pendingCoachSquadSaveRef.current[member.id]?.priorities[
+          trainingTeamKey
+        ] ?? COVER_COACH_PRIORITY) === HEAD_COACH_PRIORITY;
+      if (wasHead) {
+        successMessage = `${member.name} is now a cover coach for ${teamName}.`;
+      }
+    }
+
+    await assignCoachSquads(member, keys, nextPriorities, successMessage);
   };
 
   const saveMemberNumber = async (member: ClubMember) => {
@@ -345,7 +685,8 @@ export function ClubRosterManager({
     if (draft === undefined) return;
 
     const normalized = draft.trim().toUpperCase().replace(/\s+/g, "");
-    if (!normalized || normalized === member.vlyNumber) {
+    const nextValue = normalized.length > 0 ? normalized : null;
+    if (nextValue === (member.vlyNumber ?? null)) {
       setMemberNumberDrafts((current) => {
         const next = { ...current };
         delete next[member.id];
@@ -361,7 +702,7 @@ export function ClubRosterManager({
 
     const result = await apiPatch(
       `/api/admin/club-members/${member.id}`,
-      { vlyNumber: normalized },
+      { vlyNumber: nextValue },
       "Failed to update member number",
     );
 
@@ -390,7 +731,11 @@ export function ClubRosterManager({
         return next;
       });
     }, 1600);
-    setMessage("Member number updated");
+    setMessage(
+      nextValue
+        ? "Member number updated"
+        : "Member number cleared — they can add it later on their profile",
+    );
     await loadClubMembers();
   };
 
@@ -464,14 +809,14 @@ export function ClubRosterManager({
   return (
     <AdminSection
       title="Registered Members"
-      description="Players allowed to register — add VLY numbers, names, and training squads before they sign up."
+      description="Players and coaches on the roster — assign coaches to squads as head or cover (or leave them off a team). VLY/VLYC can be blank until issued."
     >
       <AdminFormCard
         collapsible
         openTriggerLabel="Add club member entry"
         title="Add club member entry"
-        error={error}
-        message={message}
+        error={formError}
+        message={formMessage}
         onSubmit={addMember}
         submitLabel={loading ? "Saving..." : "Add club member"}
         loading={loading}
@@ -479,7 +824,8 @@ export function ClubRosterManager({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <Label htmlFor="roster-vly">
-              {form.rosterRole === "COACH" ? "VLYC coach number" : "VLY number"}
+              {form.rosterRole === "COACH" ? "VLYC coach number" : "VLY number"}{" "}
+              <span className="font-normal text-zinc-500">(optional for now)</span>
             </Label>
             <Input
               id="roster-vly"
@@ -490,8 +836,11 @@ export function ClubRosterManager({
                   vlyNumber: event.target.value.toUpperCase(),
                 }))
               }
-              placeholder={form.rosterRole === "COACH" ? "VLYC12345" : "VLY12345"}
-              required
+              placeholder={
+                form.rosterRole === "COACH"
+                  ? "VLYC12345 — leave blank if not issued yet"
+                  : "VLY12345 — leave blank if not issued yet"
+              }
             />
           </div>
           <div>
@@ -507,22 +856,62 @@ export function ClubRosterManager({
           </div>
           <div className="sm:col-span-2">
             <Label>
-              {form.rosterRole === "COACH" ? "Squads" : "Team"}
+              {form.rosterRole === "COACH"
+                ? "Training squads (head & cover)"
+                : "Team"}
             </Label>
             {form.rosterRole === "COACH" ? (
               <>
                 <SquadCheckboxGroup
                   idPrefix="roster-add"
                   selectedKeys={form.trainingTeamKeys}
+                  priorities={form.coachSquadPriorities}
                   trainingTeams={trainingTeams}
                   disabled={loading}
-                  onChange={(trainingTeamKeys) =>
-                    setForm((current) => ({ ...current, trainingTeamKeys }))
+                  showHeadCoachControls
+                  headBySquad={headBySquad}
+                  onToggle={(trainingTeamKey) =>
+                    setForm((current) => {
+                      const selected = current.trainingTeamKeys.includes(
+                        trainingTeamKey,
+                      );
+                      const trainingTeamKeys = selected
+                        ? current.trainingTeamKeys.filter(
+                            (key) => key !== trainingTeamKey,
+                          )
+                        : [...current.trainingTeamKeys, trainingTeamKey];
+                      const nextPriorities = { ...current.coachSquadPriorities };
+                      for (const key of Object.keys(nextPriorities)) {
+                        if (!trainingTeamKeys.includes(key)) {
+                          delete nextPriorities[key];
+                        }
+                      }
+                      for (const key of trainingTeamKeys) {
+                        if (nextPriorities[key] === undefined) {
+                          nextPriorities[key] = COVER_COACH_PRIORITY;
+                        }
+                      }
+                      return {
+                        ...current,
+                        trainingTeamKeys,
+                        coachSquadPriorities: nextPriorities,
+                      };
+                    })
+                  }
+                  onPriorityChange={(trainingTeamKey, priority) =>
+                    setForm((current) => ({
+                      ...current,
+                      coachSquadPriorities: {
+                        ...current.coachSquadPriorities,
+                        [trainingTeamKey]: priority,
+                      },
+                    }))
                   }
                 />
                 {form.trainingTeamKeys.length === 0 ? (
                   <p className="mt-2 text-xs text-zinc-500">
-                    Select at least one squad for this coach.
+                    Optional — leave empty if this coach should not cover any
+                    squad yet.
                   </p>
                 ) : null}
               </>
@@ -554,22 +943,26 @@ export function ClubRosterManager({
             <Select
               id="roster-role"
               value={form.rosterRole}
-              onChange={(event) =>
+              onChange={(event) => {
+                const rosterRole = event.target.value as "PLAYER" | "COACH";
+                setFormError(null);
                 setForm((current) => ({
                   ...current,
-                  rosterRole: event.target.value,
+                  rosterRole,
+                  // Avoid carrying a player VLY into a coach create (and vice versa).
+                  vlyNumber: "",
                   trainingTeamKeys:
-                    event.target.value === "COACH"
+                    rosterRole === "COACH"
                       ? current.trainingTeamKey
                         ? [current.trainingTeamKey]
                         : current.trainingTeamKeys
                       : [],
                   trainingTeamKey:
-                    event.target.value === "PLAYER"
+                    rosterRole === "PLAYER"
                       ? current.trainingTeamKeys[0] ?? current.trainingTeamKey
                       : current.trainingTeamKey,
-                }))
-              }
+                }));
+              }}
               required
             >
               <option value="PLAYER">Player</option>
@@ -600,6 +993,9 @@ export function ClubRosterManager({
           )}
         </div>
       </AdminFormCard>
+
+      <SuccessBanner message={message} />
+      <FormError message={error} />
 
       <AdminBulkCsvImport type="roster" />
 
@@ -799,6 +1195,77 @@ export function ClubRosterManager({
                           onUpdated={loadClubMembers}
                         />
                       </div>
+
+                      <div className="space-y-2">
+                        <Label className="mb-0 text-xs font-normal text-zinc-500">
+                          Roster role
+                        </Label>
+                        <Select
+                          value={member.rosterRole}
+                          disabled={loading}
+                          onChange={(event) =>
+                            void assignRosterRole(
+                              member,
+                              event.target.value as "PLAYER" | "COACH",
+                            )
+                          }
+                        >
+                          <option value="PLAYER">Player</option>
+                          <option value="COACH">Coach</option>
+                        </Select>
+                      </div>
+
+                      {member.rosterRole === "COACH" ? (
+                        <div className="space-y-2">
+                          <Label className="mb-0 text-xs font-normal text-zinc-500">
+                            Training squads (head & cover)
+                          </Label>
+                          <SquadCheckboxGroup
+                            idPrefix={`mobile-team-${member.id}`}
+                            selectedKeys={memberSquadKeys(member)}
+                            priorities={memberCoachPriorities(member)}
+                            trainingTeams={trainingTeams}
+                            disabled={loading}
+                            showHeadCoachControls
+                            headBySquad={headBySquad}
+                            currentMemberId={member.id}
+                            onToggle={(key) => toggleCoachSquad(member, key)}
+                            onPriorityChange={(key, priority) =>
+                              void assignCoachSquadPriority(
+                                member,
+                                key,
+                                priority,
+                              )
+                            }
+                          />
+                          {savingSquadMemberId === member.id ? (
+                            <p className="text-[11px] text-zinc-500">
+                              Saving squads…
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : (
+                        <div className="space-y-2">
+                          <Label className="mb-0 text-xs font-normal text-zinc-500">
+                            Squad
+                          </Label>
+                          <Select
+                            value={member.trainingTeamKey ?? ""}
+                            disabled={loading}
+                            onChange={(event) =>
+                              void assignTeam(member, event.target.value)
+                            }
+                          >
+                            <option value="">No squad assigned</option>
+                            {trainingTeams.map((team) => (
+                              <option key={team.key} value={team.key}>
+                                {team.name}
+                              </option>
+                            ))}
+                          </Select>
+                        </div>
+                      )}
+
                       {!member.userId ? (
                         <Button
                           size="sm"
@@ -962,7 +1429,9 @@ export function ClubRosterManager({
                               <div className="space-y-3">
                                 <p className="text-sm text-zinc-400">
                                   <span className="text-zinc-500">VLY:</span>{" "}
-                                  {member.vlyNumber}
+                                  {member.vlyNumber ?? (
+                                    <span className="text-zinc-500">Not set yet</span>
+                                  )}
                                 </p>
                                 <p className="text-sm text-zinc-400">
                                   <span className="text-zinc-500">Squad:</span>{" "}
@@ -1004,7 +1473,8 @@ export function ClubRosterManager({
                                         id={`number-${member.id}`}
                                         value={
                                           memberNumberDrafts[member.id] ??
-                                          member.vlyNumber
+                                          member.vlyNumber ??
+                                          ""
                                         }
                                         disabled={loading}
                                         onChange={(event) => {
@@ -1022,8 +1492,8 @@ export function ClubRosterManager({
                                         }}
                                         placeholder={
                                           member.rosterRole === "COACH"
-                                            ? "VLYC12345"
-                                            : "VLY12345"
+                                            ? "VLYC12345 (optional)"
+                                            : "VLY12345 (optional)"
                                         }
                                         className="py-2 text-sm"
                                       />
@@ -1106,19 +1576,37 @@ export function ClubRosterManager({
                                   <div className="flex flex-col gap-1.5 md:col-span-2 lg:col-span-1">
                                     <Label className="mb-0 text-xs font-normal text-zinc-500">
                                       {member.rosterRole === "COACH"
-                                        ? "Squads"
+                                        ? "Training squads (head & cover)"
                                         : "Squad"}
                                     </Label>
                                     {member.rosterRole === "COACH" ? (
-                                      <SquadCheckboxGroup
-                                        idPrefix={`team-${member.id}`}
-                                        selectedKeys={memberSquadKeys(member)}
-                                        trainingTeams={trainingTeams}
-                                        disabled={loading}
-                                        onChange={(keys) =>
-                                          assignCoachSquads(member, keys)
-                                        }
-                                      />
+                                      <>
+                                        <SquadCheckboxGroup
+                                          idPrefix={`team-${member.id}`}
+                                          selectedKeys={memberSquadKeys(member)}
+                                          priorities={memberCoachPriorities(member)}
+                                          trainingTeams={trainingTeams}
+                                          disabled={loading}
+                                          showHeadCoachControls
+                                          headBySquad={headBySquad}
+                                          currentMemberId={member.id}
+                                          onToggle={(key) =>
+                                            toggleCoachSquad(member, key)
+                                          }
+                                          onPriorityChange={(key, priority) =>
+                                            void assignCoachSquadPriority(
+                                              member,
+                                              key,
+                                              priority,
+                                            )
+                                          }
+                                        />
+                                        {savingSquadMemberId === member.id ? (
+                                          <p className="text-[11px] text-zinc-500">
+                                            Saving squads…
+                                          </p>
+                                        ) : null}
+                                      </>
                                     ) : (
                                       <Select
                                         id={`team-${member.id}`}

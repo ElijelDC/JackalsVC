@@ -37,6 +37,7 @@ function sampleOrder(overrides: Partial<KitOrderRecord> = {}): KitOrderRecord {
     jacketHighCollarSize: "",
     jacketFullZip: false,
     jacketFullZipSize: "",
+    freeLineItemIds: [],
     paymentToken: "tok_test",
     paymentStatus: "UNPAID",
     proofScreenshotUrl: null,
@@ -77,6 +78,16 @@ describe("buildKitOrderPaymentQuote", () => {
       }),
     );
     expect(quote.totalEur).toBe(90);
+  });
+
+  it("zeroes waived line items for payment emails", () => {
+    const quote = buildKitOrderPaymentQuote(
+      sampleOrder({ freeLineItemIds: ["training-tshirt"] }),
+    );
+    expect(quote.totalEur).toBe(45);
+    expect(
+      quote.items.find((item) => item.id === "training-tshirt")?.amountEur,
+    ).toBe(0);
   });
 });
 

@@ -26,7 +26,7 @@ async function exportRosterRows(): Promise<string[][]> {
   });
 
   return members.map((member) => [
-    member.vlyNumber,
+    member.vlyNumber ?? "",
     member.name,
     member.trainingTeamKey ?? "",
     member.rosterRole,

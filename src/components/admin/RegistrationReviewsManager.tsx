@@ -18,7 +18,7 @@ import { cn } from "@/lib/utils";
 
 export type RegistrationReviewItem = {
   id: string;
-  vlyNumber: string;
+  vlyNumber: string | null;
   name: string;
   vlyMembershipPhotoUrl: string;
   registrationPhotoSubmittedAt: string | null;
@@ -159,7 +159,7 @@ export function RegistrationReviewsManager({
           <p>
             <span className="text-zinc-500">VLY:</span>{" "}
             <span className="font-mono text-jackals-red-light">
-              {review.vlyNumber}
+              {review.vlyNumber ?? "VLY pending"}
             </span>
           </p>
           <p>
@@ -295,7 +295,7 @@ export function RegistrationReviewsManager({
                       </button>
                     </td>
                     <td className="px-2 py-2 font-mono text-xs text-jackals-red-light">
-                      {review.vlyNumber}
+                      {review.vlyNumber ?? "VLY pending"}
                     </td>
                     <td className="px-2 py-2 text-xs text-zinc-400">
                       <span className="truncate">
@@ -350,7 +350,7 @@ export function RegistrationReviewsManager({
                     </span>
                   </button>
                   <p className="mt-1 font-mono text-sm text-jackals-red-light">
-                    {review.vlyNumber}
+                    {review.vlyNumber ?? "VLY pending"}
                   </p>
                   <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-zinc-500">
                     <span>{roleLabel(review)}</span>

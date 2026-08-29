@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Banknote,
   CheckCircle2,
@@ -39,7 +39,7 @@ import {
   type KitOrderRecord,
 } from "@/lib/kit-order-response-config";
 import { formatMembershipEuro } from "@/lib/membership-2026-27";
-import { apiApproveKitOrderPayment, apiDelete, apiGet, apiPost } from "@/lib/client-api";
+import { apiApproveKitOrderPayment, apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import { downloadExcelFromUrl } from "@/lib/download-excel";
 import { formatOfferSubmittedAt } from "@/lib/offer-response-shared";
 import { cn } from "@/lib/utils";
@@ -74,6 +74,78 @@ function isKitOrderPaid(row: KitOrderRecord) {
   return (row.paymentStatus ?? "AWAITING") === "PAID";
 }
 
+function KitOrderFreeLinesEditor({
+  order,
+  saving,
+  onSave,
+}: {
+  order: KitOrderRecord;
+  saving: boolean;
+  onSave: (freeLineItemIds: string[]) => void;
+}) {
+  const baseQuote = buildKitOrderPaymentQuote({
+    ...order,
+    freeLineItemIds: [],
+  });
+  const savedIds = order.freeLineItemIds ?? [];
+  const [draft, setDraft] = useState<string[]>(savedIds);
+
+  useEffect(() => {
+    setDraft(order.freeLineItemIds ?? []);
+  }, [order.id, order.freeLineItemIds]);
+
+  const dirty =
+    draft.slice().sort().join(",") !== savedIds.slice().sort().join(",");
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs uppercase tracking-wide text-zinc-500">
+        Make items free
+      </p>
+      <p className="text-xs text-zinc-500">
+        Waive line items for this person before sending the payment email. Totals
+        on the pay page and email update immediately.
+      </p>
+      <ul className="space-y-1.5">
+        {baseQuote.items.map((item) => {
+          const checked = draft.includes(item.id);
+          return (
+            <li key={item.id}>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-300">
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  disabled={saving}
+                  onChange={(event) => {
+                    setDraft((current) =>
+                      event.target.checked
+                        ? [...current, item.id]
+                        : current.filter((id) => id !== item.id),
+                    );
+                  }}
+                  className="h-4 w-4 rounded border-white/20 bg-black/30"
+                />
+                <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                <span className="shrink-0 text-xs text-zinc-500">
+                  {formatMembershipEuro(item.amountEur)}
+                </span>
+              </label>
+            </li>
+          );
+        })}
+      </ul>
+      <Button
+        type="button"
+        size="sm"
+        disabled={saving || !dirty}
+        onClick={() => onSave(draft)}
+      >
+        {saving ? "Saving…" : "Save free items"}
+      </Button>
+    </div>
+  );
+}
+
 function kitSummaryShort(row: KitOrderRecord) {
   const label = row.kitPiecesLabel || row.kitTypeLabel;
   if (label.length <= 28) return label;
@@ -104,8 +176,10 @@ export function KitOrdersManager({
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [savingFreeId, setSavingFreeId] = useState<string | null>(null);
   const [bulkSending, setBulkSending] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [waivedOpen, setWaivedOpen] = useState(false);
   const [confirmOrderIds, setConfirmOrderIds] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -155,10 +229,44 @@ export function KitOrdersManager({
   const stats = useMemo(() => {
     let unpaid = 0;
     let paid = 0;
+    let waived = 0;
     let totalRemaining = 0;
     let totalPaid = 0;
+    let totalWaived = 0;
+    const waivedDetails: Array<{
+      id: string;
+      name: string;
+      email: string;
+      items: Array<{ id: string; label: string; amountEur: number }>;
+      waivedEur: number;
+    }> = [];
+
     for (const row of filterBase) {
       const amount = buildKitOrderPaymentQuote(row).totalEur;
+      const freeIds = row.freeLineItemIds ?? [];
+      if (freeIds.length > 0) {
+        const fullQuote = buildKitOrderPaymentQuote({
+          ...row,
+          freeLineItemIds: [],
+        });
+        const waivedEur = Math.max(0, fullQuote.totalEur - amount);
+        waived += 1;
+        totalWaived += waivedEur;
+        const freeSet = new Set(freeIds);
+        waivedDetails.push({
+          id: row.id,
+          name: kitOrderFullName(row),
+          email: row.email,
+          items: fullQuote.items
+            .filter((item) => freeSet.has(item.id))
+            .map((item) => ({
+              id: item.id,
+              label: item.label,
+              amountEur: item.amountEur,
+            })),
+          waivedEur,
+        });
+      }
       if (isKitOrderPaid(row)) {
         paid += 1;
         totalPaid += amount;
@@ -167,7 +275,17 @@ export function KitOrdersManager({
         totalRemaining += amount;
       }
     }
-    return { unpaid, paid, totalRemaining, totalPaid };
+
+    waivedDetails.sort((a, b) => a.name.localeCompare(b.name));
+    return {
+      unpaid,
+      paid,
+      waived,
+      totalRemaining,
+      totalPaid,
+      totalWaived,
+      waivedDetails,
+    };
   }, [filterBase]);
 
   const selectedOrders = useMemo(
@@ -298,6 +416,35 @@ export function KitOrdersManager({
       result.data.message ||
         `Payment approved for ${kitOrderFullName(row)}.`,
     );
+  };
+
+  const handleSaveFreeLines = async (
+    row: KitOrderRecord,
+    freeLineItemIds: string[],
+  ) => {
+    setSavingFreeId(row.id);
+    setError(null);
+    setMessage(null);
+
+    const result = await apiPut<{ order: KitOrderRecord }>(
+      `/api/admin/kit-orders/${row.id}`,
+      { freeLineItemIds },
+      "save free kit items",
+    );
+
+    setSavingFreeId(null);
+
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+
+    setOrders((current) =>
+      current.map((item) =>
+        item.id === row.id ? result.data.order : item,
+      ),
+    );
+    setMessage(`Updated free items for ${kitOrderFullName(row)}.`);
   };
 
   const sendPaymentEmails = async (orderIds: string[]) => {
@@ -431,7 +578,7 @@ export function KitOrdersManager({
         </div>
       </details>
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {[
           { label: "Unpaid", value: String(stats.unpaid) },
           { label: "Paid", value: String(stats.paid) },
@@ -454,6 +601,29 @@ export function KitOrdersManager({
             <p className="mt-0.5 text-lg font-semibold text-white">{item.value}</p>
           </div>
         ))}
+        <button
+          type="button"
+          disabled={stats.waived === 0}
+          onClick={() => setWaivedOpen(true)}
+          className={cn(
+            "rounded-lg border px-3 py-2.5 text-left transition",
+            stats.waived > 0
+              ? "border-amber-500/30 bg-amber-500/10 hover:border-amber-400/45 hover:bg-amber-500/15"
+              : "cursor-default border-white/10 bg-white/[0.02] opacity-70",
+          )}
+        >
+          <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+            Waived
+          </p>
+          <p className="mt-0.5 text-lg font-semibold text-white">
+            {stats.waived > 0
+              ? `${stats.waived} · ${formatMembershipEuro(stats.totalWaived)}`
+              : "0"}
+          </p>
+          {stats.waived > 0 ? (
+            <p className="mt-1 text-[11px] text-amber-200/80">View details</p>
+          ) : null}
+        </button>
       </div>
 
       <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
@@ -734,15 +904,24 @@ export function KitOrdersManager({
                       <tr className="bg-black/20">
                         <td colSpan={5} className="px-4 py-4">
                           <div className="grid gap-4 lg:grid-cols-2">
-                            <div>
-                              <p className="text-xs uppercase tracking-wide text-zinc-500">
-                                Breakdown
-                              </p>
-                              <KitOrderQuoteBreakdown
-                                items={quote.items}
-                                totalEur={quote.totalEur}
-                                compact
-                                className="mt-2"
+                            <div className="space-y-4">
+                              <div>
+                                <p className="text-xs uppercase tracking-wide text-zinc-500">
+                                  Breakdown
+                                </p>
+                                <KitOrderQuoteBreakdown
+                                  items={quote.items}
+                                  totalEur={quote.totalEur}
+                                  compact
+                                  className="mt-2"
+                                />
+                              </div>
+                              <KitOrderFreeLinesEditor
+                                order={row}
+                                saving={savingFreeId === row.id}
+                                onSave={(ids) =>
+                                  void handleSaveFreeLines(row, ids)
+                                }
                               />
                             </div>
                             <div className="space-y-2 text-sm text-zinc-400">
@@ -929,7 +1108,7 @@ export function KitOrdersManager({
                 </div>
                 <details className="mt-3">
                   <summary className="cursor-pointer text-xs text-zinc-500">
-                    Show breakdown
+                    Show breakdown & free items
                   </summary>
                   <KitOrderQuoteBreakdown
                     items={quote.items}
@@ -937,6 +1116,13 @@ export function KitOrdersManager({
                     compact
                     className="mt-2"
                   />
+                  <div className="mt-3">
+                    <KitOrderFreeLinesEditor
+                      order={row}
+                      saving={savingFreeId === row.id}
+                      onSave={(ids) => void handleSaveFreeLines(row, ids)}
+                    />
+                  </div>
                 </details>
               </article>
             );
@@ -944,6 +1130,66 @@ export function KitOrdersManager({
           </div>
         </>
       )}
+
+      <Modal
+        open={waivedOpen}
+        onClose={() => setWaivedOpen(false)}
+        title="Waived kit items"
+        description={`${stats.waived} order${stats.waived === 1 ? "" : "s"} · ${formatMembershipEuro(stats.totalWaived)} waived in total`}
+      >
+        {stats.waivedDetails.length === 0 ? (
+          <p className="text-sm text-zinc-500">No waived items right now.</p>
+        ) : (
+          <ul className="max-h-[60vh] space-y-3 overflow-y-auto">
+            {stats.waivedDetails.map((row) => (
+              <li
+                key={row.id}
+                className="rounded-lg border border-white/10 bg-black/20 px-3 py-2.5"
+              >
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="font-medium text-white">{row.name}</p>
+                    <p className="truncate text-xs text-zinc-500">{row.email}</p>
+                  </div>
+                  <p className="shrink-0 text-sm font-semibold text-amber-200">
+                    −{formatMembershipEuro(row.waivedEur)}
+                  </p>
+                </div>
+                <ul className="mt-2 space-y-1">
+                  {row.items.map((item) => (
+                    <li
+                      key={item.id}
+                      className="flex items-center justify-between gap-3 text-sm text-zinc-300"
+                    >
+                      <span>{item.label}</span>
+                      <span className="text-zinc-500">
+                        {formatMembershipEuro(item.amountEur)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  type="button"
+                  className="mt-2 text-xs font-medium text-jackals-gold hover:underline"
+                  onClick={() => {
+                    setWaivedOpen(false);
+                    setExpandedId(row.id);
+                    setPaymentFilter("ALL");
+                    setSearch(row.name);
+                  }}
+                >
+                  Open order
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+        <div className="mt-4 flex justify-end">
+          <Button type="button" variant="outline" onClick={() => setWaivedOpen(false)}>
+            Close
+          </Button>
+        </div>
+      </Modal>
 
       <Modal
         open={confirmOpen}

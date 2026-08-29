@@ -143,7 +143,9 @@ export function coachTrainingPayItemLabel(
   if (item.cancelled) return "Cancelled";
   if (item.coachStatus === "NOT_ATTENDING") return "Can't attend";
   if (item.expected) return "Expected";
-  if (item.coachStatus === "ATTENDING") return "Attended";
+  if (item.coachStatus === "ATTENDING") {
+    return item.payable ? "Attended" : "Covering";
+  }
   return "Payable";
 }
 

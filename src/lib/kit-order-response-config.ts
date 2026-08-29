@@ -2,6 +2,7 @@ import {
   kitOrderGenderLabel,
   kitOrderKitTypeLabel,
   kitOrderPiecesLabel,
+  parseKitOrderFreeLineItemIds,
   summarizeKitSize,
   type KitOrderGender,
   type KitOrderKitType,
@@ -38,6 +39,7 @@ export type KitOrderRecord = {
   jacketHighCollarSize: string;
   jacketFullZip: boolean;
   jacketFullZipSize: string;
+  freeLineItemIds: string[];
   paymentToken: string;
   paymentStatus: string;
   proofScreenshotUrl: string | null;
@@ -132,6 +134,7 @@ export function serializeKitOrder(row: {
   jacketFullZip: boolean;
   jacketFullZipSize: string;
   createdAt: Date;
+  freeLineItemIds?: string | null;
   paymentToken?: string;
   paymentStatus?: string;
   proofScreenshotUrl?: string | null;
@@ -175,6 +178,7 @@ export function serializeKitOrder(row: {
     jacketHighCollarSize: row.jacketHighCollarSize,
     jacketFullZip: row.jacketFullZip,
     jacketFullZipSize: row.jacketFullZipSize,
+    freeLineItemIds: parseKitOrderFreeLineItemIds(row.freeLineItemIds),
     paymentToken: row.paymentToken ?? "",
     paymentStatus: row.paymentStatus ?? "AWAITING",
     proofScreenshotUrl: row.proofScreenshotUrl ?? null,

@@ -64,6 +64,9 @@ function teamAccent(tryingOutFor: string) {
   if (tryingOutFor === "MENS_DIVISION_2") {
     return "text-jackals-red-light bg-jackals-red/15";
   }
+  if (tryingOutFor === "MENS_DIVISION_3") {
+    return "text-zinc-300 bg-zinc-500/15";
+  }
   if (tryingOutFor === "WOMENS_DIVISION_3") {
     return "text-purple-300 bg-purple-500/15";
   }

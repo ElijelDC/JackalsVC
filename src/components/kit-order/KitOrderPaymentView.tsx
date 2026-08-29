@@ -73,39 +73,51 @@ export function KitOrderPaymentView({
         ) : null}
       </Card>
 
-      <Card className="border-jackals-red/30 py-5">
-        <div className="mb-4 flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-jackals-red-light" />
+      {quote.totalEur > 0 ? (
+        <Card className="border-jackals-red/30 py-5">
+          <div className="mb-4 flex items-center gap-2">
+            <CreditCard className="h-5 w-5 text-jackals-red-light" />
+            <h2 className="font-display text-lg font-semibold text-white">
+              Pay by bank transfer
+            </h2>
+          </div>
+          <p className="text-sm text-zinc-400">
+            Transfer the total below to the club account. Use your name and the
+            reference exactly as shown — then upload your receipt underneath.
+          </p>
+
+          <IbanTransferDetails
+            accountHolder={clubBank.accountHolder}
+            iban={clubBank.iban}
+            accountLabel={clubBank.accountLabel}
+            paymentReference={reference}
+            amount={quote.totalEur}
+            className="mt-4"
+          />
+
+          <p className="mt-4 text-sm text-zinc-400">
+            Order email on file:{" "}
+            <span className="font-medium text-white">{order.email}</span>
+          </p>
+
+          <KitOrderProofUpload
+            paymentToken={order.paymentToken!}
+            existingProofUrl={order.proofScreenshotUrl}
+            proofSubmittedAt={order.proofSubmittedAt}
+            paymentStatus={order.paymentStatus}
+          />
+        </Card>
+      ) : (
+        <Card className="border-emerald-500/30 py-5">
           <h2 className="font-display text-lg font-semibold text-white">
-            Pay by bank transfer
+            No payment due
           </h2>
-        </div>
-        <p className="text-sm text-zinc-400">
-          Transfer the total below to the club account. Use your name and the
-          reference exactly as shown — then upload your receipt underneath.
-        </p>
-
-        <IbanTransferDetails
-          accountHolder={clubBank.accountHolder}
-          iban={clubBank.iban}
-          accountLabel={clubBank.accountLabel}
-          paymentReference={reference}
-          amount={quote.totalEur}
-          className="mt-4"
-        />
-
-        <p className="mt-4 text-sm text-zinc-400">
-          Order email on file:{" "}
-          <span className="font-medium text-white">{order.email}</span>
-        </p>
-
-        <KitOrderProofUpload
-          paymentToken={order.paymentToken!}
-          existingProofUrl={order.proofScreenshotUrl}
-          proofSubmittedAt={order.proofSubmittedAt}
-          paymentStatus={order.paymentStatus}
-        />
-      </Card>
+          <p className="mt-2 text-sm text-zinc-400">
+            The club has covered the chargeable items on this order. Nothing to
+            transfer.
+          </p>
+        </Card>
+      )}
 
       <p className="text-center text-sm text-zinc-500">
         Questions?{" "}

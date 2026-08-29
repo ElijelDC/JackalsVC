@@ -81,7 +81,7 @@ async function authorizeVlyMembershipPhoto(
       select: { vlyNumber: true },
     });
     if (
-      member &&
+      member?.vlyNumber &&
       verifyRegistrationToken(registrationToken, member.vlyNumber).valid
     ) {
       return true;

@@ -103,6 +103,15 @@ function teamAccentClasses(tryingOutFor: string) {
       panel: "border-jackals-red/60 bg-jackals-red/10 ring-1 ring-jackals-red/40",
       badge: "bg-jackals-red text-white",
       label: "text-jackals-red-light",
+      submit: "",
+    };
+  }
+  if (tryingOutFor === "MENS_DIVISION_3") {
+    return {
+      panel: "border-zinc-500/60 bg-zinc-500/10 ring-1 ring-zinc-400/40",
+      badge: "bg-zinc-600 text-white",
+      label: "text-zinc-300",
+      submit: "bg-zinc-600 hover:bg-zinc-500",
     };
   }
   if (tryingOutFor === "WOMENS_DIVISION_3") {
@@ -110,13 +119,31 @@ function teamAccentClasses(tryingOutFor: string) {
       panel: "border-purple-500/60 bg-purple-500/10 ring-1 ring-purple-400/40",
       badge: "bg-purple-600 text-white",
       label: "text-purple-300",
+      submit: "bg-purple-600 hover:bg-purple-500",
     };
   }
   return {
     panel: "border-white/10 bg-transparent",
     badge: "",
     label: "text-zinc-400",
+    submit: "",
   };
+}
+
+function teamOptionButtonClasses(accent: string, selected: boolean) {
+  if (accent === "red") {
+    return selected
+      ? "border-jackals-red bg-jackals-red text-white shadow-[0_0_0_1px_rgba(200,16,46,0.8)]"
+      : "border-jackals-red/50 bg-jackals-red/15 text-jackals-red-light hover:bg-jackals-red/25";
+  }
+  if (accent === "grey") {
+    return selected
+      ? "border-zinc-400 bg-zinc-600 text-white shadow-[0_0_0_1px_rgba(113,113,122,0.8)]"
+      : "border-zinc-500/50 bg-zinc-500/15 text-zinc-200 hover:bg-zinc-500/25";
+  }
+  return selected
+    ? "border-purple-500 bg-purple-600 text-white shadow-[0_0_0_1px_rgba(147,51,234,0.8)]"
+    : "border-purple-500/50 bg-purple-500/15 text-purple-200 hover:bg-purple-500/25";
 }
 
 export function TrialsApplicationModal({
@@ -277,8 +304,9 @@ export function TrialsApplicationModal({
       description={
         <div className="space-y-2">
           <p className="text-sm leading-relaxed text-zinc-400">
-            Register for our August 2026 trials for Men&apos;s Division 2 or
-            Women&apos;s Division 3. All fields are required.
+            Register for our August 2026 trials for Men&apos;s Division 2,
+            Men&apos;s Division 3, or Women&apos;s Division 3. All fields are
+            required.
           </p>
           {draftRestored && !success ? (
             <p className="text-sm text-amber-300/90">
@@ -316,10 +344,9 @@ export function TrialsApplicationModal({
               </span>
             ) : null}
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 sm:grid-cols-3">
             {TRIALS_TEAM_OPTIONS.map((option) => {
               const selected = form.tryingOutFor === option.value;
-              const isRed = option.accent === "red";
               return (
                 <button
                   key={option.value}
@@ -331,17 +358,11 @@ export function TrialsApplicationModal({
                   }
                   className={cn(
                     "rounded-lg border px-4 py-4 text-left transition",
-                    isRed
-                      ? selected
-                        ? "border-jackals-red bg-jackals-red text-white shadow-[0_0_0_1px_rgba(200,16,46,0.8)]"
-                        : "border-jackals-red/50 bg-jackals-red/15 text-jackals-red-light hover:bg-jackals-red/25"
-                      : selected
-                        ? "border-purple-500 bg-purple-600 text-white shadow-[0_0_0_1px_rgba(147,51,234,0.8)]"
-                        : "border-purple-500/50 bg-purple-500/15 text-purple-200 hover:bg-purple-500/25",
+                    teamOptionButtonClasses(option.accent, selected),
                   )}
                 >
                   <span className="block text-xs font-semibold uppercase tracking-widest opacity-80">
-                    {isRed ? "Division 2" : "Division 3"}
+                    {option.shortDivision}
                   </span>
                   <span className="mt-1 block font-display text-base font-semibold sm:text-lg">
                     {option.label}
@@ -590,11 +611,7 @@ export function TrialsApplicationModal({
             <Button
               type="submit"
               disabled={loading}
-              className={cn(
-                "w-full sm:w-auto",
-                form.tryingOutFor === "WOMENS_DIVISION_3" &&
-                  "bg-purple-600 hover:bg-purple-500",
-              )}
+              className={cn("w-full sm:w-auto", accent.submit)}
             >
               {loading ? "Submitting..." : "Submit signup"}
             </Button>

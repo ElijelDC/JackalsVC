@@ -17,7 +17,7 @@ export const TRIALS_BENEFITS: {
     icon: Trophy,
     title: "National League pathway",
     description:
-      "Trial for our Men's Division 2 and Women's Division 3 squads competing in the Irish National League.",
+      "Trial for our Men's Division 2, Men's Division 3, and Women's Division 3 squads competing in the Irish National League.",
   },
   {
     icon: Volleyball,
@@ -62,11 +62,19 @@ export const TRIALS_TEAM_OPTIONS = [
   {
     value: "MENS_DIVISION_2",
     label: "Men's Division 2",
+    shortDivision: "Division 2",
     accent: "red",
+  },
+  {
+    value: "MENS_DIVISION_3",
+    label: "Men's Division 3",
+    shortDivision: "Division 3",
+    accent: "grey",
   },
   {
     value: "WOMENS_DIVISION_3",
     label: "Women's Division 3",
+    shortDivision: "Division 3",
     accent: "purple",
   },
 ] as const;
