@@ -15,7 +15,7 @@ export default function MerchandiseOrderPage() {
     <PageContainer className="max-w-4xl">
       <PageHeader
         title="2026/27 merchandise order"
-        description="Choose a training t-shirt or one or more club jackets. Select men's or women's fit, review your order, then pay by bank transfer."
+        description="Choose a training t-shirt or one or more club jackets. Pick a size for each item, review your order, then pay by bank transfer."
       />
       <MerchandiseOrderForm />
     </PageContainer>

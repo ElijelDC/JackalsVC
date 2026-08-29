@@ -1,5 +1,4 @@
 import { afterSaveNotify } from "@/lib/offer-notify";
-import { merchandiseOrderGenderLabel } from "@/lib/merchandise-order-config";
 import {
   merchandiseOrderFullName,
   merchandiseOrderItemSummary,
@@ -20,7 +19,7 @@ export async function submitMerchandiseOrder(data: MerchandiseOrderData) {
       lastName: data.lastName,
       email: data.email.toLowerCase(),
       phoneNumber: data.phoneNumber.trim(),
-      gender: data.gender,
+      gender: "unisex",
       trainingTshirt: data.trainingTshirt,
       trainingTshirtSize: selectedSize(
         data.trainingTshirt,
@@ -58,7 +57,6 @@ export async function submitMerchandiseOrder(data: MerchandiseOrderData) {
           { label: "Name", value: fullName },
           { label: "Email", value: order.email },
           { label: "Phone", value: order.phoneNumber },
-          { label: "Fit", value: merchandiseOrderGenderLabel(order.gender) },
           { label: "Items", value: items.join(", ") },
         ],
         ctaUrl: emailSiteUrl("/admin/merchandise-orders"),

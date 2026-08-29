@@ -8,8 +8,9 @@ import {
   isValidKitOrderSize,
   KIT_ORDER_QUOTE_LINE_IDS,
 } from "@/lib/kit-order-config";
+import { emailTypoError } from "@/lib/email-typo";
 import {
-  hasAnyMerchandiseItem,
+  merchandiseOrderSizeIssues,
   MERCHANDISE_ORDER_QUOTE_LINE_IDS,
 } from "@/lib/merchandise-order-config";
 
@@ -1019,13 +1020,21 @@ export const merchandiseOrderSchema = z
   .object({
     firstName: kitOrderName,
     lastName: kitOrderName,
-    email: z.string().trim().email("Enter a valid email address"),
+    email: z
+      .string()
+      .trim()
+      .email("Enter a valid email address")
+      .superRefine((value, ctx) => {
+        const typo = emailTypoError(value);
+        if (typo) {
+          ctx.addIssue({ code: "custom", message: typo });
+        }
+      }),
     phoneNumber: z
       .string()
       .trim()
       .min(7, "Enter a valid phone number")
       .max(30, "Phone number is too long"),
-    gender: z.enum(["men", "women"], { message: "Choose men's or women's" }),
     trainingTshirt: z.boolean(),
     trainingTshirtSize: kitOrderOptionalSize,
     trainingTop: z.boolean(),
@@ -1038,36 +1047,12 @@ export const merchandiseOrderSchema = z
     jacketFullZipSize: kitOrderOptionalSize,
   })
   .superRefine((data, ctx) => {
-    if (!hasAnyMerchandiseItem(data)) {
+    for (const issue of merchandiseOrderSizeIssues(data)) {
       ctx.addIssue({
         code: "custom",
-        path: ["trainingTshirt"],
-        message: "Choose at least one merchandise item",
+        path: [issue.path],
+        message: issue.message,
       });
-    }
-
-    const items = [
-      [data.trainingTshirt, data.trainingTshirtSize, "trainingTshirtSize", "training t-shirt"],
-      [data.trainingTop, data.trainingTopSize, "trainingTopSize", "quarter zip"],
-      [data.jacketHoodie, data.jacketHoodieSize, "jacketHoodieSize", "zip hoodie"],
-      [
-        data.jacketHighCollar,
-        data.jacketHighCollarSize,
-        "jacketHighCollarSize",
-        "high collar zip",
-      ],
-      [data.jacketFullZip, data.jacketFullZipSize, "jacketFullZipSize", "full zip"],
-    ] as const;
-
-    for (const [included, size, path, label] of items) {
-      if (!included) continue;
-      if (!isValidKitOrderSize(data.gender, size)) {
-        ctx.addIssue({
-          code: "custom",
-          path: [path],
-          message: `Select a valid ${label} size`,
-        });
-      }
     }
   });
 

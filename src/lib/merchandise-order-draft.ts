@@ -1,17 +1,14 @@
 import {
-  MERCHANDISE_ORDER_GENDERS,
-  isValidKitOrderSize,
-  type MerchandiseOrderGender,
+  isValidMerchandiseOrderSize,
   type MerchandiseSelection,
 } from "@/lib/merchandise-order-config";
 
 export const MERCHANDISE_ORDER_DRAFT_STORAGE_KEY =
   "jackals-merchandise-order-draft-2026-27";
-const VERSION = 1;
+const VERSION = 2;
 
 export type MerchandiseOrderDraft = MerchandiseSelection & {
   version: number;
-  gender: MerchandiseOrderGender;
   firstName: string;
   lastName: string;
   email: string;
@@ -21,12 +18,10 @@ export type MerchandiseOrderDraft = MerchandiseSelection & {
 const asString = (value: unknown) => (typeof value === "string" ? value : "");
 const asBoolean = (value: unknown) => value === true;
 
-function itemSize(
-  gender: MerchandiseOrderGender,
-  included: boolean,
-  value: unknown,
-) {
-  return included && typeof value === "string" && isValidKitOrderSize(gender, value)
+function itemSize(included: boolean, value: unknown) {
+  return included &&
+    typeof value === "string" &&
+    isValidMerchandiseOrderSize(value)
     ? value
     : "";
 }
@@ -41,16 +36,10 @@ export function parseMerchandiseOrderDraft(
   raw: unknown,
 ): MerchandiseOrderDraft | null {
   if (!raw || typeof raw !== "object") return null;
-  const value = raw as Partial<MerchandiseOrderDraft>;
-  if (value.version !== VERSION) return null;
-  if (
-    typeof value.gender !== "string" ||
-    !(MERCHANDISE_ORDER_GENDERS as readonly string[]).includes(value.gender)
-  ) {
-    return null;
-  }
+  const value = raw as Partial<MerchandiseOrderDraft> & { gender?: string };
+  // Accept v1 (had gender) and v2 (unisex only).
+  if (value.version !== 1 && value.version !== VERSION) return null;
 
-  const gender = value.gender as MerchandiseOrderGender;
   const trainingTshirt = asBoolean(value.trainingTshirt);
   const trainingTop = asBoolean(value.trainingTop);
   const jacketHoodie = asBoolean(value.jacketHoodie);
@@ -59,31 +48,28 @@ export function parseMerchandiseOrderDraft(
 
   return {
     version: VERSION,
-    gender,
     firstName: asString(value.firstName),
     lastName: asString(value.lastName),
     email: asString(value.email),
     phoneNumber: asString(value.phoneNumber),
     trainingTshirt,
-    trainingTshirtSize: itemSize(gender, trainingTshirt, value.trainingTshirtSize),
+    trainingTshirtSize: itemSize(trainingTshirt, value.trainingTshirtSize),
     trainingTop,
-    trainingTopSize: itemSize(gender, trainingTop, value.trainingTopSize),
+    trainingTopSize: itemSize(trainingTop, value.trainingTopSize),
     jacketHoodie,
-    jacketHoodieSize: itemSize(gender, jacketHoodie, value.jacketHoodieSize),
+    jacketHoodieSize: itemSize(jacketHoodie, value.jacketHoodieSize),
     jacketHighCollar,
     jacketHighCollarSize: itemSize(
-      gender,
       jacketHighCollar,
       value.jacketHighCollarSize,
     ),
     jacketFullZip,
-    jacketFullZipSize: itemSize(gender, jacketFullZip, value.jacketFullZipSize),
+    jacketFullZipSize: itemSize(jacketFullZip, value.jacketFullZipSize),
   };
 }
 
 export function merchandiseOrderDraftHasContent(draft: MerchandiseOrderDraft) {
   return (
-    draft.gender !== "men" ||
     Boolean(draft.firstName.trim()) ||
     Boolean(draft.lastName.trim()) ||
     Boolean(draft.email.trim()) ||

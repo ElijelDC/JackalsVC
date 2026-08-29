@@ -5,8 +5,7 @@ import {
 } from "@/lib/merchandise-order-draft";
 
 const draft = {
-  version: 1,
-  gender: "women",
+  version: 2,
   firstName: "Alex",
   lastName: "Murphy",
   email: "alex@example.com",
@@ -27,7 +26,6 @@ describe("merchandise order draft", () => {
   it("restores selected items and drops sizes for unselected items", () => {
     const parsed = parseMerchandiseOrderDraft(draft);
     expect(parsed).toMatchObject({
-      gender: "women",
       trainingTshirt: true,
       trainingTshirtSize: "M",
       trainingTop: false,
@@ -38,7 +36,17 @@ describe("merchandise order draft", () => {
     expect(merchandiseOrderDraftHasContent(parsed!)).toBe(true);
   });
 
+  it("migrates v1 drafts that still include gender", () => {
+    const parsed = parseMerchandiseOrderDraft({
+      ...draft,
+      version: 1,
+      gender: "women",
+    });
+    expect(parsed?.trainingTshirtSize).toBe("M");
+    expect(parsed?.version).toBe(2);
+  });
+
   it("rejects unknown draft versions", () => {
-    expect(parseMerchandiseOrderDraft({ ...draft, version: 2 })).toBeNull();
+    expect(parseMerchandiseOrderDraft({ ...draft, version: 99 })).toBeNull();
   });
 });

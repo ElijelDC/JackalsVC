@@ -328,9 +328,7 @@ export function MerchandiseOrdersManager({
                         {formatMembershipEuro(quote.totalEur)}
                       </span>
                     </h2>
-                    <p className="text-sm text-zinc-500">
-                      {order.email} · {order.genderLabel}
-                    </p>
+                    <p className="text-sm text-zinc-500">{order.email}</p>
                     <p className="mt-1 text-sm text-zinc-300">
                       {merchandiseOrderItemSummary(order).join(" · ")}
                     </p>

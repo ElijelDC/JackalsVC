@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   hasAnyMerchandiseItem,
   merchandiseOrderQuote,
+  merchandiseOrderSizeIssues,
 } from "@/lib/merchandise-order-config";
 import { merchandiseOrderSchema } from "@/lib/validations";
 
@@ -31,23 +32,40 @@ describe("merchandise order config", () => {
 
   it("requires an item and valid selected sizes", () => {
     expect(hasAnyMerchandiseItem(items)).toBe(true);
+    expect(merchandiseOrderSizeIssues(items)).toEqual([]);
+    expect(
+      merchandiseOrderSizeIssues({
+        ...items,
+        trainingTshirtSize: "",
+      })[0]?.message,
+    ).toMatch(/training t-shirt/i);
+
     expect(
       merchandiseOrderSchema.safeParse({
         firstName: "Alex",
         lastName: "Murphy",
         email: "alex@example.com",
         phoneNumber: "0871234567",
-        gender: "men",
         ...items,
       }).success,
     ).toBe(true);
+
+    expect(
+      merchandiseOrderSchema.safeParse({
+        firstName: "Alex",
+        lastName: "Murphy",
+        email: "alex@gnail.com",
+        phoneNumber: "0871234567",
+        ...items,
+      }).success,
+    ).toBe(false);
+
     expect(
       merchandiseOrderSchema.safeParse({
         firstName: "Alex",
         lastName: "Murphy",
         email: "alex@example.com",
         phoneNumber: "0871234567",
-        gender: "men",
         ...Object.fromEntries(
           Object.entries(items).map(([key, value]) => [
             key,

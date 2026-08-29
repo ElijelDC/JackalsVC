@@ -1,7 +1,4 @@
-import {
-  merchandiseOrderQuote,
-  merchandiseOrderGenderLabel,
-} from "@/lib/merchandise-order-config";
+import { merchandiseOrderQuote } from "@/lib/merchandise-order-config";
 import {
   merchandiseOrderFullName,
   type MerchandiseOrderRecord,
@@ -45,7 +42,6 @@ export function buildMerchandiseOrderPaymentEmailDetails(
       }`,
     })),
     { label: "Total due", value: formatMembershipEuro(quote.totalEur) },
-    { label: "Fit", value: merchandiseOrderGenderLabel(order.gender) },
   ];
 }
 

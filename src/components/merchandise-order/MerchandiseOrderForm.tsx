@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ZoomIn } from "lucide-react";
 import {
@@ -16,16 +16,15 @@ import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { apiPost } from "@/lib/client-api";
+import { emailTypoError } from "@/lib/email-typo";
 import {
-  MERCHANDISE_ORDER_GENDER_LABELS,
   MERCHANDISE_ORDER_JACKETS,
   MERCHANDISE_ORDER_LAYER_FEE_EUR,
+  MERCHANDISE_ORDER_SIZES,
   MERCHANDISE_ORDER_TRAINING_TSHIRT,
   MERCHANDISE_ORDER_TRAINING_TSHIRT_FEE_EUR,
-  hasAnyMerchandiseItem,
   merchandiseOrderQuote,
-  merchandiseOrderSizesForGender,
-  type MerchandiseOrderGender,
+  merchandiseOrderSizeIssues,
 } from "@/lib/merchandise-order-config";
 import {
   buildMerchandiseOrderDraft,
@@ -42,21 +41,43 @@ import { cn } from "@/lib/utils";
 type Selection = {
   selected: boolean;
   size: string;
-  setSelected: React.Dispatch<React.SetStateAction<boolean>>;
-  setSize: React.Dispatch<React.SetStateAction<string>>;
+  setSelected: (next: boolean) => void;
+  setSize: (size: string) => void;
 };
+
+function ProductColumn({
+  title,
+  description,
+  sizeGuide,
+  footer,
+  children,
+}: {
+  title: string;
+  description: ReactNode;
+  sizeGuide: ReactNode;
+  footer?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <div className="grid gap-4 lg:h-full lg:grid-rows-[auto_minmax(3.5rem,auto)_2rem_minmax(0,1fr)_1.5rem]">
+      <h2 className="font-display text-xl font-bold text-white">{title}</h2>
+      <p className="text-sm leading-relaxed text-zinc-400">{description}</p>
+      <div className="flex items-center">{sizeGuide}</div>
+      <div className="flex min-h-0 flex-col">{children}</div>
+      <div className="flex h-6 items-center justify-center">{footer}</div>
+    </div>
+  );
+}
 
 function ItemCard({
   item,
   selection,
-  gender,
   price,
   sizeId,
   onOpen,
 }: {
   item: MembershipMerchItem202627;
   selection: Selection;
-  gender: MerchandiseOrderGender;
   price: number;
   sizeId: string;
   onOpen: () => void;
@@ -73,7 +94,7 @@ function ItemCard({
       <button
         type="button"
         onClick={onOpen}
-        className="group relative aspect-[3/2] w-full bg-zinc-950/80 p-5"
+        className="group relative aspect-[3/2] w-full shrink-0 bg-zinc-950/80 p-5"
       >
         <Image
           src={item.imageSrc}
@@ -86,7 +107,7 @@ function ItemCard({
           <ZoomIn className="h-3 w-3" /> View
         </span>
       </button>
-      <div className="flex flex-1 flex-col gap-3 border-t border-white/10 p-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-3 border-t border-white/10 p-4">
         <div className="flex justify-between gap-3">
           <div>
             <h3 className="font-semibold text-white">{item.title}</h3>
@@ -96,39 +117,41 @@ function ItemCard({
             </p>
           </div>
           {selection.selected ? (
-            <Check className="h-5 w-5 text-jackals-red-light" />
+            <Check className="h-5 w-5 shrink-0 text-jackals-red-light" />
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={() => selection.setSelected((value) => !value)}
-          className={cn(
-            "mt-auto border px-3 py-2.5 text-sm font-semibold",
-            selection.selected
-              ? "border-jackals-red bg-jackals-red/20 text-white"
-              : "border-white/15 bg-black/30 text-zinc-200",
-          )}
-        >
-          {selection.selected ? "Remove from order" : "Add to order"}
-        </button>
-        {selection.selected ? (
-          <div>
-            <Label htmlFor={sizeId}>{item.title} size</Label>
-            <Select
-              id={sizeId}
-              value={selection.size}
-              required
-              onChange={(event) => selection.setSize(event.target.value)}
-            >
-              <option value="">Select size</option>
-              {merchandiseOrderSizesForGender(gender).map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </Select>
-          </div>
-        ) : null}
+        <div className="mt-auto space-y-3">
+          <button
+            type="button"
+            onClick={() => selection.setSelected(!selection.selected)}
+            className={cn(
+              "w-full border px-3 py-2.5 text-sm font-semibold",
+              selection.selected
+                ? "border-jackals-red bg-jackals-red/20 text-white"
+                : "border-white/15 bg-black/30 text-zinc-200",
+            )}
+          >
+            {selection.selected ? "Remove from order" : "Add to order"}
+          </button>
+          {selection.selected ? (
+            <div>
+              <Label htmlFor={sizeId}>{item.title} size</Label>
+              <Select
+                id={sizeId}
+                value={selection.size}
+                required
+                onChange={(event) => selection.setSize(event.target.value)}
+              >
+                <option value="">Select size</option>
+                {MERCHANDISE_ORDER_SIZES.map((size) => (
+                  <option key={size} value={size}>
+                    {size}
+                  </option>
+                ))}
+              </Select>
+            </div>
+          ) : null}
+        </div>
       </div>
     </article>
   );
@@ -136,7 +159,6 @@ function ItemCard({
 
 export function MerchandiseOrderForm() {
   const router = useRouter();
-  const [gender, setGender] = useState<MerchandiseOrderGender>("men");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -164,7 +186,6 @@ export function MerchandiseOrderForm() {
   useEffect(() => {
     const draft = readMerchandiseOrderDraft();
     if (draft) {
-      setGender(draft.gender);
       setFirstName(draft.firstName);
       setLastName(draft.lastName);
       setEmail(draft.email);
@@ -185,7 +206,6 @@ export function MerchandiseOrderForm() {
 
   const fields = useMemo(
     () => ({
-      gender,
       firstName,
       lastName,
       email,
@@ -202,7 +222,6 @@ export function MerchandiseOrderForm() {
       jacketFullZipSize,
     }),
     [
-      gender,
       firstName,
       lastName,
       email,
@@ -221,7 +240,9 @@ export function MerchandiseOrderForm() {
   );
 
   useEffect(() => {
-    if (draftReady) writeMerchandiseOrderDraft(buildMerchandiseOrderDraft(fields));
+    if (draftReady) {
+      writeMerchandiseOrderDraft(buildMerchandiseOrderDraft(fields));
+    }
   }, [draftReady, fields]);
 
   const quote = merchandiseOrderQuote(fields);
@@ -229,53 +250,82 @@ export function MerchandiseOrderForm() {
     {
       selected: trainingTop,
       size: trainingTopSize,
-      setSelected: setTrainingTop,
+      setSelected: (next) => {
+        setTrainingTop(next);
+        if (!next) setTrainingTopSize("");
+      },
       setSize: setTrainingTopSize,
     },
     {
       selected: jacketHoodie,
       size: jacketHoodieSize,
-      setSelected: setJacketHoodie,
+      setSelected: (next) => {
+        setJacketHoodie(next);
+        if (!next) setJacketHoodieSize("");
+      },
       setSize: setJacketHoodieSize,
     },
     {
       selected: jacketHighCollar,
       size: jacketHighCollarSize,
-      setSelected: setJacketHighCollar,
+      setSelected: (next) => {
+        setJacketHighCollar(next);
+        if (!next) setJacketHighCollarSize("");
+      },
       setSize: setJacketHighCollarSize,
     },
     {
       selected: jacketFullZip,
       size: jacketFullZipSize,
-      setSelected: setJacketFullZip,
+      setSelected: (next) => {
+        setJacketFullZip(next);
+        if (!next) setJacketFullZipSize("");
+      },
       setSize: setJacketFullZipSize,
     },
   ];
   const activeJacket = MERCHANDISE_ORDER_JACKETS[jacketIndex]!;
   const activeSelection = jacketSelections[jacketIndex]!;
 
-  const changeGender = (next: MerchandiseOrderGender) => {
-    setGender(next);
-    const sizes = merchandiseOrderSizesForGender(next) as readonly string[];
-    const keep = (size: string) => (sizes.includes(size) ? size : "");
-    setTrainingTshirtSize(keep(trainingTshirtSize));
-    setTrainingTopSize(keep(trainingTopSize));
-    setJacketHoodieSize(keep(jacketHoodieSize));
-    setJacketHighCollarSize(keep(jacketHighCollarSize));
-    setJacketFullZipSize(keep(jacketFullZipSize));
+  const validateForReview = (): string | null => {
+    const sizeIssues = merchandiseOrderSizeIssues(fields);
+    if (sizeIssues.length > 0) return sizeIssues[0]!.message;
+
+    if (!firstName.trim() || !lastName.trim()) {
+      return "Enter your first and last name.";
+    }
+    if (!email.trim()) return "Enter your email address.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      return "Enter a valid email address.";
+    }
+    const typo = emailTypoError(email);
+    if (typo) return typo;
+    if (phoneNumber.trim().length < 7) {
+      return "Enter a valid phone number.";
+    }
+    return null;
   };
 
   const submit = (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
-    if (!hasAnyMerchandiseItem(fields)) {
-      setError("Choose at least one merchandise item.");
+    const message = validateForReview();
+    if (message) {
+      setError(message);
+      setReviewOpen(false);
       return;
     }
+    setError(null);
     setReviewOpen(true);
   };
 
   const confirmOrder = async () => {
+    const message = validateForReview();
+    if (message) {
+      setError(message);
+      setReviewOpen(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     const result = await apiPost<{
@@ -296,7 +346,7 @@ export function MerchandiseOrderForm() {
   };
 
   return (
-    <form onSubmit={submit} className="space-y-10">
+    <form onSubmit={submit} className="space-y-10" noValidate>
       {lightbox ? (
         <KitOrderImageLightbox
           items={lightbox.items}
@@ -309,58 +359,28 @@ export function MerchandiseOrderForm() {
       ) : null}
       <FormError message={error} />
 
-      <section className="space-y-4">
-        <div>
-          <h2 className="font-display text-xl font-bold text-white">Fit</h2>
-          <p className="mt-1 text-sm text-zinc-400">
-            Choose men&apos;s or women&apos;s sizing for all selected items.
-          </p>
-        </div>
-        <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/25 p-1">
-          {(["men", "women"] as const).map((option) => (
-            <button
-              key={option}
-              type="button"
-              onClick={() => changeGender(option)}
-              className={cn(
-                "rounded-md px-4 py-2.5 text-sm font-semibold",
-                gender === option
-                  ? option === "women"
-                    ? "bg-jackals-purple text-white"
-                    : "bg-jackals-red text-white"
-                  : "text-zinc-400",
-              )}
-            >
-              {MERCHANDISE_ORDER_GENDER_LABELS[option]}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-8 lg:grid-cols-2">
-        <div className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <h2 className="font-display text-xl font-bold text-white">
-                Training t-shirt
-              </h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                {formatMembershipEuro(
-                  MERCHANDISE_ORDER_TRAINING_TSHIRT_FEE_EUR,
-                )}
-              </p>
-            </div>
-            <KitSizeGuide kind="tshirt" />
-          </div>
+      <section className="grid gap-10 lg:grid-cols-2 lg:items-stretch lg:gap-8">
+        <ProductColumn
+          title="Training t-shirt"
+          description={
+            <>
+              Short sleeve club tee ·{" "}
+              {formatMembershipEuro(MERCHANDISE_ORDER_TRAINING_TSHIRT_FEE_EUR)}
+            </>
+          }
+          sizeGuide={<KitSizeGuide kind="tshirt" />}
+        >
           <ItemCard
             item={MERCHANDISE_ORDER_TRAINING_TSHIRT}
             selection={{
               selected: trainingTshirt,
               size: trainingTshirtSize,
-              setSelected: setTrainingTshirt,
+              setSelected: (next) => {
+                setTrainingTshirt(next);
+                if (!next) setTrainingTshirtSize("");
+              },
               setSize: setTrainingTshirtSize,
             }}
-            gender={gender}
             price={MERCHANDISE_ORDER_TRAINING_TSHIRT_FEE_EUR}
             sizeId="merchandise-order-tshirt-size"
             onOpen={() =>
@@ -370,32 +390,38 @@ export function MerchandiseOrderForm() {
               })
             }
           />
-        </div>
+        </ProductColumn>
 
-        <div className="space-y-4">
-          <div className="flex items-end justify-between gap-3">
-            <div>
-              <h2 className="font-display text-xl font-bold text-white">
-                Jackets
-              </h2>
-              <p className="mt-1 text-sm text-zinc-400">
-                Four styles ·{" "}
-                {formatMembershipEuro(MERCHANDISE_ORDER_LAYER_FEE_EUR)} each
-              </p>
-            </div>
-            <KitSizeGuide kind="jacket" />
-          </div>
+        <ProductColumn
+          title="Jackets"
+          description={
+            <>
+              Four styles ·{" "}
+              {formatMembershipEuro(MERCHANDISE_ORDER_LAYER_FEE_EUR)} each —
+              add as many as you want.
+            </>
+          }
+          sizeGuide={<KitSizeGuide kind="jacket" />}
+          footer={
+            <KitOrderCarouselDots
+              count={MERCHANDISE_ORDER_JACKETS.length}
+              index={jacketIndex}
+              onIndexChange={setJacketIndex}
+              ariaLabel="Jackets"
+            />
+          }
+        >
           <KitOrderCarousel
             count={MERCHANDISE_ORDER_JACKETS.length}
             index={jacketIndex}
             onIndexChange={setJacketIndex}
             ariaLabel="Jackets"
+            className="flex h-full max-w-none flex-col"
             hideDots
           >
             <ItemCard
               item={activeJacket}
               selection={activeSelection}
-              gender={gender}
               price={MERCHANDISE_ORDER_LAYER_FEE_EUR}
               sizeId={`merchandise-order-jacket-${jacketIndex}-size`}
               onOpen={() =>
@@ -406,13 +432,7 @@ export function MerchandiseOrderForm() {
               }
             />
           </KitOrderCarousel>
-          <KitOrderCarouselDots
-            count={MERCHANDISE_ORDER_JACKETS.length}
-            index={jacketIndex}
-            onIndexChange={setJacketIndex}
-            ariaLabel="Jackets"
-          />
-        </div>
+        </ProductColumn>
       </section>
 
       <section className="space-y-4">
@@ -490,17 +510,17 @@ export function MerchandiseOrderForm() {
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Name</dt>
-              <dd className="text-white">{firstName} {lastName}</dd>
-            </div>
-            <div className="flex justify-between gap-4">
-              <dt className="text-zinc-500">Fit</dt>
               <dd className="text-white">
-                {MERCHANDISE_ORDER_GENDER_LABELS[gender]}
+                {firstName} {lastName}
               </dd>
             </div>
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Email</dt>
               <dd className="break-all text-right text-white">{email}</dd>
+            </div>
+            <div className="flex justify-between gap-4">
+              <dt className="text-zinc-500">Phone</dt>
+              <dd className="text-right text-white">{phoneNumber}</dd>
             </div>
           </dl>
           <KitOrderQuoteBreakdown items={quote.items} totalEur={quote.totalEur} />
