@@ -93,6 +93,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     links: [
       { href: "/admin/payments", label: "Payments", icon: Banknote, keywords: "membership transfer" },
       { href: "/admin/kit-orders", label: "Kit payments", icon: Shirt, keywords: "kit order" },
+      {
+        href: "/admin/merchandise-orders",
+        label: "Merchandise payments",
+        icon: ShoppingBag,
+        keywords: "merch order jackets training tshirt",
+      },
       { href: "/admin/coach-payments", label: "Coach payments", icon: Wallet },
       { href: "/admin/membership", label: "Plans", icon: CreditCard, keywords: "membership pricing" },
     ],
@@ -142,6 +148,7 @@ const ALL_ADMIN_LINKS = ADMIN_NAV_GROUPS.flatMap((group) =>
 const QUICK_LINK_HREFS = [
   "/admin/payments",
   "/admin/kit-orders",
+  "/admin/merchandise-orders",
   "/admin/registration-reviews",
   "/admin/one-off-sessions",
   "/admin/coach-payments",

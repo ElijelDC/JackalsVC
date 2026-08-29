@@ -66,6 +66,8 @@ next-env.d.ts
 !/public/uploads/trial-session-proofs/.gitkeep
 /public/uploads/kit-order-proofs/*
 !/public/uploads/kit-order-proofs/.gitkeep
+/public/uploads/merchandise-order-proofs/*
+!/public/uploads/merchandise-order-proofs/.gitkeep
 /public/uploads/admin-docs/*
 !/public/uploads/admin-docs/.gitkeep
 /public/uploads/tournament-winners/*

@@ -12,6 +12,7 @@ export type AdminActionQueueEntry = {
     | "registration"
     | "payment"
     | "kit-payment"
+    | "merchandise-payment"
     | "coach-payment"
     | "coaching-application"
     | "trials-application"
@@ -69,6 +70,8 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     paymentCount,
     kitPaymentProofs,
     kitPaymentProofCount,
+    merchandisePaymentProofs,
+    merchandisePaymentProofCount,
     coachOverduePayments,
     coachOverdueCount,
     coachingApplications,
@@ -105,6 +108,13 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       select: { firstName: true, lastName: true },
     }),
     prisma.kitOrder.count({ where: KIT_PROOF_SUBMITTED_WHERE }),
+    prisma.merchandiseOrder.findMany({
+      where: KIT_PROOF_SUBMITTED_WHERE,
+      orderBy: { proofSubmittedAt: "desc" },
+      take: 4,
+      select: { firstName: true, lastName: true },
+    }),
+    prisma.merchandiseOrder.count({ where: KIT_PROOF_SUBMITTED_WHERE }),
     prisma.coachSalaryPayment.findMany({
       where: coachPaymentOverdueWhere(now),
       include: {
@@ -203,6 +213,22 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
     });
   }
 
+  if (merchandisePaymentProofCount > 0) {
+    entries.push({
+      kind: "merchandise-payment",
+      href: "/admin/merchandise-orders",
+      title: "Merchandise payments",
+      summary:
+        merchandisePaymentProofCount === 1
+          ? "1 merchandise payment receipt to verify"
+          : `${merchandisePaymentProofCount} merchandise payment receipts to verify`,
+      count: merchandisePaymentProofCount,
+      previews: merchandisePaymentProofs.map((order) =>
+        `${order.firstName} ${order.lastName}`.trim(),
+      ),
+    });
+  }
+
   if (coachOverdueCount > 0) {
     entries.push({
       kind: "coach-payment",
@@ -274,6 +300,9 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
   if (kitPaymentProofCount > 0) {
     badgeCounts["/admin/kit-orders"] = kitPaymentProofCount;
   }
+  if (merchandisePaymentProofCount > 0) {
+    badgeCounts["/admin/merchandise-orders"] = merchandisePaymentProofCount;
+  }
   if (coachOverdueCount > 0) {
     badgeCounts["/admin/coach-payments"] = coachOverdueCount;
   }
@@ -293,6 +322,7 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       registrationCount +
       paymentCount +
       kitPaymentProofCount +
+      merchandisePaymentProofCount +
       coachOverdueCount +
       coachingApplicationCount +
       trialsApplicationCount +

@@ -158,11 +158,13 @@ export type BankStatementImportResult = {
   matched: number;
   matchedMembership: number;
   matchedKitOrders: number;
+  matchedMerchandiseOrders: number;
   scanned: number;
   skippedDuplicates: number;
   unmatchedRows: number;
   unmatchedPayments: number;
   unmatchedKitOrders: number;
+  unmatchedMerchandiseOrders: number;
   fileName?: string;
 };
 
@@ -257,6 +259,31 @@ export async function apiRemoveKitOrderProof(
   );
 }
 
+export async function apiUploadMerchandiseOrderProof(
+  paymentToken: string,
+  file: File,
+  fallbackError = "Failed to upload receipt",
+): Promise<ApiResult<KitOrderProofResponse>> {
+  const formData = new FormData();
+  formData.append("paymentToken", paymentToken);
+  formData.append("screenshot", file);
+  return apiPostForm<KitOrderProofResponse>(
+    "/api/merchandise-order/payment-proof",
+    formData,
+    fallbackError,
+  );
+}
+
+export async function apiRemoveMerchandiseOrderProof(
+  paymentToken: string,
+  fallbackError = "Failed to remove receipt",
+): Promise<ApiResult<KitOrderProofResponse>> {
+  return apiDelete<KitOrderProofResponse>(
+    `/api/merchandise-order/payment-proof?paymentToken=${encodeURIComponent(paymentToken)}`,
+    fallbackError,
+  );
+}
+
 export async function apiRemoveTrialSessionPaymentProof(
   slug: string,
   proofId: string,
@@ -301,6 +328,19 @@ export async function apiImportKitOrderBankStatementCsv(
   );
 }
 
+export async function apiImportMerchandiseOrderBankStatementCsv(
+  file: File,
+  fallbackError = "Failed to import CSV",
+): Promise<ApiResult<BankStatementImportResult>> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiPostForm<BankStatementImportResult>(
+    "/api/admin/merchandise-orders/import-csv",
+    formData,
+    fallbackError,
+  );
+}
+
 export async function apiApprovePayment(
   paymentId: string,
   fallbackError = "Failed to approve payment",
@@ -320,6 +360,23 @@ export async function apiApproveKitOrderPayment(
 ): Promise<ApiResult<KitOrderApproveResponse>> {
   return apiPost<KitOrderApproveResponse>(
     `/api/admin/kit-orders/${orderId}/approve`,
+    {},
+    fallbackError,
+  );
+}
+
+type MerchandiseOrderApproveResponse = {
+  order: import("@/lib/merchandise-order-response-config").MerchandiseOrderRecord;
+  emailDelivered: boolean;
+  message: string;
+};
+
+export async function apiApproveMerchandiseOrderPayment(
+  orderId: string,
+  fallbackError = "Failed to approve merchandise payment",
+): Promise<ApiResult<MerchandiseOrderApproveResponse>> {
+  return apiPost<MerchandiseOrderApproveResponse>(
+    `/api/admin/merchandise-orders/${orderId}/approve`,
     {},
     fallbackError,
   );

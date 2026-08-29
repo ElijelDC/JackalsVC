@@ -361,6 +361,7 @@ model PaymentImportRecord {
   transactionDate    DateTime?
   matchedPaymentId   String?
   matchedKitOrderId  String?
+  matchedMerchandiseOrderId String?
   status             String
   createdAt          DateTime @default(now())
 
@@ -684,5 +685,38 @@ model KitOrder {
   @@index([createdAt])
   @@index([gender, createdAt])
   @@index([kitType, createdAt])
+  @@index([paymentStatus, createdAt])
+}
+
+model MerchandiseOrder {
+  id                   String   @id @default(cuid())
+  firstName            String
+  lastName             String
+  email                String
+  phoneNumber          String   @default("")
+  /// men | women
+  gender               String
+  trainingTshirt       Boolean  @default(false)
+  trainingTshirtSize   String   @default("")
+  trainingTop          Boolean  @default(false)
+  trainingTopSize      String   @default("")
+  jacketHoodie         Boolean  @default(false)
+  jacketHoodieSize     String   @default("")
+  jacketHighCollar     Boolean  @default(false)
+  jacketHighCollarSize String   @default("")
+  jacketFullZip        Boolean  @default(false)
+  jacketFullZipSize    String   @default("")
+  freeLineItemIds      String   @default("[]")
+  paymentToken         String   @unique @default(cuid())
+  /// AWAITING | PROOF_SUBMITTED | PAID
+  paymentStatus        String   @default("AWAITING")
+  proofScreenshotUrl   String?
+  proofSubmittedAt     DateTime?
+  paymentEmailSentAt   DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([createdAt])
+  @@index([gender, createdAt])
   @@index([paymentStatus, createdAt])
 }

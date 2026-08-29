@@ -6,13 +6,16 @@ import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import {
   apiImportBankStatementCsv,
+  apiImportKitOrderBankStatementCsv,
+  apiImportMerchandiseOrderBankStatementCsv,
   type BankStatementImportResult,
 } from "@/lib/client-api";
 
 type AdminBankStatementImportProps = {
   onImported?: (result: BankStatementImportResult) => void;
   /** When set, result copy focuses on this payment type. */
-  focus?: "membership" | "kit" | "all";
+  focus?: "membership" | "kit" | "merchandise" | "all";
+  endpoint?: "all" | "kit" | "merchandise";
 };
 
 function resultSummary(result: BankStatementImportResult, focus: AdminBankStatementImportProps["focus"]) {
@@ -21,13 +24,20 @@ function resultSummary(result: BankStatementImportResult, focus: AdminBankStatem
     `matched ${result.matched} payment${result.matched === 1 ? "" : "s"}`,
   ];
 
-  if (result.matchedMembership > 0 || result.matchedKitOrders > 0) {
+  if (
+    result.matchedMembership > 0 ||
+    result.matchedKitOrders > 0 ||
+    result.matchedMerchandiseOrders > 0
+  ) {
     const breakdown: string[] = [];
     if (result.matchedMembership > 0) {
       breakdown.push(`${result.matchedMembership} membership`);
     }
     if (result.matchedKitOrders > 0) {
       breakdown.push(`${result.matchedKitOrders} kit`);
+    }
+    if (result.matchedMerchandiseOrders > 0) {
+      breakdown.push(`${result.matchedMerchandiseOrders} merchandise`);
     }
     parts[parts.length - 1] = `matched ${result.matched} (${breakdown.join(", ")})`;
   }
@@ -41,6 +51,12 @@ function resultSummary(result: BankStatementImportResult, focus: AdminBankStatem
 
   if (focus === "kit") {
     parts.push(`${result.unmatchedKitOrders} kit order${result.unmatchedKitOrders === 1 ? "" : "s"} still unpaid`);
+  } else if (focus === "merchandise") {
+    parts.push(
+      `${result.unmatchedMerchandiseOrders} merchandise order${
+        result.unmatchedMerchandiseOrders === 1 ? "" : "s"
+      } still unpaid`,
+    );
   } else if (focus === "membership") {
     parts.push(`${result.unmatchedPayments} membership payment${result.unmatchedPayments === 1 ? "" : "s"} still pending`);
   } else {
@@ -50,6 +66,9 @@ function resultSummary(result: BankStatementImportResult, focus: AdminBankStatem
     }
     if (result.unmatchedKitOrders > 0) {
       pending.push(`${result.unmatchedKitOrders} kit`);
+    }
+    if (result.unmatchedMerchandiseOrders > 0) {
+      pending.push(`${result.unmatchedMerchandiseOrders} merchandise`);
     }
     if (pending.length > 0) {
       parts.push(`${pending.join(" · ")} still unpaid`);
@@ -62,6 +81,7 @@ function resultSummary(result: BankStatementImportResult, focus: AdminBankStatem
 export function AdminBankStatementImport({
   onImported,
   focus = "all",
+  endpoint = "all",
 }: AdminBankStatementImportProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [file, setFile] = useState<File | null>(null);
@@ -79,7 +99,12 @@ export function AdminBankStatementImport({
     setError(null);
     setResult(null);
 
-    const response = await apiImportBankStatementCsv(file);
+    const response =
+      endpoint === "kit"
+        ? await apiImportKitOrderBankStatementCsv(file)
+        : endpoint === "merchandise"
+          ? await apiImportMerchandiseOrderBankStatementCsv(file)
+          : await apiImportBankStatementCsv(file);
     setLoading(false);
 
     if (!response.ok) {
@@ -111,7 +136,7 @@ export function AdminBankStatementImport({
         <p className="text-sm text-zinc-400">
           Export transactions from SumUp or your bank, then upload the CSV here.
           We match incoming transfers by amount and payment reference for membership
-          and kit payments.
+          kit, and merchandise payments.
         </p>
 
         <FormError message={error} />

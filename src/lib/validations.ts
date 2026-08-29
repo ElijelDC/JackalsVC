@@ -8,6 +8,10 @@ import {
   isValidKitOrderSize,
   KIT_ORDER_QUOTE_LINE_IDS,
 } from "@/lib/kit-order-config";
+import {
+  hasAnyMerchandiseItem,
+  MERCHANDISE_ORDER_QUOTE_LINE_IDS,
+} from "@/lib/merchandise-order-config";
 
 /** Preprocess empty strings/null/undefined → undefined for optional Zod fields */
 const emptyToUndefined = (val: unknown) =>
@@ -1009,5 +1013,67 @@ export const kitOrderFreeLineItemsSchema = z.object({
   freeLineItemIds: z
     .array(z.enum(KIT_ORDER_QUOTE_LINE_IDS))
     .max(KIT_ORDER_QUOTE_LINE_IDS.length),
+});
+
+export const merchandiseOrderSchema = z
+  .object({
+    firstName: kitOrderName,
+    lastName: kitOrderName,
+    email: z.string().trim().email("Enter a valid email address"),
+    phoneNumber: z
+      .string()
+      .trim()
+      .min(7, "Enter a valid phone number")
+      .max(30, "Phone number is too long"),
+    gender: z.enum(["men", "women"], { message: "Choose men's or women's" }),
+    trainingTshirt: z.boolean(),
+    trainingTshirtSize: kitOrderOptionalSize,
+    trainingTop: z.boolean(),
+    trainingTopSize: kitOrderOptionalSize,
+    jacketHoodie: z.boolean(),
+    jacketHoodieSize: kitOrderOptionalSize,
+    jacketHighCollar: z.boolean(),
+    jacketHighCollarSize: kitOrderOptionalSize,
+    jacketFullZip: z.boolean(),
+    jacketFullZipSize: kitOrderOptionalSize,
+  })
+  .superRefine((data, ctx) => {
+    if (!hasAnyMerchandiseItem(data)) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["trainingTshirt"],
+        message: "Choose at least one merchandise item",
+      });
+    }
+
+    const items = [
+      [data.trainingTshirt, data.trainingTshirtSize, "trainingTshirtSize", "training t-shirt"],
+      [data.trainingTop, data.trainingTopSize, "trainingTopSize", "quarter zip"],
+      [data.jacketHoodie, data.jacketHoodieSize, "jacketHoodieSize", "zip hoodie"],
+      [
+        data.jacketHighCollar,
+        data.jacketHighCollarSize,
+        "jacketHighCollarSize",
+        "high collar zip",
+      ],
+      [data.jacketFullZip, data.jacketFullZipSize, "jacketFullZipSize", "full zip"],
+    ] as const;
+
+    for (const [included, size, path, label] of items) {
+      if (!included) continue;
+      if (!isValidKitOrderSize(data.gender, size)) {
+        ctx.addIssue({
+          code: "custom",
+          path: [path],
+          message: `Select a valid ${label} size`,
+        });
+      }
+    }
+  });
+
+export const merchandiseOrderFreeLineItemsSchema = z.object({
+  freeLineItemIds: z
+    .array(z.enum(MERCHANDISE_ORDER_QUOTE_LINE_IDS))
+    .max(MERCHANDISE_ORDER_QUOTE_LINE_IDS.length),
 });
 

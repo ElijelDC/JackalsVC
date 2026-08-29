@@ -50,6 +50,13 @@ const SECTIONS = [
     countKey: "kitOrders" as const,
   },
   {
+    href: "/admin/merchandise-orders",
+    title: "Merchandise payments",
+    description: "Training t-shirts and club jackets",
+    icon: ShoppingBag,
+    countKey: "merchandiseOrders" as const,
+  },
+  {
     href: "/admin/subscriptions",
     title: "Subscriptions",
     description: "Grant and manage memberships",
@@ -151,6 +158,7 @@ export default async function AdminPage() {
     members,
     roster,
     kitOrders,
+    merchandiseOrders,
     training,
     matches,
     funSessions,
@@ -168,6 +176,7 @@ export default async function AdminPage() {
     prisma.membership.count(),
     prisma.clubMember.count(),
     prisma.kitOrder.count(),
+    prisma.merchandiseOrder.count(),
     prisma.trainingSession.count({
       where: { category: "WEEKLY" },
     }),
@@ -191,6 +200,7 @@ export default async function AdminPage() {
     members,
     roster,
     kitOrders,
+    merchandiseOrders,
     training,
     matches,
     funSessions,
