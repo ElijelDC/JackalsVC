@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { AdminBankStatementImport } from "@/components/admin/AdminBankStatementImport";
+import { AdminReceiptPreview } from "@/components/admin/AdminReceiptPreview";
 import { KitOrderQuoteBreakdown } from "@/components/kit-order/KitOrderQuoteBreakdown";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
@@ -26,8 +27,9 @@ import {
 } from "@/lib/client-api";
 import { downloadExcelFromUrl } from "@/lib/download-excel";
 import {
-  canApproveMerchandiseOrderPayment,
   merchandiseOrderPaymentPath,
+  merchandiseOrderProofImageUrl,
+  merchandiseOrderHasUploadedProof,
 } from "@/lib/merchandise-order-payment-access";
 import {
   buildMerchandiseOrderPaymentQuote,
@@ -41,7 +43,16 @@ import {
 import { formatMembershipEuro } from "@/lib/membership-2026-27";
 import { cn } from "@/lib/utils";
 
-type PaymentFilter = "ALL" | "PAID" | "UNPAID";
+type PaymentFilter = "ALL" | "RECEIPTS" | "PAID" | "UNPAID";
+
+function merchProofUrl(order: MerchandiseOrderRecord) {
+  if (!order.proofScreenshotUrl) return null;
+  if (!order.paymentToken) return order.proofScreenshotUrl;
+  return merchandiseOrderProofImageUrl(
+    order.proofScreenshotUrl,
+    order.paymentToken,
+  );
+}
 
 function statusTone(status: string) {
   if (status === "PAID") return "bg-emerald-500/10 text-emerald-300";
@@ -60,7 +71,11 @@ export function MerchandiseOrdersManager({
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<PaymentFilter>("ALL");
+  const [filter, setFilter] = useState<PaymentFilter>(() =>
+    initialOrders.some((order) => order.paymentStatus === "PROOF_SUBMITTED")
+      ? "RECEIPTS"
+      : "UNPAID",
+  );
   const [selected, setSelected] = useState<string[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -73,8 +88,10 @@ export function MerchandiseOrdersManager({
     const query = search.trim().toLowerCase();
     return orders.filter((order) => {
       const paid = order.paymentStatus === "PAID";
+      const hasReceipt = merchandiseOrderHasUploadedProof(order);
       if (filter === "PAID" && !paid) return false;
       if (filter === "UNPAID" && paid) return false;
+      if (filter === "RECEIPTS" && (paid || !hasReceipt)) return false;
       return (
         !query ||
         [
@@ -118,6 +135,15 @@ export function MerchandiseOrdersManager({
   };
 
   const approve = async (order: MerchandiseOrderRecord) => {
+    if (order.paymentStatus === "PAID") return;
+    if (
+      !merchandiseOrderHasUploadedProof(order) &&
+      !confirm(
+        `No receipt uploaded for ${merchandiseOrderFullName(order)}. Mark as paid anyway?`,
+      )
+    ) {
+      return;
+    }
     setBusyId(order.id);
     setError(null);
     const result = await apiApproveMerchandiseOrderPayment(order.id);
@@ -271,7 +297,7 @@ export function MerchandiseOrdersManager({
             />
           </div>
           <div className="flex overflow-hidden rounded-lg border border-white/10">
-            {(["ALL", "UNPAID", "PAID"] as const).map((value) => (
+            {(["RECEIPTS", "UNPAID", "PAID", "ALL"] as const).map((value) => (
               <button
                 key={value}
                 type="button"
@@ -281,7 +307,13 @@ export function MerchandiseOrdersManager({
                   filter === value ? "bg-white/10 text-white" : "text-zinc-500",
                 )}
               >
-                {value === "ALL" ? "All" : value === "PAID" ? "Paid" : "Unpaid"}
+                {value === "ALL"
+                  ? "All"
+                  : value === "PAID"
+                    ? "Paid"
+                    : value === "RECEIPTS"
+                      ? "To review"
+                      : "Unpaid"}
               </button>
             ))}
           </div>
@@ -343,7 +375,7 @@ export function MerchandiseOrdersManager({
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  {canApproveMerchandiseOrderPayment(order) ? (
+                  {order.paymentStatus !== "PAID" ? (
                     <Button
                       type="button"
                       size="sm"
@@ -379,9 +411,21 @@ export function MerchandiseOrdersManager({
                 </div>
               </div>
 
+              <div className="mt-4">
+                <AdminReceiptPreview
+                  name={merchandiseOrderFullName(order)}
+                  email={order.email}
+                  amountLabel={formatMembershipEuro(quote.totalEur)}
+                  proofUrl={merchProofUrl(order)}
+                  canApprove={order.paymentStatus !== "PAID"}
+                  approving={busyId === order.id}
+                  onApprove={() => void approve(order)}
+                />
+              </div>
+
               <details className="mt-4 border-t border-white/10 pt-3">
                 <summary className="cursor-pointer text-sm text-zinc-400">
-                  Breakdown, receipt and free items
+                  Breakdown and free items
                 </summary>
                 <div className="mt-4 grid gap-5 lg:grid-cols-2">
                   <KitOrderQuoteBreakdown
@@ -405,16 +449,6 @@ export function MerchandiseOrdersManager({
                       >
                         Pay page <ExternalLink className="h-3 w-3" />
                       </a>
-                      {order.proofScreenshotUrl ? (
-                        <a
-                          href={order.proofScreenshotUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-jackals-gold hover:underline"
-                        >
-                          Receipt <ExternalLink className="h-3 w-3" />
-                        </a>
-                      ) : null}
                     </div>
                     <FreeItemEditor
                       order={order}

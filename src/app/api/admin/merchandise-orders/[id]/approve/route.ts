@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { jsonError, requireAdmin } from "@/lib/api";
 import { completeMerchandiseOrderPayment } from "@/lib/complete-merchandise-order-payment";
 import { isEmailConfigured } from "@/lib/email";
-import { canApproveMerchandiseOrderPayment } from "@/lib/merchandise-order-payment-access";
 import { serializeMerchandiseOrder } from "@/lib/merchandise-order-response-config";
 import { prisma } from "@/lib/prisma";
 
@@ -16,8 +15,8 @@ export async function POST(
   try {
     const order = await prisma.merchandiseOrder.findUnique({ where: { id } });
     if (!order) return jsonError("Merchandise order not found", 404);
-    if (!canApproveMerchandiseOrderPayment(order)) {
-      return jsonError("Upload a payment receipt before approving", 400);
+    if (order.paymentStatus === "PAID") {
+      return jsonError("This merchandise order is already marked as paid", 400);
     }
     const { emailDelivered } = await completeMerchandiseOrderPayment(id);
     const updated = await prisma.merchandiseOrder.findUniqueOrThrow({

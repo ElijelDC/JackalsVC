@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AdminBankStatementImport } from "@/components/admin/AdminBankStatementImport";
+import { AdminReceiptPreview } from "@/components/admin/AdminReceiptPreview";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -27,8 +28,9 @@ import {
   buildKitOrderPaymentReference,
 } from "@/lib/kit-order-payment-summary";
 import {
-  canApproveKitOrderPayment,
+  kitOrderHasUploadedProof,
   kitOrderPaymentPath,
+  kitOrderProofImageUrl,
 } from "@/lib/kit-order-payment-access";
 import {
   jerseyBackName,
@@ -45,7 +47,7 @@ import { formatOfferSubmittedAt } from "@/lib/offer-response-shared";
 import { cn } from "@/lib/utils";
 
 type ViewMode = "table" | "cards";
-type PaymentFilter = "ALL" | "PAID" | "UNPAID";
+type PaymentFilter = "ALL" | "RECEIPTS" | "PAID" | "UNPAID";
 
 type SendResult = {
   attempted: number;
@@ -68,6 +70,12 @@ function kitPaymentStatusShort(status: string) {
   if (status === "PAID") return "Paid";
   if (status === "PROOF_SUBMITTED") return "Receipt";
   return "Awaiting";
+}
+
+function kitProofUrl(row: KitOrderRecord) {
+  if (!row.proofScreenshotUrl) return null;
+  if (!row.paymentToken) return row.proofScreenshotUrl;
+  return kitOrderProofImageUrl(row.proofScreenshotUrl, row.paymentToken);
 }
 
 function isKitOrderPaid(row: KitOrderRecord) {
@@ -167,7 +175,11 @@ export function KitOrdersManager({
 }) {
   const [orders, setOrders] = useState(initialOrders);
   const [view, setView] = useState<ViewMode>("table");
-  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("ALL");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>(() =>
+    initialOrders.some((row) => row.paymentStatus === "PROOF_SUBMITTED")
+      ? "RECEIPTS"
+      : "UNPAID",
+  );
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -216,8 +228,10 @@ export function KitOrdersManager({
   const filtered = useMemo(() => {
     const rows = filterBase.filter((row) => {
       const paid = isKitOrderPaid(row);
+      const hasReceipt = kitOrderHasUploadedProof(row);
       if (paymentFilter === "PAID" && !paid) return false;
       if (paymentFilter === "UNPAID" && paid) return false;
+      if (paymentFilter === "RECEIPTS" && (paid || !hasReceipt)) return false;
       return true;
     });
 
@@ -388,8 +402,13 @@ export function KitOrdersManager({
   };
 
   const handleApprove = async (row: KitOrderRecord) => {
-    if (!canApproveKitOrderPayment(row)) {
-      setError("Upload a payment receipt before approving.");
+    if (isKitOrderPaid(row)) return;
+    if (
+      !kitOrderHasUploadedProof(row) &&
+      !confirm(
+        `No receipt uploaded for ${kitOrderFullName(row)}. Mark as paid anyway?`,
+      )
+    ) {
       return;
     }
     setApprovingId(row.id);
@@ -698,9 +717,10 @@ export function KitOrdersManager({
           <div className="flex shrink-0 overflow-hidden rounded-lg border border-white/10">
             {(
               [
-                { value: "ALL" as const, label: "All" },
+                { value: "RECEIPTS" as const, label: "To review" },
                 { value: "UNPAID" as const, label: "Unpaid" },
                 { value: "PAID" as const, label: "Paid" },
+                { value: "ALL" as const, label: "All" },
               ] as const
             ).map((option) => (
               <button
@@ -763,7 +783,7 @@ export function KitOrdersManager({
                   <col className="w-10" />
                   <col />
                   <col className="w-[4.5rem]" />
-                  <col className="w-[5.25rem]" />
+                  <col className="w-[7.5rem]" />
                   <col className="w-[6.5rem]" />
                 </colgroup>
                 <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
@@ -780,6 +800,7 @@ export function KitOrdersManager({
                     <th className="px-2 py-2.5 font-medium">Player</th>
                     <th className="px-2 py-2.5 font-medium">Total</th>
                     <th className="px-2 py-2.5 font-medium">Payment</th>
+                    <th className="px-2 py-2.5 font-medium">Receipt</th>
                     <th className="px-2 py-2.5 text-right font-medium">Actions</th>
                   </tr>
                 </thead>
@@ -841,11 +862,32 @@ export function KitOrdersManager({
                         </span>
                       </td>
                       <td className="px-2 py-2">
+                        {kitProofUrl(row) ? (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpandedId(expanded ? null : row.id)
+                            }
+                            className="block overflow-hidden rounded border border-white/15 bg-black"
+                            title="View receipt"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={kitProofUrl(row)!}
+                              alt=""
+                              className="h-14 w-20 object-cover"
+                            />
+                          </button>
+                        ) : (
+                          <span className="text-[11px] text-zinc-600">None</span>
+                        )}
+                      </td>
+                      <td className="px-2 py-2">
                         <div className="flex items-center justify-end gap-1">
-                          {canApproveKitOrderPayment(row) ? (
+                          {!isKitOrderPaid(row) ? (
                             <button
                               type="button"
-                              title="Approve receipt"
+                              title="Approve payment"
                               disabled={approvingId === row.id}
                               onClick={() => void handleApprove(row)}
                               className="rounded p-1.5 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:opacity-40"
@@ -902,7 +944,7 @@ export function KitOrdersManager({
                     </tr>
                     {expanded ? (
                       <tr className="bg-black/20">
-                        <td colSpan={5} className="px-4 py-4">
+                        <td colSpan={6} className="px-4 py-4">
                           <div className="grid gap-4 lg:grid-cols-2">
                             <div className="space-y-4">
                               <div>
@@ -978,40 +1020,16 @@ export function KitOrdersManager({
                                     <ExternalLink className="h-3 w-3" />
                                   </a>
                                 ) : null}
-                                {row.proofScreenshotUrl ? (
-                                  <a
-                                    href={row.proofScreenshotUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="inline-flex items-center gap-1 text-xs text-jackals-gold hover:underline"
-                                  >
-                                    View receipt
-                                    <ExternalLink className="h-3 w-3" />
-                                  </a>
-                                ) : null}
                               </div>
-                              {canApproveKitOrderPayment(row) ? (
-                                <div className="pt-3">
-                                  <Button
-                                    type="button"
-                                    size="sm"
-                                    disabled={approvingId === row.id}
-                                    onClick={() => void handleApprove(row)}
-                                  >
-                                    {approvingId === row.id ? (
-                                      <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                        Approving…
-                                      </>
-                                    ) : (
-                                      <>
-                                        <CheckCircle2 className="h-4 w-4" />
-                                        Approve receipt & email player
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              ) : null}
+                              <AdminReceiptPreview
+                                name={kitOrderFullName(row)}
+                                email={row.email}
+                                amountLabel={formatMembershipEuro(total)}
+                                proofUrl={kitProofUrl(row)}
+                                canApprove={!isKitOrderPaid(row)}
+                                approving={approvingId === row.id}
+                                onApprove={() => void handleApprove(row)}
+                              />
                             </div>
                           </div>
                         </td>
@@ -1073,11 +1091,10 @@ export function KitOrdersManager({
                     </div>
                   </div>
                   <div className="flex shrink-0 gap-1">
-                    {canApproveKitOrderPayment(row) ? (
+                    {!isKitOrderPaid(row) ? (
                       <Button
                         type="button"
                         size="sm"
-                        variant="outline"
                         disabled={approvingId === row.id}
                         onClick={() => void handleApprove(row)}
                       >
@@ -1086,6 +1103,7 @@ export function KitOrdersManager({
                         ) : (
                           <CheckCircle2 className="h-3.5 w-3.5" />
                         )}
+                        Approve
                       </Button>
                     ) : null}
                     <Button
@@ -1105,6 +1123,18 @@ export function KitOrdersManager({
                       <Trash2 className="h-3.5 w-3.5" />
                     </Button>
                   </div>
+                </div>
+                <div className="mt-3">
+                  <AdminReceiptPreview
+                    name={kitOrderFullName(row)}
+                    email={row.email}
+                    amountLabel={formatMembershipEuro(total)}
+                    proofUrl={kitProofUrl(row)}
+                    canApprove={!isKitOrderPaid(row)}
+                    approving={approvingId === row.id}
+                    onApprove={() => void handleApprove(row)}
+                    compact
+                  />
                 </div>
                 <details className="mt-3">
                   <summary className="cursor-pointer text-xs text-zinc-500">

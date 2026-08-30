@@ -1,6 +1,5 @@
 import { jsonError, requireAdmin } from "@/lib/api";
 import { completeKitOrderPayment } from "@/lib/complete-kit-order-payment";
-import { canApproveKitOrderPayment } from "@/lib/kit-order-payment-access";
 import { isEmailConfigured } from "@/lib/email";
 import { serializeKitOrder } from "@/lib/kit-order-response-config";
 import { prisma } from "@/lib/prisma";
@@ -22,9 +21,6 @@ export async function POST(
     }
     if (order.paymentStatus === "PAID") {
       return jsonError("This kit order is already marked as paid", 400);
-    }
-    if (!canApproveKitOrderPayment(order)) {
-      return jsonError("Upload a payment receipt before approving", 400);
     }
 
     const { emailDelivered } = await completeKitOrderPayment(id);

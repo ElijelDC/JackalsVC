@@ -129,11 +129,11 @@ async function authorizeKitOrderProof(
   relativePath: string,
   request: Request,
 ) {
-  const orderId = extractIdFromFilename(relativePath, "kit-order-proofs");
-  if (!orderId) return false;
-
   const session = await auth();
   if (session?.user?.role === "ADMIN") return true;
+
+  const orderId = extractIdFromFilename(relativePath, "kit-order-proofs");
+  if (!orderId) return false;
 
   const paymentToken = new URL(request.url).searchParams.get("pt");
   if (!paymentToken?.trim()) return false;
@@ -149,13 +149,14 @@ async function authorizeMerchandiseOrderProof(
   relativePath: string,
   request: Request,
 ) {
+  const session = await auth();
+  if (session?.user?.role === "ADMIN") return true;
+
   const orderId = extractIdFromFilename(
     relativePath,
     "merchandise-order-proofs",
   );
   if (!orderId) return false;
-  const session = await auth();
-  if (session?.user?.role === "ADMIN") return true;
   const paymentToken = new URL(request.url).searchParams.get("pt");
   if (!paymentToken?.trim()) return false;
   const order = await prisma.merchandiseOrder.findFirst({
