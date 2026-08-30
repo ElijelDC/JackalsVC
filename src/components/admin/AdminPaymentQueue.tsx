@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import { AdminBankStatementImport } from "@/components/admin/AdminBankStatementImport";
+import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Select } from "@/components/ui/Input";
@@ -123,6 +124,7 @@ export function AdminPaymentQueue({
   teams: { key: string; name: string }[];
 }) {
   const router = useRouter();
+  const refreshNotifications = useRefreshAdminNotifications();
   const [view, setView] = useState<ViewMode>("table");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -234,6 +236,7 @@ export function AdminPaymentQueue({
     }
 
     setMessage(`Payment approved for ${memberName}.`);
+    void refreshNotifications();
     router.refresh();
   };
 
@@ -262,6 +265,7 @@ export function AdminPaymentQueue({
         focus="membership"
         onImported={() => {
           setMessage("Bank statement imported. Matching payments were auto-approved.");
+          void refreshNotifications();
           router.refresh();
         }}
       />

@@ -2,6 +2,7 @@
 
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { TrialsApplicantEmailPanel } from "@/components/admin/TrialsApplicantEmailPanel";
 import {
   CheckCircle2,
@@ -248,6 +249,7 @@ export function TrialsApplicationsManager({
   canEmailApplicants?: boolean;
 }) {
   const router = useRouter();
+  const refreshNotifications = useRefreshAdminNotifications();
   const [applications, setApplications] = useState(initialApplications);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("NEW");
   const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
@@ -291,6 +293,7 @@ export function TrialsApplicationsManager({
     }
 
     setApplications(result.data.applications);
+    void refreshNotifications();
   };
 
   const act = async (id: string, action: "review" | "dismiss") => {
@@ -319,6 +322,7 @@ export function TrialsApplicationsManager({
     );
 
     router.refresh();
+    void refreshNotifications();
   };
 
   const reviewDismissed = async (id: string) => {
@@ -356,6 +360,7 @@ export function TrialsApplicationsManager({
     setApplications((current) => current.filter((item) => item.id !== id));
     if (expandedId === id) setExpandedId(null);
     router.refresh();
+    void refreshNotifications();
   };
 
   const downloadExcel = async () => {

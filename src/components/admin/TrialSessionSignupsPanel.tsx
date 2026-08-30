@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { formatInClubTime } from "@/lib/datetime-form";
+import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { apiPatch, apiPost } from "@/lib/client-api";
 import type {
   TrialSessionReminderStats,
@@ -82,6 +83,7 @@ export function TrialSessionSignupsPanel({
   onSelectSignupIds: (ids: string[]) => void;
   onSendReminders: () => void;
 }) {
+  const refreshNotifications = useRefreshAdminNotifications();
   const [filter, setFilter] = useState<SignupFilter>("PENDING");
   const [updatingIds, setUpdatingIds] = useState<string[]>([]);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -168,6 +170,8 @@ export function TrialSessionSignupsPanel({
       onError(result.error);
       return;
     }
+
+    void refreshNotifications();
 
     if (status === "APPROVED" && filter === "PENDING") {
       const remainingPending = previous.filter(

@@ -1,5 +1,6 @@
 import { jsonError, requireAdmin } from "@/lib/api";
-import { reconcileFromCsv } from "@/lib/payment-csv-reconcile";
+import { reconcileFromSpreadsheet } from "@/lib/payment-csv-reconcile";
+import { isSpreadsheetFileName } from "@/lib/spreadsheet-table";
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
@@ -11,27 +12,29 @@ export async function POST(request: Request) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return jsonError("CSV file required", 400);
+      return jsonError("Spreadsheet file required", 400);
     }
 
-    const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith(".csv")) {
-      return jsonError("Please upload a CSV file exported from your bank or SumUp account", 400);
+    if (!isSpreadsheetFileName(file.name)) {
+      return jsonError(
+        "Please upload an Excel (.xlsx) or CSV file from your bank or SumUp account",
+        400,
+      );
     }
 
     if (file.size > 5 * 1024 * 1024) {
-      return jsonError("CSV file must be smaller than 5 MB", 400);
+      return jsonError("File must be smaller than 5 MB", 400);
     }
 
-    const csvContent = await file.text();
-    if (!csvContent.trim()) {
-      return jsonError("CSV file is empty", 400);
-    }
-
-    const result = await reconcileFromCsv(csvContent, file.name);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const result = await reconcileFromSpreadsheet(buffer, file.name);
     return NextResponse.json(result);
   } catch (error) {
-    console.error("Payment CSV import failed:", error);
-    return jsonError("Failed to import payment CSV", 500);
+    console.error("Payment spreadsheet import failed:", error);
+    const message =
+      error instanceof Error && error.message.includes("upload")
+        ? error.message
+        : "Failed to import bank statement";
+    return jsonError(message, 500);
   }
 }

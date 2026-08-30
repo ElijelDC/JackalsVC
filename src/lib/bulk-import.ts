@@ -1,5 +1,4 @@
 import { parse as parseDateFns } from "date-fns";
-import { parseCsvTable } from "@/lib/csv-utils";
 import {
   parseCsvDate,
   parseCsvDateTime,
@@ -37,7 +36,10 @@ export {
   getBulkImportTemplateMeta,
   isBulkImportType,
 } from "@/lib/bulk-import-config";
-export { exportBulkImportCsv } from "@/lib/bulk-import-export";
+export {
+  exportBulkImportCsv,
+  exportBulkImportExcel,
+} from "@/lib/bulk-import-export";
 
 export type BulkImportRowError = {
   row: number;
@@ -523,10 +525,9 @@ async function importEventRow(
 
 export async function runBulkImport(
   type: BulkImportType,
-  csvContent: string,
+  rows: Record<string, string>[],
   fileName: string | null,
 ): Promise<BulkImportResult> {
-  const { rows } = parseCsvTable(csvContent);
   if (rows.length === 0) {
     return emptyResult(fileName);
   }

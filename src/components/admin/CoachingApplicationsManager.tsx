@@ -12,6 +12,7 @@ import {
   Search,
   XCircle,
 } from "lucide-react";
+import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Select } from "@/components/ui/Input";
@@ -154,6 +155,7 @@ export function CoachingApplicationsManager({
   initialApplications: CoachingApplicationRecord[];
 }) {
   const router = useRouter();
+  const refreshNotifications = useRefreshAdminNotifications();
   const [applications, setApplications] = useState(initialApplications);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("NEW");
   const [qualificationFilter, setQualificationFilter] =
@@ -218,6 +220,7 @@ export function CoachingApplicationsManager({
     }
 
     setApplications(result.data.applications);
+    void refreshNotifications();
   };
 
   const act = async (id: string, action: "review" | "dismiss") => {
@@ -246,6 +249,7 @@ export function CoachingApplicationsManager({
     );
 
     router.refresh();
+    void refreshNotifications();
   };
 
   const clearFilters = () => {

@@ -12,6 +12,7 @@ import {
   type BulkImportType,
 } from "@/lib/client-api";
 import { getBulkImportTemplateMeta } from "@/lib/bulk-import-config";
+import { spreadsheetAcceptAttr } from "@/lib/spreadsheet-accept";
 
 export function AdminBulkCsvImport({
   type,
@@ -33,14 +34,14 @@ export function AdminBulkCsvImport({
   const [result, setResult] = useState<BulkImportResult | null>(null);
 
   const meta = getBulkImportTemplateMeta(type);
-  const sectionTitle = title ?? "Bulk import from CSV";
-  const triggerLabel = openTriggerLabel ?? "Bulk CSV import";
+  const sectionTitle = title ?? "Bulk import from Excel";
+  const triggerLabel = openTriggerLabel ?? "Bulk Excel import";
   const sectionDescription =
     description ?? meta.instructions;
 
   const submitImport = async () => {
     if (!file) {
-      setError("Choose a CSV file first.");
+      setError("Choose an Excel file first.");
       return;
     }
 
@@ -84,15 +85,14 @@ export function AdminBulkCsvImport({
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border border-white/20 bg-transparent px-3 py-2 text-sm font-semibold text-white transition-all duration-300 hover:border-jackals-red/50 hover:bg-jackals-red/10"
           >
             <Download className="h-4 w-4" />
-            Download current CSV
+            Download current Excel
           </a>
         </div>
 
         <p className="mt-3 text-xs text-zinc-500">
-          Tip: add new rows at the top of the file, keep existing rows as-is, then
-          re-upload. Duplicates are skipped automatically. If using Excel, format
-          date and time columns as <strong className="text-zinc-400">Text</strong>{" "}
-          before editing, or use Google Sheets.
+          Tip: add new rows at the top of the sheet, keep existing rows as-is, then
+          re-upload. Duplicates are skipped automatically. Date and time columns
+          are saved as text so Excel won&apos;t rewrite them.
         </p>
 
         <FormError message={error} />
@@ -100,7 +100,7 @@ export function AdminBulkCsvImport({
         {result && (
           <div className="mt-4 space-y-3">
             <div className="border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
-              Imported {result.fileName ?? "CSV"}: created {result.created} of{" "}
+              Imported {result.fileName ?? "sheet"}: created {result.created} of{" "}
               {result.scanned} rows
               {result.skipped > 0 ? ` · ${result.skipped} skipped (duplicates)` : ""}
               {result.failed > 0 ? ` · ${result.failed} failed` : ""}
@@ -128,15 +128,17 @@ export function AdminBulkCsvImport({
           >
             <Upload className="mb-2 h-8 w-8 text-zinc-500" />
             <span className="text-sm font-medium text-white">
-              {file ? file.name : "Choose CSV file"}
+              {file ? file.name : "Choose Excel file"}
             </span>
-            <span className="mt-1 text-xs text-zinc-500">Max 2 MB</span>
+            <span className="mt-1 text-xs text-zinc-500">
+              .xlsx preferred · CSV still accepted · Max 5 MB
+            </span>
           </button>
 
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept={spreadsheetAcceptAttr()}
             className="hidden"
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null);
@@ -151,7 +153,7 @@ export function AdminBulkCsvImport({
             disabled={loading}
             onClick={submitImport}
           >
-            {loading ? "Importing..." : "Upload CSV & import rows"}
+            {loading ? "Importing..." : "Upload Excel & import rows"}
           </Button>
         </div>
       </div>

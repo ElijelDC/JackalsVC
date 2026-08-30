@@ -57,25 +57,19 @@ function isIncomingRow(typeValue: string, amount: number, reference: string): bo
   return amount > 0 && reference.length >= 3;
 }
 
-export function parseBankTransferCsv(content: string): ParsedBankTransferRow[] {
-  const lines = content
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter(Boolean);
+export function parseBankTransferMatrix(matrix: string[][]): ParsedBankTransferRow[] {
+  if (matrix.length === 0) return [];
 
-  if (lines.length === 0) return [];
-
-  const firstCells = parseCsvLine(lines[0]!);
+  const firstCells = matrix[0]!;
   const hasHeader = firstCells.some((cell) =>
     /amount|reference|description|date|type|memo|details/i.test(cell),
   );
 
   const headers = hasHeader ? firstCells.map(normalizeHeader) : [];
-  const dataLines = hasHeader ? lines.slice(1) : lines;
+  const dataRows = hasHeader ? matrix.slice(1) : matrix;
   const parsed: ParsedBankTransferRow[] = [];
 
-  for (const line of dataLines) {
-    const cells = parseCsvLine(line);
+  for (const cells of dataRows) {
     if (cells.every((cell) => !cell)) continue;
 
     const amountRaw = hasHeader
@@ -115,9 +109,20 @@ export function parseBankTransferCsv(content: string): ParsedBankTransferRow[] {
       amount,
       reference,
       transactionDate,
-      rawLine: line,
+      rawLine: cells.join(","),
     });
   }
 
   return parsed;
+}
+
+export function parseBankTransferCsv(content: string): ParsedBankTransferRow[] {
+  const lines = content
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (lines.length === 0) return [];
+
+  return parseBankTransferMatrix(lines.map((line) => parseCsvLine(line)));
 }

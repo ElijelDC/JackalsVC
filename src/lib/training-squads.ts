@@ -91,3 +91,47 @@ export async function getTrainingSquadUsageCounts(key: string) {
     total: members + coachLinks + sessions + matches + clubTeams,
   };
 }
+
+export async function deleteTrainingSquadCascade(id: string) {
+  const existing = await prisma.trainingSquad.findUnique({ where: { id } });
+  if (!existing) {
+    throw new Error("Squad not found");
+  }
+
+  const usage = await getTrainingSquadUsageCounts(existing.key);
+  if (usage.members > 0) {
+    throw new Error(
+      `This squad still has ${usage.members} roster member${usage.members === 1 ? "" : "s"}. Reassign them first.`,
+    );
+  }
+
+  const sessions = await prisma.trainingSession.findMany({
+    where: { trainingTeamKey: existing.key },
+    select: { id: true },
+  });
+
+  const { deleteTrainingSessionCascade } = await import("@/lib/training-events");
+  for (const session of sessions) {
+    await deleteTrainingSessionCascade(session.id);
+  }
+
+  await prisma.teamMatch.deleteMany({
+    where: { trainingTeamKey: existing.key },
+  });
+
+  await prisma.clubMemberCoachSquad.deleteMany({
+    where: { trainingTeamKey: existing.key },
+  });
+
+  await prisma.clubTeam.updateMany({
+    where: { trainingTeamKey: existing.key },
+    data: { trainingTeamKey: null },
+  });
+
+  await prisma.trainingSquad.delete({ where: { id } });
+
+  return {
+    deletedSessions: sessions.length,
+    deletedMatches: usage.matches,
+  };
+}

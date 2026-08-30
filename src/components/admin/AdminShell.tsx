@@ -34,6 +34,7 @@ import {
   X,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { useAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { SHOP_ENABLED } from "@/lib/features";
 import { cn } from "@/lib/utils";
 
@@ -448,11 +449,10 @@ function AdminNavPanel({
 
 export function AdminShell({
   children,
-  badgeCounts = {},
 }: {
   children: React.ReactNode;
-  badgeCounts?: Record<string, number>;
 }) {
+  const { badgeCounts } = useAdminNotifications();
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [canPortal, setCanPortal] = useState(false);

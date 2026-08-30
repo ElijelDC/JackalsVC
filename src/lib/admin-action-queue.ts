@@ -6,30 +6,12 @@ import {
   getPendingPaymentDueState,
 } from "@/lib/admin-pending-payments";
 import { prisma } from "@/lib/prisma";
+import type {
+  AdminActionQueue,
+  AdminActionQueueEntry,
+} from "@/lib/admin-action-queue-types";
 
-export type AdminActionQueueEntry = {
-  kind:
-    | "registration"
-    | "payment"
-    | "kit-payment"
-    | "merchandise-payment"
-    | "coach-payment"
-    | "coaching-application"
-    | "trials-application"
-    | "trial-session-signup";
-  href: string;
-  title: string;
-  summary: string;
-  count: number;
-  urgentCount?: number;
-  previews: string[];
-};
-
-export type AdminActionQueue = {
-  entries: AdminActionQueueEntry[];
-  totalCount: number;
-  badgeCounts: Record<string, number>;
-};
+export type { AdminActionQueue, AdminActionQueueEntry };
 
 /** Pending registration reviews: awaiting photo approval (VLY may be blank). */
 const REGISTRATION_REVIEW_WHERE = {
@@ -60,7 +42,7 @@ function coachPaymentOverdueWhere(now = new Date()) {
   };
 }
 
-export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => {
+export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
   const now = new Date();
 
   const [
@@ -329,4 +311,6 @@ export const getAdminActionQueue = cache(async (): Promise<AdminActionQueue> => 
       trialSessionSignupCount,
     badgeCounts,
   };
-});
+}
+
+export const getAdminActionQueue = cache(queryAdminActionQueue);

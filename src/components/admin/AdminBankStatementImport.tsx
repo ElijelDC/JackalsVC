@@ -10,6 +10,7 @@ import {
   apiImportMerchandiseOrderBankStatementCsv,
   type BankStatementImportResult,
 } from "@/lib/client-api";
+import { spreadsheetAcceptAttr } from "@/lib/spreadsheet-accept";
 
 type AdminBankStatementImportProps = {
   onImported?: (result: BankStatementImportResult) => void;
@@ -91,7 +92,7 @@ export function AdminBankStatementImport({
 
   const submitImport = async () => {
     if (!file) {
-      setError("Choose a CSV file first.");
+      setError("Choose an Excel or CSV file first.");
       return;
     }
 
@@ -124,7 +125,7 @@ export function AdminBankStatementImport({
         <div className="flex items-center gap-2">
           <Upload className="h-4 w-4 text-jackals-gold" />
           <span className="text-sm font-medium text-white">
-            Import bank statement CSV
+            Import bank statement
           </span>
           <span className="hidden text-xs text-zinc-500 sm:inline">
             Auto-match by amount & reference
@@ -134,9 +135,10 @@ export function AdminBankStatementImport({
       </summary>
       <div className="border-t border-white/10 px-4 py-4 sm:px-5">
         <p className="text-sm text-zinc-400">
-          Export transactions from SumUp or your bank, then upload the CSV here.
-          We match incoming transfers by amount and payment reference for membership
-          kit, and merchandise payments.
+          Export transactions from SumUp or your bank, fix anything in Excel if
+          needed, then upload the .xlsx or CSV here. We match incoming transfers by
+          amount and payment reference for membership, kit, and merchandise
+          payments.
         </p>
 
         <FormError message={error} />
@@ -155,7 +157,7 @@ export function AdminBankStatementImport({
           >
             <Upload className="mb-2 h-6 w-6 text-zinc-500" />
             <span className="text-sm font-medium text-white">
-              {file ? file.name : "Choose CSV file"}
+              {file ? file.name : "Choose Excel or CSV file"}
             </span>
             <span className="mt-1 text-xs text-zinc-500">Max 5 MB</span>
           </button>
@@ -163,7 +165,7 @@ export function AdminBankStatementImport({
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept={spreadsheetAcceptAttr()}
             className="hidden"
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null);

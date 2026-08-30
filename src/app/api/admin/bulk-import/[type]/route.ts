@@ -1,11 +1,16 @@
 import { NextResponse } from "next/server";
 import { jsonError, requireAdmin } from "@/lib/api";
 import {
-  exportBulkImportCsv,
+  exportBulkImportExcel,
   getBulkImportTemplateMeta,
   isBulkImportType,
   runBulkImport,
 } from "@/lib/bulk-import";
+import {
+  excelContentType,
+  isSpreadsheetFileName,
+  parseSpreadsheetTable,
+} from "@/lib/spreadsheet-table";
 
 type RouteContext = {
   params: Promise<{ type: string }>;
@@ -21,11 +26,11 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const meta = getBulkImportTemplateMeta(type);
-  const csv = await exportBulkImportCsv(type);
+  const buffer = await exportBulkImportExcel(type);
 
-  return new NextResponse(csv, {
+  return new NextResponse(new Uint8Array(buffer), {
     headers: {
-      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Type": excelContentType(),
       "Content-Disposition": `attachment; filename="${meta.fileName}"`,
     },
   });
@@ -45,27 +50,36 @@ export async function POST(request: Request, context: RouteContext) {
     const file = formData.get("file");
 
     if (!(file instanceof File)) {
-      return jsonError("CSV file required", 400);
+      return jsonError("Excel file required", 400);
     }
 
-    const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith(".csv")) {
-      return jsonError("Please upload a CSV file", 400);
+    if (!isSpreadsheetFileName(file.name)) {
+      return jsonError("Please upload an Excel (.xlsx) file", 400);
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      return jsonError("CSV file must be smaller than 2 MB", 400);
+    if (file.size > 5 * 1024 * 1024) {
+      return jsonError("File must be smaller than 5 MB", 400);
     }
 
-    const csvContent = await file.text();
-    if (!csvContent.trim()) {
-      return jsonError("CSV file is empty", 400);
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const { rows } = await parseSpreadsheetTable(buffer, file.name);
+    if (rows.length === 0) {
+      return jsonError("Spreadsheet is empty", 400);
     }
 
-    const result = await runBulkImport(type, csvContent, file.name);
+    const result = await runBulkImport(type, rows, file.name);
     return NextResponse.json(result);
   } catch (error) {
     console.error(`Bulk import failed (${type}):`, error);
-    return jsonError("Failed to import CSV", 500);
+    const message =
+      error instanceof Error ? error.message : "Failed to import spreadsheet";
+    if (
+      message.includes("upload") ||
+      message.includes("Excel") ||
+      message.includes("CSV")
+    ) {
+      return jsonError(message, 400);
+    }
+    return jsonError("Failed to import spreadsheet", 500);
   }
 }

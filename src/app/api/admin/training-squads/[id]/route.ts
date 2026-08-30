@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import { prisma } from "@/lib/prisma";
-import { getTrainingSquadUsageCounts } from "@/lib/training-squads";
+import {
+  deleteTrainingSquadCascade,
+  getTrainingSquadUsageCounts,
+} from "@/lib/training-squads";
 import { trainingSquadUpdateSchema } from "@/lib/validations";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -38,44 +41,31 @@ export async function DELETE(_request: Request, context: RouteContext) {
   if (response) return response;
 
   const { id } = await context.params;
-  const existing = await prisma.trainingSquad.findUnique({ where: { id } });
-  if (!existing) return jsonError("Squad not found", 404);
 
-  const usage = await getTrainingSquadUsageCounts(existing.key);
-
-  // Hard blockers: players / schedule data must be moved first.
-  if (usage.members > 0 || usage.sessions > 0 || usage.matches > 0) {
-    const parts: string[] = [];
-    if (usage.members > 0) {
-      parts.push(
-        `${usage.members} roster member${usage.members === 1 ? "" : "s"}`,
-      );
+  try {
+    const result = await deleteTrainingSquadCascade(id);
+    return NextResponse.json({ ok: true, ...result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete squad";
+    if (message === "Squad not found") {
+      return jsonError(message, 404);
     }
-    if (usage.sessions > 0) {
-      parts.push(
-        `${usage.sessions} training session${usage.sessions === 1 ? "" : "s"}`,
-      );
+    if (message.includes("roster member")) {
+      return jsonError(message, 409);
     }
-    if (usage.matches > 0) {
-      parts.push(`${usage.matches} match${usage.matches === 1 ? "" : "es"}`);
-    }
-    return jsonError(
-      `This squad is still linked to ${parts.join(", ")}. Reassign those first, or deactivate the squad instead of deleting.`,
-      409,
-    );
+    console.error("Failed to delete training squad:", error);
+    return jsonError("Failed to delete squad", 500);
   }
+}
 
-  // Soft links (coach covers + synced club teams) can be cleared safely.
-  await prisma.$transaction(async (tx) => {
-    await tx.clubMemberCoachSquad.deleteMany({
-      where: { trainingTeamKey: existing.key },
-    });
-    await tx.clubTeam.updateMany({
-      where: { trainingTeamKey: existing.key },
-      data: { trainingTeamKey: null },
-    });
-    await tx.trainingSquad.delete({ where: { id } });
-  });
+export async function GET(_request: Request, context: RouteContext) {
+  const { response } = await requireAdmin();
+  if (response) return response;
 
-  return NextResponse.json({ ok: true });
+  const { id } = await context.params;
+  const squad = await prisma.trainingSquad.findUnique({ where: { id } });
+  if (!squad) return jsonError("Squad not found", 404);
+
+  const usage = await getTrainingSquadUsageCounts(squad.key);
+  return NextResponse.json({ squad, usage });
 }

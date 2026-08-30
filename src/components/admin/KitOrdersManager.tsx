@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AdminBankStatementImport } from "@/components/admin/AdminBankStatementImport";
+import { useRefreshAdminNotifications, useSyncAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { AdminReceiptPreview } from "@/components/admin/AdminReceiptPreview";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input } from "@/components/ui/Input";
@@ -173,6 +174,8 @@ export function KitOrdersManager({
   clubIban: string;
   clubAccountHolder: string;
 }) {
+  const syncNotifications = useSyncAdminNotifications();
+  const refreshNotifications = useRefreshAdminNotifications();
   const [orders, setOrders] = useState(initialOrders);
   const [view, setView] = useState<ViewMode>("table");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>(() =>
@@ -346,6 +349,7 @@ export function KitOrdersManager({
       const valid = new Set(result.data.orders.map((order) => order.id));
       return current.filter((id) => valid.has(id));
     });
+    void refreshNotifications();
   };
 
   const clearFilters = () => {
@@ -399,6 +403,7 @@ export function KitOrdersManager({
     setOrders((current) => current.filter((item) => item.id !== row.id));
     setSelectedIds((current) => current.filter((id) => id !== row.id));
     if (expandedId === row.id) setExpandedId(null);
+    void syncNotifications("/admin/kit-orders");
   };
 
   const handleApprove = async (row: KitOrderRecord) => {
@@ -435,6 +440,7 @@ export function KitOrdersManager({
       result.data.message ||
         `Payment approved for ${kitOrderFullName(row)}.`,
     );
+    await syncNotifications("/admin/kit-orders");
   };
 
   const handleSaveFreeLines = async (
@@ -539,6 +545,7 @@ export function KitOrdersManager({
         onImported={() => {
           setMessage("Bank statement imported. Matching kit payments were auto-approved.");
           void refresh();
+          void refreshNotifications();
         }}
       />
 

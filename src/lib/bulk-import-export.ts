@@ -1,10 +1,10 @@
 import { safeFormatDate } from "@/lib/csv-date-parse";
-import { buildCsvContent } from "@/lib/csv-utils";
 import {
   BULK_IMPORT_DEFINITIONS,
   type BulkImportType,
 } from "@/lib/bulk-import-config";
 import { prisma } from "@/lib/prisma";
+import { buildExcelTableBuffer } from "@/lib/spreadsheet-table";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
 import { DAYS_OF_WEEK } from "@/lib/utils";
 
@@ -120,7 +120,17 @@ async function exportEventRows(): Promise<string[][]> {
   ]);
 }
 
-export async function exportBulkImportCsv(type: BulkImportType): Promise<string> {
+const SHEET_NAMES: Record<BulkImportType, string> = {
+  roster: "Roster",
+  "weekly-training": "Weekly training",
+  "fun-sessions": "Fun sessions",
+  matches: "Matches",
+  events: "Events",
+};
+
+export async function exportBulkImportExcel(
+  type: BulkImportType,
+): Promise<Buffer> {
   const meta = BULK_IMPORT_DEFINITIONS[type];
   let rows: string[][] = [];
 
@@ -142,5 +152,8 @@ export async function exportBulkImportCsv(type: BulkImportType): Promise<string>
       break;
   }
 
-  return buildCsvContent(meta.headers, rows);
+  return buildExcelTableBuffer(SHEET_NAMES[type], meta.headers, rows);
 }
+
+/** @deprecated Use exportBulkImportExcel */
+export const exportBulkImportCsv = exportBulkImportExcel;

@@ -218,21 +218,78 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
     router.refresh();
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Delete this squad?")) return;
-    setDeletingId(id);
-    setListError(null);
-    setListMessage(null);
-    const result = await apiDelete(`/api/admin/training-squads/${id}`);
-    setDeletingId(null);
-    if (!result.ok) {
-      // Always show on the list — delete runs from the row, not only edit mode.
-      setListError(result.error);
-      if (editingId === id) setEditError(result.error);
+  const handleDelete = async (squad: SquadItem) => {
+    const usageResult = await apiGet<{
+      usage: {
+        members: number;
+        sessions: number;
+        matches: number;
+      };
+    }>(`/api/admin/training-squads/${squad.id}`, "load squad usage");
+
+    const usage = usageResult.ok ? usageResult.data.usage : null;
+
+    if (usage?.members) {
+      setListError(
+        `Cannot delete ${squad.name}: ${usage.members} roster member${usage.members === 1 ? "" : "s"} still assigned. Reassign them on the roster first.`,
+      );
       return;
     }
-    if (editingId === id) cancelEdit();
-    setListMessage("Squad deleted.");
+
+    const linkedParts: string[] = [];
+    if (usage?.sessions) {
+      linkedParts.push(
+        `${usage.sessions} training session${usage.sessions === 1 ? "" : "s"}`,
+      );
+    }
+    if (usage?.matches) {
+      linkedParts.push(`${usage.matches} match${usage.matches === 1 ? "" : "es"}`);
+    }
+
+    const cascadeNote =
+      linkedParts.length > 0
+        ? `\n\nThis will permanently delete ${linkedParts.join(" and ")} linked to this squad.`
+        : "";
+
+    if (
+      !confirm(
+        `Delete ${squad.name}?${cascadeNote}\n\nThis cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setDeletingId(squad.id);
+    setListError(null);
+    setListMessage(null);
+    const result = await apiDelete(`/api/admin/training-squads/${squad.id}`);
+    setDeletingId(null);
+    if (!result.ok) {
+      setListError(result.error);
+      if (editingId === squad.id) setEditError(result.error);
+      return;
+    }
+    if (editingId === squad.id) cancelEdit();
+    const deleted = result.data as {
+      deletedSessions?: number;
+      deletedMatches?: number;
+    };
+    const removed: string[] = [];
+    if (deleted.deletedSessions) {
+      removed.push(
+        `${deleted.deletedSessions} training session${deleted.deletedSessions === 1 ? "" : "s"}`,
+      );
+    }
+    if (deleted.deletedMatches) {
+      removed.push(
+        `${deleted.deletedMatches} match${deleted.deletedMatches === 1 ? "" : "es"}`,
+      );
+    }
+    setListMessage(
+      removed.length > 0
+        ? `Squad deleted (${removed.join(", ")} removed).`
+        : "Squad deleted.",
+    );
     await loadSquads();
     router.refresh();
   };
@@ -278,7 +335,7 @@ export function SquadsManager({ initialSquads }: { initialSquads: SquadItem[] })
                 : "Inactive — hidden from new assignments"
             }
             onEdit={() => startEdit(squad)}
-            onDelete={() => void handleDelete(squad.id)}
+            onDelete={() => void handleDelete(squad)}
             deleting={deletingId === squad.id}
             onCancelEdit={cancelEdit}
             onSubmit={(e) => void handleUpdate(e)}

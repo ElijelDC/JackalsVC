@@ -4,6 +4,7 @@ import Image from "next/image";
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Button } from "@/components/ui/Button";
 import { Label, Select } from "@/components/ui/Input";
@@ -48,6 +49,7 @@ export function AdminCoachPaymentsManager({
   ratePerSession: number;
 }) {
   const router = useRouter();
+  const refreshNotifications = useRefreshAdminNotifications();
   const now = useMemo(() => new Date(), []);
   const [coaches, setCoaches] = useState(initialCoaches);
   const [tab, setTab] = useState<PaymentsTab>("current");
@@ -189,6 +191,7 @@ export function AdminCoachPaymentsManager({
 
     setMessage("Coach payment updated.");
     await reload();
+    void refreshNotifications();
     router.refresh();
   };
 
@@ -213,6 +216,7 @@ export function AdminCoachPaymentsManager({
 
     setMessage("Invoice screenshot uploaded and payment marked paid.");
     await reload();
+    void refreshNotifications();
     router.refresh();
   };
 
@@ -242,6 +246,7 @@ export function AdminCoachPaymentsManager({
 
     setMessage("Payment screenshot removed.");
     await reload();
+    void refreshNotifications();
     router.refresh();
   };
 

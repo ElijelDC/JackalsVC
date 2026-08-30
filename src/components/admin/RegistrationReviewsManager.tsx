@@ -11,6 +11,7 @@ import {
   RefreshCw,
   X,
 } from "lucide-react";
+import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { Button } from "@/components/ui/Button";
 import { FormError, WarningBanner } from "@/components/ui/FormMessage";
 import { apiGet, apiPatch } from "@/lib/client-api";
@@ -48,6 +49,7 @@ export function RegistrationReviewsManager({
   initialReviews: RegistrationReviewItem[];
 }) {
   const router = useRouter();
+  const refreshNotifications = useRefreshAdminNotifications();
   const [reviews, setReviews] = useState(initialReviews);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -88,6 +90,7 @@ export function RegistrationReviewsManager({
 
     setReviews((current) => current.filter((review) => review.id !== id));
     if (expandedId === id) setExpandedId(null);
+    void refreshNotifications();
     router.refresh();
   };
 

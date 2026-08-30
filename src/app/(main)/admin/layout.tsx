@@ -1,9 +1,12 @@
 import { requireAdminPage } from "@/lib/admin-auth";
+import { AdminNotificationsProvider } from "@/components/admin/AdminNotificationsProvider";
 import { AdminShell } from "@/components/admin/AdminShell";
 import { getAdminActionQueue } from "@/lib/admin-action-queue";
-import { pageMetadata, adminPageMetadata } from "@/lib/seo";
+import { adminPageMetadata } from "@/lib/seo";
 
 export const metadata = adminPageMetadata("Admin");
+
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
   children,
@@ -11,7 +14,11 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   await requireAdminPage();
-  const { badgeCounts } = await getAdminActionQueue();
+  const notifications = await getAdminActionQueue();
 
-  return <AdminShell badgeCounts={badgeCounts}>{children}</AdminShell>;
+  return (
+    <AdminNotificationsProvider initial={notifications}>
+      <AdminShell>{children}</AdminShell>
+    </AdminNotificationsProvider>
+  );
 }

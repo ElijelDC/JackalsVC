@@ -6,6 +6,7 @@ import { ChevronDown, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { apiImportPaymentCsv, type CsvImportResult } from "@/lib/client-api";
+import { spreadsheetAcceptAttr } from "@/lib/spreadsheet-accept";
 
 export function AdminCsvImport() {
   const router = useRouter();
@@ -17,7 +18,7 @@ export function AdminCsvImport() {
 
   const submitImport = async () => {
     if (!file) {
-      setError("Choose a CSV file first.");
+      setError("Choose an Excel or CSV file first.");
       return;
     }
 
@@ -45,7 +46,7 @@ export function AdminCsvImport() {
         <div className="flex items-center gap-2">
           <Upload className="h-4 w-4 text-jackals-gold" />
           <span className="text-sm font-medium text-white">
-            Import bank statement CSV
+            Import bank statement
           </span>
           <span className="hidden text-xs text-zinc-500 sm:inline">
             Auto-match by amount & reference
@@ -55,17 +56,23 @@ export function AdminCsvImport() {
       </summary>
       <div className="border-t border-white/10 px-4 py-4 sm:px-5">
         <p className="text-sm text-zinc-400">
-          Export transactions from SumUp Business Account or your bank, then upload the CSV here.
-          We match incoming transfers by amount and payment reference.
+          Export transactions from SumUp or your bank, fix anything in Excel if
+          needed, then upload the .xlsx or CSV here. We match incoming transfers by
+          amount and payment reference.
         </p>
 
         <FormError message={error} />
 
         {result && (
           <div className="mt-4 border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
-            Imported {result.fileName ?? "CSV"}: matched {result.matched} of {result.scanned} rows
-            {result.skippedDuplicates > 0 ? ` · ${result.skippedDuplicates} duplicates skipped` : ""}
-            {result.unmatchedRows > 0 ? ` · ${result.unmatchedRows} rows had no matching payment` : ""}
+            Imported {result.fileName ?? "sheet"}: matched {result.matched} of{" "}
+            {result.scanned} rows
+            {result.skippedDuplicates > 0
+              ? ` · ${result.skippedDuplicates} duplicates skipped`
+              : ""}
+            {result.unmatchedRows > 0
+              ? ` · ${result.unmatchedRows} rows had no matching payment`
+              : ""}
             · {result.unmatchedPayments} payments still pending
           </div>
         )}
@@ -78,7 +85,7 @@ export function AdminCsvImport() {
           >
             <Upload className="mb-2 h-8 w-8 text-zinc-500" />
             <span className="text-sm font-medium text-white">
-              {file ? file.name : "Choose CSV file"}
+              {file ? file.name : "Choose Excel or CSV file"}
             </span>
             <span className="mt-1 text-xs text-zinc-500">Max 5 MB</span>
           </button>
@@ -86,7 +93,7 @@ export function AdminCsvImport() {
           <input
             ref={inputRef}
             type="file"
-            accept=".csv,text/csv"
+            accept={spreadsheetAcceptAttr()}
             className="hidden"
             onChange={(event) => {
               setFile(event.target.files?.[0] ?? null);
@@ -96,7 +103,7 @@ export function AdminCsvImport() {
           />
 
           <Button type="button" className="w-full" disabled={loading} onClick={submitImport}>
-            {loading ? "Importing..." : "Upload CSV & match payments"}
+            {loading ? "Importing..." : "Upload & match payments"}
           </Button>
         </div>
       </div>

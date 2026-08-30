@@ -13,6 +13,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { AdminBankStatementImport } from "@/components/admin/AdminBankStatementImport";
+import { useRefreshAdminNotifications, useSyncAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { AdminReceiptPreview } from "@/components/admin/AdminReceiptPreview";
 import { KitOrderQuoteBreakdown } from "@/components/kit-order/KitOrderQuoteBreakdown";
 import { Button } from "@/components/ui/Button";
@@ -69,6 +70,8 @@ export function MerchandiseOrdersManager({
   clubIban: string;
   clubAccountHolder: string;
 }) {
+  const syncNotifications = useSyncAdminNotifications();
+  const refreshNotifications = useRefreshAdminNotifications();
   const [orders, setOrders] = useState(initialOrders);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<PaymentFilter>(() =>
@@ -112,15 +115,18 @@ export function MerchandiseOrdersManager({
     let paid = 0;
     let unpaid = 0;
     let remainingEur = 0;
+    let paidEur = 0;
     for (const order of orders) {
       const amount = buildMerchandiseOrderPaymentQuote(order).totalEur;
-      if (order.paymentStatus === "PAID") paid += 1;
-      else {
+      if (order.paymentStatus === "PAID") {
+        paid += 1;
+        paidEur += amount;
+      } else {
         unpaid += 1;
         remainingEur += amount;
       }
     }
-    return { paid, unpaid, remainingEur };
+    return { paid, unpaid, remainingEur, paidEur };
   }, [orders]);
 
   const refresh = async () => {
@@ -132,6 +138,7 @@ export function MerchandiseOrdersManager({
     setRefreshing(false);
     if (!result.ok) return setError(result.error);
     setOrders(result.data.orders);
+    void refreshNotifications();
   };
 
   const approve = async (order: MerchandiseOrderRecord) => {
@@ -155,6 +162,7 @@ export function MerchandiseOrdersManager({
       ),
     );
     setMessage(result.data.message);
+    await syncNotifications("/admin/merchandise-orders");
   };
 
   const remove = async (order: MerchandiseOrderRecord) => {
@@ -164,6 +172,7 @@ export function MerchandiseOrdersManager({
     setBusyId(null);
     if (!result.ok) return setError(result.error);
     setOrders((current) => current.filter((item) => item.id !== order.id));
+    void refreshNotifications();
   };
 
   const saveFreeItems = async (
@@ -232,21 +241,31 @@ export function MerchandiseOrdersManager({
         onImported={() => {
           setMessage("Bank statement imported and matching merch payments approved.");
           void refresh();
+          void refreshNotifications();
         }}
       />
 
-      <div className="grid gap-2 sm:grid-cols-3">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Unpaid", String(totals.unpaid)],
-          ["Paid", String(totals.paid)],
-          ["Remaining", formatMembershipEuro(totals.remainingEur)],
-        ].map(([label, value]) => (
+          { label: "Unpaid", value: String(totals.unpaid) },
+          { label: "Paid", value: String(totals.paid) },
+          {
+            label: "Total remaining",
+            value: formatMembershipEuro(totals.remainingEur),
+          },
+          {
+            label: "Total paid",
+            value: formatMembershipEuro(totals.paidEur),
+          },
+        ].map((item) => (
           <div
-            key={label}
-            className="rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3"
+            key={item.label}
+            className="rounded-lg border border-white/10 bg-white/[0.02] px-3 py-2.5"
           >
-            <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
-            <p className="mt-1 text-xl font-semibold text-white">{value}</p>
+            <p className="text-[11px] uppercase tracking-wide text-zinc-500">
+              {item.label}
+            </p>
+            <p className="mt-0.5 text-lg font-semibold text-white">{item.value}</p>
           </div>
         ))}
       </div>

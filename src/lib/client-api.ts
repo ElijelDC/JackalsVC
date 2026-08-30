@@ -194,7 +194,7 @@ export function getBulkImportTemplateUrl(type: BulkImportType): string {
 export async function apiBulkImportCsv(
   type: BulkImportType,
   file: File,
-  fallbackError = "Failed to import CSV",
+  fallbackError = "Failed to import spreadsheet",
 ): Promise<ApiResult<BulkImportResult>> {
   const formData = new FormData();
   formData.append("file", file);
@@ -297,14 +297,14 @@ export async function apiRemoveTrialSessionPaymentProof(
 
 export async function apiImportPaymentCsv(
   file: File,
-  fallbackError = "Failed to import CSV",
+  fallbackError = "Failed to import bank statement",
 ): Promise<ApiResult<BankStatementImportResult>> {
   return apiImportBankStatementCsv(file, fallbackError);
 }
 
 export async function apiImportBankStatementCsv(
   file: File,
-  fallbackError = "Failed to import CSV",
+  fallbackError = "Failed to import bank statement",
 ): Promise<ApiResult<BankStatementImportResult>> {
   const formData = new FormData();
   formData.append("file", file);
@@ -317,7 +317,7 @@ export async function apiImportBankStatementCsv(
 
 export async function apiImportKitOrderBankStatementCsv(
   file: File,
-  fallbackError = "Failed to import CSV",
+  fallbackError = "Failed to import bank statement",
 ): Promise<ApiResult<BankStatementImportResult>> {
   const formData = new FormData();
   formData.append("file", file);
@@ -330,7 +330,7 @@ export async function apiImportKitOrderBankStatementCsv(
 
 export async function apiImportMerchandiseOrderBankStatementCsv(
   file: File,
-  fallbackError = "Failed to import CSV",
+  fallbackError = "Failed to import bank statement",
 ): Promise<ApiResult<BankStatementImportResult>> {
   const formData = new FormData();
   formData.append("file", file);

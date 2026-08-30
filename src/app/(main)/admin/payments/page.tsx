@@ -48,7 +48,7 @@ export default async function AdminPaymentsPage() {
   return (
     <AdminSection
       title="Payments"
-      description="Import bank CSV files and approve member transfer screenshots."
+      description="Import bank statements and approve member transfer screenshots."
     >
       <div className="space-y-4">
         <AdminPaymentQueue
@@ -86,7 +86,7 @@ export default async function AdminPaymentsPage() {
 
         {recentImports.length > 0 && (
           <section className="rounded-xl border border-white/10 bg-white/[0.02] p-4 sm:p-5">
-            <h2 className="text-sm font-semibold text-white">Recent CSV imports</h2>
+            <h2 className="text-sm font-semibold text-white">Recent statement imports</h2>
             <ul className="mt-3 space-y-2 text-sm">
               {recentImports.map((record) => (
                 <li

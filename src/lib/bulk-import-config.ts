@@ -1,5 +1,3 @@
-import { buildCsvContent } from "@/lib/csv-utils";
-
 export const BULK_IMPORT_TYPES = [
   "roster",
   "weekly-training",
@@ -19,7 +17,7 @@ type BulkImportDefinition = {
 export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinition> =
   {
     roster: {
-      fileName: "jackals-roster.csv",
+      fileName: "jackals-roster.xlsx",
       headers: [
         "vly_number",
         "name",
@@ -32,7 +30,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "Download the current roster, add new rows at the top, then upload. Use VLY12345 for players and VLYC12345 for coaches. Existing member numbers are skipped automatically.",
     },
     "weekly-training": {
-      fileName: "jackals-weekly-training.csv",
+      fileName: "jackals-weekly-training.xlsx",
       headers: [
         "title",
         "training_team_key",
@@ -54,7 +52,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "Download current training sessions, add new rows at the top, then upload. Duplicate sessions are skipped automatically.",
     },
     "fun-sessions": {
-      fileName: "jackals-fun-sessions.csv",
+      fileName: "jackals-fun-sessions.xlsx",
       headers: [
         "title",
         "recurring",
@@ -78,7 +76,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "Download current fun sessions, add new rows at the top, then upload. Duplicate sessions are skipped automatically.",
     },
     matches: {
-      fileName: "jackals-matches.csv",
+      fileName: "jackals-matches.xlsx",
       headers: [
         "training_team_key",
         "opponent_name",
@@ -92,7 +90,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "Download current matches, add new rows at the top, then upload. Duplicate matches are skipped automatically.",
     },
     events: {
-      fileName: "jackals-events.csv",
+      fileName: "jackals-events.xlsx",
       headers: [
         "title",
         "type",
@@ -119,9 +117,4 @@ export function isBulkImportType(value: string): value is BulkImportType {
 
 export function getBulkImportTemplateMeta(type: BulkImportType) {
   return BULK_IMPORT_DEFINITIONS[type];
-}
-
-export function getEmptyBulkImportCsv(type: BulkImportType): string {
-  const definition = BULK_IMPORT_DEFINITIONS[type];
-  return buildCsvContent(definition.headers, []);
 }

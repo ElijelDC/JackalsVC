@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import {
   AlertCircle,
@@ -12,7 +14,8 @@ import {
   Volleyball,
   Wallet,
 } from "lucide-react";
-import type { AdminActionQueueEntry } from "@/lib/admin-action-queue";
+import { useAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
+import type { AdminActionQueueEntry } from "@/lib/admin-action-queue-types";
 import { cn } from "@/lib/utils";
 
 const ENTRY_ICONS = {
@@ -94,13 +97,8 @@ function ActionQueueCard({ entry }: { entry: AdminActionQueueEntry }) {
   );
 }
 
-export function AdminActionQueue({
-  entries,
-  totalCount,
-}: {
-  entries: AdminActionQueueEntry[];
-  totalCount: number;
-}) {
+export function AdminActionQueue() {
+  const { entries, totalCount } = useAdminNotifications();
   return (
     <section className="mb-8 sm:mb-10">
       <div className="mb-4 sm:mb-5">

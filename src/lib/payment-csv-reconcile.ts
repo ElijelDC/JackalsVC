@@ -10,13 +10,14 @@ import {
   completeMatchedPayment,
   referenceMatchesText,
 } from "@/lib/payment-match";
-import { parseBankTransferCsv, type ParsedBankTransferRow } from "@/lib/payment-csv-parse";
+import { parseBankTransferCsv, parseBankTransferMatrix, type ParsedBankTransferRow } from "@/lib/payment-csv-parse";
 import { serializeKitOrder } from "@/lib/kit-order-response-config";
 import {
   buildMerchandiseOrderPaymentQuote,
   buildMerchandiseOrderPaymentReference,
 } from "@/lib/merchandise-order-payment-summary";
 import { serializeMerchandiseOrder } from "@/lib/merchandise-order-response-config";
+import { parseSpreadsheetMatrix } from "@/lib/spreadsheet-table";
 
 export type BankStatementImportResult = {
   matched: number;
@@ -124,11 +125,10 @@ async function loadPendingMerchandiseOrders(): Promise<
   });
 }
 
-export async function reconcileFromCsv(
-  csvContent: string,
+export async function reconcileFromBankRows(
+  rows: ParsedBankTransferRow[],
   fileName?: string,
 ): Promise<BankStatementImportResult> {
-  const rows = parseBankTransferCsv(csvContent);
   const pendingPayments = await prisma.payment.findMany({
     where: { status: "PENDING" },
     orderBy: [{ dueDate: "asc" }, { createdAt: "asc" }],
@@ -170,6 +170,7 @@ export async function reconcileFromCsv(
       skippedDuplicates += 1;
       continue;
     }
+
 
     const payment = matchRowToPayment(row, pendingPayments, usedPaymentIds);
 
@@ -279,4 +280,19 @@ export async function reconcileFromCsv(
     unmatchedMerchandiseOrders,
     fileName,
   };
+}
+
+export async function reconcileFromCsv(
+  csvContent: string,
+  fileName?: string,
+): Promise<BankStatementImportResult> {
+  return reconcileFromBankRows(parseBankTransferCsv(csvContent), fileName);
+}
+
+export async function reconcileFromSpreadsheet(
+  buffer: ArrayBuffer | Buffer,
+  fileName: string,
+): Promise<BankStatementImportResult> {
+  const matrix = await parseSpreadsheetMatrix(buffer, fileName);
+  return reconcileFromBankRows(parseBankTransferMatrix(matrix), fileName);
 }

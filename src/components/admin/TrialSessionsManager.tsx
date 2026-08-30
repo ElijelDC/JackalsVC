@@ -12,6 +12,7 @@ import {
 import { AdminSection } from "@/components/admin/AdminShell";
 import { Input, Label } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/InputFields";
+import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { TrialSessionSignupsPanel } from "@/components/admin/TrialSessionSignupsPanel";
 import { DEFAULT_RECLUB_USERNAME } from "@/lib/club-payment-defaults";
 import {
@@ -340,6 +341,7 @@ export function TrialSessionsManager({
   initialSessions: AdminTrialSessionListItem[];
 }) {
   const router = useRouter();
+  const refreshNotifications = useRefreshAdminNotifications();
   const [sessions, setSessions] = useSyncedListState(initialSessions);
   const [createForm, setCreateForm] = useState(createEmptyForm);
   const [editForm, setEditForm] = useState(createEmptyForm);
@@ -588,6 +590,7 @@ export function TrialSessionsManager({
     if (editingId === id) cancelEdit();
     setListMessage("Session deleted.");
     await loadSessions();
+    void refreshNotifications();
     router.refresh();
   };
 
