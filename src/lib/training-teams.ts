@@ -12,6 +12,7 @@ export {
   isAllMonthsParam,
   parseScheduleMonthParam,
   parseTrainingMonthParam,
+  type CoachSquadRole,
   type TrainingTeam,
 } from "@/lib/training-teams-config";
 
@@ -63,6 +64,41 @@ export async function getUserTrainingTeamKeys(userId: string | undefined) {
   }
 
   return clubMember.trainingTeamKey ? [clubMember.trainingTeamKey] : [];
+}
+
+/** Head (priority 0) vs cover for each squad the coach is assigned to. */
+export async function getUserCoachSquadRoles(userId: string | undefined) {
+  if (!userId) return {} as Record<string, CoachSquadRole>;
+
+  const clubMember = await prisma.clubMember.findFirst({
+    where: { userId, rosterRole: "COACH", active: true },
+    select: {
+      coachSquads: { select: { trainingTeamKey: true, priority: true } },
+    },
+  });
+
+  if (!clubMember) return {} as Record<string, CoachSquadRole>;
+
+  return Object.fromEntries(
+    clubMember.coachSquads.map((row) => [
+      row.trainingTeamKey,
+      row.priority === 0 ? ("head" as const) : ("cover" as const),
+    ]),
+  ) as Record<string, CoachSquadRole>;
+}
+
+export async function enrichTeamsWithCoachRoles(
+  userId: string | undefined,
+  teams: TrainingTeam[],
+  isCoach: boolean,
+): Promise<TrainingTeam[]> {
+  if (!isCoach || teams.length === 0) return teams;
+
+  const roles = await getUserCoachSquadRoles(userId);
+  return teams.map((team) => ({
+    ...team,
+    coachRole: roles[team.key],
+  }));
 }
 
 /** Primary / first squad key (for single-team callers). */

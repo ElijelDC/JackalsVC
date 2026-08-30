@@ -8,6 +8,7 @@ import { getUserEventAttendanceStatuses } from "@/lib/training-attendance";
 import { enrichEventRecords } from "@/lib/event-enrichment";
 import { resolveCoachEventAttendanceStatus } from "@/lib/training-attendance-config";
 import {
+  enrichTeamsWithCoachRoles,
   getMonthlyTrainingEventsForTeams,
   getTrainingTeamByKey,
   getTrainingSquads,
@@ -53,8 +54,13 @@ export default async function TrainingPage({
   const availableTeams = (
     await Promise.all(availableKeys.map((key) => getTrainingTeamByKey(key)))
   ).filter((team): team is NonNullable<typeof team> => Boolean(team));
+  const teamsWithCoachRoles = await enrichTeamsWithCoachRoles(
+    session.user.id,
+    availableTeams,
+    session.user.isCoach,
+  );
 
-  if (availableTeams.length === 0) {
+  if (teamsWithCoachRoles.length === 0) {
     const squads = await getTrainingSquads();
     return <NoTrainingTeamAssigned squads={squads} />;
   }
@@ -79,7 +85,9 @@ export default async function TrainingPage({
       ),
     ]),
   );
-  const teamNameByKey = new Map(availableTeams.map((team) => [team.key, team.name]));
+  const teamNameByKey = new Map(
+    teamsWithCoachRoles.map((team) => [team.key, team.name]),
+  );
   const teamKeyByEventId = new Map(
     events.map((event) => [event.id, event.trainingTeamKey]),
   );
@@ -89,7 +97,7 @@ export default async function TrainingPage({
     ? results.find((result) => result.trainingTeamKey === singleKey)
     : null;
   const singleTeam = singleKey
-    ? availableTeams.find((team) => team.key === singleKey) ?? null
+    ? teamsWithCoachRoles.find((team) => team.key === singleKey) ?? null
     : null;
 
   const displayTeam =
@@ -104,7 +112,7 @@ export default async function TrainingPage({
   return (
     <TeamTrainingMonthView
       team={displayTeam}
-      teams={availableTeams}
+      teams={teamsWithCoachRoles}
       selectedTeamKey={singleKey}
       month={month}
       isCoach={session.user.isCoach}

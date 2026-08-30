@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MonthNavigator } from "@/components/calendar/MonthNavigator";
+import { CoachSquadRoleBadge } from "@/components/training/CoachSquadRoleBadge";
 import { SquadBannerTeamFilter } from "@/components/training/SquadBannerTeamFilter";
 import {
   TrainingAttendanceStatusBadge,
@@ -194,9 +195,11 @@ export function TeamMatchesMonthView({
   const squadTitle = isAllTeams
     ? "All teams"
     : (team?.name ?? teams[0]?.name ?? "Your squad");
-  const scheduleHint = isAllTeams
-    ? teams.map((item) => item.name).join(" · ")
-    : null;
+  const activeCoachRole =
+    selectedTeamKey != null
+      ? teams.find((item) => item.key === selectedTeamKey)?.coachRole
+      : null;
+  const showCoachRoles = isCoach && teams.some((item) => item.coachRole);
 
   const upcomingMatches = matches.filter(
     (match) => !isPast(new Date(match.matchStart)),
@@ -285,19 +288,38 @@ export function TeamMatchesMonthView({
           <div className="px-6 py-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex-1">
-                <h2 className="font-display text-2xl font-semibold text-white">
-                  {squadTitle}
-                </h2>
-                <p className="mt-2 text-sm text-zinc-400">
-                  {scheduleHint ? (
-                    <>{scheduleHint}</>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="font-display text-2xl font-semibold text-white">
+                    {squadTitle}
+                  </h2>
+                  {activeCoachRole ? (
+                    <CoachSquadRoleBadge role={activeCoachRole} />
+                  ) : null}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400">
+                  {isAllTeams && showCoachRoles ? (
+                    teams.map((item) => (
+                      <span
+                        key={item.key}
+                        className="inline-flex flex-wrap items-center gap-2"
+                      >
+                        <span className="font-medium text-zinc-300">
+                          {item.name}
+                        </span>
+                        {item.coachRole ? (
+                          <CoachSquadRoleBadge role={item.coachRole} />
+                        ) : null}
+                      </span>
+                    ))
+                  ) : isAllTeams ? (
+                    <span>{teams.map((item) => item.name).join(" · ")}</span>
                   ) : (
                     <>
                       {upcomingMatches.length} upcoming match
                       {upcomingMatches.length !== 1 ? "es" : ""} this month
                     </>
                   )}
-                </p>
+                </div>
               </div>
               {isCoach && (
                 <Link

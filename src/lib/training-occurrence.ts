@@ -1,3 +1,4 @@
+import { applyClubWallTimeToDate } from "@/lib/datetime-form";
 import { prisma } from "@/lib/prisma";
 
 export function startOfOccurrenceDay(date: Date) {
@@ -114,16 +115,8 @@ export async function resetTrainingOccurrence(
   });
 }
 
-function parseTime(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-  return { hours, minutes };
-}
-
 export function applyTimeToOccurrenceDay(occurrenceDate: Date, time: string) {
-  const { hours, minutes } = parseTime(time);
-  const result = startOfOccurrenceDay(occurrenceDate);
-  result.setHours(hours, minutes, 0, 0);
-  return result;
+  return applyClubWallTimeToDate(startOfOccurrenceDay(occurrenceDate), time);
 }
 
 export async function isTrainingOccurrenceCancelled(

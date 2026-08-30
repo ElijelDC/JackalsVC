@@ -9,6 +9,7 @@ import {
   resolveOccurrencePaymentUrl,
   startOfOccurrenceDay,
 } from "@/lib/training-occurrence";
+import { applyClubWallTimeToDate } from "@/lib/datetime-form";
 import {
   buildTrainingEventDescription,
   calendarEventTypeForCategory,
@@ -24,18 +25,6 @@ export {
 
 export const TRAINING_CALENDAR_WEEKS = 12;
 const MAX_OCCURRENCES = 104;
-
-function parseTime(time: string) {
-  const [hours, minutes] = time.split(":").map(Number);
-  return { hours, minutes };
-}
-
-function applyTimeToDate(date: Date, time: string) {
-  const { hours, minutes } = parseTime(time);
-  const result = new Date(date);
-  result.setHours(hours, minutes, 0, 0);
-  return result;
-}
 
 function firstOccurrenceOnOrAfter(from: Date, dayOfWeek: number) {
   const date = startOfDay(from);
@@ -117,8 +106,8 @@ export function buildTrainingOccurrences(
 
     const day = new Date(session.sessionDate);
     const occurrenceDate = startOfOccurrenceDay(day);
-    const defaultStart = applyTimeToDate(day, session.startTime);
-    const defaultEnd = applyTimeToDate(day, session.endTime);
+    const defaultStart = applyClubWallTimeToDate(day, session.startTime);
+    const defaultEnd = applyClubWallTimeToDate(day, session.endTime);
     const override = overrides.get(occurrenceDateKey(occurrenceDate));
 
     if (override) {
@@ -147,8 +136,8 @@ export function buildTrainingOccurrences(
 
   while (current <= rangeEnd && occurrences.length < MAX_OCCURRENCES) {
     const occurrenceDate = startOfOccurrenceDay(current);
-    const defaultStart = applyTimeToDate(current, session.startTime);
-    const defaultEnd = applyTimeToDate(current, session.endTime);
+    const defaultStart = applyClubWallTimeToDate(current, session.startTime);
+    const defaultEnd = applyClubWallTimeToDate(current, session.endTime);
     const override = overrides.get(occurrenceDateKey(occurrenceDate));
 
     if (override) {

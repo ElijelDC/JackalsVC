@@ -1,5 +1,6 @@
 "use client";
 
+import { CoachSquadRoleBadge } from "@/components/training/CoachSquadRoleBadge";
 import type { TrainingTeam } from "@/lib/training-teams-config";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,12 @@ export function SquadBannerTeamFilter({
   if (squads.length <= 1) return null;
 
   const options = [
-    { key: "", label: "All teams" },
-    ...squads.map((squad) => ({ key: squad.key, label: squad.name })),
+    { key: "", label: "All teams", coachRole: undefined },
+    ...squads.map((squad) => ({
+      key: squad.key,
+      label: squad.name,
+      coachRole: squad.coachRole,
+    })),
   ];
 
   return (
@@ -26,7 +31,7 @@ export function SquadBannerTeamFilter({
       aria-label="Filter by team"
       className={cn("w-full min-w-0 sm:w-auto", className)}
     >
-      <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
+      <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
         {options.map((option, index) => {
           const selected = value === option.key;
           return (
@@ -45,13 +50,18 @@ export function SquadBannerTeamFilter({
                 aria-pressed={selected}
                 onClick={() => onChange(option.key)}
                 className={cn(
-                  "w-full rounded-sm px-0 py-1 text-left text-[11px] font-semibold uppercase tracking-wider transition-colors sm:w-auto sm:px-1.5",
+                  "flex w-full flex-col items-start gap-1 rounded-sm px-0 py-1 text-left transition-colors sm:w-auto sm:px-1.5",
                   selected
                     ? "text-white"
                     : "text-zinc-500 hover:text-jackals-red-light",
                 )}
               >
-                {option.label}
+                <span className="text-[11px] font-semibold uppercase tracking-wider">
+                  {option.label}
+                </span>
+                {option.coachRole ? (
+                  <CoachSquadRoleBadge role={option.coachRole} />
+                ) : null}
               </button>
             </span>
           );

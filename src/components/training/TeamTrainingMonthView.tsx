@@ -13,6 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { MonthNavigator } from "@/components/calendar/MonthNavigator";
+import { CoachSquadRoleBadge } from "@/components/training/CoachSquadRoleBadge";
 import { SquadBannerTeamFilter } from "@/components/training/SquadBannerTeamFilter";
 import {
   TrainingAttendanceStatusBadge,
@@ -36,6 +37,7 @@ import {
   formatTrainingMonthParam,
   type TrainingTeam,
 } from "@/lib/training-teams-config";
+import { CLUB_TIMEZONE } from "@/lib/datetime-form";
 import { formatEventDateTime } from "@/lib/event-display";
 import { cn } from "@/lib/utils";
 
@@ -182,9 +184,11 @@ export function TeamTrainingMonthView({
   const squadTitle = isAllTeams
     ? "All teams"
     : (team?.name ?? teams[0]?.name ?? "Your squad");
-  const scheduleHint = isAllTeams
-    ? teams.map((item) => item.name).join(" · ")
-    : null;
+  const activeCoachRole =
+    selectedTeamKey != null
+      ? teams.find((item) => item.key === selectedTeamKey)?.coachRole
+      : null;
+  const showCoachRoles = isCoach && teams.some((item) => item.coachRole);
 
   const upcomingEvents = events.filter((event) => !isPast(new Date(event.startDate)));
   const pastEvents = events.filter((event) => isPast(new Date(event.startDate)));
@@ -265,12 +269,31 @@ export function TeamTrainingMonthView({
           <div className="px-6 py-5">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="flex-1">
-                <h2 className="font-display text-2xl font-semibold text-white">
-                  {squadTitle}
-                </h2>
-                <p className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-zinc-400">
-                  {scheduleHint ? (
-                    <span>{scheduleHint}</span>
+                <div className="flex flex-wrap items-center gap-3">
+                  <h2 className="font-display text-2xl font-semibold text-white">
+                    {squadTitle}
+                  </h2>
+                  {activeCoachRole ? (
+                    <CoachSquadRoleBadge role={activeCoachRole} />
+                  ) : null}
+                </div>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400">
+                  {isAllTeams && showCoachRoles ? (
+                    teams.map((item) => (
+                      <span
+                        key={item.key}
+                        className="inline-flex flex-wrap items-center gap-2"
+                      >
+                        <span className="font-medium text-zinc-300">
+                          {item.name}
+                        </span>
+                        {item.coachRole ? (
+                          <CoachSquadRoleBadge role={item.coachRole} />
+                        ) : null}
+                      </span>
+                    ))
+                  ) : isAllTeams ? (
+                    <span>{teams.map((item) => item.name).join(" · ")}</span>
                   ) : (
                     <>
                       {team && (
@@ -287,7 +310,7 @@ export function TeamTrainingMonthView({
                       )}
                     </>
                   )}
-                </p>
+                </div>
               </div>
               <div className="flex items-center gap-4">
                 {isCoach && (
@@ -392,6 +415,7 @@ export function TeamTrainingMonthView({
                 const { timeLabel } = formatEventDateTime(
                   event.startDate,
                   event.endDate,
+                  { timeZone: CLUB_TIMEZONE },
                 );
                 const userStatus = attendanceByEventId[event.id] ?? "UNANSWERED";
                 const isCancelled = event.cancelled === true;
@@ -547,6 +571,7 @@ export function TeamTrainingMonthView({
                 const { timeLabel } = formatEventDateTime(
                   event.startDate,
                   event.endDate,
+                  { timeZone: CLUB_TIMEZONE },
                 );
                 const userStatus = attendanceByEventId[event.id] ?? "UNANSWERED";
                 const isCancelled = event.cancelled === true;

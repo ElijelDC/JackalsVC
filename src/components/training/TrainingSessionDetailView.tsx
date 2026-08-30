@@ -18,6 +18,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { DashboardBackLink } from "@/components/dashboard/DashboardBackLink";
 import { PageContainer } from "@/components/layout/PageShell";
+import { CLUB_TIMEZONE } from "@/lib/datetime-form";
 import { formatEventDateTime } from "@/lib/event-display";
 import type { TrainingSessionDetailData } from "@/lib/training-attendance-config";
 import {
@@ -50,6 +51,7 @@ export function TrainingSessionDetailView({
   const { timeLabel } = formatEventDateTime(
     detail.event.startDate,
     detail.event.endDate,
+    { timeZone: CLUB_TIMEZONE },
   );
   const past = eventDate < new Date();
   const canRespond =

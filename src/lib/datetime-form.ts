@@ -90,6 +90,24 @@ export function parseDatetimeLocalAsClubTime(value: string): Date {
   return new Date(utcMs);
 }
 
+/**
+ * Combine a calendar date with `HH:mm` wall-clock time in Europe/Dublin.
+ * Use when building UTC instants from training session start/end times.
+ */
+export function applyClubWallTimeToDate(date: Date, time: string): Date {
+  const match = /^(\d{1,2}):(\d{2})/.exec(time.trim());
+  if (!match) {
+    throw new Error(`Invalid time: ${time}`);
+  }
+
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  const parts = getZonedParts(date, CLUB_TIMEZONE);
+  const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+  const value = `${pad(parts.year, 4)}-${pad(parts.month)}-${pad(parts.day)}T${pad(hour)}:${pad(minute)}`;
+  return parseDatetimeLocalAsClubTime(value);
+}
+
 /** Format an ISO date for `<input type="datetime-local">` in Europe/Dublin. */
 export function toClubDatetimeLocal(value: string | null | undefined) {
   if (!value) return "";

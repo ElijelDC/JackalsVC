@@ -11,6 +11,7 @@ import {
 } from "@/lib/matches";
 import { resolveCoachAttendanceStatus } from "@/lib/training-attendance-config";
 import {
+  enrichTeamsWithCoachRoles,
   getTrainingTeamByKey,
   getTrainingSquads,
   getUserTrainingTeamKeys,
@@ -52,8 +53,13 @@ export default async function MatchesPage({
   const availableTeams = (
     await Promise.all(availableKeys.map((key) => getTrainingTeamByKey(key)))
   ).filter((team): team is NonNullable<typeof team> => Boolean(team));
+  const teamsWithCoachRoles = await enrichTeamsWithCoachRoles(
+    session.user.id,
+    availableTeams,
+    session.user.isCoach,
+  );
 
-  if (availableTeams.length === 0) {
+  if (teamsWithCoachRoles.length === 0) {
     const squads = await getTrainingSquads();
     return <NoMatchTeamAssigned squads={squads} />;
   }
@@ -73,16 +79,18 @@ export default async function MatchesPage({
       return [match.id, status];
     }),
   );
-  const teamNameByKey = new Map(availableTeams.map((team) => [team.key, team.name]));
+  const teamNameByKey = new Map(
+    teamsWithCoachRoles.map((team) => [team.key, team.name]),
+  );
   const singleKey = selectedKeys.length === 1 ? selectedKeys[0]! : null;
   const singleTeam = singleKey
-    ? availableTeams.find((team) => team.key === singleKey) ?? null
+    ? teamsWithCoachRoles.find((team) => team.key === singleKey) ?? null
     : null;
 
   return (
     <TeamMatchesMonthView
       team={singleTeam}
-      teams={availableTeams}
+      teams={teamsWithCoachRoles}
       selectedTeamKey={singleKey}
       month={month}
       isCoach={session.user.isCoach}
