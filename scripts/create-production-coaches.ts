@@ -1,14 +1,19 @@
 /**
- * Idempotent bootstrap for production head coaches (Brijesh + Zubin).
+ * Idempotent bootstrap / update for production coach accounts.
  *
  * Creates User (role MEMBER) + ClubMember (rosterRole COACH) linked together,
- * assigns all three squads, and sets head-coach priority (0) per squad.
+ * assigns squad coach links with priority (0 = head, 100 = cover).
  *
  * Usage (production only):
- *   ALLOW_PRODUCTION_COACH_SEED=1 DATABASE_URL=file:/data/jackals.db npx tsx scripts/create-production-coaches.ts
+ *   ALLOW_PRODUCTION_COACH_SEED=1 \
+ *   FORCE_RESET_COACH_PASSWORDS=1 \
+ *   DATABASE_URL=file:/data/jackals.db \
+ *   npx tsx scripts/create-production-coaches.ts
  *
- * Do NOT run against local/dev — use scripts/setup-local-coach-cover-demo.ts instead
- * (fake @jackalsvc.com emails). Temporary passwords are printed once to stdout.
+ * FORCE_RESET_COACH_PASSWORDS=1 regenerates temporary passwords for existing
+ * accounts too (needed when sharing login details again).
+ *
+ * Do NOT run against local/dev — use scripts/setup-local-coach-cover-demo.ts.
  */
 import { randomBytes } from "node:crypto";
 import bcrypt from "bcryptjs";
@@ -19,7 +24,9 @@ const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
 const prisma = new PrismaClient({ adapter });
 
-const ALL_SQUADS = ["DIV2_MENS", "DIV3_WOMENS", "DIV4_MENS"] as const;
+/** Active competition squads (exclude inactive leftover keys like DIV4_MENS). */
+const ACTIVE_SQUADS = ["DIV2_MENS", "DIV3_WOMENS", "DIVISION_3_MENS"] as const;
+type ActiveSquad = (typeof ACTIVE_SQUADS)[number];
 
 type CoachSeed = {
   name: string;
@@ -27,8 +34,11 @@ type CoachSeed = {
   /** Null until VLYC is issued — coaches set it later on their profile. */
   vlyNumber: string | null;
   coachPaymentType: "PAID" | "VOLUNTEER";
-  /** Squad key → priority (0 = head coach, 100 = cover). */
-  priorities: Record<(typeof ALL_SQUADS)[number], number>;
+  /**
+   * Squad key → priority (0 = head coach, 100 = cover).
+   * Only listed squads are assigned; others are cleared for this coach.
+   */
+  priorities: Partial<Record<ActiveSquad, number>>;
 };
 
 const coaches: CoachSeed[] = [
@@ -40,7 +50,7 @@ const coaches: CoachSeed[] = [
     priorities: {
       DIV2_MENS: 100,
       DIV3_WOMENS: 0,
-      DIV4_MENS: 100,
+      DIVISION_3_MENS: 100,
     },
   },
   {
@@ -51,7 +61,37 @@ const coaches: CoachSeed[] = [
     priorities: {
       DIV2_MENS: 0,
       DIV3_WOMENS: 100,
-      DIV4_MENS: 100,
+      DIVISION_3_MENS: 100,
+    },
+  },
+  {
+    name: "Chris Vinzons",
+    email: "chvinzons@gmail.com",
+    vlyNumber: null,
+    coachPaymentType: "PAID",
+    // Cover coach for every active squad
+    priorities: {
+      DIV2_MENS: 100,
+      DIV3_WOMENS: 100,
+      DIVISION_3_MENS: 100,
+    },
+  },
+  {
+    name: "Orestis",
+    email: "orestisal97@gmail.com",
+    vlyNumber: null,
+    coachPaymentType: "PAID",
+    priorities: {
+      DIV2_MENS: 100,
+    },
+  },
+  {
+    name: "Viktoriia",
+    email: "rost.ovtseva226@gmail.com",
+    vlyNumber: null,
+    coachPaymentType: "PAID",
+    priorities: {
+      DIVISION_3_MENS: 0,
     },
   },
 ];
@@ -60,10 +100,15 @@ function tempPassword() {
   return randomBytes(12).toString("base64url");
 }
 
-async function upsertCoach(seed: CoachSeed) {
+async function upsertCoach(
+  seed: CoachSeed,
+  options: { forceResetPassword: boolean },
+) {
   const email = seed.email.trim().toLowerCase();
   const existingUser = await prisma.user.findUnique({ where: { email } });
-  const password = existingUser ? null : tempPassword();
+  const shouldIssuePassword =
+    !existingUser || options.forceResetPassword;
+  const password = shouldIssuePassword ? tempPassword() : null;
   const passwordHash = password
     ? await bcrypt.hash(password, 12)
     : existingUser!.passwordHash;
@@ -73,6 +118,7 @@ async function upsertCoach(seed: CoachSeed) {
     update: {
       name: seed.name,
       role: "MEMBER",
+      ...(password ? { passwordHash } : {}),
     },
     create: {
       name: seed.name,
@@ -98,12 +144,16 @@ async function upsertCoach(seed: CoachSeed) {
     );
   }
 
+  const assignedSquads = ACTIVE_SQUADS.filter(
+    (key) => seed.priorities[key] != null,
+  );
+  const primarySquad = assignedSquads[0] ?? ACTIVE_SQUADS[0];
+
   const memberId = byVly?.id ?? byUser?.id;
   const clubMember = memberId
     ? await prisma.clubMember.update({
         where: { id: memberId },
         data: {
-          // Keep an existing real VLYC if already set; otherwise leave/null as seeded.
           ...(seed.vlyNumber != null || byUser?.vlyNumber == null
             ? { vlyNumber: seed.vlyNumber }
             : {}),
@@ -111,7 +161,7 @@ async function upsertCoach(seed: CoachSeed) {
           active: true,
           rosterRole: "COACH",
           coachPaymentType: seed.coachPaymentType,
-          trainingTeamKey: ALL_SQUADS[0],
+          trainingTeamKey: primarySquad,
           userId: user.id,
           playerNumber: null,
         },
@@ -123,7 +173,7 @@ async function upsertCoach(seed: CoachSeed) {
           active: true,
           rosterRole: "COACH",
           coachPaymentType: seed.coachPaymentType,
-          trainingTeamKey: ALL_SQUADS[0],
+          trainingTeamKey: primarySquad,
           userId: user.id,
           playerNumber: null,
         },
@@ -133,15 +183,15 @@ async function upsertCoach(seed: CoachSeed) {
     where: { clubMemberId: clubMember.id },
   });
   await prisma.clubMemberCoachSquad.createMany({
-    data: ALL_SQUADS.map((trainingTeamKey) => ({
+    data: assignedSquads.map((trainingTeamKey) => ({
       clubMemberId: clubMember.id,
       trainingTeamKey,
-      priority: seed.priorities[trainingTeamKey],
+      priority: seed.priorities[trainingTeamKey]!,
     })),
   });
 
   // Ensure exclusive head (priority 0) per squad for this seed's head assignments.
-  for (const trainingTeamKey of ALL_SQUADS) {
+  for (const trainingTeamKey of assignedSquads) {
     if (seed.priorities[trainingTeamKey] !== 0) continue;
     await prisma.clubMemberCoachSquad.updateMany({
       where: {
@@ -159,6 +209,7 @@ async function upsertCoach(seed: CoachSeed) {
     vlyNumber: seed.vlyNumber,
     password,
     createdUser: !existingUser,
+    passwordReset: Boolean(existingUser && password),
     clubMemberId: clubMember.id,
     priorities: seed.priorities,
   };
@@ -166,6 +217,8 @@ async function upsertCoach(seed: CoachSeed) {
 
 async function main() {
   const allow = process.env.ALLOW_PRODUCTION_COACH_SEED === "1";
+  const forceResetPassword =
+    process.env.FORCE_RESET_COACH_PASSWORDS === "1";
   const looksLocal =
     !dbUrl.includes("/data/") &&
     (dbUrl.includes("dev.db") ||
@@ -178,27 +231,37 @@ async function main() {
       "Refusing to seed real coach emails. For local testing use:\n" +
         "  DATABASE_URL=file:./prisma/dev.db npx tsx scripts/setup-local-coach-cover-demo.ts\n" +
         "For production only:\n" +
-        "  ALLOW_PRODUCTION_COACH_SEED=1 DATABASE_URL=file:/data/jackals.db npx tsx scripts/create-production-coaches.ts",
+        "  ALLOW_PRODUCTION_COACH_SEED=1 FORCE_RESET_COACH_PASSWORDS=1 DATABASE_URL=file:/data/jackals.db npx tsx scripts/create-production-coaches.ts",
     );
   }
 
   const results = [];
   for (const seed of coaches) {
-    results.push(await upsertCoach(seed));
+    results.push(await upsertCoach(seed, { forceResetPassword }));
   }
 
   console.log("Production coaches ready:\n");
   for (const row of results) {
     console.log(`- ${row.name} <${row.email}>`);
     console.log(`  VLYC: ${row.vlyNumber ?? "(not set yet — add on profile)"}`);
+    const headFor = Object.entries(row.priorities)
+      .filter(([, p]) => p === 0)
+      .map(([k]) => k);
+    const coverFor = Object.entries(row.priorities)
+      .filter(([, p]) => p !== 0)
+      .map(([k]) => k);
     console.log(
-      `  Head for: ${Object.entries(row.priorities)
-        .filter(([, p]) => p === 0)
-        .map(([k]) => k)
-        .join(", ") || "(none)"}`,
+      `  Head for: ${headFor.length > 0 ? headFor.join(", ") : "(none)"}`,
+    );
+    console.log(
+      `  Cover for: ${coverFor.length > 0 ? coverFor.join(", ") : "(none)"}`,
     );
     if (row.password) {
-      console.log(`  Temporary password: ${row.password}`);
+      console.log(
+        `  Temporary password: ${row.password}${
+          row.passwordReset ? " (reset)" : " (new account)"
+        }`,
+      );
     } else {
       console.log("  Temporary password: (unchanged — user already existed)");
     }
