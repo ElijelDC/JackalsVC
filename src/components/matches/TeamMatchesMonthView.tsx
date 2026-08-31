@@ -199,7 +199,6 @@ export function TeamMatchesMonthView({
     selectedTeamKey != null
       ? teams.find((item) => item.key === selectedTeamKey)?.coachRole
       : null;
-  const showCoachRoles = isCoach && teams.some((item) => item.coachRole);
 
   const upcomingMatches = matches.filter(
     (match) => !isPast(new Date(match.matchStart)),
@@ -268,7 +267,12 @@ export function TeamMatchesMonthView({
 
       <AnimateIn>
         <div className="mb-8 overflow-hidden border border-jackals-red/25 bg-gradient-to-br from-jackals-red/15 via-jackals-surface to-jackals-surface">
-          <div className="border-b border-jackals-red/20 px-6 py-3">
+          <div
+            className={cn(
+              "px-6 py-3",
+              !isAllTeams && "border-b border-jackals-red/20",
+            )}
+          >
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
                 <Users className="h-3.5 w-3.5" />
@@ -285,59 +289,41 @@ export function TeamMatchesMonthView({
               )}
             </div>
           </div>
-          <div className="px-6 py-5">
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex flex-wrap items-center gap-3">
-                  <h2 className="font-display text-2xl font-semibold text-white">
-                    {squadTitle}
-                  </h2>
-                  {activeCoachRole ? (
-                    <CoachSquadRoleBadge role={activeCoachRole} />
-                  ) : null}
+          {!isAllTeams && (
+            <div className="px-6 py-5">
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <h2 className="font-display text-2xl font-semibold text-white">
+                      {squadTitle}
+                    </h2>
+                    {activeCoachRole ? (
+                      <CoachSquadRoleBadge role={activeCoachRole} />
+                    ) : null}
+                  </div>
+                  <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400">
+                    {upcomingMatches.length} upcoming match
+                    {upcomingMatches.length !== 1 ? "es" : ""} this month
+                  </div>
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400">
-                  {isAllTeams && showCoachRoles ? (
-                    teams.map((item) => (
-                      <span
-                        key={item.key}
-                        className="inline-flex flex-wrap items-center gap-2"
-                      >
-                        <span className="font-medium text-zinc-300">
-                          {item.name}
-                        </span>
-                        {item.coachRole ? (
-                          <CoachSquadRoleBadge role={item.coachRole} />
-                        ) : null}
-                      </span>
-                    ))
-                  ) : isAllTeams ? (
-                    <span>{teams.map((item) => item.name).join(" · ")}</span>
-                  ) : (
-                    <>
-                      {upcomingMatches.length} upcoming match
-                      {upcomingMatches.length !== 1 ? "es" : ""} this month
-                    </>
-                  )}
-                </div>
+                {isCoach && (
+                  <Link
+                    href={editMatchesHref}
+                    className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-jackals-red-light hover:text-jackals-red transition-colors"
+                  >
+                    Edit matches
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </Link>
+                )}
               </div>
-              {isCoach && (
-                <Link
-                  href={editMatchesHref}
-                  className="inline-flex items-center gap-1 shrink-0 text-xs font-medium text-jackals-red-light hover:text-jackals-red transition-colors"
-                >
-                  Edit matches
-                  <ChevronRight className="h-3.5 w-3.5" />
-                </Link>
-              )}
+              <div className="mt-5">
+                <MonthProgressBar
+                  attending={attendingUpcoming}
+                  total={upcomingMatches.length}
+                />
+              </div>
             </div>
-            <div className="mt-5">
-              <MonthProgressBar
-                attending={attendingUpcoming}
-                total={upcomingMatches.length}
-              />
-            </div>
-          </div>
+          )}
         </div>
 
         <Card className="mb-6 min-w-0 overflow-hidden p-4">
