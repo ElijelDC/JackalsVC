@@ -3,6 +3,7 @@ import "server-only";
 import { getScheduleMonthWindow } from "@/lib/schedule-month-groups";
 import { prisma } from "@/lib/prisma";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
+import type { CoachSquadRole, TrainingTeam } from "@/lib/training-teams-config";
 
 export {
   ALL_MONTHS_PARAM,
