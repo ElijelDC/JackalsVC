@@ -274,15 +274,16 @@ export function TeamTrainingMonthView({
             <div className="px-6 py-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="font-display text-2xl font-semibold text-white">
-                      {squadTitle}
-                    </h2>
-                    {activeCoachRole ? (
-                      <CoachSquadRoleBadge role={activeCoachRole} />
-                    ) : null}
-                  </div>
+                  <h2 className="font-display text-2xl font-semibold text-white">
+                    {squadTitle}
+                  </h2>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400">
+                    {activeCoachRole ? (
+                      <CoachSquadRoleBadge
+                        role={activeCoachRole}
+                        className="text-sm"
+                      />
+                    ) : null}
                     {team && (
                       <span className="inline-flex items-center gap-2">
                         <CalendarDays className="h-4 w-4 shrink-0 text-jackals-red-light" />

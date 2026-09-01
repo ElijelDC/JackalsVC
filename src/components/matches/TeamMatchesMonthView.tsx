@@ -293,15 +293,16 @@ export function TeamMatchesMonthView({
             <div className="px-6 py-5">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex flex-wrap items-center gap-3">
-                    <h2 className="font-display text-2xl font-semibold text-white">
-                      {squadTitle}
-                    </h2>
-                    {activeCoachRole ? (
-                      <CoachSquadRoleBadge role={activeCoachRole} />
-                    ) : null}
-                  </div>
+                  <h2 className="font-display text-2xl font-semibold text-white">
+                    {squadTitle}
+                  </h2>
                   <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm text-zinc-400">
+                    {activeCoachRole ? (
+                      <CoachSquadRoleBadge
+                        role={activeCoachRole}
+                        className="text-sm"
+                      />
+                    ) : null}
                     {upcomingMatches.length} upcoming match
                     {upcomingMatches.length !== 1 ? "es" : ""} this month
                   </div>

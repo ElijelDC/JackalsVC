@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Check, Shirt, ZoomIn } from "lucide-react";
 import { KitOrderCarousel, KitOrderCarouselDots } from "@/components/kit-order/KitOrderCarousel";
 import { KitOrderImageLightbox } from "@/components/kit-order/KitOrderImageLightbox";
 import { KitSizeGuide } from "@/components/kit-order/KitSizeGuide";
 import { Button } from "@/components/ui/Button";
-import { FormError } from "@/components/ui/FormMessage";
+import { FormErrorAlert, useFormErrorFocus } from "@/components/ui/FormMessage";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { apiPost } from "@/lib/client-api";
@@ -359,6 +359,10 @@ export function KitOrderForm() {
   const [loading, setLoading] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitErrorRef = useRef<HTMLDivElement>(null);
+  const modalErrorRef = useRef<HTMLDivElement>(null);
+  useFormErrorFocus(reviewOpen ? null : error, submitErrorRef);
+  useFormErrorFocus(reviewOpen ? error : null, modalErrorRef);
   const [success, setSuccess] = useState(false);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [draftReady, setDraftReady] = useState(false);
@@ -542,9 +546,6 @@ export function KitOrderForm() {
 
     if (!kitType) {
       setError("Choose a match kit — player, libero, or both.");
-      document
-        .getElementById("kit-order-match-kit")
-        ?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
 
@@ -652,8 +653,6 @@ export function KitOrderForm() {
           }
         />
       ) : null}
-
-      <FormError message={error} />
 
       <section className="space-y-4">
         <div>
@@ -962,15 +961,18 @@ export function KitOrderForm() {
         </OptionalExtraColumn>
       </section>
 
-      <div className="flex justify-center border-t border-white/10 pt-6">
-        <Button
-          type="submit"
-          size="lg"
-          className="w-full px-8 py-3.5 text-base sm:w-auto sm:min-w-[20rem] sm:px-12 sm:py-4 sm:text-lg"
-          disabled={loading}
-        >
-          Review order
-        </Button>
+      <div className="space-y-4 border-t border-white/10 pt-6">
+        <FormErrorAlert message={error} ref={submitErrorRef} />
+        <div className="flex justify-center">
+          <Button
+            type="submit"
+            size="lg"
+            className="w-full px-8 py-3.5 text-base sm:w-auto sm:min-w-[20rem] sm:px-12 sm:py-4 sm:text-lg"
+            disabled={loading}
+          >
+            Review order
+          </Button>
+        </div>
       </div>
 
       {kitType && quote ? (
@@ -990,7 +992,7 @@ export function KitOrderForm() {
           className="max-w-[min(100%,32rem)]"
         >
           <div className="space-y-5">
-            {error ? <FormError message={error} /> : null}
+            <FormErrorAlert message={error} ref={modalErrorRef} />
 
             <dl className="space-y-2 text-sm">
               <div className="flex justify-between gap-4">

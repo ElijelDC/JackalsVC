@@ -31,7 +31,7 @@ export function SquadBannerTeamFilter({
       aria-label="Filter by team"
       className={cn("w-full min-w-0 sm:w-auto", className)}
     >
-      <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-1">
+      <div className="flex flex-col gap-1 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-1 sm:gap-y-0">
         {options.map((option, index) => {
           const selected = value === option.key;
           return (
@@ -50,7 +50,7 @@ export function SquadBannerTeamFilter({
                 aria-pressed={selected}
                 onClick={() => onChange(option.key)}
                 className={cn(
-                  "flex w-full flex-col items-start gap-1 rounded-sm px-0 py-1 text-left transition-colors sm:w-auto sm:px-1.5",
+                  "inline-flex min-w-0 max-w-full flex-wrap items-baseline gap-x-1.5 rounded-sm px-0 py-1 text-left transition-colors sm:px-1.5",
                   selected
                     ? "text-white"
                     : "text-zinc-500 hover:text-jackals-red-light",
@@ -60,7 +60,15 @@ export function SquadBannerTeamFilter({
                   {option.label}
                 </span>
                 {option.coachRole ? (
-                  <CoachSquadRoleBadge role={option.coachRole} />
+                  <>
+                    <span aria-hidden className="text-zinc-600">
+                      ·
+                    </span>
+                    <CoachSquadRoleBadge
+                      role={option.coachRole}
+                      className="text-[10px]"
+                    />
+                  </>
                 ) : null}
               </button>
             </span>

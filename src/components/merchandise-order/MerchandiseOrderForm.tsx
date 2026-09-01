@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ZoomIn } from "lucide-react";
 import {
@@ -12,7 +12,7 @@ import { KitOrderImageLightbox } from "@/components/kit-order/KitOrderImageLight
 import { KitOrderQuoteBreakdown } from "@/components/kit-order/KitOrderQuoteBreakdown";
 import { KitSizeGuide } from "@/components/kit-order/KitSizeGuide";
 import { Button } from "@/components/ui/Button";
-import { FormError } from "@/components/ui/FormMessage";
+import { FormErrorAlert, useFormErrorFocus } from "@/components/ui/FormMessage";
 import { Input, Label, Select } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { apiPost } from "@/lib/client-api";
@@ -181,6 +181,10 @@ export function MerchandiseOrderForm() {
   const [reviewOpen, setReviewOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const submitErrorRef = useRef<HTMLDivElement>(null);
+  const modalErrorRef = useRef<HTMLDivElement>(null);
+  useFormErrorFocus(reviewOpen ? null : error, submitErrorRef);
+  useFormErrorFocus(reviewOpen ? error : null, modalErrorRef);
   const [draftReady, setDraftReady] = useState(false);
 
   useEffect(() => {
@@ -357,7 +361,6 @@ export function MerchandiseOrderForm() {
           }
         />
       ) : null}
-      <FormError message={error} />
 
       <section className="grid gap-10 lg:grid-cols-2 lg:items-stretch lg:gap-8">
         <ProductColumn
@@ -492,10 +495,13 @@ export function MerchandiseOrderForm() {
         </div>
       </section>
 
-      <div className="flex justify-center border-t border-white/10 pt-6">
-        <Button type="submit" size="lg" className="w-full sm:w-auto sm:min-w-80">
-          Review order
-        </Button>
+      <div className="space-y-4 border-t border-white/10 pt-6">
+        <FormErrorAlert message={error} ref={submitErrorRef} />
+        <div className="flex justify-center">
+          <Button type="submit" size="lg" className="w-full sm:w-auto sm:min-w-80">
+            Review order
+          </Button>
+        </div>
       </div>
 
       <Modal
@@ -506,7 +512,7 @@ export function MerchandiseOrderForm() {
         title="Review your merchandise order"
       >
         <div className="space-y-5">
-          <FormError message={error} />
+          <FormErrorAlert message={error} ref={modalErrorRef} />
           <dl className="space-y-2 text-sm">
             <div className="flex justify-between gap-4">
               <dt className="text-zinc-500">Name</dt>
