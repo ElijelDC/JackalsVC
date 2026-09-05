@@ -2,7 +2,7 @@
  * Demo data for the coach mobile walkthrough video.
  *
  * Creates coach.demo@jackalsvc.com (head D2M, cover D3W) with upcoming
- * training, matches, player responses, and payment records.
+ * training, matches, player responses, VLY photos, and payment records.
  *
  *   npx tsx scripts/seed-test-users.ts
  *   npx tsx scripts/setup-coach-mobile-demo.ts
@@ -21,6 +21,8 @@ const DEMO_EMAIL = "coach.demo@jackalsvc.com";
 const DEMO_PASSWORD = process.env.COACH_DEMO_PASSWORD?.trim() || "coachdemo123";
 const HEAD_SQUAD = "DIV2_MENS";
 const COVER_SQUAD = "DIV3_WOMENS";
+const HEAD_COACH_EMAIL = "emma.williams@jackalsvc.com";
+const DEMO_VLY_PHOTO = "/brand/logo.png";
 
 async function ensureDemoCoach() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
@@ -81,6 +83,47 @@ async function ensureDemoCoach() {
   });
 
   return { user, member };
+}
+
+/** Emma Williams is head coach on D3W so the demo cover coach sees the priority gate. */
+async function ensureHeadCoachForCoverSquad() {
+  const headUser = await prisma.user.findUnique({
+    where: { email: HEAD_COACH_EMAIL },
+  });
+  if (!headUser) {
+    console.warn(`Head coach user ${HEAD_COACH_EMAIL} not found — run seed-test-users first.`);
+    return null;
+  }
+
+  const headMember = await prisma.clubMember.findFirst({
+    where: { userId: headUser.id, rosterRole: "COACH" },
+  });
+  if (!headMember) return null;
+
+  await prisma.clubMemberCoachSquad.deleteMany({
+    where: {
+      trainingTeamKey: COVER_SQUAD,
+      clubMemberId: { not: headMember.id },
+      priority: 0,
+    },
+  });
+
+  await prisma.clubMemberCoachSquad.upsert({
+    where: {
+      clubMemberId_trainingTeamKey: {
+        clubMemberId: headMember.id,
+        trainingTeamKey: COVER_SQUAD,
+      },
+    },
+    create: {
+      clubMemberId: headMember.id,
+      trainingTeamKey: COVER_SQUAD,
+      priority: 0,
+    },
+    update: { priority: 0 },
+  });
+
+  return headUser;
 }
 
 async function ensureWeeklySessions() {
@@ -182,9 +225,31 @@ async function ensureUpcomingMatches() {
   }
 }
 
-async function seedAttendanceAndPayments(
+async function seedPlayerVlyPhotos() {
+  const players = await prisma.clubMember.findMany({
+    where: {
+      rosterRole: "PLAYER",
+      active: true,
+      trainingTeamKey: HEAD_SQUAD,
+      userId: { not: null },
+    },
+    select: { id: true },
+  });
+
+  for (const [index, player] of players.entries()) {
+    await prisma.clubMember.update({
+      where: { id: player.id },
+      data: {
+        vlyMembershipPhotoUrl: DEMO_VLY_PHOTO,
+        playerNumber: index + 1,
+      },
+    });
+  }
+}
+
+async function seedTrainingAttendance(
   coachUserId: string,
-  clubMemberId: string,
+  headCoachUserId: string | null,
 ) {
   const now = new Date();
   const upcomingEvents = await prisma.event.findMany({
@@ -199,7 +264,7 @@ async function seedAttendanceAndPayments(
       trainingSession: { select: { trainingTeamKey: true } },
     },
     orderBy: { startDate: "asc" },
-    take: 4,
+    take: 6,
   });
 
   const players = await prisma.clubMember.findMany({
@@ -210,17 +275,26 @@ async function seedAttendanceAndPayments(
       userId: { not: null },
     },
     select: { userId: true, trainingTeamKey: true },
-    take: 6,
   });
 
   for (const event of upcomingEvents) {
-    await prisma.eventSignup.upsert({
-      where: { userId_eventId: { userId: coachUserId, eventId: event.id } },
-      create: { userId: coachUserId, eventId: event.id, status: "ATTENDING" },
-      update: { status: "ATTENDING" },
-    });
-
     const squadKey = event.trainingSession?.trainingTeamKey ?? null;
+
+    if (squadKey === COVER_SQUAD) {
+      // Cover squad: head coach unanswered so demo cover coach sees the priority gate.
+      await prisma.eventSignup.deleteMany({
+        where: {
+          eventId: event.id,
+          userId: { in: [coachUserId, ...(headCoachUserId ? [headCoachUserId] : [])] },
+        },
+      });
+    } else if (squadKey === HEAD_SQUAD) {
+      await prisma.eventSignup.upsert({
+        where: { userId_eventId: { userId: coachUserId, eventId: event.id } },
+        create: { userId: coachUserId, eventId: event.id, status: "ATTENDING" },
+        update: { status: "ATTENDING" },
+      });
+    }
 
     const squadPlayers = players.filter(
       (player) => player.trainingTeamKey === squadKey && player.userId,
@@ -228,7 +302,12 @@ async function seedAttendanceAndPayments(
 
     for (const [index, player] of squadPlayers.entries()) {
       if (!player.userId) continue;
-      const status = index % 3 === 0 ? "UNANSWERED" : index % 3 === 1 ? "ATTENDING" : "NOT_ATTENDING";
+      const status =
+        index % 3 === 0
+          ? "UNANSWERED"
+          : index % 3 === 1
+            ? "ATTENDING"
+            : "NOT_ATTENDING";
       if (status === "UNANSWERED") continue;
 
       await prisma.eventSignup.upsert({
@@ -240,7 +319,55 @@ async function seedAttendanceAndPayments(
       });
     }
   }
+}
 
+async function seedMatchAttendance(coachUserId: string) {
+  const now = new Date();
+  const match = await prisma.teamMatch.findFirst({
+    where: {
+      trainingTeamKey: HEAD_SQUAD,
+      matchStart: { gte: now },
+    },
+    orderBy: { matchStart: "asc" },
+  });
+  if (!match) return;
+
+  const players = await prisma.clubMember.findMany({
+    where: {
+      rosterRole: "PLAYER",
+      active: true,
+      trainingTeamKey: HEAD_SQUAD,
+      userId: { not: null },
+    },
+    select: { userId: true },
+  });
+
+  await prisma.matchSignup.upsert({
+    where: { userId_matchId: { userId: coachUserId, matchId: match.id } },
+    create: { userId: coachUserId, matchId: match.id, status: "ATTENDING" },
+    update: { status: "ATTENDING" },
+  });
+
+  for (const [index, player] of players.entries()) {
+    if (!player.userId) continue;
+    const status =
+      index % 3 === 0
+        ? "UNANSWERED"
+        : index % 3 === 1
+          ? "ATTENDING"
+          : "NOT_ATTENDING";
+    if (status === "UNANSWERED") continue;
+
+    await prisma.matchSignup.upsert({
+      where: { userId_matchId: { userId: player.userId, matchId: match.id } },
+      create: { userId: player.userId, matchId: match.id, status },
+      update: { status },
+    });
+  }
+}
+
+async function seedPayments(clubMemberId: string) {
+  const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const prevMonth = month === 1 ? 12 : month - 1;
@@ -299,14 +426,28 @@ async function main() {
   const { user, member } = await ensureDemoCoach();
   console.log(`Coach: ${DEMO_EMAIL} / ${DEMO_PASSWORD}`);
 
+  const headCoach = await ensureHeadCoachForCoverSquad();
+  if (headCoach) {
+    console.log(`Head coach for ${COVER_SQUAD}: ${HEAD_COACH_EMAIL}`);
+  }
+
   await ensureWeeklySessions();
   console.log("Training sessions synced.");
 
   await ensureUpcomingMatches();
   console.log("Upcoming matches created.");
 
-  await seedAttendanceAndPayments(user.id, member.id);
-  console.log("Attendance + payment demo data ready.");
+  await seedPlayerVlyPhotos();
+  console.log("VLY membership photos set for D2M players.");
+
+  await seedTrainingAttendance(user.id, headCoach?.id ?? null);
+  console.log("Training attendance demo data ready.");
+
+  await seedMatchAttendance(user.id);
+  console.log("Match attendance demo data ready.");
+
+  await seedPayments(member.id);
+  console.log("Payment demo data ready.");
   console.log("Done.");
 }
 

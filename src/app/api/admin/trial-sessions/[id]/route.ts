@@ -113,7 +113,7 @@ export async function PUT(
     const slugTaken = await findTrialSessionSlugConflict(slug, existing.id);
     if (slugTaken) {
       return jsonError(
-        "That link slug is already in use by an active session. Choose another, or wait until the current session is past.",
+        "That link slug is already in use. Choose another so this week's session has its own private link.",
         409,
       );
     }

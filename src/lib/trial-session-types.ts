@@ -95,7 +95,7 @@ export type TrialSessionReminderStats = {
 };
 
 export function trialSessionPublicPath(slug: string) {
-  return `/trials/session/${slug}`;
+  return `/session/${slug}`;
 }
 
 export function trialSessionEndsAt(session: {
@@ -126,9 +126,8 @@ export function isTrialSessionRegistrationOpen(
   return new Date(session.startDate) > now;
 }
 
-/** Prefer the upcoming/current session; callers should pass startDate desc.
- *  Public registration pages use pickLiveTrialSession — past slugs 404 unless
- *  a new live session reuses the slug.
+/** Prefer the upcoming/current session for a slug. Past sessions with the
+ *  same slug should not happen for new creates — each live link is unique.
  */
 export function pickLiveTrialSession<
   T extends { startDate: string | Date; endDate?: string | Date | null },

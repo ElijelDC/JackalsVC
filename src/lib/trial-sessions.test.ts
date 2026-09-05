@@ -23,7 +23,7 @@ describe("trial session helpers", () => {
     );
   });
 
-  it("picks the live session for a reused slug", () => {
+  it("picks the live session when multiple share a slug", () => {
     const past = {
       id: "past",
       startDate: "2026-08-01T18:00:00.000Z",

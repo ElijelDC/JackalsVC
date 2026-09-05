@@ -45,7 +45,7 @@ export async function createUniqueTrialSessionSlug(title: string) {
   let slug = base;
   let suffix = 0;
 
-  while (await findLiveTrialSessionBySlug(slug)) {
+  while (await findTrialSessionSlugConflict(slug)) {
     suffix += 1;
     slug = `${base}-${suffix}`;
   }
@@ -72,14 +72,18 @@ export async function findPublicTrialSessionBySlug(
   return findLiveTrialSessionBySlug(slug, now);
 }
 
+/** Any other session (past or live) already using this slug. */
 export async function findTrialSessionSlugConflict(
   slug: string,
   excludeId?: string,
-  now = new Date(),
 ) {
-  const live = await findLiveTrialSessionBySlug(slug, now);
-  if (live && live.id !== excludeId) return live;
-  return null;
+  return prisma.trialSession.findFirst({
+    where: {
+      slug,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    orderBy: { startDate: "desc" },
+  });
 }
 
 function serializeTrialSession(session: {

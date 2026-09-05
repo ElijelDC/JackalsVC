@@ -117,7 +117,7 @@ function formFromSession(
     paymentUrl: session.paymentUrl ?? "",
     reclubUsername: session.reclubUsername ?? DEFAULT_RECLUB_USERNAME,
     sessionFee: session.sessionFee?.toString() ?? "",
-    slug: duplicate && !isPastSession(session) ? "" : session.slug,
+    slug: duplicate ? "" : session.slug,
     active: session.active,
   };
 }
@@ -311,8 +311,8 @@ function SessionFields({
         />
         <p className="mt-1 text-xs text-zinc-500">
           {slugLocked
-            ? "This session is in the past, so the private link is closed and the slug can no longer be changed. Duplicate the session to reuse the slug."
-            : `Link path: ${publicPathHint ?? trialSessionPublicPath(form.slug || "your-slug")}. Past sessions free this slug, so you can reuse it for the next one.`}
+            ? "This session is in the past, so the private link is closed and the slug can no longer be changed. Duplicate to create a new session with a fresh link."
+            : `Link path: ${publicPathHint ?? trialSessionPublicPath(form.slug || "your-slug")}. Leave blank to auto-generate. Each session needs its own slug so last week's link can't open this one.`}
         </p>
       </div>
       <div className="sm:col-span-2">

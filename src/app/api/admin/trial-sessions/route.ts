@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const existingSlug = await findTrialSessionSlugConflict(slug);
     if (existingSlug) {
       return jsonError(
-        "That link slug is already in use by an active session. Choose another, or wait until the current session is past.",
+        "That link slug is already in use. Choose another, or leave it blank to auto-generate a unique one.",
         409,
       );
     }

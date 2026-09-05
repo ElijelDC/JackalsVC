@@ -18,7 +18,7 @@ export async function generateMetadata({
   return privatePageMetadata(result.session.title);
 }
 
-export default async function TrialSessionPage({
+export default async function OneOffSessionPage({
   params,
 }: {
   params: Promise<{ slug: string }>;

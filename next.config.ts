@@ -18,6 +18,15 @@ const nextConfig: NextConfig = {
     // matcher so large gallery batches are not truncated.
     proxyClientMaxBodySize: 300 * 1024 * 1024,
   },
+  async redirects() {
+    return [
+      {
+        source: "/trials/session/:slug",
+        destination: "/session/:slug",
+        permanent: true,
+      },
+    ];
+  },
   async rewrites() {
     return {
       beforeFiles: [
