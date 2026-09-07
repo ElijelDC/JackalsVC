@@ -578,32 +578,12 @@ const offerSignatureDataUrl = z
     "Invalid signature format",
   );
 
-export const clubOfferAcceptanceSchema = z
-  .object({
-    ...offerPersonFields,
-    phoneNumber: offerPhoneRequired,
-    preferredKitNumber1: z.coerce
-      .number({ message: "Enter preferred kit number 1" })
-      .int("Kit number must be a whole number")
-      .min(1, "Kit numbers are between 1 and 99")
-      .max(99, "Kit numbers are between 1 and 99"),
-    preferredKitNumber2: z.coerce
-      .number({ message: "Enter preferred kit number 2" })
-      .int("Kit number must be a whole number")
-      .min(1, "Kit numbers are between 1 and 99")
-      .max(99, "Kit numbers are between 1 and 99"),
-    commitmentAccepted: offerCommitmentAccepted,
-    signatureDataUrl: offerSignatureDataUrl,
-  })
-  .superRefine((data, ctx) => {
-    if (data.preferredKitNumber1 === data.preferredKitNumber2) {
-      ctx.addIssue({
-        code: "custom",
-        path: ["preferredKitNumber2"],
-        message: "Choose a different second kit number",
-      });
-    }
-  });
+export const clubOfferAcceptanceSchema = z.object({
+  ...offerPersonFields,
+  phoneNumber: offerPhoneRequired,
+  commitmentAccepted: offerCommitmentAccepted,
+  signatureDataUrl: offerSignatureDataUrl,
+});
 
 export const clubOfferDeclineSchema = z.object({
   ...offerPersonFields,

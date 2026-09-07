@@ -50,7 +50,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
     confirmLabel: "Confirm my offer",
     formHeading: "Accept your Division 2 place",
     formSupport:
-      "Share your details and preferred kit numbers so we can get you set for the season.",
+      "Share your details so we can get you set for the season.",
     accentWord: "NATIONAL",
     accent: "red",
     benefits: [
@@ -78,7 +78,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
     confirmLabel: "Confirm my offer",
     formHeading: "Accept your Division 3 place",
     formSupport:
-      "Share your details and preferred kit numbers so we can get you set for the season.",
+      "Share your details so we can get you set for the season.",
     accentWord: "DIVISION",
     accent: "purple",
     benefits: [
@@ -106,7 +106,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
     confirmLabel: "Confirm my offer",
     formHeading: "Accept your Division 3 place",
     formSupport:
-      "Share your details and preferred kit numbers so we can get you set for the season.",
+      "Share your details so we can get you set for the season.",
     accentWord: "DIVISION",
     accent: "red",
     benefits: [

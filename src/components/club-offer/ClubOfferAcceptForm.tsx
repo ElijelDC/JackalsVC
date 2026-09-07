@@ -20,8 +20,6 @@ export function ClubOfferAcceptForm({ team }: ClubOfferAcceptFormProps) {
   const [fullName, setFullName] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [email, setEmail] = useState("");
-  const [preferredKitNumber1, setPreferredKitNumber1] = useState("");
-  const [preferredKitNumber2, setPreferredKitNumber2] = useState("");
   const [commitmentAccepted, setCommitmentAccepted] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -41,8 +39,6 @@ export function ClubOfferAcceptForm({ team }: ClubOfferAcceptFormProps) {
         fullName,
         phoneNumber,
         email,
-        preferredKitNumber1,
-        preferredKitNumber2,
         commitmentAccepted,
         signatureDataUrl,
       },
@@ -131,49 +127,6 @@ export function ClubOfferAcceptForm({ team }: ClubOfferAcceptFormProps) {
             required
             disabled={loading}
           />
-        </div>
-      </div>
-
-      <div>
-        <p className="mb-1.5 text-sm font-medium text-zinc-400">
-          Preferred kit numbers
-        </p>
-        <p className="mb-3 text-sm leading-relaxed text-zinc-500">
-          Choose two preferred numbers (first choice and a backup). If more than
-          one player wants the same number, it will be decided by a fair lottery
-          draw.
-        </p>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <div>
-            <Label htmlFor="club-offer-kit-1">First choice</Label>
-            <Input
-              id="club-offer-kit-1"
-              name="preferredKitNumber1"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={99}
-              value={preferredKitNumber1}
-              onChange={(event) => setPreferredKitNumber1(event.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-          <div>
-            <Label htmlFor="club-offer-kit-2">Second choice</Label>
-            <Input
-              id="club-offer-kit-2"
-              name="preferredKitNumber2"
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={99}
-              value={preferredKitNumber2}
-              onChange={(event) => setPreferredKitNumber2(event.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
         </div>
       </div>
 
