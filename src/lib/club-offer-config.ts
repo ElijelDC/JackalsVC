@@ -32,7 +32,7 @@ export type ClubOfferTeam = {
 };
 
 export const CLUB_OFFER_COMMITMENT_COPY =
-  "I understand that accepting this club offer means joining Jackals Volleyball Club for the season. I commit to paying membership and kit fees on time, showing respect to teammates, coaches, opponents, and officials, attending training and matches with reliability, and representing the club with pride on and off the court.";
+  "I understand that accepting this club offer means joining Jackals Volleyball Club for the season. I commit to paying membership fees on time, showing respect to teammates, coaches, opponents, and officials, attending training and matches with reliability, and representing the club with pride on and off the court.";
 
 export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
   "division-2-men": {
@@ -47,7 +47,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
     heroHighlight: "Division 2 Men",
     heroSupport:
       "Congratulations — you've been offered a place on Jackals Men's Division 2. Training is Wednesday nights at Meakstown.",
-    confirmLabel: "Confirm my Division 2 offer",
+    confirmLabel: "Confirm my offer",
     formHeading: "Accept your Division 2 place",
     formSupport:
       "Share your details and preferred kit numbers so we can get you set for the season.",
@@ -61,7 +61,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
       "Member pricing on club fun sessions & merch",
       "A hungry team looking to promote to the top",
     ],
-    closingLine: "Confirm your place on Division 2 when you're ready.",
+    closingLine: "Confirm your place when you're ready.",
   },
   "division-3-women": {
     slug: "division-3-women",
@@ -75,7 +75,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
     heroHighlight: "Division 3 Women",
     heroSupport:
       "Congratulations — you've been offered a place on Jackals Women's Division 3. Weekly training is at Meakstown.",
-    confirmLabel: "Confirm my Division 3 offer",
+    confirmLabel: "Confirm my offer",
     formHeading: "Accept your Division 3 place",
     formSupport:
       "Share your details and preferred kit numbers so we can get you set for the season.",
@@ -89,7 +89,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
       "Member rates on club fun sessions & merch",
       "A hungry team looking to promote to the top",
     ],
-    closingLine: "Confirm your place on Division 3 when you're ready.",
+    closingLine: "Confirm your place when you're ready.",
   },
   "division-3-men": {
     slug: "division-3-men",
@@ -103,7 +103,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
     heroHighlight: "Division 3 Men",
     heroSupport:
       "Congratulations — you've been offered a place on Jackals Men's Division 3. Weekly training is at Meakstown.",
-    confirmLabel: "Confirm my Division 3 offer",
+    confirmLabel: "Confirm my offer",
     formHeading: "Accept your Division 3 place",
     formSupport:
       "Share your details and preferred kit numbers so we can get you set for the season.",
@@ -117,7 +117,7 @@ export const CLUB_OFFER_TEAMS: Record<ClubOfferTeamSlug, ClubOfferTeam> = {
       "Member rates on club fun sessions & merch",
       "A hungry team looking to promote to the top",
     ],
-    closingLine: "Confirm your place on Division 3 when you're ready.",
+    closingLine: "Confirm your place when you're ready.",
   },
 };
 

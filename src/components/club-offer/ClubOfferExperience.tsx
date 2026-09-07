@@ -180,8 +180,8 @@ export function ClubOfferExperience({ team }: { team: ClubOfferTeam }) {
               {team.closingLine}
             </h2>
             <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Confirm your Club Offer for {team.shortName}, then complete your
-              acceptance details below — or decline if you can&apos;t take it up.
+              Confirm your Club Offer, then complete your acceptance details
+              below — or decline if you can&apos;t take it up.
             </p>
             {!panel ? (
               <div className="relative mt-12 flex flex-col items-center">

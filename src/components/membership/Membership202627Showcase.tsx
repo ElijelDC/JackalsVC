@@ -1,12 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
 import {
   CalendarDays,
   Check,
   Info,
-  Shirt,
   Trophy,
   Volleyball,
   Wallet,
@@ -19,8 +17,6 @@ import { StaggerIn } from "@/components/motion/StaggerIn";
 import { Button } from "@/components/ui/Button";
 import {
   formatMembershipEuro,
-  KIT_FEE_EUR,
-  KIT_PAYMENT_DUE,
   MEMBERSHIP_FEES_BY_LEAGUE_INTRO,
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
@@ -32,39 +28,6 @@ import {
   type MembershipLeagueTier202627,
 } from "@/lib/membership-2026-27";
 import { cn } from "@/lib/utils";
-
-function StepCard({
-  step,
-  title,
-  description,
-  icon: Icon,
-}: {
-  step: number;
-  title: string;
-  description: ReactNode;
-  icon: typeof Shirt;
-}) {
-  return (
-    <div className="relative overflow-hidden border border-white/10 bg-jackals-surface/90 p-6">
-      <div
-        aria-hidden
-        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-jackals-red via-jackals-red-light to-jackals-red"
-      />
-      <div className="flex items-start gap-4">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light">
-          <Icon className="h-6 w-6" aria-hidden />
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-jackals-red-light">
-            Step {step}
-          </p>
-          <h3 className="mt-1 font-display text-xl font-bold text-white">{title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-zinc-400">{description}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
   const isNationalLeague = tier.league === "National League";
@@ -203,34 +166,6 @@ export function Membership202627Showcase() {
           </Link>
         }
       />
-
-      <section className="border-b border-white/10 bg-jackals-inset/20 py-14 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <AnimateIn variant="fade-up" className="mx-auto max-w-2xl text-center">
-            <h2 className="font-display text-2xl font-bold text-white sm:text-3xl">
-              Kit &amp; membership
-            </h2>
-            <p className="mt-3 text-sm leading-relaxed text-zinc-400 sm:text-base">
-              Your season has two parts — club kit and squad membership. They&apos;re
-              priced and paid separately; here&apos;s what each covers.
-            </p>
-          </AnimateIn>
-          <StaggerIn className="mt-10 grid gap-4 md:grid-cols-2" stagger={80}>
-            <StepCard
-              step={1}
-              icon={Shirt}
-              title={`Club kit · ${formatMembershipEuro(KIT_FEE_EUR)}`}
-              description={`Premium Jackal-Legea club kit — custom sublimated jersey and shorts for the squad. Kit payment due ${KIT_PAYMENT_DUE}. Priced separately from the season fees below.`}
-            />
-            <StepCard
-              step={2}
-              icon={Volleyball}
-              title="Season membership"
-              description="Covers your squad's league season from October through April. Choose how you pay below."
-            />
-          </StaggerIn>
-        </div>
-      </section>
 
       <section className="py-14 sm:py-16">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">

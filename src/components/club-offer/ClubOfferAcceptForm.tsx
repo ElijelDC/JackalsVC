@@ -81,7 +81,7 @@ export function ClubOfferAcceptForm({ team }: ClubOfferAcceptFormProps) {
           </p>
           <p className="mt-2 text-sm leading-relaxed text-zinc-400">
             Your acceptance for {team.shortName} has been received. We&apos;ll
-            follow up by email with membership, kit, and training details.
+            follow up by email with membership and training details.
           </p>
         </div>
       </div>
