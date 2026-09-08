@@ -94,14 +94,14 @@ function ItemCard({
       <button
         type="button"
         onClick={onOpen}
-        className="group relative aspect-[3/2] w-full shrink-0 bg-zinc-950/80 p-5"
+        className="group relative aspect-[3/2] w-full shrink-0 overflow-hidden bg-white"
       >
         <Image
           src={item.imageSrc}
           alt={item.imageAlt}
           fill
           sizes="(max-width: 768px) 100vw, 50vw"
-          className="object-contain p-5"
+          className="object-contain object-center"
         />
         <span className="absolute bottom-3 right-3 inline-flex items-center gap-1 bg-black/70 px-2 py-1 text-xs text-white">
           <ZoomIn className="h-3 w-3" /> View
