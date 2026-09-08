@@ -468,6 +468,50 @@ export const coachingApplicationSchema = z.object({
     .max(2000, "Please keep your answer under 2000 characters"),
 });
 
+const committeeRoleEnum = z.enum(
+  [
+    "EQUIPMENT_OFFICER",
+    "VOLUNTEER_COORDINATOR",
+    "PLAYER_WELFARE_OFFICER",
+    "CHILDRENS_OFFICER",
+    "SOCIAL_MEDIA_OFFICER",
+    "GFX_DESIGNER",
+    "CLUB_ANNOUNCEMENTS_LEAD",
+    "EVENTS_OFFICER",
+    "PHOTO_OFFICER",
+    "MEMBERSHIP_OFFICER",
+    "SECRETARY",
+  ],
+  { message: "Select a committee role" },
+);
+
+export const committeeInterestSchema = z
+  .object({
+    fullName: z.string().min(2, "Enter your full name").max(120),
+    roleInterest1: committeeRoleEnum,
+    roleInterest2: committeeRoleEnum,
+    roleInterest3: committeeRoleEnum,
+  })
+  .superRefine((data, ctx) => {
+    if (data.roleInterest1 === data.roleInterest2) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["roleInterest2"],
+        message: "Choose a different second choice",
+      });
+    }
+    if (
+      data.roleInterest1 === data.roleInterest3 ||
+      data.roleInterest2 === data.roleInterest3
+    ) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["roleInterest3"],
+        message: "Choose a different third choice",
+      });
+    }
+  });
+
 const trialsPositionEnum = z.enum(
   ["WING", "OPPO", "MIDDLE", "SETTER", "LIBERO"],
   { message: "Select a preferred position" },

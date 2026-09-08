@@ -7,6 +7,7 @@ import {
   Banknote,
   Calendar,
   CheckCircle2,
+  ClipboardCheck,
   GraduationCap,
   Shirt,
   ShoppingBag,
@@ -25,6 +26,7 @@ const ENTRY_ICONS = {
   "merchandise-payment": ShoppingBag,
   "coach-payment": Wallet,
   "coaching-application": GraduationCap,
+  "committee-interest": ClipboardCheck,
   "trials-application": Volleyball,
   "trial-session-signup": Calendar,
 } as const;

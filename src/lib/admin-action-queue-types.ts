@@ -6,6 +6,7 @@ export type AdminActionQueueEntry = {
     | "merchandise-payment"
     | "coach-payment"
     | "coaching-application"
+    | "committee-interest"
     | "trials-application"
     | "trial-session-signup";
   href: string;

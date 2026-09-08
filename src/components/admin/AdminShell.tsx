@@ -11,6 +11,7 @@ import {
   Calendar,
   Camera,
   ChevronDown,
+  ClipboardCheck,
   ClipboardList,
   ClipboardPen,
   CreditCard,
@@ -76,6 +77,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         href: "/admin/coaching-applications",
         label: "Coaching applications",
         icon: GraduationCap,
+      },
+      {
+        href: "/admin/committee-interests",
+        label: "Committee interests",
+        icon: ClipboardCheck,
+        keywords: "roles preferences",
       },
       {
         href: "/admin/club-offer-acceptances",

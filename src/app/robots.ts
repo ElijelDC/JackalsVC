@@ -26,6 +26,7 @@ export default function robots(): MetadataRoute.Robots {
           "/shop/cart",
           "/sponsors/presentation",
           "/calendar/",
+          "/committee",
         ],
       },
     ],

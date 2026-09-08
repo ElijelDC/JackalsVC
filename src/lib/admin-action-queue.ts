@@ -58,6 +58,8 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     coachOverdueCount,
     coachingApplications,
     coachingApplicationCount,
+    committeeInterests,
+    committeeInterestCount,
     trialsApplications,
     trialsApplicationCount,
     trialSessionSignups,
@@ -115,6 +117,13 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       select: { fullName: true, qualificationLevel: true },
     }),
     prisma.coachingApplication.count({ where: { status: "NEW" } }),
+    prisma.committeeInterest.findMany({
+      where: { status: "NEW" },
+      orderBy: { createdAt: "asc" },
+      take: 4,
+      select: { fullName: true, roleInterest1: true },
+    }),
+    prisma.committeeInterest.count({ where: { status: "NEW" } }),
     prisma.trialsApplication.findMany({
       where: { status: "NEW" },
       orderBy: { createdAt: "asc" },
@@ -242,6 +251,20 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     });
   }
 
+  if (committeeInterestCount > 0) {
+    entries.push({
+      kind: "committee-interest",
+      href: "/admin/committee-interests",
+      title: "Committee interests",
+      summary:
+        committeeInterestCount === 1
+          ? "1 new committee role preference"
+          : `${committeeInterestCount} new committee role preferences`,
+      count: committeeInterestCount,
+      previews: committeeInterests.map((interest) => interest.fullName),
+    });
+  }
+
   if (trialsApplicationCount > 0) {
     entries.push({
       kind: "trials-application",
@@ -291,6 +314,9 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
   if (coachingApplicationCount > 0) {
     badgeCounts["/admin/coaching-applications"] = coachingApplicationCount;
   }
+  if (committeeInterestCount > 0) {
+    badgeCounts["/admin/committee-interests"] = committeeInterestCount;
+  }
   if (trialsApplicationCount > 0) {
     badgeCounts["/admin/trials-applications"] = trialsApplicationCount;
   }
@@ -307,6 +333,7 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       merchandisePaymentProofCount +
       coachOverdueCount +
       coachingApplicationCount +
+      committeeInterestCount +
       trialsApplicationCount +
       trialSessionSignupCount,
     badgeCounts,

@@ -62,6 +62,7 @@ function isPrismaClientCurrent(client: PrismaClient) {
     typeof client.matchSignup?.findMany === "function" &&
     typeof client.siteContent?.findMany === "function" &&
     typeof client.coachingApplication?.findMany === "function" &&
+    typeof client.committeeInterest?.findMany === "function" &&
     typeof client.trialsApplication?.findMany === "function" &&
     typeof client.clubOfferAcceptance?.findMany === "function" &&
     clientHasModelField(client, "ClubOfferAcceptance", "status") &&
