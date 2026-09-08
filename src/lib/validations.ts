@@ -481,6 +481,7 @@ const committeeRoleEnum = z.enum(
     "PHOTO_OFFICER",
     "MEMBERSHIP_OFFICER",
     "SECRETARY",
+    "ORDINARY_COMMITTEE_MEMBER",
   ],
   { message: "Select a committee role" },
 );

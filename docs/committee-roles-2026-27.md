@@ -17,6 +17,7 @@ Use the **short list** for WhatsApp / online sign-up. Use the **detailed list** 
 9. **Photo Officer** — matchday / training photos for Socials + GFX Designer  
 10. **Membership Officer** — remind members to pay; use the website to see who’s due / unpaid  
 11. **Secretary** — committee meetings, minutes, correspondence, and club records  
+12. **Ordinary Committee Member** — general committee support; help with decisions and club jobs as needed  
 
 ---
 
@@ -99,6 +100,13 @@ Use the **short list** for WhatsApp / online sign-up. Use the **detailed list** 
 - Handle or forward official club correspondence when needed.
 - Support AGM / EGM prep (notices, agenda, attendance notes).
 
+### 12. Ordinary Committee Member
+- Attend committee meetings and contribute to decisions.
+- Help with club jobs when asked (events, matchdays, admin tasks).
+- Support other officers when their workload spikes.
+- Bring ideas and feedback from players to the committee.
+- Step in on small tasks so the club doesn’t rely on only a few people.
+
 ---
 
 ## How roles work together (quick)
@@ -115,6 +123,7 @@ Use the **short list** for WhatsApp / online sign-up. Use the **detailed list** 
 | Player issue | Player Welfare Officer | Committee |
 | U18 issue | Children’s Officer | Committee / safeguarding route |
 | Meetings / minutes | Secretary | Committee |
+| Extra help | Ordinary Committee Member | Relevant officer |
 
 ---
 
@@ -133,3 +142,4 @@ Use the **short list** for WhatsApp / online sign-up. Use the **detailed list** 
 | 9 | Photo Officer | |
 | 10 | Membership Officer | |
 | 11 | Secretary | |
+| 12 | Ordinary Committee Member | |

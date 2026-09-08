@@ -9,6 +9,7 @@ import {
   Package,
   Palette,
   Share2,
+  Users,
   UsersRound,
   Wallet,
 } from "lucide-react";
@@ -25,6 +26,7 @@ export const COMMITTEE_ROLE_VALUES = [
   "PHOTO_OFFICER",
   "MEMBERSHIP_OFFICER",
   "SECRETARY",
+  "ORDINARY_COMMITTEE_MEMBER",
 ] as const;
 
 export type CommitteeRoleValue = (typeof COMMITTEE_ROLE_VALUES)[number];
@@ -182,6 +184,20 @@ export const COMMITTEE_ROLES: CommitteeRole[] = [
       "Keep simple club records in order (contacts, role holders, key docs).",
       "Handle or forward official club correspondence when needed.",
       "Support AGM / EGM prep (notices, agenda, attendance notes).",
+    ],
+  },
+  {
+    value: "ORDINARY_COMMITTEE_MEMBER",
+    title: "Ordinary Committee Member",
+    summary:
+      "General committee support — help with decisions and club jobs as needed.",
+    icon: Users,
+    tasks: [
+      "Attend committee meetings and contribute to decisions.",
+      "Help with club jobs when asked (events, matchdays, admin tasks).",
+      "Support other officers when their workload spikes.",
+      "Bring ideas and feedback from players to the committee.",
+      "Step in on small tasks so the club doesn’t rely on only a few people.",
     ],
   },
 ];

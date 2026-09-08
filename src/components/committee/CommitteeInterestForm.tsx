@@ -131,9 +131,7 @@ export function CommitteeInterestModal({
             Your top three roles
           </p>
           <p className="text-sm leading-relaxed text-zinc-400">
-            Enter your name and choose a first, second, and third preference. If
-            more than one person wants the same role, the committee will decide
-            fairly.
+            Enter your name and choose a first, second, and third preference.
           </p>
         </div>
       }
