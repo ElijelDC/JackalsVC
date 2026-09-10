@@ -1,4 +1,4 @@
-export const MEMBERSHIP_SEASON_LABEL = "October 2026 – April 2027";
+export const MEMBERSHIP_SEASON_LABEL = "October 2026 – May 2027";
 
 export const KIT_FEE_EUR = 45;
 
@@ -114,7 +114,7 @@ export const MEMBERSHIP_MERCHANDISE_COPY =
 
 /** Shown once below the league fee cards. */
 export const MEMBERSHIP_LEAGUE_COVERAGE_COPY =
-  "Full-court training sessions at Meakstown throughout the season for your squad, with dedicated coaching staff every training night. Members also get reduced pricing on club merchandise.";
+  "Weekly full-court training at Meakstown with dedicated coaching, home matchday costs at Luttrellstown, league fixtures for the season, reduced fun-session rates, and member pricing on club merchandise. Match kit and jackets are ordered separately.";
 
 export const MEMBERSHIP_FEES_BY_LEAGUE_INTRO =
   "Membership is priced by league tier. National League covers Division 2 Men, Division 3 Women, and Division 3 Men. Amounts below are the full season total.";
@@ -127,9 +127,9 @@ export const MEMBERSHIP_PAYMENT_OPTIONS = [
   {
     id: "installments",
     label: "3 instalments",
-    summary: "Oct · Jan · Mar",
+    summary: "Instalment 1 · 2 · 3",
     description:
-      "Three payments due on the first Monday of October, January, and March.",
+      "Three payments: Instalment 1 in October, Instalment 2 in January, Instalment 3 in March.",
   },
   {
     id: "full",
@@ -160,13 +160,16 @@ export const MEMBERSHIP_LEAGUE_TIERS_2026_27: MembershipLeagueTier202627[] = [
 ];
 
 export const MEMBERSHIP_INCLUDES = [
+  "Weekly full-court training at Meakstown for your squad",
+  "Dedicated coaching staff on your training night",
   "Home matchday costs when the club hosts at Luttrellstown",
-  "Structured league volleyball Oct–April — hall, coach, and fixtures",
+  "League fixtures and hall for the Oct–April season",
   "Reduced member pricing on club fun sessions",
   MEMBERSHIP_MERCHANDISE_COPY,
 ] as const;
 
 export const MEMBERSHIP_EXCLUDES = [
+  "Match kit and club jackets (order separately)",
   "Volleyball Ireland League License",
   "Tournament entries",
   "Extra training beyond your team's weekly night",

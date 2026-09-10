@@ -1,15 +1,40 @@
 import { formatEuroFee } from "@/lib/utils";
+import { MEMBERSHIP_INCLUDES } from "@/lib/membership-2026-27";
+
+export type MembershipInstallmentAmounts = [number, number, number];
 
 export type MembershipPricing = {
   seasonTotalPrice: number;
   durationMonths: number;
+  installmentAmounts?: MembershipInstallmentAmounts | null;
 };
 
 export function createMembershipPricing(
   seasonTotalPrice: number,
   durationMonths: number,
+  installmentAmounts?: MembershipInstallmentAmounts | null,
 ): MembershipPricing {
-  return { seasonTotalPrice, durationMonths };
+  return {
+    seasonTotalPrice,
+    durationMonths,
+    installmentAmounts: installmentAmounts ?? null,
+  };
+}
+
+export function planInstallmentAmounts(plan: {
+  installment1Eur?: number | null;
+  installment2Eur?: number | null;
+  installment3Eur?: number | null;
+}): MembershipInstallmentAmounts | null {
+  const amounts = [
+    plan.installment1Eur,
+    plan.installment2Eur,
+    plan.installment3Eur,
+  ];
+  if (amounts.every((amount) => typeof amount === "number" && Number.isFinite(amount))) {
+    return amounts as MembershipInstallmentAmounts;
+  }
+  return null;
 }
 
 export const CLUB_MEMBERSHIP_SEASON_LABEL =
@@ -23,12 +48,15 @@ export const MEMBERSHIP_PLAN_ADULT_PRICE = 450;
 export const MEMBERSHIP_PLAN_STUDENT_PRICE = 385;
 export const MEMBERSHIP_PLAN_DURATION_MONTHS = 7;
 
-export const MEMBERSHIP_FEATURES = [
-  "Training Sessions",
-  "Personalized Club Kit",
-  "League Matchdays",
-  "Merchandise Discounts",
-];
+/** All 2026/27 club memberships end mid-May 2027. */
+export const CLUB_MEMBERSHIP_SEASON_END_DATE = new Date(2027, 4, 15, 23, 59, 59, 999);
+
+export function getClubMembershipSeasonEndDate() {
+  return new Date(CLUB_MEMBERSHIP_SEASON_END_DATE);
+}
+
+/** Checkout “what’s included” — kept in sync with the public 2026/27 page. */
+export const MEMBERSHIP_FEATURES = [...MEMBERSHIP_INCLUDES];
 
 /** Default pricing when no plan is loaded (adult tier). */
 export const DEFAULT_MEMBERSHIP_PRICING = createMembershipPricing(
@@ -36,11 +64,16 @@ export const DEFAULT_MEMBERSHIP_PRICING = createMembershipPricing(
   MEMBERSHIP_PLAN_DURATION_MONTHS,
 );
 
+/** Schedules members can choose at checkout. */
+export const CHECKOUT_PAYMENT_SCHEDULES = ["INSTALLMENTS", "FULL"] as const;
+export type CheckoutPaymentSchedule = (typeof CHECKOUT_PAYMENT_SCHEDULES)[number];
+
+/** Includes legacy MONTHLY for existing memberships. */
 export const PAYMENT_SCHEDULES = ["MONTHLY", "INSTALLMENTS", "FULL"] as const;
 export type PaymentSchedule = (typeof PAYMENT_SCHEDULES)[number];
 
 export type PaymentScheduleOption = {
-  id: PaymentSchedule;
+  id: CheckoutPaymentSchedule;
   label: string;
   description: string;
   summary: string;
@@ -97,6 +130,44 @@ function installmentDueDates(referenceDate: Date): Date[] {
   ];
 }
 
+const INSTALLMENT_WEIGHTS = [3, 2, 2] as const;
+
+export function defaultInstallmentAmounts(
+  seasonTotalPrice: number,
+): MembershipInstallmentAmounts {
+  const amounts = proportionalAmounts(seasonTotalPrice, [...INSTALLMENT_WEIGHTS]);
+  return [amounts[0]!, amounts[1]!, amounts[2]!];
+}
+
+export function resolveInstallmentAmounts(
+  pricing: MembershipPricing,
+): MembershipInstallmentAmounts {
+  if (
+    pricing.installmentAmounts &&
+    pricing.installmentAmounts.every((amount) => Number.isFinite(amount) && amount > 0)
+  ) {
+    return pricing.installmentAmounts;
+  }
+  return defaultInstallmentAmounts(pricing.seasonTotalPrice);
+}
+
+export function validateInstallmentAmounts(
+  price: number,
+  amounts: MembershipInstallmentAmounts,
+): string | null {
+  if (amounts.some((amount) => !Number.isFinite(amount) || amount <= 0)) {
+    return "Each instalment must be greater than zero.";
+  }
+
+  const sum = Math.round((amounts[0] + amounts[1] + amounts[2]) * 100) / 100;
+  const target = Math.round(price * 100) / 100;
+  if (sum !== target) {
+    return `The three instalments must add up to ${formatEuroFee(price)} (currently ${formatEuroFee(sum)}).`;
+  }
+
+  return null;
+}
+
 function getInstallmentTemplates(pricing: MembershipPricing): Record<
   PaymentSchedule,
   InstallmentTemplate[]
@@ -110,20 +181,20 @@ function getInstallmentTemplates(pricing: MembershipPricing): Record<
     INSTALLMENTS: [
       {
         monthsCovered: 3,
-        label: "October",
-        description: "First Monday of October",
+        label: "Instalment 1",
+        description: "October",
         dueDate: (referenceDate) => installmentDueDates(referenceDate)[0]!,
       },
       {
         monthsCovered: 2,
-        label: "January",
-        description: "First Monday of January",
+        label: "Instalment 2",
+        description: "January",
         dueDate: (referenceDate) => installmentDueDates(referenceDate)[1]!,
       },
       {
         monthsCovered: 2,
-        label: "March",
-        description: "First Monday of March",
+        label: "Instalment 3",
+        description: "March",
         dueDate: (referenceDate) => installmentDueDates(referenceDate)[2]!,
       },
     ],
@@ -131,7 +202,8 @@ function getInstallmentTemplates(pricing: MembershipPricing): Record<
       {
         monthsCovered: pricing.durationMonths,
         monthsUntilDue: 0,
-        label: "Full membership payment",
+        label: "Full payment",
+        description: "Pay once upfront",
       },
     ],
   };
@@ -140,19 +212,9 @@ function getInstallmentTemplates(pricing: MembershipPricing): Record<
 function monthlyAmounts(pricing: MembershipPricing): number[] {
   const weights = [
     2,
-    ...Array.from({ length: pricing.durationMonths - 1 }, () => 1),
+    ...Array.from({ length: Math.max(pricing.durationMonths - 1, 0) }, () => 1),
   ];
   return proportionalAmounts(pricing.seasonTotalPrice, weights);
-}
-
-/** Standard monthly rate after the first (double) payment. */
-export function getMonthlyRecurringAmount(pricing: MembershipPricing): number {
-  const amounts = monthlyAmounts(pricing);
-  return amounts[1] ?? amounts[0] ?? 0;
-}
-
-export function getMonthlyFirstAmount(pricing: MembershipPricing): number {
-  return monthlyAmounts(pricing)[0] ?? 0;
 }
 
 export function validateMembershipPlanPrice(
@@ -173,6 +235,9 @@ export function toPlanData(data: {
   description: string;
   price: number;
   durationMonths: number;
+  installment1Eur: number;
+  installment2Eur: number;
+  installment3Eur: number;
   active: boolean;
 }) {
   return {
@@ -180,6 +245,9 @@ export function toPlanData(data: {
     description: data.description,
     price: data.price,
     durationMonths: data.durationMonths,
+    installment1Eur: data.installment1Eur,
+    installment2Eur: data.installment2Eur,
+    installment3Eur: data.installment3Eur,
     features: "[]",
     active: data.active,
   };
@@ -188,29 +256,20 @@ export function toPlanData(data: {
 export function getPaymentScheduleOptions(
   pricing: MembershipPricing,
 ): PaymentScheduleOption[] {
-  const remainingMonths = pricing.durationMonths - 1;
-  const firstAmount = getMonthlyFirstAmount(pricing);
-  const recurringAmount = getMonthlyRecurringAmount(pricing);
+  const [oct, jan, mar] = resolveInstallmentAmounts(pricing);
 
   return [
     {
-      id: "MONTHLY",
-      label: "Monthly",
-      description: `First month is ${formatEuroFee(firstAmount)}, then ${formatEuroFee(recurringAmount)} per month for the remaining ${remainingMonths} months`,
-      summary: `Then ${formatEuroFee(recurringAmount)}/mo for ${remainingMonths} months`,
-    },
-    {
       id: "INSTALLMENTS",
-      label: "3 payments",
-      description:
-        "Three instalments due on the first Monday of October, January, and March",
-      summary: "Oct · Jan · Mar",
+      label: "3 instalments",
+      description: "Split the season into three payments",
+      summary: `1: ${formatEuroFee(oct)} · 2: ${formatEuroFee(jan)} · 3: ${formatEuroFee(mar)}`,
     },
     {
       id: "FULL",
       label: "Pay in full",
-      description: `One upfront payment for the entire ${pricing.durationMonths}-month membership`,
-      summary: "Pay once upfront",
+      description: "One payment for the whole season",
+      summary: formatEuroFee(pricing.seasonTotalPrice),
     },
   ];
 }
@@ -221,6 +280,8 @@ export type GeneratedInstallment = {
   dueDate: Date;
   description: string;
   monthsCovered: number;
+  label: string;
+  periodLabel: string;
 };
 
 export function buildInstallments(
@@ -232,10 +293,9 @@ export function buildInstallments(
   const amounts =
     schedule === "MONTHLY"
       ? monthlyAmounts(pricing)
-      : proportionalAmounts(
-          pricing.seasonTotalPrice,
-          templates.map((template) => template.monthsCovered),
-        );
+      : schedule === "INSTALLMENTS"
+        ? resolveInstallmentAmounts(pricing)
+        : [pricing.seasonTotalPrice];
 
   return templates.map((template, index) => {
     const dueDate =
@@ -243,8 +303,10 @@ export function buildInstallments(
       addMonths(startDate, template.monthsUntilDue ?? 0);
 
     const detail =
-      template.description ??
-      `${template.label} · ${template.monthsCovered} month${template.monthsCovered > 1 ? "s" : ""}`;
+      schedule === "INSTALLMENTS"
+        ? `${template.label} · ${template.description ?? template.label}`
+        : (template.description ??
+          `${template.label} · ${template.monthsCovered} month${template.monthsCovered > 1 ? "s" : ""}`);
 
     return {
       installmentNumber: index + 1,
@@ -252,6 +314,8 @@ export function buildInstallments(
       dueDate,
       description: detail,
       monthsCovered: template.monthsCovered,
+      label: template.label,
+      periodLabel: template.description ?? template.label,
     };
   });
 }
@@ -259,11 +323,24 @@ export function buildInstallments(
 export function getScheduleOption(
   schedule: PaymentSchedule,
   pricing: MembershipPricing = DEFAULT_MEMBERSHIP_PRICING,
-) {
-  return getPaymentScheduleOptions(pricing).find((option) => option.id === schedule)!;
+): PaymentScheduleOption {
+  if (schedule === "MONTHLY") {
+    return {
+      id: "INSTALLMENTS",
+      label: "Monthly",
+      description: "Legacy monthly schedule",
+      summary: "Monthly",
+    };
+  }
+
+  return (
+    getPaymentScheduleOptions(pricing).find((option) => option.id === schedule) ??
+    getPaymentScheduleOptions(pricing)[1]!
+  );
 }
 
 export function formatPaymentScheduleLabel(schedule: PaymentSchedule): string {
+  if (schedule === "MONTHLY") return "Monthly";
   return getScheduleOption(schedule).label;
 }
 
@@ -272,7 +349,7 @@ export function formatPaymentScheduleShortLabel(schedule: PaymentSchedule): stri
     case "MONTHLY":
       return "Monthly";
     case "INSTALLMENTS":
-      return "3 payments";
+      return "3 instalments";
     case "FULL":
       return "Full";
     default:
@@ -312,9 +389,9 @@ export function getScheduleDueNowLabel(
 ): string {
   switch (schedule) {
     case "MONTHLY":
-      return `${formatEuroFee(getMonthlyFirstAmount(pricing))} first month`;
+      return `${formatEuroFee(monthlyAmounts(pricing)[0] ?? 0)} first month`;
     case "INSTALLMENTS":
-      return `${formatEuroFee(getFirstInstallmentAmount(schedule, pricing))} first payment`;
+      return `Instalment 1 · ${formatEuroFee(getFirstInstallmentAmount(schedule, pricing))}`;
     case "FULL":
       return `${formatEuroFee(pricing.seasonTotalPrice)} upfront`;
     default:

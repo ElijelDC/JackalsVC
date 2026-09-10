@@ -3,6 +3,8 @@ import {
   buildInstallments,
   createMembershipPricing,
   formatPaymentScheduleLabel,
+  getClubMembershipSeasonEndDate,
+  planInstallmentAmounts,
   validateMembershipPlanPrice,
   type PaymentSchedule,
 } from "@/lib/membership-config";
@@ -26,7 +28,11 @@ export async function POST(request: Request) {
 
     if (!plan) return jsonError("Membership is not available right now", 404);
 
-    const pricing = createMembershipPricing(plan.price, plan.durationMonths);
+    const pricing = createMembershipPricing(
+      plan.price,
+      plan.durationMonths,
+      planInstallmentAmounts(plan),
+    );
     const priceError = validateMembershipPlanPrice(plan.price, plan.durationMonths);
     if (priceError) {
       return jsonError("Membership pricing is misconfigured. Please contact the club.", 503);
@@ -56,8 +62,7 @@ export async function POST(request: Request) {
 
     const schedule = data.paymentSchedule as PaymentSchedule;
     const startDate = new Date();
-    const endDate = new Date(startDate);
-    endDate.setMonth(endDate.getMonth() + plan.durationMonths);
+    const endDate = getClubMembershipSeasonEndDate();
 
     const installments = buildInstallments(schedule, pricing, startDate);
     const scheduleLabel = formatPaymentScheduleLabel(schedule);
@@ -99,7 +104,7 @@ export async function POST(request: Request) {
           { label: "Plan", value: plan.name },
           { label: "Schedule", value: scheduleLabel },
         ],
-        ctaUrl: emailSiteUrl("/admin/subscriptions"),
+        ctaUrl: emailSiteUrl("/admin/members?focus=subscription"),
         ctaLabel: "View subscriptions",
       },
     });

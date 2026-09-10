@@ -23,11 +23,12 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "name",
         "training_team_key",
         "roster_role",
+        "player_payment_type",
         "coach_payment_type",
         "active",
       ],
       instructions:
-        "Download the current roster, add new rows at the top, then upload. Use VLY12345 for players and VLYC12345 for coaches. Existing member numbers are skipped automatically.",
+        "Download the current roster, edit the sheet (add or delete rows), then upload. The sheet becomes the full roster — rows removed from Excel are removed from the club (unlinked entries deleted; linked accounts deactivated).",
     },
     "weekly-training": {
       fileName: "jackals-weekly-training.xlsx",
@@ -49,7 +50,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "description",
       ],
       instructions:
-        "Download current training sessions, add new rows at the top, then upload. Duplicate sessions are skipped automatically.",
+        "Download current weekly training, edit the sheet (add or delete rows), then upload. The sheet replaces the full weekly training list.",
     },
     "fun-sessions": {
       fileName: "jackals-fun-sessions.xlsx",
@@ -73,7 +74,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "description",
       ],
       instructions:
-        "Download current fun sessions, add new rows at the top, then upload. Duplicate sessions are skipped automatically.",
+        "Download current fun sessions, edit the sheet (add or delete rows), then upload. The sheet replaces the full fun-session list.",
     },
     matches: {
       fileName: "jackals-matches.xlsx",
@@ -87,7 +88,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "notes",
       ],
       instructions:
-        "Download current matches, add new rows at the top, then upload. Duplicate matches are skipped automatically.",
+        "Download current matches, edit the sheet (add or delete rows), then upload. The sheet replaces the full match list.",
     },
     events: {
       fileName: "jackals-events.xlsx",
@@ -104,7 +105,7 @@ export const BULK_IMPORT_DEFINITIONS: Record<BulkImportType, BulkImportDefinitio
         "reclub_username",
       ],
       instructions:
-        "Download current tournaments, clinics, and socials, add new rows at the top, then upload. Duplicate events are skipped automatically.",
+        "Download current calendar events, edit the sheet (add or delete rows), then upload. The sheet replaces tournaments, clinics, and socials (training-linked events are left alone).",
     },
   };
 

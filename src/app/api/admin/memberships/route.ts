@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { getClubMembershipSeasonEndDate } from "@/lib/membership-config";
 import { prisma } from "@/lib/prisma";
 import { membershipCreateSchema } from "@/lib/validations";
 
@@ -61,8 +62,7 @@ export async function POST(request: Request) {
   const user = await prisma.user.findUnique({ where: { id: data.userId } });
   if (!user) return jsonError("User not found", 404);
 
-  const endDate = new Date();
-  endDate.setMonth(endDate.getMonth() + plan.durationMonths);
+  const endDate = getClubMembershipSeasonEndDate();
 
   const membership = await prisma.membership.create({
     data: {

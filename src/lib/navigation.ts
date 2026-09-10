@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   Mail,
   Settings,
+  Shirt,
   ShoppingBag,
   Trophy,
   Users,
@@ -74,6 +75,14 @@ export const NAV_ITEMS: NavItem[] = [
     requiresAuth: true,
   },
   {
+    href: "/merchandise-order",
+    label: "Merch order",
+    icon: Shirt,
+    description:
+      "Order a training t-shirt or club jackets for the 2026/27 season.",
+    requiresAuth: true,
+  },
+  {
     href: "/payments",
     label: "Payments",
     icon: Wallet,
@@ -111,12 +120,27 @@ const MEMBER_PRIMARY_NAV_HREFS = [
   "/training",
   "/matches",
   "/membership",
+  "/merchandise-order",
+] as const;
+
+const MEMBER_PAYG_PRIMARY_NAV_HREFS = [
+  "/",
+  "/events",
+  "/training",
+  "/matches",
+  "/merchandise-order",
 ] as const;
 
 export const MEMBER_MOBILE_QUICK_NAV_HREFS = [
   "/training",
   "/matches",
   "/membership",
+] as const;
+
+const MEMBER_PAYG_MOBILE_QUICK_NAV_HREFS = [
+  "/training",
+  "/matches",
+  "/events",
 ] as const;
 
 const MEMBER_MOBILE_MENU_EXTRA_HREFS = ["/gallery", "/teams"] as const;
@@ -208,6 +232,7 @@ function primaryNavHrefs(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ) {
   if (isAdmin) return ADMIN_PRIMARY_NAV_HREFS;
   if (isLoggedIn && isCoach) {
@@ -215,7 +240,11 @@ function primaryNavHrefs(
       ? COACH_PAID_PRIMARY_NAV_HREFS
       : COACH_VOLUNTEER_PRIMARY_NAV_HREFS;
   }
-  if (isLoggedIn) return MEMBER_PRIMARY_NAV_HREFS;
+  if (isLoggedIn) {
+    return isPaygPlayer
+      ? MEMBER_PAYG_PRIMARY_NAV_HREFS
+      : MEMBER_PRIMARY_NAV_HREFS;
+  }
   return GUEST_PRIMARY_NAV_HREFS;
 }
 
@@ -224,6 +253,7 @@ function mobileQuickNavHrefs(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ) {
   if (!isLoggedIn) return [];
   if (isAdmin) return ADMIN_MOBILE_QUICK_NAV_HREFS;
@@ -232,7 +262,9 @@ function mobileQuickNavHrefs(
       ? COACH_PAID_MOBILE_QUICK_NAV_HREFS
       : COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS;
   }
-  return MEMBER_MOBILE_QUICK_NAV_HREFS;
+  return isPaygPlayer
+    ? MEMBER_PAYG_MOBILE_QUICK_NAV_HREFS
+    : MEMBER_MOBILE_QUICK_NAV_HREFS;
 }
 
 export const INFO_NAV_ITEMS: NavItem[] = [
@@ -295,12 +327,19 @@ function allNavItems(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ) {
-  const items = visibleNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach);
+  const items = visibleNavItems(
+    isLoggedIn,
+    isAdmin,
+    isCoach,
+    isPaidCoach,
+    isPaygPlayer,
+  );
   if (isLoggedIn || isAdmin) return items;
 
   const primaryHrefs = new Set<string>(
-    primaryNavHrefs(false, isAdmin, isCoach, isPaidCoach),
+    primaryNavHrefs(false, isAdmin, isCoach, isPaidCoach, isPaygPlayer),
   );
   const extraInfoItems = INFO_NAV_ITEMS.filter(
     (item) =>
@@ -322,7 +361,12 @@ export function isInfoNavActive(
   pathname: string,
   isLoggedIn = false,
   isAdmin = false,
-  options?: { mobileMemberMenu?: boolean; isCoach?: boolean; isPaidCoach?: boolean },
+  options?: {
+    mobileMemberMenu?: boolean;
+    isCoach?: boolean;
+    isPaidCoach?: boolean;
+    isPaygPlayer?: boolean;
+  },
 ) {
   return visibleMoreNavItems(isLoggedIn, isAdmin, options).some((item) =>
     isNavItemActive(pathname, item.href),
@@ -334,13 +378,15 @@ export function visibleNavItems(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ) {
   return NAV_ITEMS.filter(
     (item) =>
       (!item.coachOnly || (isLoggedIn && isCoach && !isAdmin)) &&
       (!item.paidCoachOnly || (isLoggedIn && isCoach && isPaidCoach && !isAdmin)) &&
       (!item.requiresAuth || isLoggedIn || isAdmin) &&
-      (SHOP_ENABLED || item.href !== "/shop"),
+      (SHOP_ENABLED || item.href !== "/shop") &&
+      !(isPaygPlayer && item.href === "/membership"),
   );
 }
 
@@ -349,13 +395,19 @@ export function visiblePrimaryNavItems(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ) {
-  const hrefs = primaryNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach);
+  const hrefs = primaryNavHrefs(
+    isLoggedIn,
+    isAdmin,
+    isCoach,
+    isPaidCoach,
+    isPaygPlayer,
+  );
   const byHref = new Map(
-    allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).map((item) => [
-      item.href,
-      item,
-    ]),
+    allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach, isPaygPlayer).map(
+      (item) => [item.href, item],
+    ),
   );
   return hrefs
     .map((href) => byHref.get(href))
@@ -367,17 +419,23 @@ export function visibleMemberMobileQuickNavItems(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ) {
   if (isAdmin) return ADMIN_MOBILE_QUICK_NAV_ITEMS;
 
-  const hrefs = mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach);
+  const hrefs = mobileQuickNavHrefs(
+    isLoggedIn,
+    isAdmin,
+    isCoach,
+    isPaidCoach,
+    isPaygPlayer,
+  );
   if (hrefs.length === 0) return [];
 
   const byHref = new Map(
-    allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).map((item) => [
-      item.href,
-      item,
-    ]),
+    allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach, isPaygPlayer).map(
+      (item) => [item.href, item],
+    ),
   );
   return hrefs
     .map((href) => byHref.get(href))
@@ -396,21 +454,24 @@ export function visibleMemberMobileMenuNavItems(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ) {
   const quickNavHrefs = new Set<string>(
-    mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach),
+    mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach, isPaygPlayer),
   );
   const primary = visiblePrimaryNavItems(
     isLoggedIn,
     isAdmin,
     isCoach,
     isPaidCoach,
+    isPaygPlayer,
   ).filter((item) => !quickNavHrefs.has(item.href));
 
   const byHref = new Map(
-    [...allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach), ...INFO_NAV_ITEMS].map(
-      (item) => [item.href, item],
-    ),
+    [
+      ...allNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach, isPaygPlayer),
+      ...INFO_NAV_ITEMS,
+    ].map((item) => [item.href, item]),
   );
   const extras = MEMBER_MOBILE_MENU_EXTRA_HREFS.map((href) =>
     byHref.get(href),
@@ -422,20 +483,31 @@ export function visibleMemberMobileMenuNavItems(
 export function visibleMoreNavItems(
   isLoggedIn: boolean,
   isAdmin = false,
-  options?: { mobileMemberMenu?: boolean; isCoach?: boolean; isPaidCoach?: boolean },
+  options?: {
+    mobileMemberMenu?: boolean;
+    isCoach?: boolean;
+    isPaidCoach?: boolean;
+    isPaygPlayer?: boolean;
+  },
 ) {
   const isCoach = options?.isCoach ?? false;
   const isPaidCoach = options?.isPaidCoach ?? false;
+  const isPaygPlayer = options?.isPaygPlayer ?? false;
   const primaryHrefs = new Set(
-    visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).map(
-      (item) => item.href,
-    ),
+    visiblePrimaryNavItems(
+      isLoggedIn,
+      isAdmin,
+      isCoach,
+      isPaidCoach,
+      isPaygPlayer,
+    ).map((item) => item.href),
   );
   const secondaryNav = visibleNavItems(
     isLoggedIn,
     isAdmin,
     isCoach,
     isPaidCoach,
+    isPaygPlayer,
   ).filter((item) => !primaryHrefs.has(item.href) && item.href !== "/dashboard");
   const infoNav = INFO_NAV_ITEMS.filter(
     (item) => !primaryHrefs.has(item.href),
@@ -444,8 +516,15 @@ export function visibleMoreNavItems(
 
   if (isCoach && !isAdmin) {
     items = items.filter(
-      (item) => item.href !== "/" && item.href !== "/membership" && !COACH_MORE_HIDE_HREFS.has(item.href),
+      (item) =>
+        item.href !== "/" &&
+        item.href !== "/membership" &&
+        !COACH_MORE_HIDE_HREFS.has(item.href),
     );
+  }
+
+  if (isPaygPlayer && !isAdmin) {
+    items = items.filter((item) => item.href !== "/membership");
   }
 
   if (options?.mobileMemberMenu && isLoggedIn && !isAdmin) {
@@ -465,8 +544,17 @@ export function getMobileQuickNavHrefs(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 ): string[] {
-  return [...mobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach)];
+  return [
+    ...mobileQuickNavHrefs(
+      isLoggedIn,
+      isAdmin,
+      isCoach,
+      isPaidCoach,
+      isPaygPlayer,
+    ),
+  ];
 }
 
 const GUEST_HOME_FEATURE_HREFS = [

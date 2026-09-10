@@ -182,9 +182,13 @@ export type BulkImportResult = {
   fileName: string | null;
   scanned: number;
   created: number;
-  skipped: number;
+  updated: number;
+  removed: number;
+  skipped?: number;
   failed: number;
   errors: { row: number; message: string }[];
+  needsConfirmation?: boolean;
+  plannedRemovals?: number;
 };
 
 export function getBulkImportTemplateUrl(type: BulkImportType): string {
@@ -194,10 +198,14 @@ export function getBulkImportTemplateUrl(type: BulkImportType): string {
 export async function apiBulkImportCsv(
   type: BulkImportType,
   file: File,
+  options?: { confirmDestructive?: boolean },
   fallbackError = "Failed to import spreadsheet",
 ): Promise<ApiResult<BulkImportResult>> {
   const formData = new FormData();
   formData.append("file", file);
+  if (options?.confirmDestructive) {
+    formData.append("confirmDestructive", "true");
+  }
   return apiPostForm<BulkImportResult>(
     `/api/admin/bulk-import/${type}`,
     formData,

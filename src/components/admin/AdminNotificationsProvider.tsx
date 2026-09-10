@@ -31,6 +31,7 @@ const HREF_TO_ENTRY_KIND: Record<string, AdminActionQueueEntry["kind"]> = {
   "/admin/coaching-applications": "coaching-application",
   "/admin/trials-applications": "trials-application",
   "/admin/one-off-sessions": "trial-session-signup",
+  "/admin/training-payg": "training-payg",
 };
 
 function applyBadgeDelta(queue: AdminActionQueue, href: string, delta: number) {

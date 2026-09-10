@@ -19,6 +19,7 @@ export function NavLinks({
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
@@ -27,20 +28,45 @@ export function NavLinks({
   isAdmin?: boolean;
   isCoach?: boolean;
   isPaidCoach?: boolean;
+  isPaygPlayer?: boolean;
 }) {
   const quickNavHrefs = new Set<string>(
-    getMobileQuickNavHrefs(isLoggedIn, isAdmin, isCoach, isPaidCoach),
+    getMobileQuickNavHrefs(
+      isLoggedIn,
+      isAdmin,
+      isCoach,
+      isPaidCoach,
+      isPaygPlayer,
+    ),
   );
   const displayItems =
     variant === "mobile" && isLoggedIn && !isAdmin
-      ? visibleMemberMobileMenuNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach)
+      ? visibleMemberMobileMenuNavItems(
+          isLoggedIn,
+          isAdmin,
+          isCoach,
+          isPaidCoach,
+          isPaygPlayer,
+        )
       : variant === "mobile" && isLoggedIn
-        ? visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach).filter(
+        ? visiblePrimaryNavItems(
+            isLoggedIn,
+            isAdmin,
+            isCoach,
+            isPaidCoach,
+            isPaygPlayer,
+          ).filter(
             (item) =>
               !quickNavHrefs.has(item.href) &&
               !(isAdmin && ADMIN_MOBILE_MENU_HIDE_HREFS.has(item.href)),
           )
-        : visiblePrimaryNavItems(isLoggedIn, isAdmin, isCoach, isPaidCoach);
+        : visiblePrimaryNavItems(
+            isLoggedIn,
+            isAdmin,
+            isCoach,
+            isPaidCoach,
+            isPaygPlayer,
+          );
 
   return (
     <>
@@ -73,6 +99,7 @@ export function NavLinks({
         isAdmin={isAdmin}
         isCoach={isCoach}
         isPaidCoach={isPaidCoach}
+        isPaygPlayer={isPaygPlayer}
       />
     </>
   );

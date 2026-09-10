@@ -8,7 +8,8 @@ export type AdminActionQueueEntry = {
     | "coaching-application"
     | "committee-interest"
     | "trials-application"
-    | "trial-session-signup";
+    | "trial-session-signup"
+    | "training-payg";
   href: string;
   title: string;
   summary: string;

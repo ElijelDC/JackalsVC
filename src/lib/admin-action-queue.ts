@@ -64,6 +64,8 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     trialsApplicationCount,
     trialSessionSignups,
     trialSessionSignupCount,
+    trainingPaygPending,
+    trainingPaygPendingCount,
   ] = await Promise.all([
     prisma.clubMember.findMany({
       where: REGISTRATION_REVIEW_WHERE,
@@ -141,6 +143,15 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       },
     }),
     prisma.trialSessionSignup.count({ where: { status: "PENDING" } }),
+    prisma.trainingPaygAttendance.findMany({
+      where: { status: "PENDING" },
+      orderBy: { createdAt: "asc" },
+      take: 4,
+      include: {
+        clubMember: { select: { name: true } },
+      },
+    }),
+    prisma.trainingPaygAttendance.count({ where: { status: "PENDING" } }),
   ]);
 
   const pendingPaymentDueDates = await prisma.payment.findMany({
@@ -295,6 +306,20 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     });
   }
 
+  if (trainingPaygPendingCount > 0) {
+    entries.push({
+      kind: "training-payg",
+      href: "/admin/training-payg",
+      title: "Pay Per Training",
+      summary:
+        trainingPaygPendingCount === 1
+          ? "1 training receipt to verify"
+          : `${trainingPaygPendingCount} training receipts to verify`,
+      count: trainingPaygPendingCount,
+      previews: trainingPaygPending.map((row) => row.clubMember.name),
+    });
+  }
+
   const badgeCounts: Record<string, number> = {};
   if (registrationCount > 0) {
     badgeCounts["/admin/registration-reviews"] = registrationCount;
@@ -323,6 +348,9 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
   if (trialSessionSignupCount > 0) {
     badgeCounts["/admin/one-off-sessions"] = trialSessionSignupCount;
   }
+  if (trainingPaygPendingCount > 0) {
+    badgeCounts["/admin/training-payg"] = trainingPaygPendingCount;
+  }
 
   return {
     entries,
@@ -335,7 +363,8 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       coachingApplicationCount +
       committeeInterestCount +
       trialsApplicationCount +
-      trialSessionSignupCount,
+      trialSessionSignupCount +
+      trainingPaygPendingCount,
     badgeCounts,
   };
 }

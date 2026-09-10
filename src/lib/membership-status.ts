@@ -6,6 +6,7 @@ export const MEMBERSHIP_STATUSES = [
   "CANCELLED",
   "PENDING_PAYMENT",
   "COACH",
+  "ARREARS",
 ] as const;
 
 export type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
@@ -13,9 +14,8 @@ export type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
 /** Statuses admins can assign when granting or editing memberships. */
 export const ADMIN_MEMBERSHIP_STATUSES = [
   "ACTIVE",
-  "EXPIRED",
   "CANCELLED",
-  "COACH",
+  "ARREARS",
 ] as const;
 
 export type AdminMembershipStatus = (typeof ADMIN_MEMBERSHIP_STATUSES)[number];
@@ -26,6 +26,7 @@ const STATUS_LABELS: Record<MembershipStatus, string> = {
   CANCELLED: "Cancelled",
   PENDING_PAYMENT: "Awaiting payment",
   COACH: "Coach",
+  ARREARS: "Arrears",
 };
 
 export function formatMembershipStatusLabel(status: string): string {
@@ -33,6 +34,12 @@ export function formatMembershipStatusLabel(status: string): string {
     return STATUS_LABELS[status as MembershipStatus];
   }
   return status;
+}
+
+export function isAdminMembershipStatus(
+  status: string,
+): status is AdminMembershipStatus {
+  return (ADMIN_MEMBERSHIP_STATUSES as readonly string[]).includes(status);
 }
 
 export function isCoachMembershipStatus(status: string): boolean {
@@ -59,6 +66,8 @@ export function membershipStatusBadgeClass(status: string): string {
       return "border-blue-500/30 bg-blue-500/10 text-blue-300";
     case "EXPIRED":
       return "border-amber-500/30 bg-amber-500/10 text-amber-300";
+    case "ARREARS":
+      return "border-red-500/30 bg-red-500/10 text-red-300";
     case "CANCELLED":
       return "border-zinc-500/30 bg-zinc-500/10 text-zinc-400";
     case "PENDING_PAYMENT":

@@ -166,6 +166,24 @@ async function authorizeMerchandiseOrderProof(
   return Boolean(order);
 }
 
+async function authorizeTrainingPaygProof(relativePath: string) {
+  const attendanceId = extractIdFromFilename(
+    relativePath,
+    "training-payg-proofs",
+  );
+  if (!attendanceId) return false;
+
+  const session = await auth();
+  if (!session?.user?.id) return false;
+  if (session.user.role === "ADMIN") return true;
+
+  const attendance = await prisma.trainingPaygAttendance.findFirst({
+    where: { id: attendanceId, userId: session.user.id },
+    select: { id: true },
+  });
+  return Boolean(attendance);
+}
+
 export async function authorizeUploadAccess(
   relativePath: string,
   request: Request,
@@ -196,6 +214,10 @@ export async function authorizeUploadAccess(
 
   if (relativePath.startsWith("merchandise-order-proofs/")) {
     return authorizeMerchandiseOrderProof(relativePath, request);
+  }
+
+  if (relativePath.startsWith("training-payg-proofs/")) {
+    return authorizeTrainingPaygProof(relativePath);
   }
 
   if (relativePath.startsWith("admin-docs/")) {

@@ -34,12 +34,11 @@ export function AdminBulkCsvImport({
   const [result, setResult] = useState<BulkImportResult | null>(null);
 
   const meta = getBulkImportTemplateMeta(type);
-  const sectionTitle = title ?? "Bulk import from Excel";
-  const triggerLabel = openTriggerLabel ?? "Bulk Excel import";
-  const sectionDescription =
-    description ?? meta.instructions;
+  const sectionTitle = title ?? "Bulk Excel override";
+  const triggerLabel = openTriggerLabel ?? "Bulk Excel override";
+  const sectionDescription = description ?? meta.instructions;
 
-  const submitImport = async () => {
+  const submitImport = async (confirmDestructive = false) => {
     if (!file) {
       setError("Choose an Excel file first.");
       return;
@@ -49,12 +48,25 @@ export function AdminBulkCsvImport({
     setError(null);
     setResult(null);
 
-    const response = await apiBulkImportCsv(type, file);
+    const response = await apiBulkImportCsv(type, file, { confirmDestructive });
     setLoading(false);
 
     if (!response.ok) {
       setError(response.error);
       return;
+    }
+
+    if (response.data.needsConfirmation) {
+      const planned = response.data.plannedRemovals ?? 0;
+      const confirmed = window.confirm(
+        `This override would remove ${planned} ${planned === 1 ? "entry" : "entries"} from the current list.\n\nMembers without a VLY number are kept automatically.\n\nContinue?`,
+      );
+      if (!confirmed) {
+        setResult(response.data);
+        setError("Override cancelled — no changes were applied.");
+        return;
+      }
+      return submitImport(true);
     }
 
     setResult(response.data);
@@ -90,9 +102,10 @@ export function AdminBulkCsvImport({
         </div>
 
         <p className="mt-3 text-xs text-zinc-500">
-          Tip: add new rows at the top of the sheet, keep existing rows as-is, then
-          re-upload. Duplicates are skipped automatically. Date and time columns
-          are saved as text so Excel won&apos;t rewrite them.
+          Override mode: the uploaded sheet becomes the full list. Add rows to
+          create, delete rows to remove, edit cells to update. If any row fails
+          validation, nothing is changed. Date and time columns are saved as text
+          so Excel won&apos;t rewrite them.
         </p>
 
         <FormError message={error} />
@@ -100,10 +113,17 @@ export function AdminBulkCsvImport({
         {result && (
           <div className="mt-4 space-y-3">
             <div className="border border-green-500/30 bg-green-500/10 px-4 py-3 text-sm text-green-300">
-              Imported {result.fileName ?? "sheet"}: created {result.created} of{" "}
-              {result.scanned} rows
-              {result.skipped > 0 ? ` · ${result.skipped} skipped (duplicates)` : ""}
-              {result.failed > 0 ? ` · ${result.failed} failed` : ""}
+              {result.fileName ?? "Sheet"}: scanned {result.scanned}
+              {result.created > 0 ? ` · ${result.created} created` : ""}
+              {result.updated > 0 ? ` · ${result.updated} updated` : ""}
+              {result.removed > 0 ? ` · ${result.removed} removed` : ""}
+              {result.failed > 0
+                ? ` · ${result.failed} failed (no changes applied)`
+                : result.created === 0 &&
+                    result.updated === 0 &&
+                    result.removed === 0
+                  ? " · no changes"
+                  : ""}
             </div>
             {result.errors.length > 0 && (
               <div className="max-h-40 overflow-y-auto rounded border border-jackals-red/30 bg-jackals-red/10 px-4 py-3 text-sm text-jackals-red-light">
@@ -151,9 +171,9 @@ export function AdminBulkCsvImport({
             type="button"
             className="w-full"
             disabled={loading}
-            onClick={submitImport}
+            onClick={() => void submitImport()}
           >
-            {loading ? "Importing..." : "Upload Excel & import rows"}
+            {loading ? "Applying override…" : "Upload Excel & replace list"}
           </Button>
         </div>
       </div>

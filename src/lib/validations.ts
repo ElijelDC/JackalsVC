@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
 import { COACH_PAYMENT_TYPES } from "@/lib/coach-payment-type";
+import { PLAYER_PAYMENT_TYPES } from "@/lib/player-payment-type";
 import {
   hasAnyJersey,
   hasAnyKitPiece,
@@ -53,7 +54,7 @@ export const registerSchema = z
     path: ["confirmPassword"],
   });
 
-import { PAYMENT_SCHEDULES } from "@/lib/membership-config";
+import { CHECKOUT_PAYMENT_SCHEDULES } from "@/lib/membership-config";
 
 export const eventSignupSchema = z.object({
   eventId: z.string().min(1, "Event ID required"),
@@ -67,7 +68,7 @@ export const matchSignupSchema = z.object({
 
 export const membershipSubscribeSchema = z.object({
   planId: z.string().min(1, "Choose a membership type"),
-  paymentSchedule: z.enum(PAYMENT_SCHEDULES, {
+  paymentSchedule: z.enum(CHECKOUT_PAYMENT_SCHEDULES, {
     error: "Choose a payment option",
   }),
 });
@@ -264,13 +265,31 @@ export const galleryPhotoSchema = z.object({
   sortOrder: z.number().int().min(0).default(0),
 });
 
-export const membershipPlanSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().min(1, "Description is required"),
-  price: z.number().positive("Price must be greater than 0"),
-  durationMonths: z.number().int().min(1, "Duration must be at least 1 month"),
-  active: z.boolean(),
-});
+export const membershipPlanSchema = z
+  .object({
+    name: z.string().min(1, "Name is required"),
+    description: z.string().min(1, "Description is required"),
+    price: z.number().positive("Price must be greater than 0"),
+    durationMonths: z.number().int().min(1, "Duration must be at least 1 month"),
+    installment1Eur: z.number().positive("October instalment must be greater than 0"),
+    installment2Eur: z.number().positive("January instalment must be greater than 0"),
+    installment3Eur: z.number().positive("March instalment must be greater than 0"),
+    active: z.boolean(),
+  })
+  .superRefine((data, ctx) => {
+    const sum =
+      Math.round(
+        (data.installment1Eur + data.installment2Eur + data.installment3Eur) * 100,
+      ) / 100;
+    const target = Math.round(data.price * 100) / 100;
+    if (sum !== target) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["installment1Eur"],
+        message: `The three instalments must add up to €${target.toFixed(2)} (currently €${sum.toFixed(2)}).`,
+      });
+    }
+  });
 
 export const userUpdateSchema = z.object({
   role: z.enum(["MEMBER", "ADMIN"]),
@@ -346,12 +365,12 @@ export const forgotPasswordResetSchema = z
 export const membershipCreateSchema = z.object({
   userId: z.string().min(1, "User is required"),
   planId: z.string().min(1, "Plan is required"),
-  status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED", "COACH"]).optional(),
+  status: z.enum(["ACTIVE", "CANCELLED", "ARREARS"]).optional(),
 });
 
 export const membershipUpdateSchema = z
   .object({
-    status: z.enum(["ACTIVE", "EXPIRED", "CANCELLED", "COACH"]),
+    status: z.enum(["ACTIVE", "CANCELLED", "ARREARS"]),
     endDate: z.string().min(1, "End date is required"),
     planId: z.string().optional(),
     paymentOverdueOverride: z.boolean().optional(),
@@ -395,6 +414,7 @@ export const clubMemberCreateSchema = z
     coachSquadPriorities: coachSquadPrioritiesSchema,
     rosterRole: z.enum(["PLAYER", "COACH"]).default("PLAYER"),
     coachPaymentType: z.enum(COACH_PAYMENT_TYPES).optional(),
+    playerPaymentType: z.enum(PLAYER_PAYMENT_TYPES).optional(),
     active: z.boolean().optional(),
   })
   .refine(
@@ -423,6 +443,7 @@ export const clubMemberUpdateSchema = z.object({
   active: z.boolean().optional(),
   rosterRole: z.enum(["PLAYER", "COACH"]).optional(),
   coachPaymentType: z.enum(COACH_PAYMENT_TYPES).nullable().optional(),
+  playerPaymentType: z.enum(PLAYER_PAYMENT_TYPES).optional(),
   trainingTeamKey: z.string().nullable().optional(),
   trainingTeamKeys: z.array(z.string().min(1)).optional(),
   coachSquadPriorities: coachSquadPrioritiesSchema,

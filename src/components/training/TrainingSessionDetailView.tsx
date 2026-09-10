@@ -35,6 +35,7 @@ export function TrainingSessionDetailView({
   detail,
   canAccessAttendance,
   attendanceBlockReason = null,
+  isPaygTraining = false,
   monthParam,
   backHref,
   backLabel,
@@ -42,6 +43,7 @@ export function TrainingSessionDetailView({
   detail: TrainingSessionDetailData;
   canAccessAttendance: boolean;
   attendanceBlockReason?: AttendanceBlockReason | null;
+  isPaygTraining?: boolean;
   monthParam: string;
   backHref?: string;
   backLabel?: string;
@@ -135,7 +137,9 @@ export function TrainingSessionDetailView({
                 : !canAccessAttendance
                   ? attendanceBlockReason === "overdue"
                     ? "Your membership payment is overdue. Pay outstanding instalments to respond to training."
-                    : "Active membership is required to respond."
+                    : isPaygTraining
+                      ? "Pay Per Training is temporarily unavailable."
+                      : "Active membership is required to respond."
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the session — from ${format(responseOpensOn, "d MMMM")}.`
                     : detail.isCoachUser
@@ -160,6 +164,7 @@ export function TrainingSessionDetailView({
                   showLockedNotice={false}
                   coachMode={detail.isCoachUser}
                   coachResponseGate={detail.coachResponseGate}
+                  isPaygTraining={isPaygTraining}
                 />
               </div>
             )}

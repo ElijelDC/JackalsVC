@@ -9,6 +9,7 @@ declare module "next-auth" {
       profileImageUrl: string | null;
       isCoach: boolean;
       isPaidCoach: boolean;
+      isPaygPlayer: boolean;
       coachPaymentType: CoachPaymentType | null;
       coachTeamKey: string | null;
       coachTeamKeys: string[];
@@ -27,6 +28,7 @@ declare module "next-auth/jwt" {
     profileImageUrl?: string | null;
     isCoach?: boolean;
     isPaidCoach?: boolean;
+    isPaygPlayer?: boolean;
     coachPaymentType?: CoachPaymentType | null;
     coachTeamKey?: string | null;
     coachTeamKeys?: string[];

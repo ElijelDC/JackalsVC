@@ -50,12 +50,39 @@ export type AdminPaymentRecord = {
 };
 
 type ViewMode = "table" | "cards";
-type PaymentFilter = "ALL" | "PAID" | "UNPAID";
-type TeamFilter = "ALL" | string;
+type PaymentFilter = "ALL" | "PAID" | "UNPAID" | "OVERDUE";
+type SquadFilter = "ALL" | "d2m" | "d3w" | "d3m";
 type PlanFilter = "ALL" | string;
+
+const SQUAD_FILTERS: {
+  id: SquadFilter;
+  label: string;
+  keys: string[] | null;
+}[] = [
+  { id: "ALL", label: "All", keys: null },
+  { id: "d2m", label: "d2m", keys: ["DIV2_MENS"] },
+  { id: "d3w", label: "d3w", keys: ["DIV3_WOMENS"] },
+  { id: "d3m", label: "d3m", keys: ["DIV3_MENS", "DIV4_MENS"] },
+];
+
+function matchesSquadFilter(
+  trainingTeamKey: string | null | undefined,
+  squad: SquadFilter,
+) {
+  const filter = SQUAD_FILTERS.find((item) => item.id === squad);
+  if (!filter?.keys) return true;
+  return Boolean(trainingTeamKey && filter.keys.includes(trainingTeamKey));
+}
 
 function isPaymentPaid(payment: AdminPaymentRecord) {
   return payment.status === "COMPLETED";
+}
+
+function isPaymentOverdue(payment: AdminPaymentRecord) {
+  return (
+    !isPaymentPaid(payment) &&
+    getPendingPaymentDueState(payment.dueDate) === "overdue"
+  );
 }
 
 function canApprovePayment(payment: AdminPaymentRecord) {
@@ -118,7 +145,7 @@ function sortByDueDate(payments: AdminPaymentRecord[]) {
 
 export function AdminPaymentQueue({
   payments,
-  teams,
+  teams: _teams,
 }: {
   payments: AdminPaymentRecord[];
   teams: { key: string; name: string }[];
@@ -132,7 +159,7 @@ export function AdminPaymentQueue({
   const [message, setMessage] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("ALL");
-  const [teamFilter, setTeamFilter] = useState<TeamFilter>("ALL");
+  const [teamFilter, setTeamFilter] = useState<SquadFilter>("ALL");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("ALL");
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
@@ -154,8 +181,8 @@ export function AdminPaymentQueue({
     const query = search.trim().toLowerCase();
 
     return payments.filter((payment) => {
-      if (teamFilter !== "ALL") {
-        if ((payment.trainingTeamKey ?? "") !== teamFilter) return false;
+      if (!matchesSquadFilter(payment.trainingTeamKey, teamFilter)) {
+        return false;
       }
       if (planFilter !== "ALL") {
         if (payment.subscriptionLabel?.planName !== planFilter) return false;
@@ -191,6 +218,7 @@ export function AdminPaymentQueue({
       const paid = isPaymentPaid(payment);
       if (paymentFilter === "PAID" && !paid) return false;
       if (paymentFilter === "UNPAID" && paid) return false;
+      if (paymentFilter === "OVERDUE" && !isPaymentOverdue(payment)) return false;
       return true;
     });
 
@@ -200,6 +228,7 @@ export function AdminPaymentQueue({
   const stats = useMemo(() => {
     let unpaid = 0;
     let paid = 0;
+    let overdue = 0;
     let totalRemaining = 0;
     let totalPaid = 0;
 
@@ -210,10 +239,11 @@ export function AdminPaymentQueue({
       } else {
         unpaid += 1;
         totalRemaining += payment.amount;
+        if (isPaymentOverdue(payment)) overdue += 1;
       }
     }
 
-    return { unpaid, paid, totalRemaining, totalPaid };
+    return { unpaid, paid, overdue, totalRemaining, totalPaid };
   }, [filterBase]);
 
   const approvePayment = async (paymentId: string, memberName: string) => {
@@ -270,9 +300,10 @@ export function AdminPaymentQueue({
         }}
       />
 
-      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
         {[
           { label: "Unpaid", value: String(stats.unpaid) },
+          { label: "Overdue", value: String(stats.overdue) },
           { label: "Paid", value: String(stats.paid) },
           {
             label: "Total remaining",
@@ -336,22 +367,24 @@ export function AdminPaymentQueue({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative min-w-0 flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search name, email, reference…"
-                className="pl-9"
-              />
-            </div>
-            <div className="flex shrink-0 overflow-hidden rounded-lg border border-white/10">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
+          <div className="relative min-w-0 flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search name, email, reference…"
+              className="pl-9"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 lg:shrink-0">
+            <div className="flex overflow-hidden rounded-lg border border-white/10">
               {(
                 [
                   { value: "ALL" as const, label: "All" },
                   { value: "UNPAID" as const, label: "Unpaid" },
+                  { value: "OVERDUE" as const, label: "Overdue" },
                   { value: "PAID" as const, label: "Paid" },
                 ] as const
               ).map((option) => (
@@ -360,7 +393,7 @@ export function AdminPaymentQueue({
                   type="button"
                   onClick={() => setPaymentFilter(option.value)}
                   className={cn(
-                    "px-4 py-2 text-xs font-medium transition",
+                    "px-3 py-2 text-xs font-medium transition",
                     paymentFilter === option.value
                       ? "bg-white/10 text-white"
                       : "text-zinc-500 hover:bg-white/5 hover:text-zinc-300",
@@ -370,23 +403,29 @@ export function AdminPaymentQueue({
                 </button>
               ))}
             </div>
-          </div>
 
-          <div className="grid gap-2 sm:grid-cols-2">
-            <Select
-              value={teamFilter}
-              onChange={(e) => setTeamFilter(e.target.value as TeamFilter)}
-            >
-              <option value="ALL">All teams</option>
-              {teams.map((team) => (
-                <option key={team.key} value={team.key}>
-                  {team.name}
-                </option>
+            <div className="flex overflow-hidden rounded-lg border border-white/10">
+              {SQUAD_FILTERS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => setTeamFilter(item.id)}
+                  className={cn(
+                    "px-3 py-2 text-xs font-medium uppercase tracking-wide transition",
+                    teamFilter === item.id
+                      ? "bg-white/10 text-white"
+                      : "text-zinc-500 hover:bg-white/5 hover:text-zinc-300",
+                  )}
+                >
+                  {item.label}
+                </button>
               ))}
-            </Select>
+            </div>
+
             <Select
               value={planFilter}
               onChange={(e) => setPlanFilter(e.target.value as PlanFilter)}
+              className="min-w-[9.5rem]"
             >
               <option value="ALL">All plans</option>
               {planOptions.map((planName) => (

@@ -40,7 +40,9 @@ export default async function TrainingSessionPage({
   const { eventId } = await params;
   const { from } = await searchParams;
   const detail = await getTrainingSessionDetail(eventId, session.user.id);
-  const attendanceAccess = await getAttendanceAccessInfo(session.user);
+  const attendanceAccess = await getAttendanceAccessInfo(session.user, {
+    scope: "training",
+  });
   const monthParam = formatTrainingMonthParam(new Date(detail.event.startDate));
   const backLink = resolveDetailBackLink(from, {
     path: `/training?month=${monthParam}`,
@@ -52,6 +54,7 @@ export default async function TrainingSessionPage({
       detail={detail}
       canAccessAttendance={attendanceAccess.canAccess}
       attendanceBlockReason={attendanceAccess.blockReason}
+      isPaygTraining={attendanceAccess.isPaygTraining}
       monthParam={monthParam}
       backHref={backLink.path}
       backLabel={backLink.label}

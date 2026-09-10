@@ -88,6 +88,10 @@ export async function POST(request: Request) {
       rosterRole: data.rosterRole,
       coachPaymentType:
         data.rosterRole === "COACH" ? (data.coachPaymentType ?? "PAID") : null,
+      playerPaymentType:
+        data.rosterRole === "PLAYER"
+          ? (data.playerPaymentType ?? "MEMBERSHIP")
+          : "MEMBERSHIP",
       active: data.active ?? true,
     },
     include: {

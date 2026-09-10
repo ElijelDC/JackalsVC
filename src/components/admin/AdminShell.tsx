@@ -27,7 +27,6 @@ import {
   Shirt,
   ShoppingBag,
   Trophy,
-  UserCheck,
   UserPlus,
   Users,
   Volleyball,
@@ -60,19 +59,31 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
-    title: "Members",
+    title: "People",
     links: [
-      { href: "/admin/roster", label: "Roster", icon: ClipboardList, keywords: "members vly" },
-      { href: "/admin/users", label: "Users", icon: Users },
+      {
+        href: "/admin/members",
+        label: "Members",
+        icon: Users,
+        keywords: "roster users subscriptions vly payg account",
+      },
       {
         href: "/admin/registration-reviews",
         label: "Registration review",
         icon: UserPlus,
         keywords: "vly photo approve",
       },
-      { href: "/admin/subscriptions", label: "Subscriptions", icon: UserCheck, keywords: "membership" },
-      { href: "/admin/trials-applications", label: "Signups", icon: ClipboardPen },
-      { href: "/admin/one-off-sessions", label: "One-off sessions", icon: Calendar, keywords: "trial session" },
+    ],
+  },
+  {
+    title: "Applications",
+    links: [
+      {
+        href: "/admin/trials-applications",
+        label: "Trial signups",
+        icon: ClipboardPen,
+        keywords: "tryouts applicants email",
+      },
       {
         href: "/admin/coaching-applications",
         label: "Coaching applications",
@@ -99,8 +110,24 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     title: "Billing",
     links: [
-      { href: "/admin/payments", label: "Payments", icon: Banknote, keywords: "membership transfer" },
-      { href: "/admin/kit-orders", label: "Kit payments", icon: Shirt, keywords: "kit order" },
+      {
+        href: "/admin/payments",
+        label: "Payments",
+        icon: Banknote,
+        keywords: "membership transfer overdue instalment",
+      },
+      {
+        href: "/admin/training-payg",
+        label: "Pay Per Training",
+        icon: Dumbbell,
+        keywords: "pay as you go payg ppt receipt training fee",
+      },
+      {
+        href: "/admin/kit-orders",
+        label: "Kit payments",
+        icon: Shirt,
+        keywords: "kit order",
+      },
       {
         href: "/admin/merchandise-orders",
         label: "Merchandise payments",
@@ -108,17 +135,38 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         keywords: "merch order jackets training tshirt",
       },
       { href: "/admin/coach-payments", label: "Coach payments", icon: Wallet },
-      { href: "/admin/membership", label: "Plans", icon: CreditCard, keywords: "membership pricing" },
+      {
+        href: "/admin/membership",
+        label: "Membership plans",
+        icon: CreditCard,
+        keywords: "membership pricing",
+      },
+    ],
+  },
+  {
+    title: "Teams",
+    links: [
+      { href: "/admin/squads", label: "Squads", icon: Flag, keywords: "training team" },
+      { href: "/admin/teams", label: "Published teams", icon: Volleyball },
     ],
   },
   {
     title: "Schedule",
     links: [
       { href: "/admin/training", label: "Weekly training", icon: Dumbbell },
-      { href: "/admin/squads", label: "Squads", icon: Flag },
-      { href: "/admin/teams", label: "Teams", icon: Volleyball },
+      {
+        href: "/admin/one-off-sessions",
+        label: "One-off sessions",
+        icon: Calendar,
+        keywords: "trial session",
+      },
       { href: "/admin/matches", label: "Matches", icon: Trophy },
-      { href: "/admin/events", label: "Calendar", icon: Calendar, keywords: "events tournament" },
+      {
+        href: "/admin/events",
+        label: "Calendar",
+        icon: Calendar,
+        keywords: "events tournament",
+      },
       { href: "/admin/fun-sessions", label: "Fun sessions", icon: PartyPopper },
       { href: "/admin/reminders", label: "Reminders", icon: Bell },
     ],
@@ -128,7 +176,11 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     links: [
       { href: "/admin/gallery", label: "Gallery", icon: Camera },
       { href: "/admin/achievements", label: "Achievements", icon: Award },
-      { href: "/admin/tournament-photos", label: "Tournament photos", icon: Trophy },
+      {
+        href: "/admin/tournament-photos",
+        label: "Tournament photos",
+        icon: Trophy,
+      },
     ],
   },
   {
@@ -154,6 +206,7 @@ const ALL_ADMIN_LINKS = ADMIN_NAV_GROUPS.flatMap((group) =>
 );
 
 const QUICK_LINK_HREFS = [
+  "/admin/training-payg",
   "/admin/payments",
   "/admin/kit-orders",
   "/admin/merchandise-orders",
@@ -327,7 +380,8 @@ function AdminNavPanel({
       Object.fromEntries(
         ADMIN_NAV_GROUPS.map((group) => [
           group.title,
-          group.title === activeGroup || group.title === "Billing",
+          group.title === activeGroup ||
+            groupBadgeCount(group, badgeCounts) > 0,
         ]),
       ),
   );
@@ -338,6 +392,20 @@ function AdminNavPanel({
       [activeGroup]: true,
     }));
   }, [activeGroup]);
+
+  useEffect(() => {
+    setExpandedGroups((current) => {
+      let changed = false;
+      const next = { ...current };
+      for (const group of ADMIN_NAV_GROUPS) {
+        if (groupBadgeCount(group, badgeCounts) > 0 && !next[group.title]) {
+          next[group.title] = true;
+          changed = true;
+        }
+      }
+      return changed ? next : current;
+    });
+  }, [badgeCounts]);
 
   const filteredLinks = useMemo(() => {
     const query = search.trim().toLowerCase();

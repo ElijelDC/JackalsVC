@@ -405,9 +405,9 @@ export function AdminCoachPaymentsManager({
           <table className="w-full table-fixed text-left text-sm">
             <colgroup>
               <col />
+              <col className="w-[9.75rem]" />
               <col className="w-[5.5rem]" />
-              <col className="w-[4.5rem]" />
-              <col className="w-[5.25rem]" />
+              <col className="w-[5.75rem]" />
             </colgroup>
             <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
               <tr>
@@ -446,7 +446,7 @@ export function AdminCoachPaymentsManager({
                       <td className="px-2 py-2 whitespace-nowrap text-xs text-zinc-400">
                         {formatCoachPaymentMonth(payment.year, payment.month)}
                       </td>
-                      <td className="px-2 py-2 font-semibold text-jackals-gold">
+                      <td className="px-2 py-2 whitespace-nowrap font-semibold text-jackals-gold">
                         {formatEuroFee(payment.amount)}
                         {projected ? (
                           <span className="ml-1 inline-flex rounded-full border border-sky-500/30 bg-sky-500/10 px-1 py-0.5 text-[10px] font-medium text-sky-200">

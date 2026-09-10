@@ -481,34 +481,48 @@ export function TrialsApplicationsManager({
               className="pl-9"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-            <Select
-              value={teamFilter}
-              onChange={(event) =>
-                setTeamFilter(event.target.value as TeamFilter)
-              }
+          <div className="flex flex-nowrap gap-1.5 overflow-x-auto rounded-lg bg-black/20 p-1.5">
+            <button
+              type="button"
+              onClick={() => setTeamFilter("ALL")}
+              className={cn(
+                "shrink-0 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition",
+                teamFilter === "ALL"
+                  ? "bg-jackals-red text-white"
+                  : "text-zinc-400 hover:text-white",
+              )}
             >
-              <option value="ALL">All teams</option>
-              {TRIALS_TEAM_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
-            <Select
-              value={positionFilter}
-              onChange={(event) =>
-                setPositionFilter(event.target.value as PositionFilter)
-              }
-            >
-              <option value="ALL">All positions</option>
-              {TRIALS_POSITION_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </Select>
+              All teams
+            </button>
+            {TRIALS_TEAM_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTeamFilter(option.value)}
+                className={cn(
+                  "shrink-0 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition",
+                  teamFilter === option.value
+                    ? "bg-jackals-red text-white"
+                    : "text-zinc-400 hover:text-white",
+                )}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
+          <Select
+            value={positionFilter}
+            onChange={(event) =>
+              setPositionFilter(event.target.value as PositionFilter)
+            }
+          >
+            <option value="ALL">All positions</option>
+            {TRIALS_POSITION_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">

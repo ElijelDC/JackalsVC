@@ -7,6 +7,7 @@ import {
   ImageIcon,
   Loader2,
   Mail,
+  UserMinus,
   UserPlus,
   Users,
   X,
@@ -16,7 +17,7 @@ import { Input, Label } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { formatInClubTime } from "@/lib/datetime-form";
 import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
-import { apiPatch, apiPost } from "@/lib/client-api";
+import { apiDelete, apiPatch, apiPost } from "@/lib/client-api";
 import type {
   TrialSessionReminderStats,
   TrialSessionSignupRecord,
@@ -181,6 +182,40 @@ export function TrialSessionSignupsPanel({
     }
   };
 
+  const kickOut = async (signup: TrialSessionSignupRecord) => {
+    if (
+      !window.confirm(
+        `Kick ${signup.displayName} out of this session? They will be removed and can sign up again later.`,
+      )
+    ) {
+      return;
+    }
+
+    const previous = signups;
+    const previousSelected = selectedSignupIds;
+    onSignupsChange(signups.filter((row) => row.id !== signup.id));
+    onSelectSignupIds(selectedSignupIds.filter((id) => id !== signup.id));
+    setUpdatingIds([signup.id]);
+    onError(null);
+
+    const result = await apiDelete(
+      `/api/admin/trial-sessions/${sessionId}/signups/${signup.id}`,
+      "kick attendee out",
+    );
+
+    setUpdatingIds([]);
+
+    if (!result.ok) {
+      onSignupsChange(previous);
+      onSelectSignupIds(previousSelected);
+      onError(result.error);
+      return;
+    }
+
+    if (expandedId === signup.id) setExpandedId(null);
+    void refreshNotifications();
+  };
+
   const toggleSignupSelection = (signup: TrialSessionSignupRecord) => {
     if (signup.reminderSent || signup.status !== "APPROVED") return;
     onSelectSignupIds(
@@ -241,6 +276,27 @@ export function TrialSessionSignupsPanel({
 
   const renderActions = (signup: TrialSessionSignupRecord) => {
     const updating = updatingIds.includes(signup.id);
+
+    if (signup.status === "APPROVED") {
+      return (
+        <div className="flex items-center justify-end gap-1">
+          <button
+            type="button"
+            title="Kick out"
+            disabled={updating || busy}
+            onClick={() => void kickOut(signup)}
+            className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
+          >
+            {updating ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <UserMinus className="h-3.5 w-3.5" />
+            )}
+          </button>
+        </div>
+      );
+    }
+
     if (signup.status !== "PENDING") return null;
 
     return (
@@ -317,6 +373,25 @@ export function TrialSessionSignupsPanel({
               >
                 <X className="h-4 w-4" />
                 Reject
+              </Button>
+            </div>
+          ) : null}
+          {signup.status === "APPROVED" ? (
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={updating || busy}
+                className="border-rose-500/30 text-rose-200 hover:border-rose-400/50 hover:bg-rose-500/10"
+                onClick={() => void kickOut(signup)}
+              >
+                {updating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <UserMinus className="h-4 w-4" />
+                )}
+                Kick out
               </Button>
             </div>
           ) : null}
@@ -763,6 +838,23 @@ export function TrialSessionSignupsPanel({
                               }
                             >
                               <X className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
+                        ) : signup.status === "APPROVED" ? (
+                          <div className="flex shrink-0 gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="ghost"
+                              disabled={updating || busy}
+                              title="Kick out"
+                              onClick={() => void kickOut(signup)}
+                            >
+                              {updating ? (
+                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                              ) : (
+                                <UserMinus className="h-3.5 w-3.5" />
+                              )}
                             </Button>
                           </div>
                         ) : null}

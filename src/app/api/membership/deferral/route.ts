@@ -96,7 +96,7 @@ export async function POST(request: Request) {
         },
         { label: "Reason", value: data.excuse.trim() },
       ],
-      ctaUrl: emailSiteUrl("/admin/subscriptions"),
+      ctaUrl: emailSiteUrl("/admin/members?focus=subscription"),
       ctaLabel: "Review subscriptions",
     },
   });

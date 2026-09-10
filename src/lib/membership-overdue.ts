@@ -31,7 +31,8 @@ export type MembershipSubscriptionFilter =
   | "expired"
   | "overridden"
   | "overdue"
-  | "cancelled";
+  | "cancelled"
+  | "arrears";
 
 export function isInstallmentSchedule(schedule: string): boolean {
   return schedule === "MONTHLY" || schedule === "INSTALLMENTS";
@@ -53,6 +54,75 @@ export function isPaymentOverdueOverrideActive(input: {
   return startOfDay(until).getTime() >= startOfDay(now).getTime();
 }
 
+/** Payment-based past-due / past-grace state (ignores membership status). */
+export function assessInstallmentPaymentState(input: {
+  paymentSchedule: string;
+  payments: PaymentForAccess[];
+  now?: Date;
+}): Pick<
+  MembershipPaymentAccess,
+  | "isOverdue"
+  | "isPastDue"
+  | "overduePayment"
+  | "daysPastDue"
+  | "graceDaysRemaining"
+> {
+  const now = input.now ?? new Date();
+  const empty = {
+    isOverdue: false,
+    isPastDue: false,
+    overduePayment: null,
+    daysPastDue: 0,
+    graceDaysRemaining: null,
+  };
+
+  if (!isInstallmentSchedule(input.paymentSchedule)) {
+    return empty;
+  }
+
+  const pendingWithDue = input.payments
+    .filter((payment) => payment.status === "PENDING" && payment.dueDate)
+    .map((payment) => ({
+      ...payment,
+      dueDate: new Date(payment.dueDate!),
+    }))
+    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
+
+  const earliestPastDue = pendingWithDue.find((payment) => payment.dueDate < now);
+  if (!earliestPastDue) {
+    return empty;
+  }
+
+  const graceEnd = addDays(earliestPastDue.dueDate, PAYMENT_OVERDUE_GRACE_DAYS);
+  const daysPastDue = Math.max(
+    0,
+    differenceInCalendarDays(now, earliestPastDue.dueDate),
+  );
+  const overduePayment = {
+    amount: earliestPastDue.amount,
+    dueDate: earliestPastDue.dueDate,
+    installmentNumber: earliestPastDue.installmentNumber,
+  };
+
+  if (now < graceEnd) {
+    return {
+      isOverdue: false,
+      isPastDue: true,
+      overduePayment,
+      daysPastDue,
+      graceDaysRemaining: differenceInCalendarDays(graceEnd, now),
+    };
+  }
+
+  return {
+    isOverdue: true,
+    isPastDue: true,
+    overduePayment,
+    daysPastDue,
+    graceDaysRemaining: 0,
+  };
+}
+
 export function assessMembershipPaymentAccess(input: {
   membershipStatus: string;
   paymentSchedule: string;
@@ -70,6 +140,12 @@ export function assessMembershipPaymentAccess(input: {
   const overrideUntil = input.paymentOverdueOverrideUntil
     ? new Date(input.paymentOverdueOverrideUntil)
     : null;
+
+  const installment = assessInstallmentPaymentState({
+    paymentSchedule: input.paymentSchedule,
+    payments: input.payments,
+    now,
+  });
 
   const base: MembershipPaymentAccess = {
     canAccessTrainingAndMatches: false,
@@ -89,6 +165,19 @@ export function assessMembershipPaymentAccess(input: {
     };
   }
 
+  // Explicit arrears status: blocked unless admin override is active.
+  if (input.membershipStatus === "ARREARS") {
+    return {
+      ...base,
+      ...installment,
+      isOverdue: true,
+      isPastDue: true,
+      canAccessTrainingAndMatches: overrideActive,
+      hasOverride: overrideActive,
+      overrideUntil,
+    };
+  }
+
   if (input.membershipStatus !== "ACTIVE") {
     return base;
   }
@@ -103,62 +192,32 @@ export function assessMembershipPaymentAccess(input: {
   if (overrideActive) {
     return {
       ...base,
+      ...installment,
       canAccessTrainingAndMatches: true,
       hasOverride: true,
       overrideUntil,
     };
   }
 
-  const pendingWithDue = input.payments
-    .filter((payment) => payment.status === "PENDING" && payment.dueDate)
-    .map((payment) => ({
-      ...payment,
-      dueDate: new Date(payment.dueDate!),
-    }))
-    .sort((a, b) => a.dueDate.getTime() - b.dueDate.getTime());
-
-  const earliestPastDue = pendingWithDue.find((payment) => payment.dueDate < now);
-
-  if (!earliestPastDue) {
+  if (!installment.isPastDue) {
     return {
       ...base,
       canAccessTrainingAndMatches: true,
     };
   }
 
-  const graceEnd = addDays(earliestPastDue.dueDate, PAYMENT_OVERDUE_GRACE_DAYS);
-  const daysPastDue = Math.max(
-    0,
-    differenceInCalendarDays(now, earliestPastDue.dueDate),
-  );
-  const overduePayment = {
-    amount: earliestPastDue.amount,
-    dueDate: earliestPastDue.dueDate,
-    installmentNumber: earliestPastDue.installmentNumber,
-  };
-
-  if (now < graceEnd) {
+  if (!installment.isOverdue) {
     return {
+      ...base,
+      ...installment,
       canAccessTrainingAndMatches: true,
-      isOverdue: false,
-      isPastDue: true,
-      hasOverride: false,
-      overrideUntil: null,
-      overduePayment,
-      daysPastDue,
-      graceDaysRemaining: differenceInCalendarDays(graceEnd, now),
     };
   }
 
   return {
+    ...base,
+    ...installment,
     canAccessTrainingAndMatches: false,
-    isOverdue: true,
-    isPastDue: true,
-    hasOverride: false,
-    overrideUntil: null,
-    overduePayment,
-    daysPastDue,
-    graceDaysRemaining: 0,
   };
 }
 
@@ -191,6 +250,10 @@ export function matchesMembershipSubscriptionFilter(
     return membership.status === "CANCELLED";
   }
 
+  if (filter === "arrears") {
+    return membership.status === "ARREARS";
+  }
+
   if (filter === "overridden") {
     return isPaymentOverdueOverrideActive({
       paymentOverdueOverride: membership.paymentOverdueOverride,
@@ -210,8 +273,7 @@ export function matchesMembershipSubscriptionFilter(
     });
 
     return (
-      membership.status === "ACTIVE" &&
-      isInstallmentSchedule(membership.paymentSchedule) &&
+      (membership.status === "ACTIVE" || membership.status === "ARREARS") &&
       access.isOverdue
     );
   }

@@ -14,6 +14,7 @@ import {
 } from "@/lib/membership-config";
 import { getClubBankDetails } from "@/lib/payments";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
+import { syncMembershipArrearsStatus } from "@/lib/membership";
 import { getCoachProfile } from "@/lib/coach-auth";
 import { isDashboardReturn } from "@/lib/dashboard-return";
 import { isCoachMembershipStatus } from "@/lib/membership-status";
@@ -31,6 +32,10 @@ export default async function MembershipPage({
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login?callbackUrl=/membership");
+  }
+
+  if (session.user.isPaygPlayer) {
+    redirect("/dashboard");
   }
 
   const { from } = await searchParams;
@@ -64,9 +69,15 @@ export default async function MembershipPage({
       where: { membershipId: membership.id },
       orderBy: [{ dueDate: "asc" }, { installmentNumber: "asc" }, { createdAt: "asc" }],
     });
+    const membershipStatus = await syncMembershipArrearsStatus({
+      id: membership.id,
+      status: membership.status,
+      paymentSchedule: membership.paymentSchedule,
+      payments,
+    });
     const clubBank = getClubBankDetails();
     const paymentAccess = assessMembershipPaymentAccess({
-      membershipStatus: membership.status,
+      membershipStatus,
       paymentSchedule: membership.paymentSchedule,
       paymentOverdueOverride: membership.paymentOverdueOverride,
       paymentOverdueOverrideUntil: membership.paymentOverdueOverrideUntil,
@@ -85,7 +96,7 @@ export default async function MembershipPage({
         <MemberPaymentStatus
           memberName={session.user.name ?? "Member"}
           membership={{
-            status: membership.status,
+            status: membershipStatus,
             paymentSchedule: membership.paymentSchedule as PaymentSchedule,
             planName: membership.plan.name,
             endDate: membership.endDate.toISOString(),
@@ -172,6 +183,9 @@ export default async function MembershipPage({
           description: plan.description,
           price: plan.price,
           durationMonths: plan.durationMonths,
+          installment1Eur: plan.installment1Eur,
+          installment2Eur: plan.installment2Eur,
+          installment3Eur: plan.installment3Eur,
         }))}
       />
     </PageContainer>

@@ -14,18 +14,21 @@ export function MemberMobileQuickNav({
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 }: {
   pathname: string;
   isLoggedIn: boolean;
   isAdmin?: boolean;
   isCoach?: boolean;
   isPaidCoach?: boolean;
+  isPaygPlayer?: boolean;
 }) {
   const items = visibleMemberMobileQuickNavItems(
     isLoggedIn,
     isAdmin,
     isCoach,
     isPaidCoach,
+    isPaygPlayer,
   );
 
   if (items.length === 0) {

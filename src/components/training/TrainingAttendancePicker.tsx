@@ -6,6 +6,7 @@ import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { AlertBanner } from "@/components/ui/FormMessage";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
+import { TrainingPaygPaymentModal } from "@/components/training/TrainingPaygPaymentModal";
 import {
   canRespondToTrainingSession,
   getTrainingResponseOpensOn,
@@ -41,6 +42,7 @@ export function TrainingAttendancePicker({
   itemLabel = "session",
   coachMode = false,
   coachResponseGate = null,
+  isPaygTraining = false,
   className,
 }: {
   eventId?: string;
@@ -53,13 +55,14 @@ export function TrainingAttendancePicker({
   itemLabel?: string;
   coachMode?: boolean;
   coachResponseGate?: CoachResponseGate | null;
+  isPaygTraining?: boolean;
   className?: string;
 }) {
   const targetId = matchId ?? eventId;
 
   return (
     <TrainingAttendancePickerInner
-      key={`${targetId}-${initialStatus}-${coachResponseGate?.kind ?? "open"}`}
+      key={`${targetId}-${initialStatus}-${coachResponseGate?.kind ?? "open"}-${isPaygTraining}`}
       eventId={eventId}
       matchId={matchId}
       sessionStartDate={sessionStartDate}
@@ -70,6 +73,7 @@ export function TrainingAttendancePicker({
       itemLabel={itemLabel}
       coachMode={coachMode}
       coachResponseGate={coachResponseGate}
+      isPaygTraining={isPaygTraining}
       className={className}
     />
   );
@@ -86,6 +90,7 @@ function TrainingAttendancePickerInner({
   itemLabel = "session",
   coachMode = false,
   coachResponseGate = null,
+  isPaygTraining = false,
   className,
 }: {
   eventId?: string;
@@ -98,6 +103,7 @@ function TrainingAttendancePickerInner({
   itemLabel?: string;
   coachMode?: boolean;
   coachResponseGate?: CoachResponseGate | null;
+  isPaygTraining?: boolean;
   className?: string;
 }) {
   const router = useRouter();
@@ -111,11 +117,19 @@ function TrainingAttendancePickerInner({
   );
   const [clearing, setClearing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [paygOpen, setPaygOpen] = useState(false);
   const isMatch = Boolean(matchId);
   const targetId = matchId ?? eventId;
+  const needsPayg = isPaygTraining && !isMatch && Boolean(eventId);
 
   const setAttendance = async (next: TrainingAttendanceResponseStatus) => {
     if (disabled || !canRespond || coverLocked || !targetId || next === status) {
+      return;
+    }
+
+    if (needsPayg && next === "ATTENDING") {
+      setMessage(null);
+      setPaygOpen(true);
       return;
     }
 
@@ -124,7 +138,9 @@ function TrainingAttendancePickerInner({
 
     const result = await apiPost(
       isMatch ? "/api/match-signups" : "/api/event-signups",
-      isMatch ? { matchId: targetId, status: next } : { eventId: targetId, status: next },
+      isMatch
+        ? { matchId: targetId, status: next }
+        : { eventId: targetId, status: next },
       "Failed to update response",
     );
 
@@ -180,7 +196,10 @@ function TrainingAttendancePickerInner({
     <div className={cn("space-y-2", className)}>
       <AlertBanner message={message} />
       {!canRespond && status === "UNANSWERED" && showLockedNotice && (
-        <TrainingResponsesLockedNotice opensOn={responseOpensOn} itemLabel={itemLabel} />
+        <TrainingResponsesLockedNotice
+          opensOn={responseOpensOn}
+          itemLabel={itemLabel}
+        />
       )}
       {canRespond && coachResponseGate?.kind === "waiting_for_head" && (
         <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3">
@@ -203,6 +222,11 @@ function TrainingAttendancePickerInner({
             needed.
           </p>
         </div>
+      )}
+      {needsPayg && status !== "ATTENDING" && canRespond && !coverLocked && (
+        <p className="text-xs text-amber-200/80">
+          Pay Per Training until membership starts in October.
+        </p>
       )}
       <div
         className={cn(
@@ -270,6 +294,18 @@ function TrainingAttendancePickerInner({
           />
           {clearing ? "Clearing..." : "Clear response (back to unanswered)"}
         </Button>
+      ) : null}
+
+      {needsPayg && eventId ? (
+        <TrainingPaygPaymentModal
+          open={paygOpen}
+          eventId={eventId}
+          onClose={() => setPaygOpen(false)}
+          onApproved={() => {
+            setStatus("ATTENDING");
+            router.refresh();
+          }}
+        />
       ) : null}
     </div>
   );

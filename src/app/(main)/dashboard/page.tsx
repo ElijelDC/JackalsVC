@@ -21,7 +21,10 @@ import { COACH_SESSION_RATE_EUR, isCurrentPaymentMonth, maskCoachPaymentForCoach
 import { getDashboardClubEvents } from "@/lib/dashboard-club-events";
 import { getUpcomingTeamMatches } from "@/lib/matches";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
-import { getAttendanceAccessInfo } from "@/lib/membership";
+import {
+  getAttendanceAccessInfo,
+  syncMembershipArrearsStatus,
+} from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import { TRAINING_RESPONSE_OPENS_DAYS } from "@/lib/training-attendance-config";
 import { getUpcomingTeamTrainingEvents } from "@/lib/training-attendance";
@@ -162,9 +165,18 @@ export default async function DashboardPage() {
       })
     : [];
 
+  const membershipStatus = currentMembership
+    ? await syncMembershipArrearsStatus({
+        id: currentMembership.id,
+        status: currentMembership.status,
+        paymentSchedule: currentMembership.paymentSchedule,
+        payments,
+      })
+    : null;
+
   const paymentAccess = currentMembership
     ? assessMembershipPaymentAccess({
-        membershipStatus: currentMembership.status,
+        membershipStatus: membershipStatus ?? currentMembership.status,
         paymentSchedule: currentMembership.paymentSchedule,
         paymentOverdueOverride: currentMembership.paymentOverdueOverride,
         paymentOverdueOverrideUntil: currentMembership.paymentOverdueOverrideUntil,
@@ -173,47 +185,57 @@ export default async function DashboardPage() {
     : null;
 
   const attendanceAccess = await getAttendanceAccessInfo(session.user);
+  const isPaygPlayer = Boolean(session.user.isPaygPlayer);
 
   return (
     <PageContainer className="overflow-x-hidden py-8 sm:py-12">
       <DashboardWelcomeSection
         title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
-        description="Your membership, training, and matches at a glance"
+        description={
+          isPaygPlayer
+            ? "Your training and matches at a glance"
+            : "Your membership, training, and matches at a glance"
+        }
       />
 
       <AnimatedPageSections>
-        <MemberPaymentsPanel
-          memberships={memberships.map((m) => ({
-            id: m.id,
-            status: m.status,
-            paymentSchedule: m.paymentSchedule as "MONTHLY" | "INSTALLMENTS" | "FULL",
-            paymentOverdueOverride: m.paymentOverdueOverride,
-            startDate: m.startDate.toISOString(),
-            endDate: m.endDate.toISOString(),
-            plan: { name: m.plan.name, price: m.plan.price },
-          }))}
-          payments={payments.map((p) => ({
-            id: p.id,
-            amount: p.amount,
-            status: p.status,
-            installmentNumber: p.installmentNumber,
-            dueDate: p.dueDate?.toISOString() ?? null,
-          }))}
-          paymentAccess={paymentAccess}
-        />
+        {!isPaygPlayer && (
+          <MemberPaymentsPanel
+            memberships={memberships.map((m) => ({
+              id: m.id,
+              status:
+                currentMembership?.id === m.id && membershipStatus
+                  ? membershipStatus
+                  : m.status,
+              paymentSchedule: m.paymentSchedule as "MONTHLY" | "INSTALLMENTS" | "FULL",
+              paymentOverdueOverride: m.paymentOverdueOverride,
+              startDate: m.startDate.toISOString(),
+              endDate: m.endDate.toISOString(),
+              plan: { name: m.plan.name, price: m.plan.price },
+            }))}
+            payments={payments.map((p) => ({
+              id: p.id,
+              amount: p.amount,
+              status: p.status,
+              installmentNumber: p.installmentNumber,
+              dueDate: p.dueDate?.toISOString() ?? null,
+            }))}
+            paymentAccess={paymentAccess}
+          />
+        )}
 
         <div className="grid min-w-0 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
           <DashboardUpcomingTrainingCard
             teamName={team?.name ?? null}
             sessions={upcomingTraining}
-            attendanceBlocked={!attendanceAccess.canAccess}
-            attendanceBlockReason={attendanceAccess.blockReason}
+            attendanceBlocked={!attendanceAccess.canAccessTraining}
+            attendanceBlockReason={attendanceAccess.blockReasonTraining}
           />
           <DashboardUpcomingMatchesCard
             teamName={team?.name ?? null}
             matches={upcomingMatches}
-            attendanceBlocked={!attendanceAccess.canAccess}
-            attendanceBlockReason={attendanceAccess.blockReason}
+            attendanceBlocked={!attendanceAccess.canAccessMatches}
+            attendanceBlockReason={attendanceAccess.blockReasonMatches}
           />
         </div>
 

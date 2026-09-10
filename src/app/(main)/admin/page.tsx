@@ -10,7 +10,6 @@ import {
   Bell,
   Calendar,
   Camera,
-  ClipboardList,
   CreditCard,
   Dumbbell,
   Images,
@@ -19,7 +18,6 @@ import {
   Trophy,
   Package,
   ShoppingBag,
-  UserCheck,
   Users,
   Volleyball,
 } from "lucide-react";
@@ -28,18 +26,11 @@ export const metadata = { title: "Admin" };
 
 const SECTIONS = [
   {
-    href: "/admin/users",
-    title: "Users",
-    description: "Accounts and roles",
+    href: "/admin/members",
+    title: "Members",
+    description: "Roster, accounts, and subscriptions",
     icon: Users,
-    countKey: "users" as const,
-  },
-  {
-    href: "/admin/roster",
-    title: "Registered Members",
-    description: "VLY numbers, names, and squads",
-    icon: ClipboardList,
-    countKey: "roster" as const,
+    countKey: "membersHub" as const,
   },
   {
     href: "/admin/kit-orders",
@@ -54,13 +45,6 @@ const SECTIONS = [
     description: "Training t-shirts and club jackets",
     icon: ShoppingBag,
     countKey: "merchandiseOrders" as const,
-  },
-  {
-    href: "/admin/subscriptions",
-    title: "Subscriptions",
-    description: "Grant and manage memberships",
-    icon: UserCheck,
-    countKey: "members" as const,
   },
   {
     href: "/admin/membership",
@@ -152,7 +136,6 @@ export default async function AdminPage() {
   const [
     users,
     plans,
-    members,
     roster,
     kitOrders,
     merchandiseOrders,
@@ -170,7 +153,6 @@ export default async function AdminPage() {
   ] = await Promise.all([
     prisma.user.count(),
     prisma.membershipPlan.count(),
-    prisma.membership.count(),
     prisma.clubMember.count(),
     prisma.kitOrder.count(),
     prisma.merchandiseOrder.count(),
@@ -192,10 +174,8 @@ export default async function AdminPage() {
   ]);
 
   const counts = {
-    users,
+    membersHub: users + roster,
     plans,
-    members,
-    roster,
     kitOrders,
     merchandiseOrders,
     training,

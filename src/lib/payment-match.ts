@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { syncMembershipArrearsStatus } from "@/lib/membership";
 import { parsePaymentReference } from "@/lib/payments";
 import { normalizeMatchText } from "@/lib/sumup";
 
@@ -44,17 +45,33 @@ export async function completeMatchedPayment(
 
   if (!payment.membershipId) return;
 
-  const paidCount = await prisma.payment.count({
-    where: {
-      membershipId: payment.membershipId,
-      status: "COMPLETED",
+  const membership = await prisma.membership.findUnique({
+    where: { id: payment.membershipId },
+    include: {
+      payments: {
+        select: {
+          status: true,
+          dueDate: true,
+          amount: true,
+          installmentNumber: true,
+        },
+      },
     },
   });
+  if (!membership) return;
 
-  if (paidCount === 1) {
+  const paidCount = membership.payments.filter((row) => row.status === "COMPLETED")
+    .length;
+
+  if (paidCount === 1 || membership.status === "PENDING_PAYMENT") {
     await prisma.membership.update({
-      where: { id: payment.membershipId },
+      where: { id: membership.id },
       data: { status: "ACTIVE" },
     });
+    return;
+  }
+
+  if (membership.status === "ARREARS") {
+    await syncMembershipArrearsStatus(membership);
   }
 }

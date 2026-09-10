@@ -92,7 +92,7 @@ export async function POST(request: Request) {
           { label: "VLY number", value: vlyNumber },
           { label: "Email", value: user.email },
         ],
-        ctaUrl: emailSiteUrl("/admin/users"),
+        ctaUrl: emailSiteUrl("/admin/members?focus=account"),
         ctaLabel: "View members",
       },
     });

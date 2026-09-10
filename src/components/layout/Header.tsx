@@ -80,6 +80,7 @@ export function Header({ session }: { session: Session | null }) {
   const isAdmin = session?.user?.role === "ADMIN";
   const isCoach = Boolean(session?.user?.isCoach);
   const isPaidCoach = Boolean(session?.user?.isPaidCoach);
+  const isPaygPlayer = Boolean(session?.user?.isPaygPlayer);
   const isLoggedIn = Boolean(session?.user);
   const [mobileOpenPath, setMobileOpenPath] = useState<string | null>(null);
   const mobileOpen = mobileOpenPath === pathname;
@@ -126,6 +127,7 @@ export function Header({ session }: { session: Session | null }) {
           isAdmin={isAdmin}
           isCoach={isCoach}
           isPaidCoach={isPaidCoach}
+          isPaygPlayer={isPaygPlayer}
         />
 
         <nav className="hidden items-center gap-0.5 lg:flex">
@@ -136,6 +138,7 @@ export function Header({ session }: { session: Session | null }) {
             isAdmin={isAdmin}
             isCoach={isCoach}
             isPaidCoach={isPaidCoach}
+            isPaygPlayer={isPaygPlayer}
           />
         </nav>
 
@@ -184,6 +187,7 @@ export function Header({ session }: { session: Session | null }) {
                   isAdmin={isAdmin}
                   isCoach={isCoach}
                   isPaidCoach={isPaidCoach}
+                  isPaygPlayer={isPaygPlayer}
                 />
               </div>
             </div>

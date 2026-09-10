@@ -1,11 +1,28 @@
 import { NextResponse } from "next/server";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
-import { toPlanData, validateMembershipPlanPrice } from "@/lib/membership-config";
+import {
+  toPlanData,
+  validateInstallmentAmounts,
+  validateMembershipPlanPrice,
+} from "@/lib/membership-config";
 import { prisma } from "@/lib/prisma";
 import { membershipPlanSchema } from "@/lib/validations";
 
-function validatePlanPricing(data: { price: number; durationMonths: number }) {
-  return validateMembershipPlanPrice(data.price, data.durationMonths);
+function validatePlanPricing(data: {
+  price: number;
+  durationMonths: number;
+  installment1Eur: number;
+  installment2Eur: number;
+  installment3Eur: number;
+}) {
+  return (
+    validateMembershipPlanPrice(data.price, data.durationMonths) ??
+    validateInstallmentAmounts(data.price, [
+      data.installment1Eur,
+      data.installment2Eur,
+      data.installment3Eur,
+    ])
+  );
 }
 
 export async function PUT(

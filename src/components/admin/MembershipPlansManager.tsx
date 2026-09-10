@@ -12,9 +12,8 @@ import { Textarea } from "@/components/ui/InputFields";
 import { FormError } from "@/components/ui/FormMessage";
 import { apiDelete, apiGet, apiPost, apiPut } from "@/lib/client-api";
 import {
-  createMembershipPricing,
-  getMonthlyFirstAmount,
-  getMonthlyRecurringAmount,
+  defaultInstallmentAmounts,
+  planInstallmentAmounts,
 } from "@/lib/membership-config";
 import { cn, formatEuroFee } from "@/lib/utils";
 
@@ -24,6 +23,9 @@ type MembershipPlan = {
   description: string;
   price: number;
   durationMonths: number;
+  installment1Eur: number | null;
+  installment2Eur: number | null;
+  installment3Eur: number | null;
   active: boolean;
   _count?: { memberships: number };
 };
@@ -33,6 +35,9 @@ type PlanFormState = {
   description: string;
   price: string;
   durationMonths: string;
+  installment1Eur: string;
+  installment2Eur: string;
+  installment3Eur: string;
   active: boolean;
 };
 
@@ -40,16 +45,36 @@ const emptyForm: PlanFormState = {
   name: "",
   description: "",
   price: "",
-  durationMonths: "1",
+  durationMonths: "7",
+  installment1Eur: "",
+  installment2Eur: "",
+  installment3Eur: "",
   active: true,
 };
 
+function amountsForPrice(price: number): Pick<
+  PlanFormState,
+  "installment1Eur" | "installment2Eur" | "installment3Eur"
+> {
+  const [oct, jan, mar] = defaultInstallmentAmounts(price);
+  return {
+    installment1Eur: String(oct),
+    installment2Eur: String(jan),
+    installment3Eur: String(mar),
+  };
+}
+
 function formFromPlan(plan: MembershipPlan): PlanFormState {
+  const configured = planInstallmentAmounts(plan);
+  const amounts = configured ?? defaultInstallmentAmounts(plan.price);
   return {
     name: plan.name,
     description: plan.description,
     price: String(plan.price),
     durationMonths: String(plan.durationMonths),
+    installment1Eur: String(amounts[0]),
+    installment2Eur: String(amounts[1]),
+    installment3Eur: String(amounts[2]),
     active: plan.active,
   };
 }
@@ -64,11 +89,10 @@ function PlanFields({
   idPrefix: string;
 }) {
   const parsedPrice = Number(form.price);
-  const parsedDuration = Number(form.durationMonths);
-  const pricingPreview =
-    form.price && form.durationMonths
-      ? createMembershipPricing(parsedPrice, parsedDuration)
-      : null;
+  const installmentSum =
+    Number(form.installment1Eur || 0) +
+    Number(form.installment2Eur || 0) +
+    Number(form.installment3Eur || 0);
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
@@ -100,16 +124,19 @@ function PlanFields({
           min="0"
           step="0.01"
           value={form.price}
-          onChange={(e) => setForm({ ...form, price: e.target.value })}
+          onChange={(e) => {
+            const price = e.target.value;
+            const parsed = Number(price);
+            setForm({
+              ...form,
+              price,
+              ...(Number.isFinite(parsed) && parsed > 0
+                ? amountsForPrice(parsed)
+                : {}),
+            });
+          }}
           required
         />
-        {pricingPreview ? (
-          <p className="mt-1.5 text-xs text-zinc-500">
-            Monthly schedule preview:{" "}
-            {formatEuroFee(getMonthlyFirstAmount(pricingPreview))} first month,
-            then {formatEuroFee(getMonthlyRecurringAmount(pricingPreview))}/mo.
-          </p>
-        ) : null}
       </div>
       <div>
         <Label htmlFor={`${idPrefix}-duration`}>Duration (months)</Label>
@@ -124,6 +151,76 @@ function PlanFields({
           required
         />
       </div>
+
+      <div className="sm:col-span-2 space-y-3 rounded-lg border border-white/10 bg-black/20 p-4">
+        <div>
+          <p className="text-sm font-medium text-white">3 instalment amounts</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Set October, January, and March separately. They must add up to the
+            membership price
+            {Number.isFinite(parsedPrice) && parsedPrice > 0
+              ? ` (${formatEuroFee(parsedPrice)})`
+              : ""}
+            . Changing the price refreshes a suggested split you can edit.
+          </p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <Label htmlFor={`${idPrefix}-oct`}>October (€)</Label>
+            <Input
+              id={`${idPrefix}-oct`}
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={form.installment1Eur}
+              onChange={(e) =>
+                setForm({ ...form, installment1Eur: e.target.value })
+              }
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor={`${idPrefix}-jan`}>January (€)</Label>
+            <Input
+              id={`${idPrefix}-jan`}
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={form.installment2Eur}
+              onChange={(e) =>
+                setForm({ ...form, installment2Eur: e.target.value })
+              }
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor={`${idPrefix}-mar`}>March (€)</Label>
+            <Input
+              id={`${idPrefix}-mar`}
+              type="number"
+              min="0.01"
+              step="0.01"
+              value={form.installment3Eur}
+              onChange={(e) =>
+                setForm({ ...form, installment3Eur: e.target.value })
+              }
+              required
+            />
+          </div>
+        </div>
+        <p
+          className={cn(
+            "text-xs",
+            Number.isFinite(parsedPrice) &&
+              Math.round(installmentSum * 100) === Math.round(parsedPrice * 100)
+              ? "text-emerald-400"
+              : "text-amber-300",
+          )}
+        >
+          Instalments total: {formatEuroFee(installmentSum)}
+        </p>
+      </div>
+
       <label className="flex items-center gap-2 text-sm text-zinc-300">
         <Checkbox
           checked={form.active}
@@ -133,6 +230,19 @@ function PlanFields({
       </label>
     </div>
   );
+}
+
+function planPayload(form: PlanFormState) {
+  return {
+    name: form.name,
+    description: form.description,
+    price: Number(form.price),
+    durationMonths: Number(form.durationMonths),
+    installment1Eur: Number(form.installment1Eur),
+    installment2Eur: Number(form.installment2Eur),
+    installment3Eur: Number(form.installment3Eur),
+    active: form.active,
+  };
 }
 
 export function MembershipPlansManager({
@@ -180,13 +290,7 @@ export function MembershipPlansManager({
     setCreateMessage(null);
     setListMessage(null);
 
-    const result = await apiPost("/api/admin/membership-plans", {
-      name: createForm.name,
-      description: createForm.description,
-      price: Number(createForm.price),
-      durationMonths: Number(createForm.durationMonths),
-      active: createForm.active,
-    });
+    const result = await apiPost("/api/admin/membership-plans", planPayload(createForm));
 
     setLoading(false);
 
@@ -210,13 +314,10 @@ export function MembershipPlansManager({
     setEditError(null);
     setListMessage(null);
 
-    const result = await apiPut(`/api/admin/membership-plans/${editingId}`, {
-      name: editForm.name,
-      description: editForm.description,
-      price: Number(editForm.price),
-      durationMonths: Number(editForm.durationMonths),
-      active: editForm.active,
-    });
+    const result = await apiPut(
+      `/api/admin/membership-plans/${editingId}`,
+      planPayload(editForm),
+    );
 
     setLoading(false);
 
@@ -252,7 +353,7 @@ export function MembershipPlansManager({
   return (
     <AdminSection
       title="Membership plans"
-      description="Set the membership price shown on the membership checkout."
+      description="Set the membership price and the three instalment amounts shown at checkout."
     >
       <AdminFormCard
         collapsible
@@ -285,6 +386,8 @@ export function MembershipPlansManager({
           plans.map((plan) => {
             const isEditing = editingId === plan.id;
             const memberCount = plan._count?.memberships ?? 0;
+            const amounts =
+              planInstallmentAmounts(plan) ?? defaultInstallmentAmounts(plan.price);
 
             return (
               <div
@@ -319,65 +422,67 @@ export function MembershipPlansManager({
                         Close
                       </Button>
                     </div>
-
                     <PlanFields
                       form={editForm}
                       setForm={setEditForm}
                       idPrefix={`plan-edit-${plan.id}`}
                     />
-
                     <FormError message={editError} />
-
-                    <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+                    <div className="mt-4 flex gap-2">
                       <Button type="submit" disabled={loading}>
-                        {loading ? "Saving..." : "Save changes"}
+                        {loading ? "Saving…" : "Save changes"}
                       </Button>
                       <Button
                         type="button"
-                        variant="ghost"
-                        onClick={cancelEdit}
+                        variant="outline"
                         disabled={loading}
+                        onClick={cancelEdit}
                       >
                         Cancel
                       </Button>
                     </div>
                   </form>
                 ) : (
-                  <div className="flex items-start justify-between gap-3 px-3 py-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate font-medium text-white">
-                        {plan.name}
+                  <div className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h4 className="font-medium text-white">{plan.name}</h4>
+                        {!plan.active ? (
+                          <span className="rounded-full border border-white/10 px-2 py-0.5 text-[10px] uppercase tracking-wide text-zinc-500">
+                            Hidden
+                          </span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-sm text-zinc-400">{plan.description}</p>
+                      <p className="mt-2 text-sm text-zinc-300">
+                        {formatEuroFee(plan.price)} · {plan.durationMonths} months ·{" "}
+                        {memberCount} member{memberCount === 1 ? "" : "s"}
                       </p>
-                      <p className="mt-0.5 line-clamp-2 text-sm text-zinc-500">
-                        {formatEuroFee(plan.price)} / {plan.durationMonths} mo
-                        {memberCount
-                          ? ` · ${memberCount} member${memberCount !== 1 ? "s" : ""}`
-                          : ""}
-                        {plan.active ? "" : " · Hidden"}
+                      <p className="mt-1 text-xs text-zinc-500">
+                        Instalments: Oct {formatEuroFee(amounts[0])} · Jan{" "}
+                        {formatEuroFee(amounts[1])} · Mar {formatEuroFee(amounts[2])}
                       </p>
                     </div>
-                    <div className="flex shrink-0 items-center gap-1">
-                      <button
+                    <div className="flex shrink-0 gap-2">
+                      <Button
                         type="button"
-                        title="Edit"
+                        size="sm"
+                        variant="outline"
                         onClick={() => startEdit(plan)}
-                        className="rounded p-1.5 text-zinc-500 hover:bg-white/5 hover:text-white"
                       >
                         <Pencil className="h-3.5 w-3.5" />
-                      </button>
-                      <button
+                        Edit
+                      </Button>
+                      <Button
                         type="button"
-                        title="Delete"
-                        disabled={deletingId === plan.id}
+                        size="sm"
+                        variant="outline"
+                        disabled={deletingId === plan.id || memberCount > 0}
                         onClick={() => void handleDelete(plan.id)}
-                        className="rounded p-1.5 text-zinc-500 hover:bg-rose-500/10 hover:text-rose-300 disabled:opacity-40"
                       >
-                        {deletingId === plan.id ? (
-                          <span className="px-1 text-xs">…</span>
-                        ) : (
-                          <Trash2 className="h-3.5 w-3.5" />
-                        )}
-                      </button>
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </Button>
                     </div>
                   </div>
                 )}

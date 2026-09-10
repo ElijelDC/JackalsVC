@@ -49,6 +49,8 @@ model ClubMember {
   active          Boolean          @default(true)
   rosterRole      String           @default("PLAYER")
   coachPaymentType String?
+  /// MEMBERSHIP (default) | PAYG — pay-per-training before season membership starts
+  playerPaymentType String         @default("MEMBERSHIP")
   trainingTeamKey String?
   profileImageUrl        String?
   vlyMembershipPhotoUrl  String?
@@ -65,6 +67,7 @@ model ClubMember {
   clubTeamMembers ClubTeamMember[]
   coachSquads     ClubMemberCoachSquad[]
   coachPayments   CoachSalaryPayment[]
+  trainingPaygAttendances TrainingPaygAttendance[]
 }
 
 model ClubMemberCoachSquad {
@@ -269,14 +272,17 @@ model CoachResponseReminder {
 }
 
 model MembershipPlan {
-  id             String       @id @default(cuid())
-  name           String
-  description    String
-  price          Float
-  durationMonths Int
-  features       String
-  active         Boolean      @default(true)
-  memberships    Membership[]
+  id               String       @id @default(cuid())
+  name             String
+  description      String
+  price            Float
+  durationMonths   Int
+  installment1Eur  Float?
+  installment2Eur  Float?
+  installment3Eur  Float?
+  features         String
+  active           Boolean      @default(true)
+  memberships      Membership[]
 }
 
 model Membership {
@@ -734,4 +740,41 @@ model MerchandiseOrder {
   @@index([createdAt])
   @@index([gender, createdAt])
   @@index([paymentStatus, createdAt])
+}
+
+/// Singleton club settings for pay-as-you-go weekly training (id = "default").
+model TrainingPaygSettings {
+  id            String   @id @default("default")
+  sessionFeeEur Float    @default(10)
+  /// Optional external payment link (SumUp etc.)
+  paymentUrl    String   @default("")
+  active        Boolean  @default(true)
+  updatedAt     DateTime @updatedAt
+}
+
+/// Per-session PAYG payment + receipt for a squad member attending training.
+model TrainingPaygAttendance {
+  id                 String     @id @default(cuid())
+  clubMemberId       String
+  clubMember         ClubMember @relation(fields: [clubMemberId], references: [id], onDelete: Cascade)
+  userId             String
+  eventId            String
+  amountDue          Float
+  paymentReference   String
+  /// AWAITING_PROOF | PENDING | APPROVED | REJECTED
+  status             String     @default("AWAITING_PROOF")
+  proofScreenshotUrl String?
+  /// MATCH | MISMATCH | UNSURE
+  aiDecision         String?
+  aiRawAmount        Float?
+  aiNotes            String?
+  reviewedAt         DateTime?
+  reviewedByUserId   String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@unique([userId, eventId])
+  @@index([status, createdAt])
+  @@index([clubMemberId])
+  @@index([eventId])
 }

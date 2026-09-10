@@ -13,7 +13,10 @@ async function validateMatchAccess(userId: string, matchId: string) {
   const match = await prisma.teamMatch.findUnique({ where: { id: matchId } });
 
   if (!match) return { error: jsonError("Match not found", 404) };
-  const attendanceAccess = await getAttendanceAccessInfo({ id: userId });
+  const attendanceAccess = await getAttendanceAccessInfo(
+    { id: userId },
+    { scope: "match" },
+  );
   if (!attendanceAccess.canAccess) {
     if (attendanceAccess.blockReason === "overdue") {
       return {

@@ -22,17 +22,30 @@ function formatCsvDateTime(value: Date | null | undefined): string {
 
 async function exportRosterRows(): Promise<string[][]> {
   const members = await prisma.clubMember.findMany({
+    include: {
+      coachSquads: { select: { trainingTeamKey: true } },
+    },
     orderBy: [{ trainingTeamKey: "asc" }, { vlyNumber: "asc" }],
   });
 
-  return members.map((member) => [
-    member.vlyNumber ?? "",
-    member.name,
-    member.trainingTeamKey ?? "",
-    member.rosterRole,
-    member.coachPaymentType ?? "",
-    formatBoolForCsv(member.active),
-  ]);
+  return members.map((member) => {
+    const squadKeys =
+      member.rosterRole === "COACH"
+        ? member.coachSquads.map((squad) => squad.trainingTeamKey)
+        : member.trainingTeamKey
+          ? [member.trainingTeamKey]
+          : [];
+
+    return [
+      member.vlyNumber ?? "",
+      member.name,
+      squadKeys.join(","),
+      member.rosterRole,
+      member.rosterRole === "PLAYER" ? (member.playerPaymentType ?? "MEMBERSHIP") : "",
+      member.coachPaymentType ?? "",
+      formatBoolForCsv(member.active),
+    ];
+  });
 }
 
 async function exportTrainingSessionRows(

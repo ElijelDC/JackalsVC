@@ -168,9 +168,26 @@ export function MemberPaymentStatus({
 
       {nextPayment ? (
         <Card className="border-jackals-red/30 py-5">
-          <div className="mb-4 flex items-center gap-2">
-            <CreditCard className="h-5 w-5 text-jackals-red-light" />
-            <h2 className="font-display text-lg font-semibold text-white">Pay now</h2>
+          <div className="mb-4 flex items-start justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 shrink-0 text-jackals-red-light" />
+              <div>
+                <h2 className="font-display text-lg font-semibold text-white">
+                  Pay instalment {nextPayment.installmentNumber ?? 1}
+                </h2>
+                <p className="mt-0.5 text-sm text-zinc-400">
+                  {nextPayment.dueDate
+                    ? `Due ${format(new Date(nextPayment.dueDate), "d MMM yyyy")}`
+                    : "Pay by bank transfer"}
+                  {" · "}
+                  {formatPrice(nextPayment.amount, "EUR")}
+                </p>
+                <p className="mt-1.5 text-sm text-zinc-500">
+                  You can pay this early — no need to wait for the due date. Transfer
+                  the amount below, then upload your receipt.
+                </p>
+              </div>
+            </div>
           </div>
 
           <IbanTransferDetails
@@ -201,53 +218,96 @@ export function MemberPaymentStatus({
       )}
 
       <div>
-        <h3 className="mb-3 text-sm font-medium uppercase tracking-wide text-zinc-500">
-          Full schedule
+        <h3 className="mb-1 text-sm font-medium uppercase tracking-wide text-zinc-500">
+          Your instalments
         </h3>
+        <p className="mb-3 text-sm text-zinc-500">
+          Instalments are paid in order. Pay the current one early if you like —
+          the next one unlocks after this is verified.
+        </p>
         <StaggerIn className="space-y-3" stagger={60}>
-          {payments.map((payment) => (
-            <Card key={payment.id} className="py-4">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-white">
-                      Instalment {payment.installmentNumber ?? "—"}
-                    </p>
-                    {statusBadge(
-                      payment.status,
-                      payment.dueDate,
-                      payment.proofSubmittedAt,
-                      paymentAccess?.isOverdue &&
-                        payment.installmentNumber === overdueInstallmentNumber,
-                    )}
-                  </div>
-                  <p className="mt-1 text-sm text-zinc-400">{payment.description}</p>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {payment.status === "COMPLETED" && payment.paidAt
-                      ? `Paid ${format(new Date(payment.paidAt), "d MMM yyyy")}`
-                      : payment.dueDate
+          {payments.map((payment) => {
+            const isCurrent =
+              nextPayment?.id === payment.id && payment.status === "PENDING";
+            const isOverdueCurrent =
+              isCurrent &&
+              Boolean(
+                paymentAccess?.isOverdue &&
+                  payment.installmentNumber === overdueInstallmentNumber,
+              );
+
+            return (
+              <Card
+                key={payment.id}
+                className={
+                  isOverdueCurrent
+                    ? "border-red-500/30 bg-red-500/[0.04] py-4"
+                    : isCurrent
+                      ? "border-amber-500/30 bg-amber-500/[0.04] py-4"
+                      : "py-4"
+                }
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-white">
+                        Instalment {payment.installmentNumber ?? "—"}
+                      </p>
+                      {isCurrent ? (
+                        <Badge
+                          className={
+                            isOverdueCurrent
+                              ? "border-red-500/30 bg-red-500/10 text-red-300"
+                              : "border-amber-500/30 bg-amber-500/10 text-amber-300"
+                          }
+                        >
+                          Due next
+                        </Badge>
+                      ) : null}
+                      {statusBadge(
+                        payment.status,
+                        payment.dueDate,
+                        payment.proofSubmittedAt,
+                        paymentAccess?.isOverdue &&
+                          payment.installmentNumber === overdueInstallmentNumber,
+                      )}
+                    </div>
+                    <p className="mt-1 text-sm text-zinc-400">
+                      {payment.dueDate
                         ? `Due ${format(new Date(payment.dueDate), "d MMM yyyy")}`
-                        : "—"}
-                  </p>
-                  {payment.status === "PENDING" && (
-                    <p className="mt-2 text-xs text-zinc-500">
-                      Reference:{" "}
-                      <code className="text-zinc-300">{payment.paymentReference}</code>
+                        : payment.description}
+                      {payment.status === "PENDING" && !isCurrent
+                        ? " · unlocks after earlier instalments"
+                        : null}
                     </p>
-                  )}
+                    {payment.status === "COMPLETED" && payment.paidAt ? (
+                      <p className="mt-1 text-sm text-zinc-500">
+                        Paid {format(new Date(payment.paidAt), "d MMM yyyy")}
+                      </p>
+                    ) : null}
+                    {isCurrent ? (
+                      <p className="mt-2 text-xs text-zinc-500">
+                        Reference:{" "}
+                        <code className="text-zinc-300">
+                          {payment.paymentReference}
+                        </code>
+                      </p>
+                    ) : null}
+                  </div>
+                  <span className="shrink-0 font-semibold text-jackals-red-light">
+                    {formatPrice(payment.amount, "EUR")}
+                  </span>
                 </div>
-                <span className="shrink-0 font-semibold text-jackals-red-light">
-                  {formatPrice(payment.amount, "EUR")}
-                </span>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            );
+          })}
         </StaggerIn>
       </div>
 
       {!isActive && nextPayment && (
         <p className="text-center text-sm text-amber-400/90">
-          Your membership activates once we receive your first bank transfer.
+          Your membership activates once we receive instalment{" "}
+          {nextPayment.installmentNumber ?? 1}. Paying early is fine.
         </p>
       )}
     </StaggerIn>

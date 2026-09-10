@@ -2,13 +2,15 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { isPaidCoachMember } from "@/lib/coach-payment-type";
+import { isPaygPlayer } from "@/lib/player-payment-type";
 import { prisma } from "@/lib/prisma";
 
-function coachFieldsFromClubMember(
+function clubMemberFieldsFromClubMember(
   clubMember: {
     profileImageUrl: string | null;
     rosterRole: string;
     coachPaymentType: string | null;
+    playerPaymentType: string | null;
     trainingTeamKey: string | null;
     coachSquads?: Array<{ trainingTeamKey: string }>;
   } | null,
@@ -39,6 +41,10 @@ function coachFieldsFromClubMember(
     ),
     coachTeamKey: coachTeamKeys[0] ?? clubMember?.trainingTeamKey ?? null,
     coachTeamKeys,
+    isPaygPlayer: Boolean(
+      clubMember &&
+        isPaygPlayer(clubMember.rosterRole, clubMember.playerPaymentType),
+    ),
   };
 }
 
@@ -105,6 +111,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
                 profileImageUrl: true,
                 rosterRole: true,
                 coachPaymentType: true,
+                playerPaymentType: true,
                 trainingTeamKey: true,
                 coachSquads: { select: { trainingTeamKey: true } },
               },
@@ -115,10 +122,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             token.role = user.role;
           }
 
-          Object.assign(token, coachFieldsFromClubMember(clubMember));
+          Object.assign(token, clubMemberFieldsFromClubMember(clubMember));
         } catch (error) {
           console.error("Failed to enrich auth token from club member:", error);
-          Object.assign(token, coachFieldsFromClubMember(null));
+          Object.assign(token, clubMemberFieldsFromClubMember(null));
         }
       }
 
@@ -147,6 +154,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             : session.user.coachTeamKey
               ? [session.user.coachTeamKey]
               : [];
+          session.user.isPaygPlayer = Boolean(token.isPaygPlayer);
         }
       } catch (error) {
         console.error("Failed to build auth session:", error);

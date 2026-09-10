@@ -8,6 +8,7 @@ import {
   Calendar,
   CheckCircle2,
   ClipboardCheck,
+  Dumbbell,
   GraduationCap,
   Shirt,
   ShoppingBag,
@@ -29,6 +30,7 @@ const ENTRY_ICONS = {
   "committee-interest": ClipboardCheck,
   "trials-application": Volleyball,
   "trial-session-signup": Calendar,
+  "training-payg": Dumbbell,
 } as const;
 
 function ActionQueueCard({ entry }: { entry: AdminActionQueueEntry }) {

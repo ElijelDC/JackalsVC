@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Loader2, Mail, Save } from "lucide-react";
+import { ChevronDown, Loader2, Mail, Save } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label, Textarea } from "@/components/ui/Input";
@@ -192,159 +192,133 @@ export function TrialsApplicantEmailPanel({
     : subject;
 
   return (
-    <section className="space-y-4 overflow-hidden rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="font-display text-base font-semibold text-white">
-            Email applicants
-          </h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            Write a saved message per tryout team. Select who should receive it
-            — useful for late sign-ups — then send.
-          </p>
-        </div>
-        <Button
-          type="button"
-          size="sm"
-          disabled={
-            selectedRecipients.length === 0 || sending || loadingTemplates
-          }
-          onClick={() => setConfirmOpen(true)}
-        >
-          {sending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Mail className="mr-2 h-4 w-4" />
-          )}
-          Email {selectedRecipients.length}{" "}
-          {selectedRecipients.length === 1 ? "applicant" : "applicants"}
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-2 gap-1.5 rounded-lg bg-black/20 p-1.5">
-        {TRIALS_TEAM_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            onClick={() => setActiveTeam(option.value)}
-            className={cn(
-              "rounded-md px-3 py-2 text-sm font-medium transition",
-              activeTeam === option.value
-                ? "bg-jackals-red text-white"
-                : "text-zinc-400 hover:text-white",
-            )}
-          >
-            {option.label}
-          </button>
-        ))}
-      </div>
-
-      {recipients.length > 0 ? (
-        <div className="overflow-hidden rounded-lg border border-white/10 bg-black/20">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
-            <p className="text-sm font-medium text-white">
-              {trialsTeamLabel(activeTeam)} recipients
+    <details className="group overflow-hidden rounded-xl border border-white/10 bg-white/[0.02]">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 marker:content-none sm:px-4">
+        <div className="flex min-w-0 items-center gap-2">
+          <Mail className="h-4 w-4 shrink-0 text-jackals-gold" />
+          <div className="min-w-0">
+            <h2 className="font-display text-base font-semibold text-white">
+              Email applicants
+            </h2>
+            <p className="mt-0.5 hidden text-xs text-zinc-500 sm:block">
+              Write a saved message per tryout team, select recipients, then send.
             </p>
-            <button
-              type="button"
-              onClick={toggleSelectAllRecipients}
-              className="text-sm text-jackals-red-light transition-colors hover:text-jackals-red"
-            >
-              {allRecipientsSelected ? "Clear selection" : "Select all"}
-            </button>
           </div>
-          <p className="border-b border-white/10 px-3 py-2 text-xs text-zinc-500">
-            {selectedRecipients.length} of {recipients.length} selected
+        </div>
+        <ChevronDown className="h-4 w-4 shrink-0 text-zinc-500 transition group-open:rotate-180" />
+      </summary>
+
+      <div className="space-y-4 border-t border-white/10 px-3 py-4 sm:px-4">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+          <p className="text-xs text-zinc-500 sm:hidden">
+            Write a saved message per tryout team. Select who should receive it —
+            useful for late sign-ups — then send.
           </p>
-          <div className="max-h-56 overflow-y-auto">
-            <div className="hidden lg:block">
-              <table className="w-full table-fixed text-left text-sm">
-                <colgroup>
-                  <col className="w-10" />
-                  <col />
-                  <col className="w-[40%]" />
-                  <col className="w-[6.5rem]" />
-                </colgroup>
-                <thead className="sticky top-0 bg-zinc-950">
-                  <tr className="border-b border-white/10 text-zinc-500">
-                    <th className="px-3 py-2 font-medium">
-                      <input
-                        type="checkbox"
-                        checked={allRecipientsSelected}
-                        onChange={toggleSelectAllRecipients}
-                        aria-label={`Select all ${trialsTeamLabel(activeTeam)} applicants`}
-                        className="rounded border-zinc-600"
-                      />
-                    </th>
-                    <th className="px-3 py-2 font-medium">Name</th>
-                    <th className="px-3 py-2 font-medium">Email</th>
-                    <th className="px-3 py-2 font-medium">Submitted</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {recipients.map((application) => (
-                    <tr
-                      key={application.id}
-                      className="border-b border-white/5 last:border-b-0"
-                    >
-                      <td className="px-3 py-2">
+          <Button
+            type="button"
+            size="sm"
+            className="shrink-0 self-start sm:ml-auto"
+            disabled={
+              selectedRecipients.length === 0 || sending || loadingTemplates
+            }
+            onClick={() => setConfirmOpen(true)}
+          >
+            {sending ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Mail className="mr-2 h-4 w-4" />
+            )}
+            Email {selectedRecipients.length}{" "}
+            {selectedRecipients.length === 1 ? "applicant" : "applicants"}
+          </Button>
+        </div>
+
+        <div className="flex flex-nowrap gap-1.5 overflow-x-auto rounded-lg bg-black/20 p-1.5">
+          {TRIALS_TEAM_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setActiveTeam(option.value)}
+              className={cn(
+                "shrink-0 rounded-md px-3 py-2 text-sm font-medium whitespace-nowrap transition",
+                activeTeam === option.value
+                  ? "bg-jackals-red text-white"
+                  : "text-zinc-400 hover:text-white",
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {recipients.length > 0 ? (
+          <div className="overflow-hidden rounded-lg border border-white/10 bg-black/20">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
+              <p className="text-sm font-medium text-white">
+                {trialsTeamLabel(activeTeam)} recipients
+              </p>
+              <button
+                type="button"
+                onClick={toggleSelectAllRecipients}
+                className="text-sm text-jackals-red-light transition-colors hover:text-jackals-red"
+              >
+                {allRecipientsSelected ? "Clear selection" : "Select all"}
+              </button>
+            </div>
+            <p className="border-b border-white/10 px-3 py-2 text-xs text-zinc-500">
+              {selectedRecipients.length} of {recipients.length} selected
+            </p>
+            <div className="max-h-56 overflow-y-auto">
+              <div className="hidden lg:block">
+                <table className="w-full table-fixed text-left text-sm">
+                  <colgroup>
+                    <col className="w-10" />
+                    <col />
+                    <col className="w-[40%]" />
+                    <col className="w-[6.5rem]" />
+                  </colgroup>
+                  <thead className="sticky top-0 bg-zinc-950">
+                    <tr className="border-b border-white/10 text-zinc-500">
+                      <th className="px-3 py-2 font-medium">
                         <input
                           type="checkbox"
-                          checked={selectedApplicationIds.includes(
-                            application.id,
-                          )}
-                          onChange={() =>
-                            toggleApplicationSelection(application.id)
-                          }
-                          aria-label={`Select ${application.fullName}`}
+                          checked={allRecipientsSelected}
+                          onChange={toggleSelectAllRecipients}
+                          aria-label={`Select all ${trialsTeamLabel(activeTeam)} applicants`}
                           className="rounded border-zinc-600"
                         />
-                      </td>
-                      <td className="truncate px-3 py-2 text-zinc-200">
-                        {application.fullName}
-                      </td>
-                      <td className="truncate px-3 py-2 text-zinc-400">
-                        {application.contactEmail}
-                      </td>
-                      <td className="whitespace-nowrap px-3 py-2 text-zinc-500">
-                        {new Date(application.createdAt).toLocaleDateString(
-                          "en-IE",
-                          {
-                            day: "numeric",
-                            month: "short",
-                            year: "numeric",
-                          },
-                        )}
-                      </td>
+                      </th>
+                      <th className="px-3 py-2 font-medium">Name</th>
+                      <th className="px-3 py-2 font-medium">Email</th>
+                      <th className="px-3 py-2 font-medium">Submitted</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <ul className="divide-y divide-white/5 lg:hidden">
-              {recipients.map((application) => {
-                const selected = selectedApplicationIds.includes(application.id);
-                return (
-                  <li key={application.id}>
-                    <label className="flex cursor-pointer items-start gap-3 px-3 py-2.5">
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        onChange={() =>
-                          toggleApplicationSelection(application.id)
-                        }
-                        aria-label={`Select ${application.fullName}`}
-                        className="mt-1 rounded border-zinc-600"
-                      />
-                      <span className="min-w-0 flex-1">
-                        <span className="block font-medium text-zinc-200">
+                  </thead>
+                  <tbody>
+                    {recipients.map((application) => (
+                      <tr
+                        key={application.id}
+                        className="border-b border-white/5 last:border-b-0"
+                      >
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedApplicationIds.includes(
+                              application.id,
+                            )}
+                            onChange={() =>
+                              toggleApplicationSelection(application.id)
+                            }
+                            aria-label={`Select ${application.fullName}`}
+                            className="rounded border-zinc-600"
+                          />
+                        </td>
+                        <td className="truncate px-3 py-2 text-zinc-200">
                           {application.fullName}
-                        </span>
-                        <span className="mt-0.5 block break-all text-xs text-zinc-400">
+                        </td>
+                        <td className="truncate px-3 py-2 text-zinc-400">
                           {application.contactEmail}
-                        </span>
-                        <span className="mt-1 block text-xs text-zinc-500">
+                        </td>
+                        <td className="whitespace-nowrap px-3 py-2 text-zinc-500">
                           {new Date(application.createdAt).toLocaleDateString(
                             "en-IE",
                             {
@@ -353,97 +327,142 @@ export function TrialsApplicantEmailPanel({
                               year: "numeric",
                             },
                           )}
-                        </span>
-                      </span>
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
-      ) : (
-        <p className="text-sm text-zinc-500">
-          No filtered applicants for {trialsTeamLabel(activeTeam)}. Adjust your
-          filters or switch team.
-        </p>
-      )}
-
-      {loadingTemplates ? (
-        <p className="text-sm text-zinc-500">Loading saved templates…</p>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
-          <div className="min-w-0 space-y-4">
-            <div>
-              <Label htmlFor="trials-email-subject">Subject</Label>
-              <Input
-                id="trials-email-subject"
-                value={subject}
-                onChange={(event) => setSubject(event.target.value)}
-              />
-            </div>
-            <div>
-              <Label htmlFor="trials-email-body">Email body</Label>
-              <Textarea
-                id="trials-email-body"
-                value={body}
-                onChange={(event) => setBody(event.target.value)}
-                rows={12}
-                className="min-h-[14rem] font-mono text-sm leading-relaxed"
-                placeholder="Paste trial links, group chat links, and any other details here."
-              />
-              <p className="mt-2 break-words text-xs text-zinc-500">
-                Optional merge fields:{" "}
-                {TRIALS_EMAIL_MERGE_FIELDS.map((field) => field.token).join(", ")}
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                disabled={saving}
-                onClick={() => void saveTemplate()}
-              >
-                {saving ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="mr-2 h-4 w-4" />
-                )}
-                Save template
-              </Button>
-            </div>
-          </div>
-
-          <div className="min-w-0 overflow-hidden rounded-xl border border-white/10 bg-black/20 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
-              Preview
-            </p>
-            {previewApplication ? (
-              <div className="mt-3 min-w-0 space-y-3 text-sm text-zinc-300">
-                <p className="break-all text-xs text-zinc-500">
-                  To: {previewApplication.contactEmail}
-                </p>
-                <p className="break-words font-medium text-white">{previewSubject}</p>
-                <p className="text-zinc-200">
-                  Hi {firstNameFrom(previewApplication.fullName)},
-                </p>
-                <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-zinc-300">
-                  {previewBody}
-                </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ) : (
-              <p className="mt-3 text-sm text-zinc-500">
-                No filtered applicants for {trialsTeamLabel(activeTeam)}. Adjust
-                your filters or switch team.
-              </p>
-            )}
-          </div>
-        </div>
-      )}
 
-      <FormError message={error} />
-      {message ? <p className="text-sm text-green-300">{message}</p> : null}
+              <ul className="divide-y divide-white/5 lg:hidden">
+                {recipients.map((application) => {
+                  const selected = selectedApplicationIds.includes(
+                    application.id,
+                  );
+                  return (
+                    <li key={application.id}>
+                      <label className="flex cursor-pointer items-start gap-3 px-3 py-2.5">
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() =>
+                            toggleApplicationSelection(application.id)
+                          }
+                          aria-label={`Select ${application.fullName}`}
+                          className="mt-1 rounded border-zinc-600"
+                        />
+                        <span className="min-w-0 flex-1">
+                          <span className="block font-medium text-zinc-200">
+                            {application.fullName}
+                          </span>
+                          <span className="mt-0.5 block break-all text-xs text-zinc-400">
+                            {application.contactEmail}
+                          </span>
+                          <span className="mt-1 block text-xs text-zinc-500">
+                            {new Date(application.createdAt).toLocaleDateString(
+                              "en-IE",
+                              {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              },
+                            )}
+                          </span>
+                        </span>
+                      </label>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
+        ) : (
+          <p className="text-sm text-zinc-500">
+            No filtered applicants for {trialsTeamLabel(activeTeam)}. Adjust your
+            filters or switch team.
+          </p>
+        )}
+
+        {loadingTemplates ? (
+          <p className="text-sm text-zinc-500">Loading saved templates…</p>
+        ) : (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)]">
+            <div className="min-w-0 space-y-4">
+              <div>
+                <Label htmlFor="trials-email-subject">Subject</Label>
+                <Input
+                  id="trials-email-subject"
+                  value={subject}
+                  onChange={(event) => setSubject(event.target.value)}
+                />
+              </div>
+              <div>
+                <Label htmlFor="trials-email-body">Email body</Label>
+                <Textarea
+                  id="trials-email-body"
+                  value={body}
+                  onChange={(event) => setBody(event.target.value)}
+                  rows={12}
+                  className="min-h-[14rem] font-mono text-sm leading-relaxed"
+                  placeholder="Paste trial links, group chat links, and any other details here."
+                />
+                <p className="mt-2 break-words text-xs text-zinc-500">
+                  Optional merge fields:{" "}
+                  {TRIALS_EMAIL_MERGE_FIELDS.map((field) => field.token).join(
+                    ", ",
+                  )}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={saving}
+                  onClick={() => void saveTemplate()}
+                >
+                  {saving ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save template
+                </Button>
+              </div>
+            </div>
+
+            <div className="min-w-0 overflow-hidden rounded-xl border border-white/10 bg-black/20 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                Preview
+              </p>
+              {previewApplication ? (
+                <div className="mt-3 min-w-0 space-y-3 text-sm text-zinc-300">
+                  <p className="break-all text-xs text-zinc-500">
+                    To: {previewApplication.contactEmail}
+                  </p>
+                  <p className="break-words font-medium text-white">
+                    {previewSubject}
+                  </p>
+                  <p className="text-zinc-200">
+                    Hi {firstNameFrom(previewApplication.fullName)},
+                  </p>
+                  <div className="whitespace-pre-wrap break-words [overflow-wrap:anywhere] leading-relaxed text-zinc-300">
+                    {previewBody}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-3 text-sm text-zinc-500">
+                  No filtered applicants for {trialsTeamLabel(activeTeam)}. Adjust
+                  your filters or switch team.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
+        <FormError message={error} />
+        {message ? <p className="text-sm text-green-300">{message}</p> : null}
+      </div>
 
       <Modal
         open={confirmOpen}
@@ -481,6 +500,6 @@ export function TrialsApplicantEmailPanel({
           Cancel
         </Button>
       </Modal>
-    </section>
+    </details>
   );
 }

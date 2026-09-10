@@ -10,18 +10,22 @@ import {
   visibleMoreNavItems,
 } from "@/lib/navigation";
 
-function coachMoreNavOptions(
-  isCoach: boolean,
-  isPaidCoach: boolean,
+function buildMoreNavOptions({
+  isCoach,
+  isPaidCoach,
+  isPaygPlayer,
   mobileMemberMenu = false,
-) {
-  if (!isCoach) {
-    return mobileMemberMenu ? ({ mobileMemberMenu: true } as const) : undefined;
-  }
-
-  return mobileMemberMenu
-    ? ({ mobileMemberMenu: true, isCoach: true, isPaidCoach } as const)
-    : ({ isCoach: true, isPaidCoach } as const);
+}: {
+  isCoach: boolean;
+  isPaidCoach: boolean;
+  isPaygPlayer: boolean;
+  mobileMemberMenu?: boolean;
+}) {
+  return {
+    ...(mobileMemberMenu ? { mobileMemberMenu: true as const } : {}),
+    ...(isCoach ? { isCoach: true as const, isPaidCoach } : {}),
+    ...(isPaygPlayer ? { isPaygPlayer: true as const } : {}),
+  };
 }
 
 function InfoNavDropdownMobile({
@@ -31,6 +35,7 @@ function InfoNavDropdownMobile({
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
@@ -38,13 +43,15 @@ function InfoNavDropdownMobile({
   isAdmin?: boolean;
   isCoach?: boolean;
   isPaidCoach?: boolean;
+  isPaygPlayer?: boolean;
 }) {
   const mobileMemberMenu = isLoggedIn && !isAdmin;
-  const moreNavOptions = coachMoreNavOptions(
+  const moreNavOptions = buildMoreNavOptions({
     isCoach,
     isPaidCoach,
+    isPaygPlayer,
     mobileMemberMenu,
-  );
+  });
   const [mobileExpanded, setMobileExpanded] = useState(() =>
     isInfoNavActive(pathname, isLoggedIn, isAdmin, moreNavOptions),
   );
@@ -136,6 +143,7 @@ export function InfoNavDropdown({
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
+  isPaygPlayer = false,
 }: {
   pathname: string;
   onNavigate?: () => void;
@@ -144,10 +152,15 @@ export function InfoNavDropdown({
   isAdmin?: boolean;
   isCoach?: boolean;
   isPaidCoach?: boolean;
+  isPaygPlayer?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const moreNavOptions = coachMoreNavOptions(isCoach, isPaidCoach);
+  const moreNavOptions = buildMoreNavOptions({
+    isCoach,
+    isPaidCoach,
+    isPaygPlayer,
+  });
   const isActive = isInfoNavActive(
     pathname,
     isLoggedIn,
@@ -184,6 +197,7 @@ export function InfoNavDropdown({
         isAdmin={isAdmin}
         isCoach={isCoach}
         isPaidCoach={isPaidCoach}
+        isPaygPlayer={isPaygPlayer}
       />
     );
   }

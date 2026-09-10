@@ -131,6 +131,13 @@ export async function PATCH(request: Request, context: RouteContext) {
         ? (existing.coachPaymentType ?? "PAID")
         : null;
 
+  const nextPlayerPaymentType =
+    data.playerPaymentType !== undefined
+      ? data.playerPaymentType
+      : nextRosterRole === "PLAYER"
+        ? (existing.playerPaymentType ?? "MEMBERSHIP")
+        : "MEMBERSHIP";
+
   const vlyNumberChanged = nextVlyNumber !== existing.vlyNumber;
 
   const clubMember = await prisma.clubMember.update({
@@ -141,11 +148,15 @@ export async function PATCH(request: Request, context: RouteContext) {
         : {}),
       ...(data.name !== undefined ? { name: data.name.trim() } : {}),
       ...(data.active !== undefined ? { active: data.active } : {}),
-      ...(data.rosterRole !== undefined ? { rosterRole: data.rosterRole } : {}),
+      ...(data.rosterRole !== undefined ? { rosterRole: nextRosterRole } : {}),
       ...(data.rosterRole === "COACH" ? { playerNumber: null } : {}),
       ...(data.coachPaymentType !== undefined ||
       data.rosterRole !== undefined
         ? { coachPaymentType: nextCoachPaymentType }
+        : {}),
+      ...(data.playerPaymentType !== undefined ||
+      data.rosterRole !== undefined
+        ? { playerPaymentType: nextPlayerPaymentType }
         : {}),
       ...(squadKeysFromBody !== null &&
       nextRosterRole === "PLAYER" &&

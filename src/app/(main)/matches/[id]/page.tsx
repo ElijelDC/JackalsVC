@@ -40,7 +40,9 @@ export default async function MatchDetailPage({
   const { id } = await params;
   const { from } = await searchParams;
   const detail = await getMatchDetail(id, session.user.id);
-  const attendanceAccess = await getAttendanceAccessInfo(session.user);
+  const attendanceAccess = await getAttendanceAccessInfo(session.user, {
+    scope: "match",
+  });
   const monthParam = formatTrainingMonthParam(new Date(detail.match.matchStart));
   const backLink = resolveDetailBackLink(from, {
     path: `/matches?month=${monthParam}`,

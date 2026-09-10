@@ -16,7 +16,7 @@ import {
   createMembershipPricing,
   formatPaymentScheduleLabel,
   getPaymentScheduleOptions,
-  getScheduleDueNowLabel,
+  planInstallmentAmounts,
   type MembershipPricing,
   type PaymentSchedule,
   type PaymentScheduleOption,
@@ -33,6 +33,9 @@ export type MembershipPlanCheckout = {
   description: string;
   price: number;
   durationMonths: number;
+  installment1Eur?: number | null;
+  installment2Eur?: number | null;
+  installment3Eur?: number | null;
 };
 
 type LockedMembership = {
@@ -41,10 +44,17 @@ type LockedMembership = {
   planName: string;
   price: number;
   durationMonths: number;
+  installment1Eur?: number | null;
+  installment2Eur?: number | null;
+  installment3Eur?: number | null;
 };
 
 export function MembershipLockedView({ membership }: { membership: LockedMembership }) {
-  const pricing = createMembershipPricing(membership.price, membership.durationMonths);
+  const pricing = createMembershipPricing(
+    membership.price,
+    membership.durationMonths,
+    planInstallmentAmounts(membership),
+  );
   const installments = buildInstallments(membership.paymentSchedule, pricing);
 
   return (
@@ -80,7 +90,10 @@ export function MembershipLockedView({ membership }: { membership: LockedMembers
             key={installment.installmentNumber}
             className="flex items-center justify-between text-sm text-zinc-300"
           >
-            <span>{installment.description}</span>
+            <span>
+              <span className="font-medium text-white">{installment.label}</span>
+              <span className="text-zinc-500"> · {installment.periodLabel}</span>
+            </span>
             <span className="font-medium text-white">
               {formatEuroFee(installment.amount)}
             </span>
@@ -170,7 +183,7 @@ function ScheduleOptionCard({
   selected: boolean;
   onSelect: () => void;
 }) {
-  const dueLabel = getScheduleDueNowLabel(option.id, pricing);
+  const installments = buildInstallments(option.id, pricing);
 
   return (
     <button
@@ -179,7 +192,7 @@ function ScheduleOptionCard({
       aria-checked={selected}
       onClick={onSelect}
       className={cn(
-        "relative flex h-full flex-col rounded-xl border p-5 text-left transition-all",
+        "relative flex flex-col rounded-xl border p-4 text-left transition-all sm:p-5",
         selected
           ? "border-jackals-red/60 bg-jackals-red/10 shadow-[0_0_24px_rgba(232,34,42,0.12)] ring-1 ring-jackals-red/30"
           : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]",
@@ -188,6 +201,7 @@ function ScheduleOptionCard({
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-display text-lg font-semibold text-white">{option.label}</p>
+          <p className="mt-1 text-sm text-zinc-400">{option.description}</p>
         </div>
         <span
           className={cn(
@@ -202,10 +216,25 @@ function ScheduleOptionCard({
         </span>
       </div>
 
-      <p className="mt-3 text-sm leading-relaxed text-zinc-400">{option.description}</p>
-
-      <p className="mt-auto pt-4 text-sm font-medium text-white">{dueLabel}</p>
-      <p className="mt-0.5 text-xs text-zinc-500">{option.summary}</p>
+      <ul className="mt-4 space-y-2 border-t border-white/10 pt-3.5">
+        {installments.map((installment) => (
+          <li
+            key={installment.installmentNumber}
+            className="flex items-baseline justify-between gap-3 text-sm"
+          >
+            <span className="min-w-0 text-zinc-300">
+              <span className="font-medium text-white">{installment.label}</span>
+              <span className="text-zinc-500">
+                {" "}
+                · {installment.periodLabel}
+              </span>
+            </span>
+            <span className="shrink-0 font-semibold text-white">
+              {formatEuroFee(installment.amount)}
+            </span>
+          </li>
+        ))}
+      </ul>
     </button>
   );
 }
@@ -227,7 +256,11 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
   const pricing = useMemo(
     () =>
       selectedPlan
-        ? createMembershipPricing(selectedPlan.price, selectedPlan.durationMonths)
+        ? createMembershipPricing(
+            selectedPlan.price,
+            selectedPlan.durationMonths,
+            planInstallmentAmounts(selectedPlan),
+          )
         : null,
     [selectedPlan],
   );
@@ -393,22 +426,20 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
       )}
 
       {selectedPlan && checkoutStep >= scheduleStep && (
-      <section>
-        <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="font-display text-xl font-semibold text-white">
-              {scheduleStep}. Choose your payment schedule
-            </h2>
-            <p className="mt-1 text-sm text-zinc-400">
-              {selectedPlan.name} · {formatEuroFee(selectedPlan.price)} — monthly, three
-              instalments, or pay in full. You cannot change this later.
-            </p>
-          </div>
+      <section className="space-y-4">
+        <div>
+          <h2 className="font-display text-xl font-semibold text-white">
+            {scheduleStep}. Choose your payment schedule
+          </h2>
+          <p className="mt-1.5 text-sm leading-snug text-zinc-400">
+            {selectedPlan.name} · {formatEuroFee(selectedPlan.price)} total. Pick
+            how you want to pay — this cannot be changed later.
+          </p>
           {plans.length > 1 && (
             <button
               type="button"
               onClick={handleBackToPlan}
-              className="text-sm text-jackals-red-light transition-colors hover:text-jackals-red"
+              className="mt-2 text-sm text-jackals-red-light transition-colors hover:text-jackals-red"
             >
               Change membership type
             </button>
@@ -416,7 +447,7 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
         </div>
 
         <div role="radiogroup" aria-label="Payment schedule">
-          <StaggerIn className="grid gap-4 md:grid-cols-3" stagger={80}>
+          <StaggerIn className="grid gap-3 sm:grid-cols-2" stagger={80}>
             {scheduleOptions.map((option) => (
               <ScheduleOptionCard
                 key={option.id}
@@ -430,7 +461,7 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
         </div>
 
         {selectedSchedule && checkoutStep === scheduleStep && (
-          <Button className="mt-6 w-full sm:w-auto" onClick={handleContinueToReview}>
+          <Button className="w-full sm:w-auto" onClick={handleContinueToReview}>
             Continue with {formatPaymentScheduleLabel(selectedSchedule).toLowerCase()}
           </Button>
         )}
@@ -453,26 +484,33 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
           <Card className="overflow-hidden p-0">
             <div className="border-b border-white/10 bg-white/[0.02] px-5 py-4 sm:px-6">
               <p className="text-sm font-medium text-white">
-                {formatPaymentScheduleLabel(selectedSchedule)} schedule
+                Your {formatPaymentScheduleLabel(selectedSchedule).toLowerCase()}
               </p>
               <p className="mt-0.5 text-xs text-zinc-500">
-                Total cost {formatEuroFee(seasonTotalPrice)}
+                Season total {formatEuroFee(seasonTotalPrice)} · pay by bank transfer.
+                You can pay each instalment early.
               </p>
             </div>
 
             <ul className="divide-y divide-white/10">
-              {previewInstallments.map((installment, index) => (
+              {previewInstallments.map((installment) => (
                 <li
                   key={installment.installmentNumber}
-                  className="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6"
+                  className="flex items-center justify-between gap-4 px-5 py-4 sm:px-6"
                 >
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-white">
-                      {index === 0 ? "Due now" : format(installment.dueDate, "d MMM yyyy")}
+                    <p className="text-sm font-semibold text-white">
+                      {installment.label}
                     </p>
-                    <p className="truncate text-xs text-zinc-500">{installment.description}</p>
+                    <p className="mt-0.5 text-xs text-zinc-500">
+                      {installment.periodLabel}
+                      {" · "}
+                      {installment.installmentNumber === 1
+                        ? "Due after you confirm"
+                        : `Due ${format(installment.dueDate, "d MMM yyyy")}`}
+                    </p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-jackals-red-light">
+                  <span className="shrink-0 text-base font-semibold text-jackals-red-light">
                     {formatEuroFee(installment.amount)}
                   </span>
                 </li>

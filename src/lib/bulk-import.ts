@@ -6,11 +6,19 @@ import {
   safeFormatDate,
 } from "@/lib/csv-date-parse";
 import type { BulkImportType } from "@/lib/bulk-import-config";
-import { setClubMemberCoachSquads, syncClubTeamsForSquadKey } from "@/lib/club-team-roster-sync";
+import { planRosterRemovals, rosterFingerprint } from "@/lib/bulk-import-roster-plan";
+import {
+  setClubMemberCoachSquads,
+  syncClubTeamsForSquadKey,
+} from "@/lib/club-team-roster-sync";
 import { toManualEventData } from "@/lib/manual-event-data";
+import { normalizePlayerPaymentType } from "@/lib/player-payment-type";
 import { prisma } from "@/lib/prisma";
 import { isTrainingSquadKey } from "@/lib/training-squads";
-import { syncTrainingSessionEvents } from "@/lib/training-events";
+import {
+  deleteTrainingSessionCascade,
+  syncTrainingSessionEvents,
+} from "@/lib/training-events";
 import {
   SESSION_CATEGORIES,
   type SessionCategory,
@@ -23,7 +31,6 @@ import {
 } from "@/lib/vly-number";
 import { DAYS_OF_WEEK } from "@/lib/utils";
 import {
-  clubMemberCreateSchema,
   eventSchema,
   teamMatchSchema,
   trainingSessionSchema,
@@ -40,6 +47,7 @@ export {
   exportBulkImportCsv,
   exportBulkImportExcel,
 } from "@/lib/bulk-import-export";
+export { planRosterRemovals, rosterFingerprint } from "@/lib/bulk-import-roster-plan";
 
 export type BulkImportRowError = {
   row: number;
@@ -50,14 +58,36 @@ export type BulkImportResult = {
   fileName: string | null;
   scanned: number;
   created: number;
+  updated: number;
+  removed: number;
+  /** @deprecated Kept for older clients; always 0 under override mode. */
   skipped: number;
   failed: number;
   errors: BulkImportRowError[];
+  /** True when removals require an explicit confirmDestructive flag. */
+  needsConfirmation?: boolean;
+  plannedRemovals?: number;
+};
+
+export type BulkImportOptions = {
+  confirmDestructive?: boolean;
 };
 
 type TrainingSessionData = ReturnType<typeof toTrainingSessionData>;
 type ParsedTeamMatch = z.infer<typeof teamMatchSchema>;
 type ParsedEvent = z.infer<typeof eventSchema>;
+
+type ParsedRosterRow = {
+  rowNumber: number;
+  fingerprint: string;
+  vlyNumber: string;
+  name: string;
+  rosterRole: "PLAYER" | "COACH";
+  squadKeys: string[];
+  coachPaymentType: "PAID" | "VOLUNTEER" | null;
+  playerPaymentType: "MEMBERSHIP" | "PAYG";
+  active: boolean;
+};
 
 function parseBool(value: string | undefined, fallback = false): boolean {
   const normalized = (value ?? "").trim().toLowerCase();
@@ -96,6 +126,8 @@ function emptyResult(fileName: string | null): BulkImportResult {
     fileName,
     scanned: 0,
     created: 0,
+    updated: 0,
+    removed: 0,
     skipped: 0,
     failed: 0,
     errors: [],
@@ -113,10 +145,6 @@ function fingerprintDate(value: Date | null | undefined): string {
 function fingerprintDateTime(value: Date | string): string {
   const date = typeof value === "string" ? new Date(value) : value;
   return safeFormatDate(date, "yyyy-MM-dd'T'HH:mm");
-}
-
-function rosterFingerprint(vlyNumber: string): string {
-  return normalizeVlyNumber(vlyNumber);
 }
 
 function trainingSessionFingerprint(
@@ -176,89 +204,6 @@ function eventFingerprint(data: ParsedEvent): string {
   ].join("|");
 }
 
-async function loadExistingRosterFingerprints(): Promise<Set<string>> {
-  const members = await prisma.clubMember.findMany({
-    select: { vlyNumber: true },
-  });
-  return new Set(
-    members
-      .map((member) => member.vlyNumber)
-      .filter((value): value is string => Boolean(value?.trim()))
-      .map((value) => rosterFingerprint(value)),
-  );
-}
-
-async function loadExistingTrainingSessionFingerprints(
-  category: SessionCategory,
-): Promise<Set<string>> {
-  const sessions = await prisma.trainingSession.findMany({
-    where: { category },
-  });
-  return new Set(
-    sessions.map((session) =>
-      trainingSessionFingerprint(category, {
-        title: session.title,
-        dayOfWeek: session.dayOfWeek,
-        startTime: session.startTime,
-        endTime: session.endTime,
-        location: session.location,
-        level: session.level,
-        description: session.description,
-        coach: session.coach,
-        attendanceUrl: session.attendanceUrl,
-        paymentUrl: session.paymentUrl,
-        reclubUsername: session.reclubUsername,
-        sessionFee: session.sessionFee,
-        recurring: session.recurring,
-        recurrenceWeeks: session.recurrenceWeeks,
-        trainingTeamKey: session.trainingTeamKey,
-        recurringFrom: session.recurringFrom,
-        recurringTo: session.recurringTo,
-        sessionDate: session.sessionDate,
-      }),
-    ),
-  );
-}
-
-async function loadExistingMatchFingerprints(): Promise<Set<string>> {
-  const matches = await prisma.teamMatch.findMany();
-  return new Set(
-    matches.map((match) =>
-      matchFingerprint({
-        trainingTeamKey: match.trainingTeamKey,
-        opponentName: match.opponentName,
-        venue: match.venue as ParsedTeamMatch["venue"],
-        location: match.location,
-        warmUpTime: match.warmUpTime.toISOString(),
-        matchStart: match.matchStart.toISOString(),
-        notes: match.notes ?? undefined,
-      }),
-    ),
-  );
-}
-
-async function loadExistingEventFingerprints(): Promise<Set<string>> {
-  const events = await prisma.event.findMany({
-    where: { trainingSessionId: null },
-  });
-  return new Set(
-    events.map((event) =>
-      eventFingerprint({
-        title: event.title,
-        type: event.type as ParsedEvent["type"],
-        startDate: event.startDate.toISOString(),
-        endDate: event.endDate?.toISOString(),
-        location: event.location ?? undefined,
-        description: event.description ?? undefined,
-        attendanceUrl: event.attendanceUrl ?? undefined,
-        paymentUrl: event.paymentUrl ?? undefined,
-        sessionFee: event.sessionFee ?? undefined,
-        reclubUsername: event.reclubUsername ?? undefined,
-      }),
-    ),
-  );
-}
-
 function parseTrainingSessionRow(row: Record<string, string>) {
   const recurring = parseBool(row.recurring, true);
   const sessionDate = parseOptional(row.session_date)
@@ -301,11 +246,10 @@ function parseTrainingSessionRow(row: Record<string, string>) {
   };
 }
 
-async function importRosterRow(
+async function parseRosterRow(
   row: Record<string, string>,
-  existing: Set<string>,
-  seenInFile: Set<string>,
-): Promise<"created" | "skipped"> {
+  rowNumber: number,
+): Promise<ParsedRosterRow> {
   const vlyNumber = normalizeVlyNumber(row.vly_number ?? "");
   const rawRosterRole = row.roster_role?.trim().toUpperCase();
   const rosterRole =
@@ -323,280 +267,78 @@ async function importRosterRow(
     );
   }
 
-  const fingerprint = rosterFingerprint(vlyNumber);
-  if (existing.has(fingerprint) || seenInFile.has(fingerprint)) {
-    seenInFile.add(fingerprint);
-    return "skipped";
-  }
-
   const squadKeys =
     row.training_team_key
       ?.split(",")
       .map((value) => value.trim())
       .filter(Boolean) ?? [];
 
-  const parsed = clubMemberCreateSchema.safeParse({
-    vlyNumber,
-    name: row.name?.trim(),
-    trainingTeamKey: squadKeys.length === 1 ? squadKeys[0] : undefined,
-    trainingTeamKeys: squadKeys.length > 1 ? squadKeys : undefined,
-    rosterRole,
-    coachPaymentType: parseOptional(row.coach_payment_type)?.toUpperCase(),
-    active: parseBool(row.active, true),
-  });
-
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid row");
+  const name = row.name?.trim() ?? "";
+  if (name.length < 2) {
+    throw new Error("Full name is required");
   }
 
-  const data = parsed.data;
-  const resolvedSquadKeys =
-    data.trainingTeamKeys ??
-    (data.trainingTeamKey ? [data.trainingTeamKey] : []);
+  const active = parseBool(row.active, true);
+  if (rosterRole === "PLAYER" && squadKeys.length === 0 && active) {
+    throw new Error("Team is required for active players");
+  }
+  if (rosterRole === "PLAYER" && squadKeys.length > 1) {
+    throw new Error("Players can only belong to one squad");
+  }
 
-  for (const key of resolvedSquadKeys) {
+  for (const key of squadKeys) {
     if (!(await isTrainingSquadKey(key))) {
       throw new Error("Invalid training_team_key");
     }
   }
 
-  const clubMember = await prisma.clubMember.create({
-    data: {
-      vlyNumber,
-      name: data.name.trim(),
-      trainingTeamKey: resolvedSquadKeys[0],
-      rosterRole: data.rosterRole,
-      coachPaymentType:
-        data.rosterRole === "COACH" ? (data.coachPaymentType ?? "PAID") : null,
-      active: data.active ?? true,
-    },
-  });
+  const coachPaymentRaw = parseOptional(row.coach_payment_type)?.toUpperCase();
+  const coachPaymentType =
+    rosterRole === "COACH"
+      ? coachPaymentRaw === "VOLUNTEER"
+        ? "VOLUNTEER"
+        : "PAID"
+      : null;
 
-  if (data.rosterRole === "COACH") {
-    await setClubMemberCoachSquads(clubMember.id, resolvedSquadKeys);
-  }
+  const playerPaymentType = normalizePlayerPaymentType(
+    parseOptional(row.player_payment_type)?.toUpperCase(),
+  );
 
-  seenInFile.add(fingerprint);
-  existing.add(fingerprint);
-  return "created";
+  return {
+    rowNumber,
+    fingerprint: rosterFingerprint(vlyNumber),
+    vlyNumber,
+    name,
+    rosterRole,
+    squadKeys,
+    coachPaymentType,
+    playerPaymentType,
+    active,
+  };
 }
 
-async function importTrainingSessionRow(
-  row: Record<string, string>,
-  category: SessionCategory,
-  existing: Set<string>,
-  seenInFile: Set<string>,
-): Promise<"created" | "skipped"> {
-  const payload = parseTrainingSessionRow(row);
-
-  if (category === SESSION_CATEGORIES.WEEKLY && !payload.trainingTeamKey) {
-    throw new Error("training_team_key is required for weekly training");
-  }
-
-  const parsed = trainingSessionSchema.safeParse({
-    ...payload,
-    trainingTeamKey:
-      category === SESSION_CATEGORIES.WEEKLY
-        ? payload.trainingTeamKey
-        : undefined,
-  });
-
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid row");
-  }
-
-  if (
-    category === SESSION_CATEGORIES.FUN &&
-    parsed.data.sessionFee == null
-  ) {
-    throw new Error("session_fee is required for fun sessions");
-  }
-
-  if (
-    category === SESSION_CATEGORIES.WEEKLY &&
-    parsed.data.trainingTeamKey &&
-    !(await isTrainingSquadKey(parsed.data.trainingTeamKey))
-  ) {
-    throw new Error("Invalid training_team_key");
-  }
-
-  const sessionData = toTrainingSessionData(parsed.data);
-  const fingerprint = trainingSessionFingerprint(category, sessionData);
-
-  if (existing.has(fingerprint) || seenInFile.has(fingerprint)) {
-    seenInFile.add(fingerprint);
-    return "skipped";
-  }
-
-  const session = await prisma.trainingSession.create({
-    data: { ...sessionData, category },
-  });
-  await syncTrainingSessionEvents(session);
-
-  seenInFile.add(fingerprint);
-  existing.add(fingerprint);
-  return "created";
-}
-
-async function importMatchRow(
-  row: Record<string, string>,
-  existing: Set<string>,
-  seenInFile: Set<string>,
-): Promise<"created" | "skipped"> {
-  const parsed = teamMatchSchema.safeParse({
-    trainingTeamKey: row.training_team_key?.trim(),
-    opponentName: row.opponent_name?.trim(),
-    venue: row.venue?.trim().toUpperCase(),
-    location: row.location?.trim(),
-    warmUpTime: row.warm_up_time?.trim()
-      ? parseCsvDateTime(row.warm_up_time)
-      : "",
-    matchStart: row.match_start?.trim() ? parseCsvDateTime(row.match_start) : "",
-    notes: parseOptional(row.notes),
-  });
-
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid row");
-  }
-
-  if (!(await isTrainingSquadKey(parsed.data.trainingTeamKey))) {
-    throw new Error("Invalid training_team_key");
-  }
-
-  const fingerprint = matchFingerprint(parsed.data);
-  if (existing.has(fingerprint) || seenInFile.has(fingerprint)) {
-    seenInFile.add(fingerprint);
-    return "skipped";
-  }
-
-  await prisma.teamMatch.create({
-    data: {
-      trainingTeamKey: parsed.data.trainingTeamKey,
-      opponentName: parsed.data.opponentName.trim(),
-      venue: parsed.data.venue,
-      location: parsed.data.location.trim(),
-      warmUpTime: new Date(parsed.data.warmUpTime),
-      matchStart: new Date(parsed.data.matchStart),
-      notes: parsed.data.notes ?? null,
-    },
-  });
-
-  seenInFile.add(fingerprint);
-  existing.add(fingerprint);
-  return "created";
-}
-
-async function importEventRow(
-  row: Record<string, string>,
-  existing: Set<string>,
-  seenInFile: Set<string>,
-): Promise<"created" | "skipped"> {
-  const parsed = eventSchema.safeParse({
-    title: row.title?.trim(),
-    type: row.type?.trim().toUpperCase(),
-    startDate: row.start_date?.trim() ? parseCsvDateTime(row.start_date) : "",
-    endDate: parseOptional(row.end_date)
-      ? parseCsvDateTime(row.end_date)
-      : undefined,
-    location: parseOptional(row.location),
-    description: parseOptional(row.description),
-    attendanceUrl: parseOptional(row.attendance_url),
-    paymentUrl: parseOptional(row.payment_url),
-    sessionFee: parseOptional(row.session_fee),
-    reclubUsername: parseOptional(row.reclub_username),
-  });
-
-  if (!parsed.success) {
-    throw new Error(parsed.error.issues[0]?.message ?? "Invalid row");
-  }
-
-  const fingerprint = eventFingerprint(parsed.data);
-  if (existing.has(fingerprint) || seenInFile.has(fingerprint)) {
-    seenInFile.add(fingerprint);
-    return "skipped";
-  }
-
-  await prisma.event.create({ data: toManualEventData(parsed.data) });
-
-  seenInFile.add(fingerprint);
-  existing.add(fingerprint);
-  return "created";
-}
-
-export async function runBulkImport(
-  type: BulkImportType,
+async function overrideRoster(
   rows: Record<string, string>[],
   fileName: string | null,
+  options: BulkImportOptions = {},
 ): Promise<BulkImportResult> {
-  if (rows.length === 0) {
-    return emptyResult(fileName);
-  }
-
-  const result: BulkImportResult = {
-    fileName,
-    scanned: 0,
-    created: 0,
-    skipped: 0,
-    failed: 0,
-    errors: [],
-  };
-
-  const squadKeysToSync = new Set<string>();
+  const result = emptyResult(fileName);
+  const desired: ParsedRosterRow[] = [];
   const seenInFile = new Set<string>();
-
-  const existing =
-    type === "roster"
-      ? await loadExistingRosterFingerprints()
-      : type === "weekly-training"
-        ? await loadExistingTrainingSessionFingerprints(SESSION_CATEGORIES.WEEKLY)
-        : type === "fun-sessions"
-          ? await loadExistingTrainingSessionFingerprints(SESSION_CATEGORIES.FUN)
-          : type === "matches"
-            ? await loadExistingMatchFingerprints()
-            : await loadExistingEventFingerprints();
 
   for (let index = 0; index < rows.length; index += 1) {
     const row = rows[index]!;
     const rowNumber = index + 2;
-
     if (rowIsEmpty(row)) continue;
 
     result.scanned += 1;
-
     try {
-      let outcome: "created" | "skipped";
-
-      if (type === "roster") {
-        outcome = await importRosterRow(row, existing, seenInFile);
-        if (outcome === "created") {
-          const squadKey = row.training_team_key?.trim();
-          if (squadKey) squadKeysToSync.add(squadKey);
-        }
-      } else if (type === "weekly-training") {
-        outcome = await importTrainingSessionRow(
-          row,
-          SESSION_CATEGORIES.WEEKLY,
-          existing,
-          seenInFile,
-        );
-      } else if (type === "fun-sessions") {
-        outcome = await importTrainingSessionRow(
-          row,
-          SESSION_CATEGORIES.FUN,
-          existing,
-          seenInFile,
-        );
-      } else if (type === "matches") {
-        outcome = await importMatchRow(row, existing, seenInFile);
-      } else {
-        outcome = await importEventRow(row, existing, seenInFile);
+      const parsed = await parseRosterRow(row, rowNumber);
+      if (seenInFile.has(parsed.fingerprint)) {
+        throw new Error(`Duplicate vly_number ${parsed.vlyNumber} in sheet`);
       }
-
-      if (outcome === "skipped") {
-        result.skipped += 1;
-      } else {
-        result.created += 1;
-      }
+      seenInFile.add(parsed.fingerprint);
+      desired.push(parsed);
     } catch (error) {
       result.failed += 1;
       result.errors.push({
@@ -606,13 +348,522 @@ export async function runBulkImport(
     }
   }
 
-  if (type === "roster") {
-    for (const squadKey of squadKeysToSync) {
-      if (await isTrainingSquadKey(squadKey)) {
-        await syncClubTeamsForSquadKey(squadKey);
+  if (result.failed > 0) {
+    return result;
+  }
+
+  if (desired.length === 0) {
+    result.failed = 1;
+    result.errors.push({
+      row: 0,
+      message: "Sheet has no data rows — upload cancelled to avoid wiping the list.",
+    });
+    return result;
+  }
+
+  const existing = await prisma.clubMember.findMany({
+    select: {
+      id: true,
+      vlyNumber: true,
+      userId: true,
+      name: true,
+      rosterRole: true,
+      trainingTeamKey: true,
+      coachPaymentType: true,
+      playerPaymentType: true,
+      active: true,
+      coachSquads: { select: { trainingTeamKey: true } },
+    },
+  });
+
+  const existingByFingerprint = new Map(
+    existing
+      .filter((member) => member.vlyNumber?.trim())
+      .map((member) => [rosterFingerprint(member.vlyNumber!), member]),
+  );
+
+  const desiredFingerprints = new Set(desired.map((row) => row.fingerprint));
+  const plannedRemovals = planRosterRemovals(existing, desiredFingerprints);
+
+  if (plannedRemovals.length > 0 && !options.confirmDestructive) {
+    return {
+      ...result,
+      needsConfirmation: true,
+      plannedRemovals: plannedRemovals.length,
+      failed: 1,
+      errors: [
+        {
+          row: 0,
+          message: `This override would remove ${plannedRemovals.length} roster ${plannedRemovals.length === 1 ? "entry" : "entries"}. Confirm to continue. Members without a VLY number are never auto-removed.`,
+        },
+      ],
+    };
+  }
+
+  const squadKeysToSync = new Set<string>();
+
+  for (const row of desired) {
+    const current = existingByFingerprint.get(row.fingerprint);
+    for (const key of row.squadKeys) squadKeysToSync.add(key);
+
+    if (!current) {
+      const clubMember = await prisma.clubMember.create({
+        data: {
+          vlyNumber: row.vlyNumber,
+          name: row.name,
+          trainingTeamKey: row.squadKeys[0] ?? null,
+          rosterRole: row.rosterRole,
+          coachPaymentType: row.coachPaymentType,
+          playerPaymentType:
+            row.rosterRole === "PLAYER" ? row.playerPaymentType : "MEMBERSHIP",
+          active: row.active,
+        },
+      });
+      if (row.rosterRole === "COACH") {
+        await setClubMemberCoachSquads(clubMember.id, row.squadKeys);
       }
+      result.created += 1;
+      continue;
+    }
+
+    const currentSquadKeys =
+      current.rosterRole === "COACH"
+        ? current.coachSquads.map((squad) => squad.trainingTeamKey).sort()
+        : current.trainingTeamKey
+          ? [current.trainingTeamKey]
+          : [];
+    const nextSquadKeys = [...row.squadKeys].sort();
+    const changed =
+      current.name !== row.name ||
+      current.rosterRole !== row.rosterRole ||
+      current.active !== row.active ||
+      (current.coachPaymentType ?? null) !== row.coachPaymentType ||
+      normalizePlayerPaymentType(current.playerPaymentType) !==
+        row.playerPaymentType ||
+      currentSquadKeys.join(",") !== nextSquadKeys.join(",");
+
+    if (changed) {
+      for (const key of currentSquadKeys) squadKeysToSync.add(key);
+      await prisma.clubMember.update({
+        where: { id: current.id },
+        data: {
+          name: row.name,
+          trainingTeamKey: row.squadKeys[0] ?? null,
+          rosterRole: row.rosterRole,
+          coachPaymentType: row.coachPaymentType,
+          playerPaymentType:
+            row.rosterRole === "PLAYER" ? row.playerPaymentType : "MEMBERSHIP",
+          active: row.active,
+        },
+      });
+      if (row.rosterRole === "COACH") {
+        await setClubMemberCoachSquads(current.id, row.squadKeys);
+      } else {
+        await setClubMemberCoachSquads(current.id, []);
+      }
+      result.updated += 1;
+    }
+  }
+
+  const removalIds = new Set(plannedRemovals.map((member) => member.id));
+  for (const member of existing) {
+    if (!removalIds.has(member.id)) continue;
+
+    if (member.trainingTeamKey) squadKeysToSync.add(member.trainingTeamKey);
+    for (const squad of member.coachSquads) {
+      squadKeysToSync.add(squad.trainingTeamKey);
+    }
+
+    if (member.userId) {
+      await setClubMemberCoachSquads(member.id, []);
+      await prisma.clubMember.update({
+        where: { id: member.id },
+        data: {
+          active: false,
+          trainingTeamKey: null,
+        },
+      });
+    } else {
+      await setClubMemberCoachSquads(member.id, []);
+      await prisma.clubMember.delete({ where: { id: member.id } });
+    }
+    result.removed += 1;
+  }
+
+  for (const squadKey of squadKeysToSync) {
+    if (await isTrainingSquadKey(squadKey)) {
+      await syncClubTeamsForSquadKey(squadKey);
     }
   }
 
   return result;
+}
+
+async function overrideTrainingSessions(
+  rows: Record<string, string>[],
+  category: SessionCategory,
+  fileName: string | null,
+): Promise<BulkImportResult> {
+  const result = emptyResult(fileName);
+  type Desired = { rowNumber: number; fingerprint: string; data: TrainingSessionData };
+  const desired: Desired[] = [];
+  const seenInFile = new Set<string>();
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index]!;
+    const rowNumber = index + 2;
+    if (rowIsEmpty(row)) continue;
+    result.scanned += 1;
+
+    try {
+      const payload = parseTrainingSessionRow(row);
+      if (category === SESSION_CATEGORIES.WEEKLY && !payload.trainingTeamKey) {
+        throw new Error("training_team_key is required for weekly training");
+      }
+
+      const parsed = trainingSessionSchema.safeParse({
+        ...payload,
+        trainingTeamKey:
+          category === SESSION_CATEGORIES.WEEKLY
+            ? payload.trainingTeamKey
+            : undefined,
+      });
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Invalid row");
+      }
+      if (
+        category === SESSION_CATEGORIES.FUN &&
+        parsed.data.sessionFee == null
+      ) {
+        throw new Error("session_fee is required for fun sessions");
+      }
+      if (
+        category === SESSION_CATEGORIES.WEEKLY &&
+        parsed.data.trainingTeamKey &&
+        !(await isTrainingSquadKey(parsed.data.trainingTeamKey))
+      ) {
+        throw new Error("Invalid training_team_key");
+      }
+
+      const sessionData = toTrainingSessionData(parsed.data);
+      const fingerprint = trainingSessionFingerprint(category, sessionData);
+      if (seenInFile.has(fingerprint)) {
+        throw new Error("Duplicate session row in sheet");
+      }
+      seenInFile.add(fingerprint);
+      desired.push({ rowNumber, fingerprint, data: sessionData });
+    } catch (error) {
+      result.failed += 1;
+      result.errors.push({
+        row: rowNumber,
+        message: error instanceof Error ? error.message : "Import failed",
+      });
+    }
+  }
+
+  if (result.failed > 0) return result;
+
+  if (desired.length === 0) {
+    result.failed = 1;
+    result.errors.push({
+      row: 0,
+      message: "Sheet has no data rows — upload cancelled to avoid wiping the list.",
+    });
+    return result;
+  }
+
+  const existing = await prisma.trainingSession.findMany({
+    where: { category },
+  });
+  const existingByFingerprint = new Map(
+    existing.map((session) => [
+      trainingSessionFingerprint(category, {
+        title: session.title,
+        dayOfWeek: session.dayOfWeek,
+        startTime: session.startTime,
+        endTime: session.endTime,
+        location: session.location,
+        level: session.level,
+        description: session.description,
+        coach: session.coach,
+        attendanceUrl: session.attendanceUrl,
+        paymentUrl: session.paymentUrl,
+        reclubUsername: session.reclubUsername,
+        sessionFee: session.sessionFee,
+        recurring: session.recurring,
+        recurrenceWeeks: session.recurrenceWeeks,
+        trainingTeamKey: session.trainingTeamKey,
+        recurringFrom: session.recurringFrom,
+        recurringTo: session.recurringTo,
+        sessionDate: session.sessionDate,
+      }),
+      session,
+    ]),
+  );
+
+  const desiredFingerprints = new Set(desired.map((row) => row.fingerprint));
+
+  for (const row of desired) {
+    if (existingByFingerprint.has(row.fingerprint)) continue;
+    const session = await prisma.trainingSession.create({
+      data: { ...row.data, category },
+    });
+    await syncTrainingSessionEvents(session);
+    result.created += 1;
+  }
+
+  for (const session of existing) {
+    const fingerprint = trainingSessionFingerprint(category, {
+      title: session.title,
+      dayOfWeek: session.dayOfWeek,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      location: session.location,
+      level: session.level,
+      description: session.description,
+      coach: session.coach,
+      attendanceUrl: session.attendanceUrl,
+      paymentUrl: session.paymentUrl,
+      reclubUsername: session.reclubUsername,
+      sessionFee: session.sessionFee,
+      recurring: session.recurring,
+      recurrenceWeeks: session.recurrenceWeeks,
+      trainingTeamKey: session.trainingTeamKey,
+      recurringFrom: session.recurringFrom,
+      recurringTo: session.recurringTo,
+      sessionDate: session.sessionDate,
+    });
+    if (desiredFingerprints.has(fingerprint)) continue;
+    await deleteTrainingSessionCascade(session.id);
+    result.removed += 1;
+  }
+
+  return result;
+}
+
+async function overrideMatches(
+  rows: Record<string, string>[],
+  fileName: string | null,
+): Promise<BulkImportResult> {
+  const result = emptyResult(fileName);
+  type Desired = { fingerprint: string; data: ParsedTeamMatch };
+  const desired: Desired[] = [];
+  const seenInFile = new Set<string>();
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index]!;
+    const rowNumber = index + 2;
+    if (rowIsEmpty(row)) continue;
+    result.scanned += 1;
+
+    try {
+      const parsed = teamMatchSchema.safeParse({
+        trainingTeamKey: row.training_team_key?.trim(),
+        opponentName: row.opponent_name?.trim(),
+        venue: row.venue?.trim().toUpperCase(),
+        location: row.location?.trim(),
+        warmUpTime: row.warm_up_time?.trim()
+          ? parseCsvDateTime(row.warm_up_time)
+          : "",
+        matchStart: row.match_start?.trim()
+          ? parseCsvDateTime(row.match_start)
+          : "",
+        notes: parseOptional(row.notes),
+      });
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Invalid row");
+      }
+      if (!(await isTrainingSquadKey(parsed.data.trainingTeamKey))) {
+        throw new Error("Invalid training_team_key");
+      }
+      const fingerprint = matchFingerprint(parsed.data);
+      if (seenInFile.has(fingerprint)) {
+        throw new Error("Duplicate match row in sheet");
+      }
+      seenInFile.add(fingerprint);
+      desired.push({ fingerprint, data: parsed.data });
+    } catch (error) {
+      result.failed += 1;
+      result.errors.push({
+        row: rowNumber,
+        message: error instanceof Error ? error.message : "Import failed",
+      });
+    }
+  }
+
+  if (result.failed > 0) return result;
+
+  if (desired.length === 0) {
+    result.failed = 1;
+    result.errors.push({
+      row: 0,
+      message: "Sheet has no data rows — upload cancelled to avoid wiping the list.",
+    });
+    return result;
+  }
+
+  const existing = await prisma.teamMatch.findMany();
+  const existingByFingerprint = new Map(
+    existing.map((match) => [
+      matchFingerprint({
+        trainingTeamKey: match.trainingTeamKey,
+        opponentName: match.opponentName,
+        venue: match.venue as ParsedTeamMatch["venue"],
+        location: match.location,
+        warmUpTime: match.warmUpTime.toISOString(),
+        matchStart: match.matchStart.toISOString(),
+        notes: match.notes ?? undefined,
+      }),
+      match,
+    ]),
+  );
+  const desiredFingerprints = new Set(desired.map((row) => row.fingerprint));
+
+  for (const row of desired) {
+    if (existingByFingerprint.has(row.fingerprint)) continue;
+    await prisma.teamMatch.create({
+      data: {
+        trainingTeamKey: row.data.trainingTeamKey,
+        opponentName: row.data.opponentName.trim(),
+        venue: row.data.venue,
+        location: row.data.location.trim(),
+        warmUpTime: new Date(row.data.warmUpTime),
+        matchStart: new Date(row.data.matchStart),
+        notes: row.data.notes ?? null,
+      },
+    });
+    result.created += 1;
+  }
+
+  for (const [fingerprint, match] of existingByFingerprint) {
+    if (desiredFingerprints.has(fingerprint)) continue;
+    await prisma.teamMatch.delete({ where: { id: match.id } });
+    result.removed += 1;
+  }
+
+  return result;
+}
+
+async function overrideEvents(
+  rows: Record<string, string>[],
+  fileName: string | null,
+): Promise<BulkImportResult> {
+  const result = emptyResult(fileName);
+  type Desired = { fingerprint: string; data: ParsedEvent };
+  const desired: Desired[] = [];
+  const seenInFile = new Set<string>();
+
+  for (let index = 0; index < rows.length; index += 1) {
+    const row = rows[index]!;
+    const rowNumber = index + 2;
+    if (rowIsEmpty(row)) continue;
+    result.scanned += 1;
+
+    try {
+      const parsed = eventSchema.safeParse({
+        title: row.title?.trim(),
+        type: row.type?.trim().toUpperCase(),
+        startDate: row.start_date?.trim()
+          ? parseCsvDateTime(row.start_date)
+          : "",
+        endDate: parseOptional(row.end_date)
+          ? parseCsvDateTime(row.end_date)
+          : undefined,
+        location: parseOptional(row.location),
+        description: parseOptional(row.description),
+        attendanceUrl: parseOptional(row.attendance_url),
+        paymentUrl: parseOptional(row.payment_url),
+        sessionFee: parseOptional(row.session_fee),
+        reclubUsername: parseOptional(row.reclub_username),
+      });
+      if (!parsed.success) {
+        throw new Error(parsed.error.issues[0]?.message ?? "Invalid row");
+      }
+      const fingerprint = eventFingerprint(parsed.data);
+      if (seenInFile.has(fingerprint)) {
+        throw new Error("Duplicate event row in sheet");
+      }
+      seenInFile.add(fingerprint);
+      desired.push({ fingerprint, data: parsed.data });
+    } catch (error) {
+      result.failed += 1;
+      result.errors.push({
+        row: rowNumber,
+        message: error instanceof Error ? error.message : "Import failed",
+      });
+    }
+  }
+
+  if (result.failed > 0) return result;
+
+  if (desired.length === 0) {
+    result.failed = 1;
+    result.errors.push({
+      row: 0,
+      message: "Sheet has no data rows — upload cancelled to avoid wiping the list.",
+    });
+    return result;
+  }
+
+  const existing = await prisma.event.findMany({
+    where: { trainingSessionId: null },
+  });
+  const existingByFingerprint = new Map(
+    existing.map((event) => [
+      eventFingerprint({
+        title: event.title,
+        type: event.type as ParsedEvent["type"],
+        startDate: event.startDate.toISOString(),
+        endDate: event.endDate?.toISOString(),
+        location: event.location ?? undefined,
+        description: event.description ?? undefined,
+        attendanceUrl: event.attendanceUrl ?? undefined,
+        paymentUrl: event.paymentUrl ?? undefined,
+        sessionFee: event.sessionFee ?? undefined,
+        reclubUsername: event.reclubUsername ?? undefined,
+      }),
+      event,
+    ]),
+  );
+  const desiredFingerprints = new Set(desired.map((row) => row.fingerprint));
+
+  for (const row of desired) {
+    if (existingByFingerprint.has(row.fingerprint)) continue;
+    await prisma.event.create({ data: toManualEventData(row.data) });
+    result.created += 1;
+  }
+
+  for (const [fingerprint, event] of existingByFingerprint) {
+    if (desiredFingerprints.has(fingerprint)) continue;
+    await prisma.eventReminder.deleteMany({ where: { eventId: event.id } });
+    await prisma.event.delete({ where: { id: event.id } });
+    result.removed += 1;
+  }
+
+  return result;
+}
+
+export async function runBulkImport(
+  type: BulkImportType,
+  rows: Record<string, string>[],
+  fileName: string | null,
+  options: BulkImportOptions = {},
+): Promise<BulkImportResult> {
+  if (rows.length === 0) {
+    return emptyResult(fileName);
+  }
+
+  if (type === "roster") {
+    return overrideRoster(rows, fileName, options);
+  }
+  if (type === "weekly-training") {
+    return overrideTrainingSessions(rows, SESSION_CATEGORIES.WEEKLY, fileName);
+  }
+  if (type === "fun-sessions") {
+    return overrideTrainingSessions(rows, SESSION_CATEGORIES.FUN, fileName);
+  }
+  if (type === "matches") {
+    return overrideMatches(rows, fileName);
+  }
+  return overrideEvents(rows, fileName);
 }

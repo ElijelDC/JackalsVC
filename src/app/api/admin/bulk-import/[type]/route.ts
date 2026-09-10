@@ -61,13 +61,16 @@ export async function POST(request: Request, context: RouteContext) {
       return jsonError("File must be smaller than 5 MB", 400);
     }
 
+    const confirmDestructive = formData.get("confirmDestructive") === "true";
     const buffer = Buffer.from(await file.arrayBuffer());
     const { rows } = await parseSpreadsheetTable(buffer, file.name);
     if (rows.length === 0) {
       return jsonError("Spreadsheet is empty", 400);
     }
 
-    const result = await runBulkImport(type, rows, file.name);
+    const result = await runBulkImport(type, rows, file.name, {
+      confirmDestructive,
+    });
     return NextResponse.json(result);
   } catch (error) {
     console.error(`Bulk import failed (${type}):`, error);

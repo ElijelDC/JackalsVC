@@ -17,6 +17,7 @@ import {
   ensureTrainingSignupReminder,
   removeTrainingSignupReminder,
 } from "@/lib/training-signups";
+import { paygMemberHasApprovedAttendance } from "@/lib/training-payg";
 import { userCanSignUpForTrainingEvent } from "@/lib/training-teams";
 import { eventSignupSchema } from "@/lib/validations";
 import { NextResponse } from "next/server";
@@ -33,7 +34,10 @@ async function validateTrainingEventAccess(userId: string, eventId: string) {
   if (event.type !== "TRAINING") {
     return { error: jsonError("Attendance is only available for training sessions", 400) };
   }
-  const attendanceAccess = await getAttendanceAccessInfo({ id: userId });
+  const attendanceAccess = await getAttendanceAccessInfo(
+    { id: userId },
+    { scope: "training" },
+  );
   if (!attendanceAccess.canAccess) {
     if (attendanceAccess.blockReason === "overdue") {
       return {
@@ -66,7 +70,7 @@ async function validateTrainingEventAccess(userId: string, eventId: string) {
     }
   }
 
-  return { event };
+  return { event, isPaygTraining: attendanceAccess.isPaygTraining };
 }
 
 function validateResponseWindow(eventStartDate: Date) {
@@ -94,6 +98,19 @@ export async function POST(request: Request) {
 
     const windowError = validateResponseWindow(result.event.startDate);
     if (windowError) return windowError;
+
+    if (status === "ATTENDING" && result.isPaygTraining) {
+      const approved = await paygMemberHasApprovedAttendance(
+        session!.user.id,
+        data.eventId,
+      );
+      if (!approved) {
+        return jsonError(
+          "Pay the session fee and upload your receipt before marking attending",
+          403,
+        );
+      }
+    }
 
     const trainingTeamKey = result.event.trainingSession?.trainingTeamKey;
     if (trainingTeamKey) {
