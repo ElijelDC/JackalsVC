@@ -50,18 +50,21 @@ export function DashboardSeasonFixturesPanel({
 
   return (
     <section className="min-w-0">
-      <div className="mb-2.5 flex items-center justify-between gap-4 sm:mb-4">
+      <div className="mb-2.5 flex items-start justify-between gap-3 sm:mb-4 sm:items-center sm:gap-4">
         <div className="min-w-0">
           <h2 className="font-display text-base font-semibold text-white sm:text-xl">
-            Season fixtures
+            <span className="inline-flex items-center gap-1.5 sm:gap-2">
+              <CalendarRange className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
+              Season fixtures
+            </span>
           </h2>
-          <p className="mt-1 text-xs text-zinc-500">
+          <p className="mt-1 text-[11px] leading-snug text-zinc-500 sm:text-xs">
             Full match schedule · your squad first, or browse every team
           </p>
         </div>
         <Link
           href={fixturesHref}
-          className="inline-flex shrink-0 items-center gap-1 text-sm text-jackals-red-light hover:text-jackals-red"
+          className="mt-0.5 inline-flex shrink-0 items-center gap-0.5 text-xs text-jackals-red-light hover:text-jackals-red sm:mt-0 sm:gap-1 sm:text-sm"
         >
           View all
           <ChevronRight className="h-3.5 w-3.5" />

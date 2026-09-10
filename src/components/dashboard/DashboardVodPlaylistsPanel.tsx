@@ -65,8 +65,11 @@ export function DashboardVodPlaylistsPanel({
     <section className={cn("@container/dash-tile flex h-full min-w-0 flex-col", className)}>
       <div className="mb-2.5 sm:mb-4">
         <h2 className="font-display text-base font-semibold text-white sm:text-xl">
-          <span className="@[14rem]/dash-tile:hidden">Videos</span>
-          <span className="hidden @[14rem]/dash-tile:inline">Video library</span>
+          <span className="inline-flex items-center gap-1.5 sm:gap-2">
+            <Clapperboard className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
+            <span className="@[14rem]/dash-tile:hidden">Videos</span>
+            <span className="hidden @[14rem]/dash-tile:inline">Video library</span>
+          </span>
         </h2>
         <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-zinc-500 sm:text-xs">
           YouTube · {teamLabel}
@@ -75,12 +78,9 @@ export function DashboardVodPlaylistsPanel({
 
       <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
         {!trainingUrl && !matchesUrl ? (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2.5 py-4 text-center sm:px-5 sm:py-5">
-            <Clapperboard className="h-5 w-5 text-zinc-600 sm:h-6 sm:w-6" />
-            <p className="text-[11px] leading-snug text-zinc-500 sm:text-sm">
-              Playlists not set yet
-            </p>
-          </div>
+          <p className="flex flex-1 items-center justify-center px-2.5 py-4 text-center text-[11px] leading-snug text-zinc-500 sm:px-5 sm:py-5 sm:text-sm">
+            Playlists not set yet
+          </p>
         ) : (
           <div className="flex flex-1 flex-col justify-start gap-2 p-2 sm:gap-3 sm:p-4">
             {trainingUrl ? (
