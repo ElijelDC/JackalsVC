@@ -85,7 +85,7 @@ export const NAV_ITEMS: NavItem[] = [
   },
   {
     href: "/merchandise-order",
-    label: "Merch order",
+    label: "Merch",
     icon: Shirt,
     description:
       "Order a training t-shirt or club jackets for the 2026/27 season.",
