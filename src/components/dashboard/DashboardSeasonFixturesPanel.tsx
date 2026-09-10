@@ -50,9 +50,9 @@ export function DashboardSeasonFixturesPanel({
 
   return (
     <section className="min-w-0">
-      <div className="mb-4 flex items-center justify-between gap-4">
+      <div className="mb-3 flex items-center justify-between gap-4 sm:mb-4">
         <div className="min-w-0">
-          <h2 className="font-display text-xl font-semibold text-white">
+          <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
             Season fixtures
           </h2>
           <p className="mt-1 text-xs text-zinc-500">
@@ -70,9 +70,9 @@ export function DashboardSeasonFixturesPanel({
 
       <Card className="min-w-0 overflow-hidden border-jackals-red/15 bg-gradient-to-br from-jackals-red/[0.05] to-transparent p-0">
         {fixtures.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <CalendarRange className="mx-auto h-8 w-8 text-zinc-600" />
-            <p className="mt-3 text-sm text-zinc-500">
+          <div className="px-4 py-4 text-center sm:py-6">
+            <CalendarRange className="mx-auto h-6 w-6 text-zinc-600 sm:h-8 sm:w-8" />
+            <p className="mt-2 text-sm text-zinc-500 sm:mt-3">
               No upcoming fixtures published yet.
             </p>
             <Link

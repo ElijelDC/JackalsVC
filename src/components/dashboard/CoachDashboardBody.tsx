@@ -64,7 +64,7 @@ export function CoachDashboardBody({
   }, [teamFilter, vodPlaylistsByTeam]);
 
   return (
-    <AnimatedPageSections>
+    <AnimatedPageSections className="space-y-5 sm:space-y-8">
       {showPayments && (
         <CoachDashboardPaymentsPanel
           teamName={teamName}
@@ -91,7 +91,7 @@ export function CoachDashboardBody({
         showTeam={multiTeam && !teamFilter}
       />
 
-      <div className="grid min-w-0 gap-8 lg:grid-cols-2 [&>*]:min-w-0">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-2 lg:items-stretch lg:gap-8 [&>*]:min-w-0">
         <CoachUpcomingTrainingCard
           sessions={filteredTraining}
           selectedTeamKey={teamFilter}
@@ -106,8 +106,8 @@ export function CoachDashboardBody({
 
       <CoachDashboardQuickActions />
 
-      <div className="grid min-w-0 gap-8 lg:grid-cols-3 [&>*]:min-w-0">
-        <div className="lg:col-span-2">
+      <div className="grid min-w-0 gap-5 lg:grid-cols-3 lg:items-stretch lg:gap-8 [&>*]:min-w-0">
+        <div className="flex h-full min-w-0 lg:col-span-2">
           <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
         </div>
         <DashboardVodPlaylistsPanel playlists={activeVodPlaylists} />

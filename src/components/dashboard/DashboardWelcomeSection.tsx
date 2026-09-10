@@ -8,7 +8,7 @@ export function DashboardWelcomeSection({
   description: string;
 }) {
   return (
-    <div className="mb-6 sm:mb-8">
+    <div className="mb-4 sm:mb-8">
       <PageHeader title={title} description={description} className="mb-0" />
     </div>
   );

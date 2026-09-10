@@ -30,13 +30,15 @@ export function DashboardUpcomingClubEventsPanel({
   const clubEvents = upcomingEvents.filter((event) => event.type !== "TRAINING");
 
   return (
-    <section className="min-w-0">
-      <div className="mb-4 flex items-center justify-between gap-4">
+    <section className="flex h-full w-full min-w-0 flex-col">
+      <div className="mb-3 flex items-center justify-between gap-4 sm:mb-4">
         <div className="min-w-0">
-          <h2 className="font-display text-xl font-semibold text-white">
+          <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
             Upcoming club events
           </h2>
-          <p className="mt-1 text-xs text-zinc-500">Tournaments and socials · within the next 4 weeks</p>
+          <p className="mt-1 text-xs text-zinc-500">
+            Tournaments and socials · within the next 4 weeks
+          </p>
         </div>
         <Link
           href={withDashboardReturn("/events")}
@@ -46,10 +48,10 @@ export function DashboardUpcomingClubEventsPanel({
         </Link>
       </div>
 
-      <Card className="min-w-0 overflow-hidden p-0">
-        <div className="divide-y divide-white/10">
+      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
+        <div className="flex flex-1 flex-col divide-y divide-white/10">
           {clubEvents.length === 0 ? (
-            <p className="px-4 py-6 text-center text-sm text-zinc-500">
+            <p className="flex flex-1 items-center px-4 py-3.5 text-sm text-zinc-500 sm:justify-center sm:px-5 sm:py-5 sm:text-center">
               No club events within the next 4 weeks.
             </p>
           ) : (
@@ -132,8 +134,10 @@ export function MemberPaymentsPanel({
 
   return (
     <section className="min-w-0">
-      <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="font-display text-xl font-semibold text-white">Membership</h2>
+      <div className="mb-3 flex items-center justify-between gap-4 sm:mb-4">
+        <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
+          Membership
+        </h2>
         <Link
           href={withDashboardReturn("/membership")}
           className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
@@ -143,7 +147,7 @@ export function MemberPaymentsPanel({
       </div>
 
       <Card className="min-w-0 overflow-hidden p-0">
-        <div className="flex items-start gap-3 px-4 py-4">
+        <div className="flex items-start gap-3 px-4 py-3 sm:py-4">
           <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-jackals-red-light" />
           <div className="min-w-0 flex-1">
             {currentMembership ? (

@@ -58,9 +58,9 @@ function ScheduleEmptyState({
   viewAllLabel: string;
 }) {
   return (
-    <div className="flex min-h-[9.5rem] flex-1 flex-col items-center justify-center px-6 py-8 text-center sm:min-h-[11rem]">
-      <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-500">
-        <Icon className="h-5 w-5" strokeWidth={1.75} />
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-4 text-center sm:min-h-[9.5rem] sm:gap-3 sm:px-6 sm:py-6">
+      <div className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-500 sm:flex">
+        <Icon className="h-4 w-4" strokeWidth={1.75} />
       </div>
       <Link
         href={withDashboardReturn(viewAllHref)}
@@ -100,11 +100,11 @@ export function DashboardUpcomingScheduleCard({
   const remaining = items.length - preview.length;
 
   return (
-    <section className="flex min-w-0 flex-col">
-      <div className="mb-4">
-        <h2 className="font-display text-xl font-semibold text-white">
+    <section className="flex h-full min-w-0 flex-col">
+      <div className="mb-3 sm:mb-4">
+        <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
           <span className="inline-flex items-center gap-2">
-            <Icon className="h-5 w-5 shrink-0 text-jackals-red-light" />
+            <Icon className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
             {heading}
           </span>
         </h2>
@@ -114,7 +114,9 @@ export function DashboardUpcomingScheduleCard({
       <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
         {topBanner}
         {unavailableMessage ? (
-          <p className="px-4 py-6 text-center text-sm text-zinc-500">{unavailableMessage}</p>
+          <p className="px-4 py-4 text-center text-sm text-zinc-500 sm:py-6">
+            {unavailableMessage}
+          </p>
         ) : items.length === 0 ? (
           <ScheduleEmptyState
             icon={Icon}
