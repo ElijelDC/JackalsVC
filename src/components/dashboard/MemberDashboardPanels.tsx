@@ -139,12 +139,14 @@ export function MemberPaymentsPanel({
         <h2 className="font-display text-base font-semibold text-white sm:text-xl">
           Membership
         </h2>
-        <Link
-          href={withDashboardReturn("/membership")}
-          className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
-        >
-          {currentMembership ? "View more" : "Choose schedule"}
-        </Link>
+        {currentMembership ? (
+          <Link
+            href={withDashboardReturn("/membership")}
+            className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
+          >
+            View more
+          </Link>
+        ) : null}
       </div>
 
       <Card className="min-w-0 overflow-hidden p-0">
@@ -226,7 +228,7 @@ export function MemberPaymentsPanel({
               </>
             ) : (
               <p className="text-sm text-zinc-400">
-                No membership yet. Choose a payment schedule to get started.
+                No membership yet. Set one up to get started.
               </p>
             )}
           </div>
