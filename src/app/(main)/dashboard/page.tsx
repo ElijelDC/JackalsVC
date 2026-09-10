@@ -23,7 +23,7 @@ import {
 } from "@/lib/coach-payments";
 import { COACH_SESSION_RATE_EUR, isCurrentPaymentMonth, maskCoachPaymentForCoachView } from "@/lib/coach-payments-config";
 import { getDashboardClubEvents } from "@/lib/dashboard-club-events";
-import { getAllMatchesForTeams, getUpcomingFixturesPreview, getUpcomingTeamMatches } from "@/lib/matches";
+import { getUpcomingFixturesPreview, getUpcomingTeamMatches } from "@/lib/matches";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import {
   getAttendanceAccessInfo,
