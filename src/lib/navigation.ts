@@ -162,6 +162,7 @@ const COACH_PAID_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
+  "/merchandise-order",
   "/payments",
 ] as const;
 
@@ -171,6 +172,7 @@ const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
+  "/merchandise-order",
 ] as const;
 
 const COACH_PAID_MOBILE_QUICK_NAV_HREFS = [
@@ -229,6 +231,7 @@ const ADMIN_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
+  "/merchandise-order",
   "/gallery",
 ] as const;
 
