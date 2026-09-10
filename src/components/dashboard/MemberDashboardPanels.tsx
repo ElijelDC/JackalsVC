@@ -74,13 +74,13 @@ export function DashboardUpcomingClubEventsPanel({
           )}
           <Link
             href={withDashboardReturn("/events")}
-            className="mt-auto flex items-center justify-center gap-1 border-t border-white/10 py-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light sm:py-2.5 sm:text-xs"
+            className="mt-auto flex items-center justify-center gap-0.5 border-t border-white/10 py-1.5 text-[10px] font-medium leading-none text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light sm:py-2 sm:text-[11px]"
           >
             {clubEvents.length > DASHBOARD_SCHEDULE_PREVIEW_LIMIT
               ? `+${clubEvents.length - DASHBOARD_SCHEDULE_PREVIEW_LIMIT} more · `
               : ""}
             View all
-            <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+            <ChevronRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
           </Link>
         </div>
       </Card>
