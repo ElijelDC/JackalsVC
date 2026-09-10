@@ -26,6 +26,7 @@ model User {
   clubMember         ClubMember?
   coachResponseReminders CoachResponseReminder[]
   eventNewsletterSubscription EventNewsletterSubscription?
+  pushSubscriptions  PushSubscription[]
 }
 
 model EventNewsletterSubscription {
@@ -229,6 +230,32 @@ model EventReminder {
   createdAt DateTime @default(now())
 
   @@unique([userId, eventId])
+}
+
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  userAgent String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model PushReminderSent {
+  id         String   @id @default(cuid())
+  userId     String
+  targetKind String
+  targetId   String
+  kind       String
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, targetKind, targetId, kind])
+  @@index([createdAt])
 }
 
 model TeamMatch {

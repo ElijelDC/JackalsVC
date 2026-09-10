@@ -9,6 +9,7 @@ import {
 import { Geist, Geist_Mono } from "next/font/google";
 import { Oswald } from "next/font/google";
 import { CartProvider } from "@/components/shop/CartProvider";
+import { ServiceWorkerRegister } from "@/components/pwa/ServiceWorkerRegister";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -73,6 +74,7 @@ export default function RootLayout({
           }}
         />
         <OrganizationJsonLd />
+        <ServiceWorkerRegister />
         <CartProvider>{children}</CartProvider>
       </body>
     </html>

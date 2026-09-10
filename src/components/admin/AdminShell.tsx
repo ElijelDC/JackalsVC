@@ -22,6 +22,7 @@ import {
   Menu,
   Package,
   PartyPopper,
+  Play,
   Search,
   Settings,
   Shirt,
@@ -174,6 +175,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     title: "Content",
     links: [
+      {
+        href: "/admin/vod-playlists",
+        label: "YouTube playlists",
+        icon: Play,
+        keywords: "vod training match video youtube",
+      },
       { href: "/admin/gallery", label: "Gallery", icon: Camera },
       { href: "/admin/achievements", label: "Achievements", icon: Award },
       {

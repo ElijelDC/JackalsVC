@@ -99,6 +99,73 @@ export async function getAllTeamMatches(trainingTeamKey: string) {
   });
 }
 
+export async function getAllMatchesForTeams(trainingTeamKeys: string[]) {
+  const keys = normalizeTrainingTeamKeys(trainingTeamKeys);
+  if (keys.length === 0) return [];
+
+  return prisma.teamMatch.findMany({
+    where: { trainingTeamKey: { in: keys } },
+    orderBy: { matchStart: "asc" },
+    select: {
+      id: true,
+      trainingTeamKey: true,
+      opponentName: true,
+      venue: true,
+      location: true,
+      warmUpTime: true,
+      matchStart: true,
+      notes: true,
+      cancelled: true,
+    },
+  });
+}
+
+/** Lightweight upcoming fixtures for dashboard preview (prioritises one squad). */
+export async function getUpcomingFixturesPreview(
+  trainingTeamKeys: string[],
+  options?: {
+    fromDate?: Date;
+    limit?: number;
+    preferTeamKey?: string | null;
+  },
+) {
+  const keys = normalizeTrainingTeamKeys(trainingTeamKeys);
+  if (keys.length === 0) return [];
+
+  const fromDate = options?.fromDate ?? new Date();
+  const limit = options?.limit ?? 4;
+  const preferTeamKey = options?.preferTeamKey ?? null;
+
+  const matches = await prisma.teamMatch.findMany({
+    where: {
+      trainingTeamKey: { in: keys },
+      cancelled: false,
+      matchStart: { gte: fromDate },
+    },
+    orderBy: { matchStart: "asc" },
+    take: preferTeamKey ? Math.max(limit * 4, 12) : limit,
+    select: {
+      id: true,
+      opponentName: true,
+      venue: true,
+      location: true,
+      matchStart: true,
+      trainingTeamKey: true,
+    },
+  });
+
+  if (!preferTeamKey) return matches.slice(0, limit);
+
+  return [...matches]
+    .sort((a, b) => {
+      const aMine = a.trainingTeamKey === preferTeamKey ? 0 : 1;
+      const bMine = b.trainingTeamKey === preferTeamKey ? 0 : 1;
+      if (aMine !== bMine) return aMine - bMine;
+      return a.matchStart.getTime() - b.matchStart.getTime();
+    })
+    .slice(0, limit);
+}
+
 export async function getTeamMatchDetail(matchId: string, userId: string) {
   const { getMatchDetail } = await import("@/lib/match-attendance");
   return getMatchDetail(matchId, userId);

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   CoachUpcomingMatchesCard,
   CoachUpcomingTrainingCard,
 } from "@/components/dashboard/DashboardUpcomingScheduleSections";
 import { DashboardUpcomingClubEventsPanel } from "@/components/dashboard/MemberDashboardPanels";
+import { DashboardVodPlaylistsPanel } from "@/components/dashboard/DashboardVodPlaylistsPanel";
 import {
   CoachDashboardPaymentsPanel,
   CoachDashboardQuickActions,
@@ -19,6 +20,7 @@ import {
 import type { CoachPaymentItem } from "@/components/coach/CoachPaymentsOverview";
 import type { CoachScheduleItem, DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import type { CoachUnansweredItem } from "@/lib/coach-unanswered-config";
+import type { TeamVodPlaylists } from "@/lib/vod-playlists";
 import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 
 export function CoachDashboardBody({
@@ -31,6 +33,7 @@ export function CoachDashboardBody({
   upcomingTraining,
   upcomingMatches,
   upcomingClubEvents,
+  vodPlaylistsByTeam,
 }: {
   teams: CoachTeamOption[];
   teamName: string;
@@ -41,6 +44,7 @@ export function CoachDashboardBody({
   upcomingTraining: CoachScheduleItem[];
   upcomingMatches: CoachScheduleItem[];
   upcomingClubEvents: DashboardClubEvent[];
+  vodPlaylistsByTeam: TeamVodPlaylists[];
 }) {
   const [teamFilter, setTeamFilter] = useState("");
   const multiTeam = teams.length > 1;
@@ -48,6 +52,16 @@ export function CoachDashboardBody({
   const filteredPending = filterCoachItemsByTeam(pendingResponses, teamFilter);
   const filteredTraining = filterCoachItemsByTeam(upcomingTraining, teamFilter);
   const filteredMatches = filterCoachItemsByTeam(upcomingMatches, teamFilter);
+
+  const activeVodPlaylists = useMemo(() => {
+    if (teamFilter) {
+      return (
+        vodPlaylistsByTeam.find((row) => row.trainingTeamKey === teamFilter) ??
+        null
+      );
+    }
+    return vodPlaylistsByTeam[0] ?? null;
+  }, [teamFilter, vodPlaylistsByTeam]);
 
   return (
     <AnimatedPageSections>
@@ -92,7 +106,12 @@ export function CoachDashboardBody({
 
       <CoachDashboardQuickActions />
 
-      <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
+      <div className="grid min-w-0 gap-8 lg:grid-cols-3 [&>*]:min-w-0">
+        <div className="lg:col-span-2">
+          <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
+        </div>
+        <DashboardVodPlaylistsPanel playlists={activeVodPlaylists} />
+      </div>
     </AnimatedPageSections>
   );
 }

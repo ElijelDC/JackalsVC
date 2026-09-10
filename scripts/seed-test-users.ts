@@ -13,8 +13,8 @@ const prisma = new PrismaClient({ adapter });
 const TEST_PASSWORD = "password123";
 
 const defaultSquads = [
-  { key: "DIV2_MENS", name: "Division 2 Mens", dayOfWeek: 4, sortOrder: 0 },
-  { key: "DIV3_WOMENS", name: "Division 3 Womens", dayOfWeek: 1, sortOrder: 1 },
+  { key: "DIV2_MENS", name: "Division 2 Mens", dayOfWeek: 3, sortOrder: 0 },
+  { key: "DIV3_WOMENS", name: "Division 3 Womens", dayOfWeek: 5, sortOrder: 1 },
   { key: "DIV4_MENS", name: "Division 4 Mens", dayOfWeek: 3, sortOrder: 2 },
 ];
 

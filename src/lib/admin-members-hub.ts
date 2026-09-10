@@ -11,14 +11,18 @@ export const ADMIN_MEMBERS_SQUAD_FILTERS: {
   { id: "ALL", label: "All", keys: null },
   { id: "d2m", label: "d2m", keys: ["DIV2_MENS"] },
   { id: "d3w", label: "d3w", keys: ["DIV3_WOMENS"] },
-  { id: "d3m", label: "d3m", keys: ["DIV3_MENS", "DIV4_MENS"] },
+  { id: "d3m", label: "d3m", keys: ["DIV3_MENS", "DIV4_MENS", "DIVISION_3_MENS"] },
 ];
 
 export function squadShortLabel(trainingTeamKey: string | null | undefined) {
   if (!trainingTeamKey) return null;
   if (trainingTeamKey === "DIV2_MENS") return "d2m";
   if (trainingTeamKey === "DIV3_WOMENS") return "d3w";
-  if (trainingTeamKey === "DIV3_MENS" || trainingTeamKey === "DIV4_MENS") {
+  if (
+    trainingTeamKey === "DIV3_MENS" ||
+    trainingTeamKey === "DIV4_MENS" ||
+    trainingTeamKey === "DIVISION_3_MENS"
+  ) {
     return "d3m";
   }
   return trainingTeamKey;

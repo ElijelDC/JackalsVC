@@ -13,6 +13,7 @@ import { getCoachUnansweredItemUrl } from "@/lib/coach-unanswered-config";
 import { prisma } from "@/lib/prisma";
 import { sendTrainingResponseReminderEmail } from "@/lib/send-coach-reminder-email";
 import { absoluteSiteUrl } from "@/lib/site-url";
+import { sendPushToUser } from "@/lib/web-push";
 
 export const COACH_RESPONSE_REMINDER_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
@@ -133,6 +134,15 @@ export async function sendCoachUnansweredReminders(input: {
     });
     if (result.delivered) delivered += 1;
     else logged += 1;
+
+    await sendPushToUser(player.userId, {
+      title:
+        item.kind === "match"
+          ? "Match response needed"
+          : "Training response needed",
+      body: `${input.coach.name} needs your attendance for ${sessionLabel}`,
+      url: itemUrl,
+    });
   }
 
   await recordCoachReminderSent(input.coach.userId, input.kind, input.id, now);

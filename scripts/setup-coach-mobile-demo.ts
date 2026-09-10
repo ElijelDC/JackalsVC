@@ -129,7 +129,7 @@ async function ensureHeadCoachForCoverSquad() {
 async function ensureWeeklySessions() {
   const squads = [
     { key: HEAD_SQUAD, title: "Division 2 Mens Training", dayOfWeek: 2 },
-    { key: COVER_SQUAD, title: "Division 3 Womens Training", dayOfWeek: 1 },
+    { key: COVER_SQUAD, title: "Division 3 Womens Training", dayOfWeek: 5 },
   ];
 
   const recurringFrom = startOfMonth(new Date());

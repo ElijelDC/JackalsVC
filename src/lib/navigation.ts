@@ -3,6 +3,7 @@ import {
   Award,
   BookOpen,
   CalendarDays,
+  CalendarRange,
   Camera,
   ClipboardList,
   Dumbbell,
@@ -35,6 +36,14 @@ export type NavItem = {
 
 export const NAV_ITEMS: NavItem[] = [
   { href: "/", label: "Home", icon: Home },
+  {
+    href: "/fixtures",
+    label: "Fixtures",
+    icon: CalendarRange,
+    description:
+      "Full season match schedule for every Jackals squad — filter by team.",
+    requiresAuth: true,
+  },
   {
     href: "/events",
     label: "Events",
@@ -116,6 +125,7 @@ export const NAV_ITEMS: NavItem[] = [
 
 const MEMBER_PRIMARY_NAV_HREFS = [
   "/",
+  "/fixtures",
   "/events",
   "/training",
   "/matches",
@@ -125,6 +135,7 @@ const MEMBER_PRIMARY_NAV_HREFS = [
 
 const MEMBER_PAYG_PRIMARY_NAV_HREFS = [
   "/",
+  "/fixtures",
   "/events",
   "/training",
   "/matches",
@@ -147,6 +158,7 @@ const MEMBER_MOBILE_MENU_EXTRA_HREFS = ["/gallery", "/teams"] as const;
 
 const COACH_PAID_PRIMARY_NAV_HREFS = [
   "/",
+  "/fixtures",
   "/events",
   "/training",
   "/matches",
@@ -155,6 +167,7 @@ const COACH_PAID_PRIMARY_NAV_HREFS = [
 
 const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
   "/",
+  "/fixtures",
   "/events",
   "/training",
   "/matches",
@@ -212,6 +225,7 @@ export { ADMIN_MOBILE_MENU_HIDE_HREFS, ADMIN_MORE_HIDE_HREFS, COACH_MORE_HIDE_HR
 
 const ADMIN_PRIMARY_NAV_HREFS = [
   "/",
+  "/fixtures",
   "/events",
   "/training",
   "/matches",

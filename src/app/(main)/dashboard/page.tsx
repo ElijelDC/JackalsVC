@@ -2,6 +2,10 @@ import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { CoachDashboardBody } from "@/components/dashboard/CoachDashboardBody";
 import { DashboardWelcomeSection } from "@/components/dashboard/DashboardWelcomeSection";
+import { InstallHomeScreenPrompt } from "@/components/dashboard/InstallHomeScreenPrompt";
+import { PushNotificationsPrompt } from "@/components/pwa/PushNotificationsPrompt";
+import { DashboardSeasonFixturesPanel } from "@/components/dashboard/DashboardSeasonFixturesPanel";
+import { DashboardVodPlaylistsPanel } from "@/components/dashboard/DashboardVodPlaylistsPanel";
 import {
   DashboardUpcomingClubEventsPanel,
   DashboardUpcomingMatchesCard,
@@ -19,19 +23,25 @@ import {
 } from "@/lib/coach-payments";
 import { COACH_SESSION_RATE_EUR, isCurrentPaymentMonth, maskCoachPaymentForCoachView } from "@/lib/coach-payments-config";
 import { getDashboardClubEvents } from "@/lib/dashboard-club-events";
-import { getUpcomingTeamMatches } from "@/lib/matches";
+import { getAllMatchesForTeams, getUpcomingFixturesPreview, getUpcomingTeamMatches } from "@/lib/matches";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import {
   getAttendanceAccessInfo,
   syncMembershipArrearsStatus,
 } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
+import { getSiteContentMap } from "@/lib/site-content";
 import { TRAINING_RESPONSE_OPENS_DAYS } from "@/lib/training-attendance-config";
 import { getUpcomingTeamTrainingEvents } from "@/lib/training-attendance";
 import {
+  getTrainingSquads,
   getTrainingTeamByKey,
   getUserTrainingTeamKey,
 } from "@/lib/training-teams";
+import {
+  readAllTeamVodPlaylists,
+  readTeamVodPlaylists,
+} from "@/lib/vod-playlists";
 
 export const metadata = {
   title: "Dashboard",
@@ -52,6 +62,7 @@ export default async function DashboardPage() {
       upcomingClubEvents,
       upcomingTraining,
       upcomingMatches,
+      siteContent,
     ] = await Promise.all([
       getCoachUnansweredItemsWithReminders(
         coach.trainingTeamKeys,
@@ -72,7 +83,13 @@ export default async function DashboardPage() {
         TRAINING_RESPONSE_OPENS_DAYS,
         DASHBOARD_SCHEDULE_FETCH_LIMIT,
       ),
+      getSiteContentMap(),
     ]);
+
+    const vodPlaylistsByTeam = readAllTeamVodPlaylists(
+      siteContent,
+      coach.teams.map((team) => ({ key: team.key, name: team.name })),
+    );
 
     const paymentOpts = { monthsBack: 3, monthsAhead: 1 };
     const eventCache = await preloadTeamEvents(
@@ -109,6 +126,8 @@ export default async function DashboardPage() {
           title={`Welcome, ${firstName}`}
           description={`${teamLabel} · ${scheduleHint}`}
         />
+        <InstallHomeScreenPrompt />
+        <PushNotificationsPrompt />
         <CoachDashboardBody
           teams={coach.teams}
           teamName={teamLabel}
@@ -121,6 +140,7 @@ export default async function DashboardPage() {
           upcomingTraining={upcomingTraining}
           upcomingMatches={upcomingMatches}
           upcomingClubEvents={upcomingClubEvents}
+          vodPlaylistsByTeam={vodPlaylistsByTeam}
         />
       </PageContainer>
     );
@@ -128,8 +148,9 @@ export default async function DashboardPage() {
 
   const trainingTeamKey = await getUserTrainingTeamKey(session.user.id);
   const team = await getTrainingTeamByKey(trainingTeamKey);
+  const squads = await getTrainingSquads();
 
-  const [memberships, upcomingClubEvents, upcomingTraining, upcomingMatches] =
+  const [memberships, upcomingClubEvents, upcomingTraining, upcomingMatches, fixturePreviewRows, siteContent] =
     await Promise.all([
       prisma.membership.findMany({
         where: { userId: session.user.id },
@@ -155,7 +176,31 @@ export default async function DashboardPage() {
             DASHBOARD_SCHEDULE_FETCH_LIMIT,
           )
         : Promise.resolve([]),
+      getUpcomingFixturesPreview(
+        squads.map((squad) => squad.key),
+        { fromDate: now, limit: 4, preferTeamKey: trainingTeamKey },
+      ),
+      getSiteContentMap(),
     ]);
+
+  const vodPlaylists =
+    trainingTeamKey && team
+      ? readTeamVodPlaylists(siteContent, trainingTeamKey, team.name)
+      : null;
+
+  const teamNameByKey = new Map(squads.map((squad) => [squad.key, squad.name]));
+  const fixturePreview = fixturePreviewRows.map((match) => ({
+    id: match.id,
+    opponentName: match.opponentName,
+    venue: match.venue,
+    location: match.location,
+    matchStart: match.matchStart.toISOString(),
+    trainingTeamKey: match.trainingTeamKey,
+    teamName: teamNameByKey.get(match.trainingTeamKey) ?? match.trainingTeamKey,
+    isMemberTeam: Boolean(
+      trainingTeamKey && match.trainingTeamKey === trainingTeamKey,
+    ),
+  }));
 
   const currentMembership = memberships.find((m) => new Date(m.endDate) > new Date());
   const payments = currentMembership
@@ -197,6 +242,8 @@ export default async function DashboardPage() {
             : "Your membership, training, and matches at a glance"
         }
       />
+      <InstallHomeScreenPrompt />
+      <PushNotificationsPrompt />
 
       <AnimatedPageSections>
         {!isPaygPlayer && (
@@ -239,7 +286,17 @@ export default async function DashboardPage() {
           />
         </div>
 
-        <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
+        <div className="grid min-w-0 gap-8 lg:grid-cols-3 [&>*]:min-w-0">
+          <div className="lg:col-span-2">
+            <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
+          </div>
+          <DashboardVodPlaylistsPanel playlists={vodPlaylists} />
+        </div>
+
+        <DashboardSeasonFixturesPanel
+          fixtures={fixturePreview}
+          memberTeamKey={trainingTeamKey}
+        />
       </AnimatedPageSections>
     </PageContainer>
   );
