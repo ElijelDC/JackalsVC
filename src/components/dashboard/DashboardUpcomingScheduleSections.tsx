@@ -23,6 +23,7 @@ const SCHEDULE_CONFIG: Record<
   {
     icon: LucideIcon;
     heading: string;
+    shortHeading: string;
     viewAllBase: string;
     viewAllLabel: string;
     noun: { one: string; many: string };
@@ -32,6 +33,7 @@ const SCHEDULE_CONFIG: Record<
   training: {
     icon: CalendarDays,
     heading: "Upcoming training",
+    shortHeading: "Training",
     viewAllBase: "/training",
     viewAllLabel: "All training",
     noun: { one: "session", many: "sessions" },
@@ -40,6 +42,7 @@ const SCHEDULE_CONFIG: Record<
   matches: {
     icon: Swords,
     heading: "Upcoming matches",
+    shortHeading: "Matches",
     viewAllBase: "/matches",
     viewAllLabel: "All matches",
     noun: { one: "match", many: "matches" },
@@ -81,17 +84,18 @@ function MemberUpcomingScheduleCard({
     kind === "training"
       ? {
           summary: teamName ? null : "No training team assigned",
-          message: teamName ? null : "Ask an admin to assign you to a training team.",
+          message: teamName ? null : "Ask an admin to assign your training team.",
         }
       : {
           summary: teamName ? null : "No team assigned",
-          message: teamName ? null : "Ask an admin to assign you to a team.",
+          message: teamName ? null : "Ask an admin to assign your team.",
         };
 
   return (
     <DashboardUpcomingScheduleCard
       icon={config.icon}
       heading={config.heading}
+      shortHeading={config.shortHeading}
       summary={buildDashboardScheduleSummary(items, needsResponse, config.noun, {
         unavailableLabel: unavailable.summary,
       })}
@@ -128,6 +132,7 @@ function CoachUpcomingScheduleCard({
     <DashboardUpcomingScheduleCard
       icon={config.icon}
       heading={config.heading}
+      shortHeading={config.shortHeading}
       summary={buildDashboardScheduleSummary(items, needsResponse, config.noun, {
         showSquadCount: showTeamInMeta,
       })}

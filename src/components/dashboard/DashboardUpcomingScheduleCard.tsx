@@ -58,16 +58,16 @@ function ScheduleEmptyState({
   viewAllLabel: string;
 }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-4 py-4 text-center sm:min-h-[9.5rem] sm:gap-3 sm:px-6 sm:py-6">
-      <div className="hidden h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-500 sm:flex">
-        <Icon className="h-4 w-4" strokeWidth={1.75} />
+    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2.5 py-4 text-center sm:min-h-[9.5rem] sm:gap-3 sm:px-6 sm:py-6">
+      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-500 sm:h-10 sm:w-10">
+        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={1.75} />
       </div>
       <Link
         href={withDashboardReturn(viewAllHref)}
-        className="inline-flex items-center gap-1 text-xs font-medium text-zinc-500 transition-colors hover:text-jackals-red-light"
+        className="inline-flex max-w-full items-center justify-center gap-0.5 text-[11px] font-medium leading-snug text-zinc-500 transition-colors hover:text-jackals-red-light sm:gap-1 sm:text-xs"
       >
-        {viewAllLabel}
-        <ChevronRight className="h-3.5 w-3.5" />
+        <span className="truncate">{viewAllLabel}</span>
+        <ChevronRight className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
       </Link>
     </div>
   );
@@ -76,6 +76,7 @@ function ScheduleEmptyState({
 export function DashboardUpcomingScheduleCard({
   icon: Icon,
   heading,
+  shortHeading,
   summary,
   items,
   showTeamInMeta = false,
@@ -87,6 +88,7 @@ export function DashboardUpcomingScheduleCard({
 }: {
   icon: LucideIcon;
   heading: string;
+  shortHeading?: string;
   summary: string;
   items: DashboardScheduleItem[];
   showTeamInMeta?: boolean;
@@ -98,23 +100,27 @@ export function DashboardUpcomingScheduleCard({
 }) {
   const preview = items.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT);
   const remaining = items.length - preview.length;
+  const compactHeading = shortHeading ?? heading;
 
   return (
-    <section className="flex h-full min-w-0 flex-col">
-      <div className="mb-3 sm:mb-4">
-        <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
-          <span className="inline-flex items-center gap-2">
+    <section className="@container/dash-tile flex h-full min-w-0 flex-col">
+      <div className="mb-2.5 sm:mb-4">
+        <h2 className="font-display text-base font-semibold text-white sm:text-xl">
+          <span className="inline-flex items-center gap-1.5 sm:gap-2">
             <Icon className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
-            {heading}
+            <span className="@[16rem]/dash-tile:hidden">{compactHeading}</span>
+            <span className="hidden @[16rem]/dash-tile:inline">{heading}</span>
           </span>
         </h2>
-        <p className="mt-1 text-xs text-zinc-500">{summary}</p>
+        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-zinc-500 sm:text-xs">
+          {summary}
+        </p>
       </div>
 
       <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
         {topBanner}
         {unavailableMessage ? (
-          <p className="px-4 py-4 text-center text-sm text-zinc-500 sm:py-6">
+          <p className="flex flex-1 items-center justify-center px-2.5 py-4 text-center text-[11px] leading-snug text-zinc-500 sm:px-4 sm:py-6 sm:text-sm">
             {unavailableMessage}
           </p>
         ) : items.length === 0 ? (
@@ -140,16 +146,18 @@ export function DashboardUpcomingScheduleCard({
                   })}
                   status={item.userStatus}
                   eventDate={startDate}
+                  dense
                 />
               );
             })}
             <Link
               href={withDashboardReturn(viewAllHref)}
-              className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
+              className="flex items-center justify-center gap-1 border-t border-white/10 py-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light sm:py-2.5 sm:text-xs"
             >
-              {remaining > 0 ? `+${remaining} more · ` : ""}
-              {viewAllLabel}
-              <ChevronRight className="h-3.5 w-3.5" />
+              {remaining > 0 ? `+${remaining} · ` : ""}
+              <span className="@[14rem]/dash-tile:hidden">View</span>
+              <span className="hidden @[14rem]/dash-tile:inline">{viewAllLabel}</span>
+              <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Link>
           </StaggerIn>
         )}

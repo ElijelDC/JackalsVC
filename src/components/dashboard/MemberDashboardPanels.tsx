@@ -30,19 +30,23 @@ export function DashboardUpcomingClubEventsPanel({
   const clubEvents = upcomingEvents.filter((event) => event.type !== "TRAINING");
 
   return (
-    <section className="flex h-full w-full min-w-0 flex-col">
-      <div className="mb-3 flex items-center justify-between gap-4 sm:mb-4">
+    <section className="@container/dash-tile flex h-full w-full min-w-0 flex-col">
+      <div className="mb-2.5 flex items-start justify-between gap-2 sm:mb-4 sm:items-center sm:gap-4">
         <div className="min-w-0">
-          <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
-            Upcoming club events
+          <h2 className="font-display text-base font-semibold text-white sm:text-xl">
+            <span className="@[16rem]/dash-tile:hidden">Events</span>
+            <span className="hidden @[16rem]/dash-tile:inline">Upcoming club events</span>
           </h2>
-          <p className="mt-1 text-xs text-zinc-500">
-            Tournaments and socials · within the next 4 weeks
+          <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-zinc-500 sm:text-xs">
+            <span className="sm:hidden">Next 4 weeks</span>
+            <span className="hidden sm:inline">
+              Tournaments and socials · within the next 4 weeks
+            </span>
           </p>
         </div>
         <Link
           href={withDashboardReturn("/events")}
-          className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
+          className="shrink-0 text-xs text-jackals-red-light hover:text-jackals-red sm:text-sm"
         >
           View all
         </Link>
@@ -51,8 +55,8 @@ export function DashboardUpcomingClubEventsPanel({
       <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
         <div className="flex flex-1 flex-col divide-y divide-white/10">
           {clubEvents.length === 0 ? (
-            <p className="flex flex-1 items-center px-4 py-3.5 text-sm text-zinc-500 sm:justify-center sm:px-5 sm:py-5 sm:text-center">
-              No club events within the next 4 weeks.
+            <p className="flex flex-1 items-center justify-center px-2.5 py-4 text-center text-[11px] leading-snug text-zinc-500 sm:px-5 sm:py-5 sm:text-sm">
+              No club events in the next 4 weeks
             </p>
           ) : (
             <StaggerIn className="divide-y divide-white/10" stagger={60}>
@@ -67,16 +71,17 @@ export function DashboardUpcomingClubEventsPanel({
                     meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}${
                       event.location ? ` · ${event.location}` : ""
                     }`}
+                    dense
                   />
                 );
               })}
               {clubEvents.length > DASHBOARD_SCHEDULE_PREVIEW_LIMIT && (
                 <Link
                   href={withDashboardReturn("/events")}
-                  className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
+                  className="flex items-center justify-center gap-1 border-t border-white/10 py-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light sm:py-2.5 sm:text-xs"
                 >
-                  +{clubEvents.length - DASHBOARD_SCHEDULE_PREVIEW_LIMIT} more events
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  +{clubEvents.length - DASHBOARD_SCHEDULE_PREVIEW_LIMIT} more
+                  <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 </Link>
               )}
             </StaggerIn>
@@ -134,8 +139,8 @@ export function MemberPaymentsPanel({
 
   return (
     <section className="min-w-0">
-      <div className="mb-3 flex items-center justify-between gap-4 sm:mb-4">
-        <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
+      <div className="mb-2.5 flex items-center justify-between gap-4 sm:mb-4">
+        <h2 className="font-display text-base font-semibold text-white sm:text-xl">
           Membership
         </h2>
         <Link

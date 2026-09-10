@@ -50,9 +50,9 @@ export function DashboardSeasonFixturesPanel({
 
   return (
     <section className="min-w-0">
-      <div className="mb-3 flex items-center justify-between gap-4 sm:mb-4">
+      <div className="mb-2.5 flex items-center justify-between gap-4 sm:mb-4">
         <div className="min-w-0">
-          <h2 className="font-display text-lg font-semibold text-white sm:text-xl">
+          <h2 className="font-display text-base font-semibold text-white sm:text-xl">
             Season fixtures
           </h2>
           <p className="mt-1 text-xs text-zinc-500">
