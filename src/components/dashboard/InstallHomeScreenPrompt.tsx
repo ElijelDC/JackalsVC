@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { Check, Download, Share, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { HOMESCREEN_CONFIRMED_KEY } from "@/lib/pwa-onboarding";
 import { cn } from "@/lib/utils";
 
-const STORAGE_KEY = "jackals-homescreen-installed-confirmed";
+const STORAGE_KEY = HOMESCREEN_CONFIRMED_KEY;
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>;
@@ -100,8 +101,8 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
           </div>
           <CardTitle>Install Jackals on your home screen</CardTitle>
           <CardDescription className="mt-2 max-w-xl text-zinc-400">
-            Add the club app for faster access — then we&apos;ll show you how to
-            turn on training &amp; match notifications.
+            Please install (or re-check) the club app on your phone — step 1 of 2.
+            After that we&apos;ll help you turn on training &amp; match notifications.
           </CardDescription>
 
           <ol className="mt-4 space-y-2 text-sm text-zinc-300">

@@ -4,10 +4,13 @@ import { useEffect, useState } from "react";
 import { Bell, BellOff, Check, Settings } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import {
+  HOMESCREEN_CONFIRMED_KEY,
+  PUSH_DISMISSED_KEY,
+} from "@/lib/pwa-onboarding";
 import { cn } from "@/lib/utils";
 
-const INSTALL_KEY = "jackals-homescreen-installed-confirmed";
-const PUSH_DISMISSED_KEY = "jackals-push-prompt-dismissed";
+const INSTALL_KEY = HOMESCREEN_CONFIRMED_KEY;
 
 type Platform = "ios" | "android" | "desktop";
 
