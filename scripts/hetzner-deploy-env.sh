@@ -55,6 +55,8 @@ ssh "${SSH_OPTS[@]}" "$REMOTE" bash -s <<EOF
 set -euo pipefail
 cd "${APP_DIR}"
 docker compose --env-file .env.production up -d ${BUILD_FLAG} --force-recreate app
+# App-only recreate can leave Caddy stopped; ensure HTTPS proxy is up.
+docker compose --env-file .env.production up -d caddy
 echo ""
 echo "==> Verifying required env vars inside the running container (values hidden):"
 docker compose exec -T app sh -c '

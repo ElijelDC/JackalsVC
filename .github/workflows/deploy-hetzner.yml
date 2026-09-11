@@ -64,6 +64,8 @@ jobs:
             git checkout main
             git pull --ff-only origin main
             docker compose --env-file .env.production up -d --build --force-recreate app
+            # App-only recreate can leave Caddy stopped; ensure HTTPS proxy is up.
+            docker compose --env-file .env.production up -d caddy
             sleep 12
             docker compose exec -T app npx prisma migrate deploy || echo "migrate deploy skipped (startup db push handles schema)"
             docker compose ps

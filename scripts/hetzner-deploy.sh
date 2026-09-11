@@ -42,6 +42,8 @@ deploy_in_dir() {
 
   echo "==> Building and recreating app container"
   docker compose --env-file .env.production up -d --build --force-recreate app
+  # App-only recreate can leave Caddy stopped; ensure HTTPS proxy is up.
+  docker compose --env-file .env.production up -d caddy
 
   echo "==> Waiting for app to become healthy"
   sleep 8

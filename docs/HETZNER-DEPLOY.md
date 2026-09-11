@@ -11,12 +11,15 @@ After updating secrets you must **recreate** the app container:
 ```bash
 cd /path/to/JackalsVC
 docker compose --env-file .env.production up -d --force-recreate app
+# Keep Caddy (HTTPS) running — app-only recreate can leave it stopped.
+docker compose --env-file .env.production up -d caddy
 ```
 
 If you changed `NEXT_PUBLIC_*` variables (baked into the Next.js client bundle at build time), rebuild as well:
 
 ```bash
 docker compose --env-file .env.production up -d --build --force-recreate app
+docker compose --env-file .env.production up -d caddy
 ```
 
 ## Server layout
@@ -72,6 +75,7 @@ ssh root@46.225.120.67
 cd /opt/app
 nano .env.production
 docker compose --env-file .env.production up -d --force-recreate app
+docker compose --env-file .env.production up -d caddy
 ```
 
 ## Required production variables
