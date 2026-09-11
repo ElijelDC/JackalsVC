@@ -4,11 +4,12 @@ import Link from "next/link";
 import { format } from "date-fns";
 import {
   getDashboardResponseDisplay,
+  getDashboardStatusInlineClass,
   type TrainingAttendanceStatus,
 } from "@/lib/training-attendance-config";
 import { cn } from "@/lib/utils";
 
-function DatePill({
+function DateBlock({
   date,
   tone,
 }: {
@@ -18,19 +19,19 @@ function DatePill({
   return (
     <div
       className={cn(
-        "flex h-10 w-9 shrink-0 flex-col items-center justify-center rounded-md border text-center",
-        tone === "urgent" && "border-amber-400/35 bg-amber-500/15",
-        tone === "attending" && "border-green-500/30 bg-green-500/15",
-        tone === "declined" && "border-rose-500/25 bg-rose-500/10",
-        tone === "neutral" && "border-white/10 bg-black/25",
+        "flex h-9 w-8 shrink-0 flex-col items-center justify-center rounded text-center sm:h-10 sm:w-9",
+        tone === "urgent" && "bg-amber-500/20",
+        tone === "attending" && "bg-green-500/20",
+        tone === "declined" && "bg-rose-500/15",
+        tone === "neutral" && "bg-black/30",
       )}
     >
       <span
         className={cn(
-          "text-[9px] font-semibold uppercase leading-none tracking-wide",
-          tone === "urgent" && "text-amber-300/80",
-          tone === "attending" && "text-green-400/80",
-          tone === "declined" && "text-rose-300/80",
+          "text-[8px] font-semibold uppercase leading-none tracking-wide sm:text-[9px]",
+          tone === "urgent" && "text-amber-300/90",
+          tone === "attending" && "text-green-400/90",
+          tone === "declined" && "text-rose-300/90",
           tone === "neutral" && "text-zinc-500",
         )}
       >
@@ -38,10 +39,10 @@ function DatePill({
       </span>
       <span
         className={cn(
-          "mt-0.5 text-sm font-bold leading-none",
-          tone === "urgent" && "text-amber-100",
-          tone === "attending" && "text-green-100",
-          tone === "declined" && "text-rose-100",
+          "mt-0.5 text-[13px] font-bold leading-none sm:text-sm",
+          tone === "urgent" && "text-amber-50",
+          tone === "attending" && "text-green-50",
+          tone === "declined" && "text-rose-50",
           tone === "neutral" && "text-white",
         )}
       >
@@ -52,7 +53,7 @@ function DatePill({
 }
 
 const rowBaseClassName =
-  "group flex h-full min-h-0 items-center gap-2.5 px-3 transition-colors sm:gap-3 sm:px-3.5";
+  "group relative flex h-full min-h-0 items-center gap-2 px-2.5 transition-colors sm:gap-2.5 sm:px-3";
 
 export function DashboardEventRow({
   href,
@@ -67,16 +68,13 @@ export function DashboardEventRow({
   dense?: boolean;
 }) {
   return (
-    <Link
-      href={href}
-      className={cn(rowBaseClassName, "hover:bg-white/[0.03]")}
-    >
-      <DatePill date={date} tone="neutral" />
+    <Link href={href} className={cn(rowBaseClassName, "hover:bg-white/[0.03]")}>
+      <DateBlock date={date} tone="neutral" />
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[13px] font-medium leading-snug text-white sm:text-sm">
+        <p className="line-clamp-2 break-words text-[12px] font-medium leading-snug text-white sm:text-[13px]">
           {title}
         </p>
-        <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-zinc-400 sm:text-xs">
+        <p className="mt-0.5 line-clamp-2 break-words text-[10px] leading-snug text-zinc-400 sm:text-[11px]">
           {meta}
         </p>
       </div>
@@ -114,37 +112,35 @@ export function DashboardScheduleRow({
       href={href}
       className={cn(
         rowBaseClassName,
-        tone === "urgent" &&
-          "bg-amber-500/[0.12] hover:bg-amber-500/[0.18] ring-1 ring-inset ring-amber-400/25",
-        tone === "attending" &&
-          "bg-green-500/[0.08] hover:bg-green-500/[0.14] ring-1 ring-inset ring-green-500/20",
+        tone === "urgent" && "bg-amber-500/[0.12] hover:bg-amber-500/[0.18]",
+        tone === "attending" && "bg-green-500/[0.08] hover:bg-green-500/[0.14]",
         tone === "declined" && "hover:bg-white/[0.03]",
         tone === "neutral" && "hover:bg-white/[0.03]",
       )}
     >
-      <DatePill date={date} tone={tone} />
+      <span
+        aria-hidden
+        className={cn(
+          "absolute inset-y-0 left-0 w-0.5",
+          tone === "urgent" && "bg-amber-400",
+          tone === "attending" && "bg-green-400",
+          tone === "declined" && "bg-rose-400/70",
+          tone === "neutral" && "bg-transparent",
+        )}
+      />
+      <DateBlock date={date} tone={tone} />
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-[13px] font-medium leading-snug text-white sm:text-sm">
+        <p className="line-clamp-2 break-words text-[12px] font-medium leading-snug text-white sm:text-[13px]">
           {title}
         </p>
-        <p className="mt-0.5 line-clamp-1 text-[11px] leading-snug text-zinc-400 sm:text-xs">
-          {meta}
+        <p className="mt-0.5 line-clamp-2 break-words text-[10px] leading-snug text-zinc-400 sm:text-[11px]">
+          <span>{meta}</span>
+          <span className={getDashboardStatusInlineClass(display, status)}>
+            {" · "}
+            {display.label}
+          </span>
         </p>
       </div>
-      <span
-        className={cn(
-          "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-          display.badgeClassName,
-        )}
-      >
-        {display.needsUrgentResponse
-          ? "Reply"
-          : status === "ATTENDING"
-            ? "Yes"
-            : status === "NOT_ATTENDING"
-              ? "No"
-              : "Open"}
-      </span>
     </Link>
   );
 }
