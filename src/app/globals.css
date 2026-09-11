@@ -869,15 +869,3 @@ h4,
     animation: none;
   }
 }
-
-/* Training session detail — lock page scroll on mobile tabbed layout */
-html.session-detail-lock,
-html.session-detail-lock body {
-  overflow: hidden;
-  height: 100%;
-  overscroll-behavior: none;
-}
-
-html.session-detail-lock footer {
-  display: none;
-}

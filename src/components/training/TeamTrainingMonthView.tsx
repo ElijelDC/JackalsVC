@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Fragment } from "react";
+import { Fragment, useEffect } from "react";
 import { format, isPast, isSameMonth } from "date-fns";
 import {
   CalendarDays,
@@ -177,6 +177,12 @@ export function TeamTrainingMonthView({
   returnFrom?: string | null;
 }) {
   const router = useRouter();
+
+  // Clear leftover lock from older session-detail layouts that blanked /training.
+  useEffect(() => {
+    document.documentElement.classList.remove("session-detail-lock");
+  }, []);
+
   const monthLabel = format(month, "MMMM yyyy");
   const now = new Date();
   const showTeamFilter = teams.length > 1;
@@ -634,6 +640,10 @@ export function TeamTrainingMonthView({
 }
 
 export function NoTrainingTeamAssigned({ squads }: { squads: TrainingTeam[] }) {
+  useEffect(() => {
+    document.documentElement.classList.remove("session-detail-lock");
+  }, []);
+
   return (
     <PageContainer>
       <PageHeader
