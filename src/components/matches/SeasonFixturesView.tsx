@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { format, isPast, isToday, parseISO } from "date-fns";
 import {
   CalendarRange,
@@ -61,7 +60,6 @@ function TeamFilter({
   memberTeamKey: string | null;
   returnFrom?: string | null;
 }) {
-  const router = useRouter();
   const ordered = [
     ...teams.filter((team) => team.key === memberTeamKey),
     ...teams.filter((team) => team.key !== memberTeamKey),
@@ -82,22 +80,18 @@ function TeamFilter({
 
   return (
     <nav aria-label="Filter fixtures by team" className="w-full">
-      <div className="flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="flex flex-wrap gap-2">
         {options.map((option) => {
           const selected = selectedTeamKey === option.key;
           const isMine = option.key === memberTeamKey;
           return (
-            <button
+            <Link
               key={option.key}
-              type="button"
-              aria-pressed={selected}
-              onClick={() =>
-                router.push(fixturesHref(option.key, returnFrom), {
-                  scroll: false,
-                })
-              }
+              href={fixturesHref(option.key, returnFrom)}
+              scroll={false}
+              aria-current={selected ? "page" : undefined}
               className={cn(
-                "shrink-0 rounded-full border px-3.5 py-2 text-left transition-all",
+                "min-h-11 shrink-0 rounded-full border px-3.5 py-2 text-left transition-all",
                 selected
                   ? "border-jackals-red/50 bg-jackals-red/15 text-white shadow-[0_0_20px_rgba(232,34,42,0.15)]"
                   : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
@@ -117,7 +111,7 @@ function TeamFilter({
                   {option.hint}
                 </span>
               ) : null}
-            </button>
+            </Link>
           );
         })}
       </div>
@@ -243,7 +237,7 @@ export function SeasonFixturesView({
       : teams.find((team) => team.key === selectedTeamKey) ?? null;
 
   return (
-    <PageContainer className="overflow-x-hidden py-8 sm:py-12">
+    <PageContainer className="py-8 sm:py-12">
       <ConditionalDashboardBackLink from={returnFrom} />
 
       <AnimateIn>
