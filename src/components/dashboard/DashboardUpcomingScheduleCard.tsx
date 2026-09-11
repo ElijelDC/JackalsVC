@@ -40,7 +40,7 @@ export function buildDashboardScheduleSummary(
   }
 
   if (items.length === 0) {
-    return `No ${noun.many} soon`;
+    return `No upcoming ${noun.many}`;
   }
 
   if (needsResponse > 0) {
