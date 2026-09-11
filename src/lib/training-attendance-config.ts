@@ -281,13 +281,16 @@ export type TrainingSessionDetailData = {
   coachReminder: CoachReminderStatus | null;
   roster: TrainingRosterGroups;
   coaches: TrainingRosterGroups;
+  /** Approved guests — kept separate from squad attending roster. */
+  guests: TrainingRosterMember[];
   counts: {
     attending: number;
     notAttending: number;
     unanswered: number;
     total: number;
+    guests: number;
   };
-  /** Approved guest invitees shown with attending players. */
+  /** Approved guest invitees (source data for guests roster). */
   guestAttendees: Array<{
     id: string;
     displayName: string;

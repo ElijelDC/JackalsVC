@@ -14,6 +14,7 @@ export function SquadRosterGroup({
   headerAction,
   onRemoveGuest,
   removingGuestId,
+  dense = false,
 }: {
   title: string;
   members: TrainingRosterMember[];
@@ -22,6 +23,7 @@ export function SquadRosterGroup({
   /** When set, guests show an X to remove them from the session. */
   onRemoveGuest?: (guestSignupId: string) => void;
   removingGuestId?: string | null;
+  dense?: boolean;
 }) {
   const toneStyles = {
     green: {
@@ -42,7 +44,7 @@ export function SquadRosterGroup({
 
   return (
     <div>
-      <div className="mb-3 flex items-start justify-between gap-3">
+      <div className={cn("flex items-start justify-between gap-3", dense ? "mb-2" : "mb-3")}>
         <p
           className={cn(
             "text-xs font-semibold uppercase tracking-wider",
@@ -56,7 +58,14 @@ export function SquadRosterGroup({
       {members.length === 0 ? (
         <p className="text-sm text-zinc-600">No one yet</p>
       ) : (
-        <ul className="grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-x-2 gap-y-4">
+        <ul
+          className={cn(
+            "grid gap-x-2",
+            dense
+              ? "grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-y-2.5"
+              : "grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-y-4",
+          )}
+        >
           {members.map((member) => {
             const guestSignupId = member.isGuest
               ? member.userId.replace(/^guest:/, "")
@@ -69,7 +78,7 @@ export function SquadRosterGroup({
             return (
               <li
                 key={member.userId}
-                className="relative flex min-w-0 flex-col items-center gap-1.5 text-center"
+                className="relative flex min-w-0 flex-col items-center gap-1 text-center"
               >
                 {canRemove ? (
                   <button
@@ -85,7 +94,8 @@ export function SquadRosterGroup({
                 <TeamMemberAvatar
                   name={member.name}
                   className={cn(
-                    "h-10 w-10 ring-2",
+                    "ring-2",
+                    dense ? "h-8 w-8" : "h-10 w-10",
                     member.isCurrentUser
                       ? "ring-jackals-red ring-offset-2 ring-offset-jackals-surface"
                       : styles.ring,
@@ -93,7 +103,8 @@ export function SquadRosterGroup({
                 />
                 <span
                   className={cn(
-                    "w-full truncate text-[11px] font-medium leading-tight",
+                    "w-full truncate font-medium leading-tight",
+                    dense ? "text-[10px]" : "text-[11px]",
                     member.isCurrentUser
                       ? "text-jackals-red-light"
                       : "text-zinc-400",

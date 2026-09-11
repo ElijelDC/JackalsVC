@@ -56,9 +56,11 @@ function SummaryStat({
 function CoachAttendanceList({
   coaches,
   showStatusBadges,
+  compact = false,
 }: {
   coaches: TrainingRosterGroups;
   showStatusBadges: boolean;
+  compact?: boolean;
 }) {
   const allCoaches = sortCoachesForDisplay([
     ...coaches.attending,
@@ -69,17 +71,23 @@ function CoachAttendanceList({
   if (allCoaches.length === 0) return null;
 
   return (
-    <div className="mt-5 border-t border-white/10 pt-4">
-      <p className="mb-3 text-xs font-medium text-zinc-500">
+    <div
+      className={cn(
+        "border-t border-white/10",
+        compact ? "mt-3 max-h-28 overflow-y-auto overscroll-contain pt-2" : "mt-5 pt-4",
+      )}
+    >
+      <p className="mb-2 text-xs font-medium text-zinc-500">
         {allCoaches.length === 1 ? "Coach" : "Coaches"}
       </p>
-      <ul className="space-y-2.5">
+      <ul className={cn("space-y-2", compact && "space-y-1.5")}>
         {allCoaches.map((coach) => (
-          <li key={coach.userId} className="flex items-center gap-2.5">
+          <li key={coach.userId} className="flex items-center gap-2">
             <TeamMemberAvatar
               name={coach.name}
               className={cn(
-                "h-8 w-8 shrink-0",
+                "shrink-0",
+                compact ? "h-6 w-6" : "h-8 w-8",
                 coach.isCurrentUser &&
                   "ring-2 ring-jackals-red ring-offset-2 ring-offset-jackals-surface",
               )}
@@ -87,7 +95,8 @@ function CoachAttendanceList({
             <div className="min-w-0 flex-1">
               <p
                 className={cn(
-                  "truncate text-sm",
+                  "truncate",
+                  compact ? "text-xs" : "text-sm",
                   coach.isCurrentUser
                     ? "font-medium text-jackals-red-light"
                     : "text-zinc-300",
@@ -100,7 +109,7 @@ function CoachAttendanceList({
                 ) : null}
               </p>
               {coach.isHeadCoach ? (
-                <p className="text-[11px] font-medium tracking-wide text-amber-300/90">
+                <p className="text-[10px] font-medium tracking-wide text-amber-300/90">
                   Head coach
                 </p>
               ) : null}
@@ -108,7 +117,7 @@ function CoachAttendanceList({
             {showStatusBadges ? (
               <span
                 className={cn(
-                  "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                  "shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium whitespace-nowrap",
                   TRAINING_ATTENDANCE_BADGE_STYLES[coach.status],
                 )}
               >
@@ -127,6 +136,7 @@ export function SquadSummaryCard({
   coaches,
   isCoachUser,
   children,
+  compact = false,
 }: {
   counts: {
     attending: number;
@@ -136,15 +146,16 @@ export function SquadSummaryCard({
   coaches: TrainingRosterGroups;
   isCoachUser: boolean;
   children?: ReactNode;
+  compact?: boolean;
 }) {
   const visibleCoaches = getCoachesVisibleToUser(coaches, isCoachUser);
   return (
-    <Card>
-      <CardTitle className="text-base">Player summary</CardTitle>
+    <Card className={compact ? "border-0 bg-transparent p-0 shadow-none" : undefined}>
+      {!compact ? <CardTitle className="text-base">Player summary</CardTitle> : null}
 
-      {children ? <div className="mt-4">{children}</div> : null}
+      {children ? <div className={compact ? "mb-3" : "mt-4"}>{children}</div> : null}
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className={cn("grid grid-cols-3 gap-2", !compact && "mt-4")}>
         <SummaryStat
           value={counts.attending}
           label={TRAINING_ATTENDANCE_LABELS.ATTENDING}
@@ -165,6 +176,7 @@ export function SquadSummaryCard({
       <CoachAttendanceList
         coaches={visibleCoaches}
         showStatusBadges={isCoachUser}
+        compact={compact}
       />
     </Card>
   );

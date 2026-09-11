@@ -290,7 +290,6 @@ export async function getTrainingSessionDetail(
   });
 
   const roster = groupByStatus(playerMembers);
-  roster.attending = [...roster.attending, ...guestMembers];
   const coaches = groupByStatus(coachMembers);
 
   const isCoachUser =
@@ -332,11 +331,13 @@ export async function getTrainingSessionDetail(
     coachReminder,
     roster,
     coaches,
+    guests: guestMembers,
     counts: {
       attending: roster.attending.length,
       notAttending: roster.notAttending.length,
       unanswered: roster.unanswered.length,
-      total: playerMembers.length + guestMembers.length,
+      total: playerMembers.length,
+      guests: guestMembers.length,
     },
     guestAttendees,
     pendingGuestInviteCount,

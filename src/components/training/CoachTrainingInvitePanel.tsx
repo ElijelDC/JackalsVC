@@ -41,7 +41,13 @@ function statusClass(status: string) {
   return "border-amber-500/40 bg-amber-500/10 text-amber-200";
 }
 
-export function CoachTrainingInvitePanel({ eventId }: { eventId: string }) {
+export function CoachTrainingInvitePanel({
+  eventId,
+  compact = false,
+}: {
+  eventId: string;
+  compact?: boolean;
+}) {
   const router = useRouter();
   const [invites, setInvites] = useState<InviteWithSignups[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,22 +168,32 @@ export function CoachTrainingInvitePanel({ eventId }: { eventId: string }) {
   const freeInvite = invites.find((invite) => invite.pricingType === "FREE");
 
   return (
-    <Card>
+    <Card className={compact ? "h-full" : undefined}>
       <div className="flex items-start gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center bg-jackals-red/15 text-jackals-red-light">
           <UserPlus className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
           <CardTitle className="text-base">Guest invites</CardTitle>
-          <CardDescription className="mt-1">
-            Invite players not on this squad to this training session. Paid
-            invites use the same €
-            {paidInvite?.sessionFeeEur ?? 10} Pay Per Training fee.
-          </CardDescription>
+          {!compact ? (
+            <CardDescription className="mt-1">
+              Invite players not on this squad. Paid links use the €
+              {paidInvite?.sessionFeeEur ?? 10} training fee.
+            </CardDescription>
+          ) : (
+            <CardDescription className="mt-1 text-xs">
+              Paid (€{paidInvite?.sessionFeeEur ?? 10}) or free invite links.
+            </CardDescription>
+          )}
         </div>
       </div>
 
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
+      <div
+        className={cn(
+          "grid gap-2",
+          compact ? "mt-3 grid-cols-1" : "mt-5 sm:grid-cols-2 gap-3",
+        )}
+      >
         {(
           [
             { type: "PAID" as const, label: "Paid invite (€10)", invite: paidInvite },
@@ -230,7 +246,12 @@ export function CoachTrainingInvitePanel({ eventId }: { eventId: string }) {
 
       <FormError message={error} />
 
-      <div className="mt-5 border-t border-white/10 pt-4">
+      <div
+        className={cn(
+          "border-t border-white/10",
+          compact ? "mt-3 max-h-40 overflow-y-auto overscroll-contain pt-3" : "mt-5 pt-4",
+        )}
+      >
         <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
           Invitees ({allSignups.length})
         </p>
