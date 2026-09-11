@@ -231,6 +231,49 @@ function isInviteRegistrationOpen(event: { startDate: Date }, invite: { status: 
   return event.startDate.getTime() > Date.now();
 }
 
+/** Squad players attending a training event (excludes coaches and invite guests). */
+async function listSquadMembersAttendingEvent(
+  eventId: string,
+  trainingTeamKey: string,
+): Promise<Array<{ id: string; displayName: string }>> {
+  const teammates = await prisma.clubMember.findMany({
+    where: {
+      trainingTeamKey,
+      active: true,
+      userId: { not: null },
+      rosterRole: { not: "COACH" },
+    },
+    select: {
+      userId: true,
+      user: { select: { id: true, name: true } },
+    },
+    orderBy: { name: "asc" },
+  });
+
+  const userIds = teammates
+    .map((member) => member.userId)
+    .filter((id): id is string => Boolean(id));
+
+  if (userIds.length === 0) return [];
+
+  const attending = await prisma.eventSignup.findMany({
+    where: {
+      eventId,
+      userId: { in: userIds },
+      status: { in: ["ATTENDING", "CONFIRMED"] },
+    },
+    select: { userId: true },
+  });
+  const attendingIds = new Set(attending.map((row) => row.userId));
+
+  return teammates
+    .filter((member) => member.userId && attendingIds.has(member.userId))
+    .map((member) => ({
+      id: member.userId!,
+      displayName: member.user?.name ?? "Player",
+    }));
+}
+
 export const getPublicTrainingInviteByToken = cache(async function getPublicTrainingInviteByToken(
   token: string,
   viewerEmail?: string | null,
@@ -293,11 +336,12 @@ export const getPublicTrainingInviteByToken = cache(async function getPublicTrai
       null
     : null;
 
-  const approved = invite.signups.filter(
-    (signup) => signup.status === TRAINING_INVITE_SIGNUP_APPROVED,
-  );
-
   const registrationOpen = isInviteRegistrationOpen(invite.event, invite);
+
+  const trainingTeamKey = invite.event.trainingSession?.trainingTeamKey ?? null;
+  const squadAttendees = trainingTeamKey
+    ? await listSquadMembersAttendingEvent(invite.eventId, trainingTeamKey)
+    : [];
 
   return {
     ok: true,
@@ -316,11 +360,7 @@ export const getPublicTrainingInviteByToken = cache(async function getPublicTrai
       coachName: invite.event.trainingSession?.coach ?? null,
       active: true,
       registrationOpen,
-      attendeeCount: approved.length,
-      attendees: approved.map((signup) => ({
-        id: signup.id,
-        displayName: signup.displayName,
-      })),
+      squadAttendees,
     },
     viewerRegistered: viewerSignup?.status === TRAINING_INVITE_SIGNUP_APPROVED,
     viewerPendingApproval:
@@ -662,6 +702,43 @@ export async function setTrainingInviteSignupStatus(input: {
     signup: serializeSignup(updated),
     unchanged: false as const,
   };
+}
+
+/** Coach/admin removes a guest registration (pending or approved). */
+export async function removeTrainingInviteSignup(input: {
+  signupId: string;
+  eventId?: string;
+}) {
+  const signup = await prisma.trainingInviteSignup.findUnique({
+    where: { id: input.signupId },
+    include: {
+      invite: { select: { eventId: true } },
+      paymentProof: { select: { id: true, proofScreenshotUrl: true } },
+    },
+  });
+
+  if (!signup) {
+    return { ok: false as const, error: "Registration not found." };
+  }
+
+  if (input.eventId && signup.invite.eventId !== input.eventId) {
+    return { ok: false as const, error: "Registration not found." };
+  }
+
+  await prisma.trainingInviteSignup.delete({ where: { id: signup.id } });
+
+  if (signup.paymentProof) {
+    await prisma.trainingInvitePaymentProof.delete({
+      where: { id: signup.paymentProof.id },
+    }).catch(() => undefined);
+    if (signup.paymentProof.proofScreenshotUrl) {
+      await deleteTrainingInvitePaymentProofFile(
+        signup.paymentProof.proofScreenshotUrl,
+      );
+    }
+  }
+
+  return { ok: true as const };
 }
 
 export async function createTrainingInvitePaymentProof(

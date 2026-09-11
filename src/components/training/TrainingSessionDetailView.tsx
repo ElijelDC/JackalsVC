@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { format } from "date-fns";
 import {
   CalendarDays,
@@ -19,6 +21,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { DashboardBackLink } from "@/components/dashboard/DashboardBackLink";
 import { PageContainer } from "@/components/layout/PageShell";
+import { apiDelete } from "@/lib/client-api";
 import { CLUB_TIMEZONE } from "@/lib/datetime-form";
 import { formatEventDateTime } from "@/lib/event-display";
 import type { TrainingSessionDetailData } from "@/lib/training-attendance-config";
@@ -49,6 +52,20 @@ export function TrainingSessionDetailView({
   backHref?: string;
   backLabel?: string;
 }) {
+  const router = useRouter();
+  const [removingGuestId, setRemovingGuestId] = useState<string | null>(null);
+
+  const removeGuest = async (guestSignupId: string) => {
+    setRemovingGuestId(guestSignupId);
+    const result = await apiDelete(
+      `/api/coach/training/invites/signups/${guestSignupId}`,
+      "Could not remove guest",
+    );
+    setRemovingGuestId(null);
+    if (result.ok) {
+      router.refresh();
+    }
+  };
   const eventDate = new Date(detail.event.startDate);
   const cancelled = detail.event.cancelled;
   const { timeLabel } = formatEventDateTime(
@@ -223,6 +240,10 @@ export function TrainingSessionDetailView({
                 title={TRAINING_ATTENDANCE_LABELS.ATTENDING}
                 members={detail.roster.attending}
                 tone="green"
+                onRemoveGuest={
+                  detail.isCoachUser ? (id) => void removeGuest(id) : undefined
+                }
+                removingGuestId={removingGuestId}
               />
               <SquadRosterGroup
                 title={TRAINING_ATTENDANCE_LABELS.NOT_ATTENDING}

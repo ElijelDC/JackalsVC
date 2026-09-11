@@ -3,6 +3,7 @@ import { coachOwnsTeam, requireCoach } from "@/lib/coach-auth";
 import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
 import {
   getSignupInviteEventTeamKey,
+  removeTrainingInviteSignup,
   setTrainingInviteSignupStatus,
 } from "@/lib/training-invites";
 import { trainingInviteSignupStatusSchema } from "@/lib/validations";
@@ -71,4 +72,24 @@ export async function PATCH(
   }
 
   return NextResponse.json({ signup: result.signup });
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ signupId: string }> },
+) {
+  const { signupId } = await params;
+  const authz = await authorizeSignupReview(signupId);
+  if (!authz.ok) return authz.response;
+
+  const result = await removeTrainingInviteSignup({
+    signupId,
+    eventId: authz.eventId,
+  });
+
+  if (!result.ok) {
+    return jsonError(result.error, 404);
+  }
+
+  return NextResponse.json({ success: true });
 }

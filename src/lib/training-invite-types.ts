@@ -92,8 +92,8 @@ export type PublicTrainingInvite = {
   coachName: string | null;
   active: boolean;
   registrationOpen: boolean;
-  attendeeCount: number;
-  attendees: Array<{ id: string; displayName: string }>;
+  /** Squad members marked attending — guests never see other invitees. */
+  squadAttendees: Array<{ id: string; displayName: string }>;
 };
 
 export type TrainingInviteGuestAttendee = {

@@ -25,7 +25,6 @@ import {
   TRAINING_INVITE_NEW_RECEIPT_REQUIRED,
   trainingInviteRequiresPaymentProof,
 } from "@/lib/training-invite-types";
-import { cn } from "@/lib/utils";
 
 const STORAGE_PREFIX = "training-invite-registration:";
 const GLOBAL_SIGNUP_PROFILE_KEY = "trial-session-signup-profile";
@@ -239,9 +238,6 @@ export function TrainingInvitePublicView({
             <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-widest text-jackals-red-light">
               <CalendarDays className="h-3.5 w-3.5" />
               {invite.teamName ?? "Training invite"}
-              <span className="rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-zinc-300">
-                {invite.pricingType === "PAID" ? "Paid guest" : "Free guest"}
-              </span>
             </div>
           </div>
           <div className="px-6 py-6">
@@ -354,8 +350,7 @@ export function TrainingInvitePublicView({
                   ) : viewerPendingApproval ? (
                     <p className="mb-4 text-sm text-zinc-400">
                       Your request has been submitted. A coach will review it
-                      soon — you&apos;ll appear on the attending list once
-                      approved.
+                      soon.
                     </p>
                   ) : viewerRejected ? (
                     <p className="mb-4 text-sm text-zinc-400">
@@ -423,34 +418,38 @@ export function TrainingInvitePublicView({
                   This invite is closed.
                 </div>
               )}
+
+              {viewerPendingApproval && (
+                <div className="mt-4 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
+                  Request submitted — waiting for coach approval.
+                </div>
+              )}
             </div>
           </Card>
         </AnimateIn>
 
         <AnimateIn immediate className="lg:col-span-3">
           <Card>
-            <CardTitle className="text-base">Approved guests</CardTitle>
+            <CardTitle className="text-base">Who&apos;s attending</CardTitle>
+            <CardDescription className="mt-2">
+              Squad members who have marked themselves as attending.
+            </CardDescription>
             <div className="mt-6">
-              {invite.attendees.length === 0 ? (
-                <p className="text-sm text-zinc-600">No guests approved yet.</p>
+              {invite.squadAttendees.length === 0 ? (
+                <p className="text-sm text-zinc-600">
+                  No squad members attending yet.
+                </p>
               ) : (
                 <ul className="grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-x-2 gap-y-4">
-                  {invite.attendees.map((attendee) => (
+                  {invite.squadAttendees.map((attendee) => (
                     <li
                       key={attendee.id}
                       className="flex min-w-0 flex-col items-center gap-1.5 text-center"
                     >
                       <TeamMemberAvatar
                         name={attendee.displayName}
-                        className={cn(
-                          "h-10 w-10 ring-2 ring-green-500/35",
-                          viewerRegistered &&
-                            form.displayName.trim() &&
-                            attendee.displayName.trim().toLowerCase() ===
-                              form.displayName.trim().toLowerCase()
-                            ? "ring-jackals-red ring-offset-2 ring-offset-jackals-surface"
-                            : "",
-                        )}
+                        className="h-10 w-10 ring-2 ring-green-500/35"
                       />
                       <span
                         className="w-full truncate text-[11px] font-medium leading-tight text-zinc-400"
@@ -463,12 +462,6 @@ export function TrainingInvitePublicView({
                 </ul>
               )}
             </div>
-            {viewerPendingApproval && (
-              <div className="mt-6 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-amber-300" />
-                Request submitted — waiting for coach approval.
-              </div>
-            )}
           </Card>
         </AnimateIn>
       </div>

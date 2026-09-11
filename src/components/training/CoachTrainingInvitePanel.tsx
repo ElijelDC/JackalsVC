@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Copy, Link2, Loader2, UserPlus } from "lucide-react";
+import { Check, Copy, Link2, Loader2, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormError } from "@/components/ui/FormMessage";
-import { apiGet, apiPatch, apiPost } from "@/lib/client-api";
+import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client-api";
 import type {
   TrainingInvitePricingType,
   TrainingInviteSignupRecord,
@@ -125,6 +125,22 @@ export function CoachTrainingInvitePanel({ eventId }: { eventId: string }) {
       `/api/coach/training/invites/signups/${signupId}`,
       { status },
       "Could not update registration",
+    );
+    setReviewingId(null);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    await load();
+    router.refresh();
+  };
+
+  const removeSignup = async (signupId: string) => {
+    setReviewingId(signupId);
+    setError(null);
+    const result = await apiDelete(
+      `/api/coach/training/invites/signups/${signupId}`,
+      "Could not remove guest",
     );
     setReviewingId(null);
     if (!result.ok) {
@@ -271,7 +287,17 @@ export function CoachTrainingInvitePanel({ eventId }: { eventId: string }) {
                       Reject
                     </Button>
                   </div>
-                ) : null}
+                ) : (
+                  <button
+                    type="button"
+                    aria-label={`Remove ${signup.displayName}`}
+                    disabled={reviewingId === signup.id}
+                    onClick={() => void removeSignup(signup.id)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition hover:border-rose-400/40 hover:bg-rose-500/15 hover:text-rose-200 disabled:opacity-50"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </li>
             ))}
           </ul>
