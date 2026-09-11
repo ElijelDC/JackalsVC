@@ -146,11 +146,13 @@ export function DashboardScheduleRow({
         <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-300 sm:text-[11px]">
           {meta}
         </p>
-        <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug sm:text-[11px]">
-          {detail ? <span className="text-zinc-500">{detail} · </span> : null}
-          <span className={getDashboardStatusInlineClass(display, status)}>
+        <p className="mt-0.5 flex min-w-0 items-baseline gap-1.5 text-[10px] leading-snug sm:text-[11px]">
+          <span className={cn("shrink-0", getDashboardStatusInlineClass(display, status))}>
             {display.label}
           </span>
+          {detail ? (
+            <span className="min-w-0 truncate text-zinc-500">{detail}</span>
+          ) : null}
         </p>
       </div>
     </Link>
