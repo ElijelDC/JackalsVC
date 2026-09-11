@@ -34,6 +34,8 @@ type CoachSeed = {
   /** Null until VLYC is issued — coaches set it later on their profile. */
   vlyNumber: string | null;
   coachPaymentType: "PAID" | "VOLUNTEER";
+  /** Defaults to MEMBER; use ADMIN for club overseer accounts. */
+  role?: "MEMBER" | "ADMIN";
   /**
    * Squad key → priority (0 = head coach, 100 = cover, 999 = overseer).
    * Only listed squads are assigned; others are cleared for this coach.
@@ -102,6 +104,7 @@ const coaches: CoachSeed[] = [
     email: "thunderjackals@gmail.com",
     vlyNumber: null,
     coachPaymentType: "VOLUNTEER",
+    role: "ADMIN",
     priorities: {
       DIV2_MENS: OVERSEER_PRIORITY,
       DIV3_WOMENS: OVERSEER_PRIORITY,
@@ -127,17 +130,23 @@ async function upsertCoach(
     ? await bcrypt.hash(password, 12)
     : existingUser!.passwordHash;
 
+  const preservedRole =
+    seed.role === "ADMIN" || existingUser?.role === "ADMIN"
+      ? "ADMIN"
+      : "MEMBER";
+
   const user = await prisma.user.upsert({
     where: { email },
     update: {
       name: seed.name,
-      role: "MEMBER",
+      // Never demote an existing admin (e.g. club overseer account).
+      role: preservedRole,
       ...(password ? { passwordHash } : {}),
     },
     create: {
       name: seed.name,
       email,
-      role: "MEMBER",
+      role: seed.role === "ADMIN" ? "ADMIN" : "MEMBER",
       passwordHash,
     },
   });
