@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { TrainingAttendancePicker } from "@/components/training/TrainingAttendancePicker";
 import { SquadSummaryCard } from "@/components/training/SquadSummaryCard";
+import { CoachTrainingInvitePanel } from "@/components/training/CoachTrainingInvitePanel";
 import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
@@ -189,6 +190,12 @@ export function TrainingSessionDetailView({
               isCoachUser={detail.isCoachUser}
             />
           </div>
+
+          {detail.isCoachUser && !cancelled ? (
+            <div className="mt-4">
+              <CoachTrainingInvitePanel eventId={detail.event.id} />
+            </div>
+          ) : null}
         </AnimateIn>
 
         <AnimateIn delay={150} className="lg:col-span-3">

@@ -218,6 +218,8 @@ export type TrainingRosterMember = {
   /** Priority 0 = head coach for this squad. */
   isHeadCoach?: boolean;
   coachPriority?: number;
+  /** Approved once-off guest invitee (not a squad member). */
+  isGuest?: boolean;
 };
 
 export type TrainingRosterGroups = {
@@ -285,4 +287,12 @@ export type TrainingSessionDetailData = {
     unanswered: number;
     total: number;
   };
+  /** Approved guest invitees shown with attending players. */
+  guestAttendees: Array<{
+    id: string;
+    displayName: string;
+    email: string;
+    pricingType: "PAID" | "FREE";
+  }>;
+  pendingGuestInviteCount: number;
 };

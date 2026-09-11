@@ -18,6 +18,10 @@ import {
 import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { enrichEventRecords, serializeEnrichedEvent } from "@/lib/event-enrichment";
 import { prisma } from "@/lib/prisma";
+import {
+  countPendingInviteSignupsForEvent,
+  listApprovedGuestAttendeesForEvent,
+} from "@/lib/training-invites";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
 import { getTeamTrainingSession, getUserTrainingTeamKeys, normalizeTrainingTeamKeys } from "@/lib/training-teams";
 
@@ -216,7 +220,8 @@ export async function getTrainingSessionDetail(
   const serialized = serializeEnrichedEvent(enriched);
   const trainingTeamKey = event.trainingSession.trainingTeamKey;
 
-  const [teammates, squadCoaches, signups] = await Promise.all([
+  const [teammates, squadCoaches, signups, guestAttendees, pendingGuestInviteCount] =
+    await Promise.all([
     prisma.clubMember.findMany({
       where: {
         trainingTeamKey,
@@ -234,6 +239,8 @@ export async function getTrainingSessionDetail(
       where: { eventId },
       select: { userId: true, status: true },
     }),
+    listApprovedGuestAttendeesForEvent(eventId),
+    countPendingInviteSignupsForEvent(eventId),
   ]);
 
   const signupMap = new Map(
@@ -262,6 +269,14 @@ export async function getTrainingSessionDetail(
       isCurrentUser: member.userId === userId,
     }));
 
+  const guestMembers: TrainingRosterMember[] = guestAttendees.map((guest) => ({
+    userId: `guest:${guest.id}`,
+    name: guest.displayName,
+    status: "ATTENDING" as const,
+    isCurrentUser: false,
+    isGuest: true,
+  }));
+
   const coachMembers: TrainingRosterMember[] = squadCoaches.map((coach) => {
     const rawStatus = signupMap.get(coach.userId) ?? "UNANSWERED";
     return {
@@ -275,6 +290,7 @@ export async function getTrainingSessionDetail(
   });
 
   const roster = groupByStatus(playerMembers);
+  roster.attending = [...roster.attending, ...guestMembers];
   const coaches = groupByStatus(coachMembers);
 
   const isCoachUser =
@@ -320,7 +336,9 @@ export async function getTrainingSessionDetail(
       attending: roster.attending.length,
       notAttending: roster.notAttending.length,
       unanswered: roster.unanswered.length,
-      total: playerMembers.length,
+      total: playerMembers.length + guestMembers.length,
     },
+    guestAttendees,
+    pendingGuestInviteCount,
   };
 }

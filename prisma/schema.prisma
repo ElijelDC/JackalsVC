@@ -207,6 +207,7 @@ model Event {
   createdAt              DateTime         @default(now())
   reminders              EventReminder[]
   signups                EventSignup[]
+  trainingInvites        TrainingInvite[]
 }
 
 model EventSignup {
@@ -777,6 +778,61 @@ model TrainingPaygSettings {
   paymentUrl    String   @default("")
   active        Boolean  @default(true)
   updatedAt     DateTime @updatedAt
+}
+
+/// Once-off coach invite for a non-squad player into a weekly training occurrence.
+model TrainingInvite {
+  id                    String                       @id @default(cuid())
+  token                 String                       @unique @default(cuid())
+  eventId               String
+  event                 Event                        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  /// PAID | FREE
+  pricingType           String
+  sessionFeeEur         Float?
+  paymentUrl            String?
+  createdByUserId       String
+  createdByClubMemberId String?
+  /// ACTIVE | REVOKED
+  status                String                       @default("ACTIVE")
+  createdAt             DateTime                     @default(now())
+  updatedAt             DateTime                     @updatedAt
+  signups               TrainingInviteSignup[]
+  paymentProofs         TrainingInvitePaymentProof[]
+
+  @@index([eventId, pricingType, status])
+  @@index([eventId])
+  @@index([createdByUserId])
+}
+
+model TrainingInvitePaymentProof {
+  id                 String                @id @default(cuid())
+  inviteId           String
+  invite             TrainingInvite        @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  proofScreenshotUrl String
+  createdAt          DateTime              @default(now())
+  signupId           String?               @unique
+  signup             TrainingInviteSignup? @relation(fields: [signupId], references: [id], onDelete: SetNull)
+
+  @@index([inviteId, createdAt])
+}
+
+model TrainingInviteSignup {
+  id               String                      @id @default(cuid())
+  inviteId         String
+  invite           TrainingInvite              @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  email            String
+  displayName      String
+  /// PENDING | APPROVED | REJECTED
+  status           String                      @default("PENDING")
+  reviewedAt       DateTime?
+  reviewedByUserId String?
+  createdAt        DateTime                    @default(now())
+  updatedAt        DateTime                    @updatedAt
+  paymentProof     TrainingInvitePaymentProof?
+
+  @@unique([inviteId, email])
+  @@index([inviteId, status])
+  @@index([status, createdAt])
 }
 
 /// Per-session PAYG payment + receipt for a squad member attending training.

@@ -24,6 +24,18 @@ export const RATE_LIMIT_RULES: RateLimitRule[] = [
     windowMs: 60_000,
     methods: ["GET", "HEAD"],
   },
+  {
+    prefix: "/api/training-invites/",
+    limit: 8,
+    windowMs: 60_000,
+    methods: ["POST", "PATCH", "DELETE"],
+  },
+  {
+    prefix: "/api/training-invites/",
+    limit: 120,
+    windowMs: 60_000,
+    methods: ["GET", "HEAD"],
+  },
   { prefix: "/api/auth/verify-email-code", limit: 10, windowMs: 60_000 },
   { prefix: "/api/auth/send-email-code", limit: 8, windowMs: 60_000 },
   { prefix: "/api/auth/forgot-password", limit: 8, windowMs: 60_000 },

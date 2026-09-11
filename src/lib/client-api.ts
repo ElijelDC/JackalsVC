@@ -303,6 +303,17 @@ export async function apiRemoveTrialSessionPaymentProof(
   );
 }
 
+export async function apiRemoveTrainingInvitePaymentProof(
+  token: string,
+  proofId: string,
+  fallbackError = "Failed to remove payment receipt",
+): Promise<ApiResult<{ message: string }>> {
+  return apiDelete<{ message: string }>(
+    `/api/training-invites/${token}/payment-proof?proofId=${encodeURIComponent(proofId)}`,
+    fallbackError,
+  );
+}
+
 export async function apiImportPaymentCsv(
   file: File,
   fallbackError = "Failed to import bank statement",

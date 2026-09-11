@@ -890,6 +890,26 @@ export const trialSessionSignupSchema = z.object({
   paymentProofId: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
 });
 
+export const trainingInviteCreateSchema = z.object({
+  eventId: z.string().min(1, "Training session is required"),
+  pricingType: z.enum(["PAID", "FREE"]),
+  regenerate: z.boolean().optional(),
+});
+
+export const trainingInviteSignupSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
+  displayName: z
+    .string()
+    .trim()
+    .min(1, "Enter the name you'd like coaches to see")
+    .max(80, "Name is too long"),
+  paymentProofId: z.preprocess(emptyToUndefined, z.string().min(1).optional()),
+});
+
+export const trainingInviteSignupStatusSchema = z.object({
+  status: z.enum(["APPROVED", "REJECTED", "PENDING"]),
+});
+
 export const adminTrialSessionAddSignupSchema = z.object({
   email: z.string().email("Enter a valid email address"),
   displayName: z

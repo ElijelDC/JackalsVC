@@ -71,11 +71,20 @@ export function SquadRosterGroup({
                   member.isCurrentUser ? "text-jackals-red-light" : "text-zinc-400",
                 )}
                 title={
-                  member.isCurrentUser ? `${member.name} (you)` : member.name
+                  member.isGuest
+                    ? `${member.name} (guest)`
+                    : member.isCurrentUser
+                      ? `${member.name} (you)`
+                      : member.name
                 }
               >
                 {firstName(member.name)}
               </span>
+              {member.isGuest ? (
+                <span className="text-[9px] font-medium uppercase tracking-wide text-zinc-500">
+                  Guest
+                </span>
+              ) : null}
             </li>
           ))}
         </ul>
