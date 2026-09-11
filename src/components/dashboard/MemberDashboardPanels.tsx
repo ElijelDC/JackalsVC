@@ -40,7 +40,7 @@ export function DashboardUpcomingClubEventsPanel({
         subtitle="Next 4 weeks"
       />
 
-      <Card className="flex min-h-[11.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[13rem]">
+      <Card className="flex min-h-[14.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[16rem]">
         <div className="flex min-h-0 flex-1 flex-col">
           {clubEvents.length === 0 ? (
             <p className="flex flex-1 items-center justify-center px-3 py-5 text-center text-xs text-zinc-500">
@@ -56,7 +56,9 @@ export function DashboardUpcomingClubEventsPanel({
                     href={withDashboardReturn(`/calendar/${event.id}`)}
                     date={startDate}
                     title={event.title}
-                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}`}
+                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}${
+                      event.location ? ` · ${event.location}` : ""
+                    }`}
                     dense
                   />
                 );

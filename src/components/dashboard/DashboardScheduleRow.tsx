@@ -2,57 +2,34 @@
 
 import Link from "next/link";
 import { format } from "date-fns";
+import { ChevronRight } from "lucide-react";
 import {
   getDashboardResponseDisplay,
+  getDashboardStatusInlineClass,
   type TrainingAttendanceStatus,
 } from "@/lib/training-attendance-config";
 import { cn } from "@/lib/utils";
 
-function DatePill({ date }: { date: Date }) {
+function DatePill({ date, dense = false }: { date: Date; dense?: boolean }) {
   return (
-    <div className="flex h-10 w-9 shrink-0 flex-col items-center justify-center rounded-md border border-white/10 bg-black/20 text-center sm:h-11 sm:w-10">
-      <span className="text-[9px] font-semibold uppercase tracking-wide text-zinc-500">
+    <div
+      className={cn(
+        "flex shrink-0 flex-col items-center justify-center rounded-md border border-white/10 bg-black/20 text-center",
+        dense ? "h-9 w-8 sm:h-10 sm:w-10" : "h-10 w-10",
+      )}
+    >
+      <span className="text-[9px] font-semibold uppercase leading-none tracking-wide text-zinc-500">
         {format(date, "MMM")}
       </span>
-      <span className="text-sm font-bold leading-none text-white sm:text-base">
+      <span
+        className={cn(
+          "font-bold leading-tight text-white",
+          dense ? "text-xs sm:text-sm" : "text-sm",
+        )}
+      >
         {format(date, "d")}
       </span>
     </div>
-  );
-}
-
-function StatusChip({
-  status,
-  eventDate,
-}: {
-  status: TrainingAttendanceStatus;
-  eventDate: Date;
-}) {
-  const display = getDashboardResponseDisplay(status, eventDate);
-  const shortLabel = display.needsUrgentResponse
-    ? "Reply"
-    : status === "ATTENDING"
-      ? "Yes"
-      : status === "NOT_ATTENDING"
-        ? "No"
-        : "Open";
-
-  return (
-    <span
-      className={cn(
-        "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide",
-        display.needsUrgentResponse && "bg-amber-500/15 text-amber-300",
-        status === "ATTENDING" && "bg-green-500/15 text-green-400",
-        status === "NOT_ATTENDING" && "bg-rose-500/15 text-rose-300",
-        !display.needsUrgentResponse &&
-          status !== "ATTENDING" &&
-          status !== "NOT_ATTENDING" &&
-          "bg-white/5 text-zinc-500",
-      )}
-    >
-      <span className="sm:hidden">{shortLabel}</span>
-      <span className="hidden sm:inline">{display.label}</span>
-    </span>
   );
 }
 
@@ -73,17 +50,37 @@ export function DashboardEventRow({
     <Link
       href={href}
       className={cn(
-        "group flex items-center gap-2.5 transition-colors hover:bg-white/[0.03]",
-        dense ? "px-3 py-2.5" : "px-4 py-3.5",
+        "group flex items-start transition-colors hover:bg-white/[0.03]",
+        dense
+          ? "gap-2 px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3.5"
+          : "gap-3 px-3 py-3.5 sm:px-4",
       )}
     >
-      <DatePill date={date} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-white">{title}</p>
-        <p className="mt-0.5 truncate text-[11px] text-zinc-500 sm:text-xs">
-          {dense ? format(date, "EEE · HH:mm") : meta}
+      <DatePill date={date} dense={dense} />
+      <div className="min-w-0 flex-1 pt-0.5">
+        <p
+          className={cn(
+            "font-medium leading-snug text-white",
+            dense ? "line-clamp-2 text-[13px] sm:text-sm" : "text-sm",
+          )}
+        >
+          {title}
+        </p>
+        <p
+          className={cn(
+            "mt-0.5 leading-relaxed text-zinc-400",
+            dense ? "line-clamp-2 text-[11px] sm:text-xs" : "text-xs",
+          )}
+        >
+          {meta}
         </p>
       </div>
+      <ChevronRight
+        className={cn(
+          "mt-1 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400",
+          dense ? "hidden h-3.5 w-3.5 sm:block" : "h-4 w-4",
+        )}
+      />
     </Link>
   );
 }
@@ -105,22 +102,47 @@ export function DashboardScheduleRow({
   eventDate: Date;
   dense?: boolean;
 }) {
+  const display = getDashboardResponseDisplay(status, eventDate);
+
   return (
     <Link
       href={href}
       className={cn(
-        "group flex items-center gap-2.5 transition-colors hover:bg-white/[0.03]",
-        dense ? "px-3 py-2.5" : "gap-3 px-4 py-3.5",
+        "group flex items-start transition-colors hover:bg-white/[0.03]",
+        dense
+          ? "gap-2 px-2.5 py-2.5 sm:gap-3 sm:px-4 sm:py-3.5"
+          : "gap-3 px-3 py-3.5 sm:px-4",
       )}
     >
-      <DatePill date={date} />
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-white">{title}</p>
-        <p className="mt-0.5 truncate text-[11px] text-zinc-500 sm:text-xs">
-          {dense ? format(date, "EEE · HH:mm") : meta}
+      <DatePill date={date} dense={dense} />
+      <div className="min-w-0 flex-1 pt-0.5">
+        <p
+          className={cn(
+            "font-medium leading-snug text-white",
+            dense ? "line-clamp-2 text-[13px] sm:text-sm" : "text-sm",
+          )}
+        >
+          {title}
+        </p>
+        <p
+          className={cn(
+            "mt-0.5 leading-relaxed text-zinc-400",
+            dense ? "line-clamp-2 text-[11px] sm:text-xs" : "text-xs",
+          )}
+        >
+          <span>{meta}</span>
+          <span className={getDashboardStatusInlineClass(display, status)}>
+            {" · "}
+            {display.label}
+          </span>
         </p>
       </div>
-      <StatusChip status={status} eventDate={eventDate} />
+      <ChevronRight
+        className={cn(
+          "mt-1 shrink-0 text-zinc-600 transition-colors group-hover:text-zinc-400",
+          dense ? "hidden h-3.5 w-3.5 sm:block" : "h-4 w-4",
+        )}
+      />
     </Link>
   );
 }

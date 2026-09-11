@@ -130,7 +130,7 @@ export function DashboardUpcomingScheduleCard({
         subtitle={summary}
       />
 
-      <Card className="flex min-h-[11.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[13rem]">
+      <Card className="flex min-h-[14.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[16rem]">
         {topBanner}
         {unavailableMessage ? (
           <p className="flex flex-1 items-center justify-center px-3 py-5 text-center text-xs leading-snug text-zinc-500">
