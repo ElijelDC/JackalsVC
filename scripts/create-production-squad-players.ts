@@ -254,22 +254,10 @@ const players: PlayerSeed[] = [
     squadLabel: "Adawale",
   },
   {
-    name: "Anar Enkhbaatar",
-    email: "enkhbaataranar@gmail.com",
-    trainingTeamKey: "DIVISION_3_MENS",
-    squadLabel: "Anar",
-  },
-  {
     name: "Jack O'Brien",
     email: "jacklovesceltic@gmail.com",
     trainingTeamKey: "DIVISION_3_MENS",
     squadLabel: "Jack",
-  },
-  {
-    name: "Nikita Jaremcuks",
-    email: "vaxinialt@gmail.com",
-    trainingTeamKey: "DIVISION_3_MENS",
-    squadLabel: "Nikita",
   },
   {
     name: "Wenze (Ivan) Li",
