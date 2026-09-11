@@ -175,7 +175,8 @@ export async function getUpcomingTeamMatches(
   userId: string,
   trainingTeamKey: string | string[],
   fromDate: Date = new Date(),
-  daysAhead: number = TRAINING_RESPONSE_OPENS_DAYS,
+  /** Null = no upper date bound (next N matches from now). */
+  daysAhead: number | null = TRAINING_RESPONSE_OPENS_DAYS,
   limit = 5,
 ) {
   const keys = normalizeTrainingTeamKeys(trainingTeamKey);
@@ -201,16 +202,22 @@ async function getUpcomingTeamMatchesForKey(
   userId: string,
   trainingTeamKey: string,
   fromDate: Date = new Date(),
-  daysAhead: number = TRAINING_RESPONSE_OPENS_DAYS,
+  daysAhead: number | null = TRAINING_RESPONSE_OPENS_DAYS,
   limit = 5,
 ) {
-  const through = getResponseWindowEndDate(fromDate, daysAhead);
+  const matchStart =
+    daysAhead == null
+      ? { gte: fromDate }
+      : {
+          gte: fromDate,
+          lte: getResponseWindowEndDate(fromDate, daysAhead),
+        };
 
   const matches = await prisma.teamMatch.findMany({
     where: {
       trainingTeamKey,
       cancelled: false,
-      matchStart: { gte: fromDate, lte: through },
+      matchStart,
     },
     orderBy: { matchStart: "asc" },
     take: limit,

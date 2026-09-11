@@ -79,7 +79,7 @@ export default async function DashboardPage() {
         session.user.id,
         coach.trainingTeamKeys,
         now,
-        TRAINING_RESPONSE_OPENS_DAYS,
+        null,
         DASHBOARD_SCHEDULE_FETCH_LIMIT,
       ),
       getSiteContentMap(),
@@ -170,7 +170,7 @@ export default async function DashboardPage() {
             session.user.id,
             trainingTeamKey,
             now,
-            TRAINING_RESPONSE_OPENS_DAYS,
+            null,
             DASHBOARD_SCHEDULE_FETCH_LIMIT,
           )
         : Promise.resolve([]),
