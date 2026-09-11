@@ -19,7 +19,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "demo:coach-mobile:setup": "tsx scripts/seed-test-users.ts && tsx scripts/setup-coach-mobile-demo.ts",
-    "demo:coach-mobile:record": "tsx scripts/record-coach-mobile-demo.ts"
+    "demo:coach-mobile:record": "tsx scripts/record-coach-mobile-demo.ts",
+    "demo:member-tutorial:setup": "DATABASE_URL=\"file:./prisma/dev.db\" tsx scripts/setup-dashboard-demo-member.ts",
+    "demo:member-tutorial:record": "tsx scripts/record-member-app-tutorial.ts"
   },
   "dependencies": {
     "@prisma/adapter-better-sqlite3": "^7.8.0",
