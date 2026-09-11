@@ -1,7 +1,7 @@
 /**
  * Record a polished mobile member-app tutorial with Playwright.
  *
- * Covers: login, dashboard, training, matches, fixtures, membership,
+ * Covers: member-nav login, dashboard, training, matches, fixtures, membership,
  * merch, gallery, videos, events, profile, and install.
  *
  *   npm run demo:member-tutorial:setup
@@ -19,7 +19,9 @@ const DEMO_EMAIL = process.env.MEMBER_DEMO_EMAIL ?? "demo.dashboard@jackalsvc.co
 const DEMO_PASSWORD =
   process.env.MEMBER_DEMO_PASSWORD ?? "DemoDash123!";
 const OUTPUT_DIR = path.join(process.cwd(), "docs/member-app-tutorial");
-const PAUSE_MS = Number(process.env.DEMO_STEP_PAUSE_MS ?? "4200");
+const PUBLIC_DIR = path.join(process.cwd(), "public/tutorials");
+/** Slightly snappier than the original ~3:14 cut; still readable captions. */
+const PAUSE_MS = Number(process.env.DEMO_STEP_PAUSE_MS ?? "3000");
 const TOTAL_STEPS = 16;
 
 const VIEWPORT = { width: 390, height: 844 };
@@ -35,6 +37,12 @@ async function wait(page: Page, ms = PAUSE_MS) {
   await page.waitForTimeout(ms);
 }
 
+function isProtectedAuthDialog(text: string) {
+  return /members only|sign in with your email|member register|member-signin/i.test(
+    text,
+  );
+}
+
 async function injectRecordingStyles(page: Page) {
   await page.addInitScript(() => {
     const hideDevUi = () => {
@@ -44,15 +52,21 @@ async function injectRecordingStyles(page: Page) {
         node.style.visibility = "hidden";
         node.style.pointerEvents = "none";
       });
-      document.querySelectorAll('[role="dialog"]').forEach((el) => {
-        const node = el as HTMLElement;
-        // Keep login form usable; hide blocking marketing/install modals only.
-        const title = node.getAttribute("aria-labelledby");
-        const labelled = title ? document.getElementById(title)?.textContent ?? "" : "";
-        if (/cookie|install|home screen|notification|subscribe|welcome/i.test(labelled + node.textContent)) {
-          node.style.display = "none";
-          const wrap = node.closest(".fixed.inset-0");
-          if (wrap) (wrap as HTMLElement).style.display = "none";
+      document.querySelectorAll(".fixed.inset-0.z-999").forEach((wrap) => {
+        const text = wrap.textContent ?? "";
+        // Never hide the member sign-in / register modal during recording.
+        if (/members only|sign in with your email|member register|member-signin/i.test(text)) {
+          return;
+        }
+        // Hide blocking marketing/install/newsletter overlays.
+        if (
+          /cookie|install|home screen|notification|subscribe|welcome|stay in the loop|event email/i.test(
+            text,
+          )
+        ) {
+          (wrap as HTMLElement).style.display = "none";
+          (wrap as HTMLElement).style.pointerEvents = "none";
+          wrap.remove();
         }
       });
     };
@@ -98,7 +112,7 @@ async function titleCard(
     title,
     body,
   }: { eyebrow: string; title: string; body: string },
-  ms = 4200,
+  ms = 3200,
 ) {
   await hideDemoChrome(page);
   await page.evaluate(
@@ -138,7 +152,7 @@ async function titleCard(
 }
 
 /** Large narration card — easy to read on phone screens. */
-async function narrate(page: Page, { step, title, body }: StepOptions, ms = 3600) {
+async function narrate(page: Page, { step, title, body }: StepOptions, ms = 2600) {
   await hideDemoChrome(page);
   await page.evaluate(
     ({ step, total, title, body }) => {
@@ -213,20 +227,34 @@ async function showCompactCaption(page: Page, step: number, title: string) {
 
 async function dismissOverlays(page: Page) {
   for (let i = 0; i < 5; i += 1) {
-    const close = page.locator(
-      'button[aria-label="Close"], button:has-text("Close"), button:has-text("Not now"), button:has-text("Maybe later"), [role="dialog"] button',
-    );
-    if (await close.first().isVisible().catch(() => false)) {
-      await close.first().click({ force: true }).catch(() => undefined);
-      await page.waitForTimeout(400);
-    } else {
-      break;
+    const dialogs = page.locator('[role="dialog"]');
+    const count = await dialogs.count();
+    let closed = false;
+    for (let d = 0; d < count; d += 1) {
+      const dialog = dialogs.nth(d);
+      if (!(await dialog.isVisible().catch(() => false))) continue;
+      const text = (await dialog.innerText().catch(() => "")) || "";
+      if (isProtectedAuthDialog(text)) continue;
+      const close = dialog.locator(
+        'button[aria-label="Close"], button:has-text("Close"), button:has-text("Not now"), button:has-text("Maybe later")',
+      );
+      if (await close.first().isVisible().catch(() => false)) {
+        await close.first().click({ force: true }).catch(() => undefined);
+        closed = true;
+        await page.waitForTimeout(300);
+      }
     }
+    if (!closed) break;
   }
-  // Force-remove leftover modal layers that can block clicks during recording.
+  // Force-remove leftover marketing modal layers — never the member auth modal.
   await page.evaluate(() => {
-    document.querySelectorAll('[role="dialog"], .fixed.inset-0.z-999').forEach((el) => {
+    document.querySelectorAll(".fixed.inset-0.z-999").forEach((el) => {
+      const text = el.textContent ?? "";
+      if (/members only|sign in with your email|member register|member-signin/i.test(text)) {
+        return;
+      }
       (el as HTMLElement).style.display = "none";
+      (el as HTMLElement).style.pointerEvents = "none";
       el.remove();
     });
   });
@@ -234,7 +262,7 @@ async function dismissOverlays(page: Page) {
 
 async function scrollToTop(page: Page) {
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-  await page.waitForTimeout(350);
+  await page.waitForTimeout(280);
 }
 
 async function scrollToFocus(
@@ -257,7 +285,7 @@ async function scrollToFocus(
     },
     { el: handle, reservedBottom, viewportH: VIEWPORT.height },
   );
-  await page.waitForTimeout(1100);
+  await page.waitForTimeout(900);
 }
 
 async function highlightLocator(page: Page, locator: Locator) {
@@ -322,11 +350,11 @@ async function tap(page: Page, locator: Locator) {
   if (!(await locator.first().isVisible().catch(() => false))) return false;
   await scrollToFocus(page, locator);
   await highlightLocator(page, locator);
-  await page.waitForTimeout(650);
+  await page.waitForTimeout(500);
   await hideDemoChrome(page);
   await locator.first().click();
   await page.waitForLoadState("networkidle").catch(() => undefined);
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(550);
   return true;
 }
 
@@ -337,8 +365,35 @@ async function gotoSafe(page: Page, pathName: string) {
   await scrollToTop(page);
 }
 
+/** Open Members Only from the site nav (mobile menu) — not footer event emails. */
+async function openMemberLoginFromNav(page: Page) {
+  await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
+  await hideDevUi(page);
+  await dismissOverlays(page);
+  await scrollToTop(page);
+
+  await dismissOverlays(page);
+  const menuBtn = page.getByRole("button", { name: /open menu/i }).first();
+  await focus(page, menuBtn, 1, "Open the menu", 1600);
+  await dismissOverlays(page);
+  await menuBtn.click({ force: true });
+  await page.waitForTimeout(700);
+
+  const membersOnly = page
+    .getByRole("navigation", { name: /mobile navigation/i })
+    .getByRole("button", { name: /members only/i })
+    .first();
+  await focus(page, membersOnly, 1, "Tap Members Only", 1800);
+  await membersOnly.click({ force: true });
+  await page.waitForTimeout(800);
+
+  const emailInput = page.locator("#member-signin-email");
+  await emailInput.waitFor({ state: "visible", timeout: 8000 });
+}
+
 async function main() {
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+  fs.mkdirSync(PUBLIC_DIR, { recursive: true });
 
   const browser = await chromium.launch({ headless: true });
   const context = await browser.newContext({
@@ -359,8 +414,8 @@ async function main() {
   page.on("dialog", (dialog) => dialog.accept());
 
   try {
-    // —— 1. Login ——
-    await page.goto(`${BASE_URL}/login`, { waitUntil: "networkidle" });
+    // —— 1. Login via Members Only in the site nav ——
+    await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
     await hideDevUi(page);
     await dismissOverlays(page);
     await titleCard(page, {
@@ -368,50 +423,48 @@ async function main() {
       title: "Member app guide",
       body: "A calm walkthrough of everything in your member account — easy steps, nothing missed.",
     });
-    await dismissOverlays(page);
 
     await narrate(page, {
       step: 1,
       title: "Sign in",
-      body: "Open jackalsvolleyball.com → Members Only. Use the email and temporary password the club sent you.",
+      body: "From the site menu, tap Members Only. Use the email and temporary password the club sent you.",
     });
-    await dismissOverlays(page);
 
-    // Visual login fill (best-effort) — overlays must never stop the recording.
-    try {
-      await dismissOverlays(page);
-      const emailInput = page.locator("#email, input[type='email']").first();
-      const passwordInput = page.locator("#password, input[type='password']").first();
-      if (await emailInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await focus(page, emailInput, 1, "Enter your email", 1800);
-        await emailInput.fill(DEMO_EMAIL, { timeout: 5000 });
-        await wait(page, 500);
-      }
-      if (await passwordInput.isVisible({ timeout: 3000 }).catch(() => false)) {
-        await focus(page, passwordInput, 1, "Enter your password", 1800);
-        await passwordInput.fill(DEMO_PASSWORD, { timeout: 5000 });
-        await wait(page, 500);
-        const signIn = page.getByRole("button", { name: /sign in/i }).first();
-        if (await signIn.isVisible().catch(() => false)) {
-          await focus(page, signIn, 1, "Tap Sign in", 1600);
-        }
-      }
-    } catch {
-      // Continue with session API login below.
+    await openMemberLoginFromNav(page);
+
+    const emailInput = page.locator("#member-signin-email");
+    const passwordInput = page.locator("#member-signin-password");
+    await emailInput.waitFor({ state: "visible", timeout: 8000 });
+
+    await focus(page, emailInput, 1, "Enter your email", 1400);
+    await emailInput.fill(DEMO_EMAIL);
+    await wait(page, 400);
+
+    await focus(page, passwordInput, 1, "Enter your password", 1400);
+    await passwordInput.fill(DEMO_PASSWORD);
+    await wait(page, 400);
+
+    const signIn = page.getByRole("button", { name: /^sign in$/i }).first();
+    await focus(page, signIn, 1, "Tap Sign in", 1400);
+    await signIn.click();
+    await page.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => undefined);
+    await page.waitForLoadState("networkidle").catch(() => undefined);
+
+    // Ensure session even if UI sign-in raced.
+    if (!page.url().includes("/dashboard")) {
+      const csrfResponse = await page.request.get(`${BASE_URL}/api/auth/csrf`);
+      const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
+      await page.request.post(`${BASE_URL}/api/auth/callback/credentials`, {
+        form: {
+          csrfToken,
+          email: DEMO_EMAIL,
+          password: DEMO_PASSWORD,
+          callbackUrl: `${BASE_URL}/dashboard`,
+          json: "true",
+        },
+      });
+      await gotoSafe(page, "/dashboard");
     }
-
-    const csrfResponse = await page.request.get(`${BASE_URL}/api/auth/csrf`);
-    const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
-    await page.request.post(`${BASE_URL}/api/auth/callback/credentials`, {
-      form: {
-        csrfToken,
-        email: DEMO_EMAIL,
-        password: DEMO_PASSWORD,
-        callbackUrl: `${BASE_URL}/dashboard`,
-        json: "true",
-      },
-    });
-    await gotoSafe(page, "/dashboard");
 
     await dismissOverlays(page);
     await gotoSafe(page, "/dashboard");
@@ -427,6 +480,7 @@ async function main() {
       page.getByRole("heading", { name: /welcome|training|dashboard/i }).first(),
       2,
       "Welcome to your home screen",
+      2400,
     );
 
     await narrate(page, {
@@ -439,14 +493,14 @@ async function main() {
       page.getByRole("heading", { name: /^Training$/i }).first(),
       3,
       "Training panel",
-      3200,
+      2300,
     );
     await focus(
       page,
       page.getByRole("heading", { name: /^Matches$/i }).first(),
       3,
       "Matches panel",
-      3200,
+      2300,
     );
 
     await narrate(page, {
@@ -459,21 +513,21 @@ async function main() {
       page.getByRole("heading", { name: /^Events$/i }).first(),
       4,
       "Club events",
-      2800,
+      2000,
     );
     await focus(
       page,
       page.getByRole("heading", { name: /^Videos$/i }).first(),
       4,
       "Squad video library",
-      2800,
+      2000,
     );
     await focus(
       page,
       page.getByRole("heading", { name: /^Links$/i }).first(),
       4,
       "Quick links",
-      2800,
+      2000,
     );
 
     // —— 5. Training RSVP ——
@@ -509,9 +563,9 @@ async function main() {
       const attendBtn = page.getByRole("button", { name: /^Attend$/i });
       const cantBtn = page.getByRole("button", { name: /can.?t attend|not attending/i });
       if (await attendBtn.isVisible().catch(() => false)) {
-        await focus(page, attendBtn, 5, "Tap Attend", 3500);
+        await focus(page, attendBtn, 5, "Tap Attend", 2500);
       } else if (await cantBtn.isVisible().catch(() => false)) {
-        await focus(page, cantBtn, 5, "Or Can’t attend", 3500);
+        await focus(page, cantBtn, 5, "Or Can’t attend", 2500);
       }
     }
 
@@ -538,7 +592,7 @@ async function main() {
       });
       const matchAttend = page.getByRole("button", { name: /^Attend$/i });
       if (await matchAttend.isVisible().catch(() => false)) {
-        await focus(page, matchAttend, 6, "Tap Attend for the match", 3500);
+        await focus(page, matchAttend, 6, "Tap Attend for the match", 2500);
       }
     }
 
@@ -554,7 +608,7 @@ async function main() {
       page.getByRole("navigation", { name: /filter fixtures by team/i }),
       7,
       "Tap a squad or All teams",
-      4000,
+      2800,
     );
 
     // —— 8. Membership ——
@@ -569,7 +623,7 @@ async function main() {
       page.getByRole("heading", { name: /membership|payment|plan/i }).first(),
       8,
       "Your membership status",
-      3800,
+      2600,
     );
 
     // —— 9. Merch ——
@@ -584,7 +638,7 @@ async function main() {
       page.getByRole("heading", { name: /merch|merchandise|order|kit/i }).first(),
       9,
       "Merchandise orders",
-      3600,
+      2500,
     );
 
     // —— 10. Gallery ——
@@ -599,12 +653,12 @@ async function main() {
       page.getByRole("heading", { name: /gallery|club/i }).first(),
       10,
       "Photo albums",
-      3400,
+      2400,
     );
     const album = page.locator('a[href*="/gallery/"]').first();
     if (await album.isVisible().catch(() => false)) {
       await tap(page, album);
-      await wait(page, 2000);
+      await wait(page, 1400);
     }
 
     // —— 11. Videos ——
@@ -619,7 +673,7 @@ async function main() {
       page.getByRole("heading", { name: /^Videos$/i }).first(),
       11,
       "Open playlists from here",
-      3800,
+      2600,
     );
 
     // —— 12. Events ——
@@ -634,7 +688,7 @@ async function main() {
       page.getByRole("heading", { name: /events|fun|what.?s on/i }).first(),
       12,
       "What’s on at the club",
-      3600,
+      2500,
     );
 
     // —— 13. Profile ——
@@ -649,21 +703,21 @@ async function main() {
       page.getByRole("heading", { name: /your profile/i }),
       13,
       "Profile overview",
-      3000,
+      2200,
     );
     await focus(
       page,
       page.getByText(/^Password$/i).first(),
       13,
       "Change your password here",
-      3200,
+      2300,
     );
     await focus(
       page,
       page.getByText(/email|newsletter|matchday|VLY/i).first(),
       13,
       "Email, matchday info & newsletter",
-      3400,
+      2400,
     );
 
     // —— 14. Navigation ——
@@ -678,9 +732,9 @@ async function main() {
       .or(page.locator('button[aria-label*="Menu" i]'))
       .first();
     if (await menuBtn.isVisible().catch(() => false)) {
-      await focus(page, menuBtn, 14, "Open the menu", 2800);
+      await focus(page, menuBtn, 14, "Open the menu", 2000);
       await tap(page, menuBtn);
-      await wait(page, 2500);
+      await wait(page, 1800);
     }
 
     // —— 15. Install ——
@@ -694,7 +748,7 @@ async function main() {
         title: "Add to your phone",
         body: "Install the app so Jackals opens like a normal app icon.",
       });
-      await focus(page, homeBtn, 15, "Add to Home Screen / Install App", 4000);
+      await focus(page, homeBtn, 15, "Add to Home Screen / Install App", 2800);
     } else {
       await narrate(page, {
         step: 15,
@@ -711,7 +765,7 @@ async function main() {
         title: "That's everything",
         body: "Check the dashboard each week, reply to training & matches, and message admin if you need help.",
       },
-      4800,
+      3600,
     );
   } finally {
     await hideDemoChrome(page).catch(() => undefined);
@@ -734,26 +788,18 @@ async function main() {
   const targetMp4 = path.join(OUTPUT_DIR, "member-app-tutorial.mp4");
   const musicPath = path.join(OUTPUT_DIR, "tutorial-ambient.m4a");
   const finalMp4 = path.join(OUTPUT_DIR, "member-app-tutorial-final.mp4");
+  const publicMp4 = path.join(PUBLIC_DIR, "member-app-tutorial.mp4");
 
   if (fs.existsSync(targetWebm)) fs.unlinkSync(targetWebm);
   if (fs.existsSync(targetMp4)) fs.unlinkSync(targetMp4);
   if (fs.existsSync(finalMp4)) fs.unlinkSync(finalMp4);
   fs.renameSync(sourceWebm, targetWebm);
 
-  // Soft ambient pad (no copyrighted track) — quiet C-major drones with fade.
-  execSync(
-    [
-      "ffmpeg -y",
-      '-f lavfi -i "sine=frequency=130.81:duration=240"',
-      '-f lavfi -i "sine=frequency=196.00:duration=240"',
-      '-f lavfi -i "sine=frequency=261.63:duration=240"',
-      '-f lavfi -i "anoisesrc=color=pink:amplitude=0.015:duration=240"',
-      '-filter_complex "[0:a][1:a][2:a]amix=inputs=3:duration=longest,volume=0.09[pad];[3:a]lowpass=f=500,volume=0.04[noise];[pad][noise]amix=inputs=2:duration=longest,afade=t=in:st=0:d=4,afade=t=out:st=230:d=8[a]"',
-      '-map "[a]" -c:a aac -b:a 128k',
-      `"${musicPath}"`,
-    ].join(" "),
-    { stdio: "inherit" },
-  );
+  if (!fs.existsSync(musicPath)) {
+    throw new Error(
+      `Missing ambient music at ${musicPath}. Generate tutorial-ambient.m4a first.`,
+    );
+  }
 
   execSync(
     [
@@ -766,22 +812,23 @@ async function main() {
     { stdio: "inherit" },
   );
 
-  // Mix video + quiet music; trim music to video length.
+  // Quiet warm pads under captions — duck slightly so UI narration stays clear.
   execSync(
     [
       "ffmpeg -y",
       `-i "${targetMp4}"`,
       `-i "${musicPath}"`,
-      '-filter_complex "[1:a]volume=0.22[a]"',
+      '-filter_complex "[1:a]volume=0.18,afade=t=in:st=0:d=2[a]"',
       "-map 0:v -map \"[a]\" -c:v copy -c:a aac -shortest -movflags +faststart",
       `"${finalMp4}"`,
     ].join(" "),
     { stdio: "inherit" },
   );
 
-  // Promote final as the shareable mp4.
   fs.renameSync(finalMp4, targetMp4);
+  fs.copyFileSync(targetMp4, publicMp4);
   console.log(`Saved: ${targetMp4}`);
+  console.log(`Public: ${publicMp4}`);
   console.log(`Also: ${targetWebm}`);
 }
 

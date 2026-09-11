@@ -6,8 +6,10 @@ Calm, easy-to-follow walkthrough for Jackals VC **members** (players) on mobile.
 
 | File | Description |
 |------|-------------|
-| `member-app-tutorial.mp4` | Shareable tutorial (H.264 + soft ambient audio) |
+| `member-app-tutorial.mp4` | Shareable tutorial (H.264 + soft ambient music) |
 | `member-app-tutorial.webm` | Raw Playwright capture |
+| `tutorial-ambient.m4a` | Warm chord-pad background music |
+| `../../public/tutorials/member-app-tutorial.mp4` | Served at `/tutorials/member-app-tutorial.mp4` |
 
 ## What it covers
 
