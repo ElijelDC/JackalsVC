@@ -277,12 +277,16 @@ const players: PlayerSeed[] = [
     trainingTeamKey: "DIVISION_3_MENS",
     squadLabel: "Ivan",
   },
+  {
+    name: "Sean Manalo",
+    email: "smanalo595@gmail.com",
+    trainingTeamKey: "DIVISION_3_MENS",
+    squadLabel: "Sean M",
+  },
 ];
 
 /** Still need emails from admin before we can create accounts. */
-export const missingEmails = [
-  { squadLabel: "Sean M", team: "D3 Men", note: "No matching email in kit orders or trials" },
-] as const;
+export const missingEmails = [] as const;
 
 function tempPassword() {
   return randomBytes(12).toString("base64url");
