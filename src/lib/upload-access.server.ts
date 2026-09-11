@@ -125,6 +125,29 @@ async function authorizeTrialSessionPaymentProof(relativePath: string) {
   return proof.trialSession.active;
 }
 
+async function authorizeTrainingInvitePaymentProof(relativePath: string) {
+  const prefix = "training-invite-proofs/";
+  if (!relativePath.startsWith(prefix)) return false;
+
+  const filename = relativePath.slice(prefix.length);
+  const match = filename.match(/^([0-9a-f-]{36})-\d+\.[a-z0-9]+$/i);
+  const proofId = match?.[1];
+  if (!proofId) return false;
+
+  const proof = await prisma.trainingInvitePaymentProof.findUnique({
+    where: { id: proofId },
+    select: { id: true },
+  });
+  if (!proof) return false;
+
+  const session = await auth();
+  if (session?.user?.role === "ADMIN") return true;
+  if (session?.user?.isCoach) return true;
+
+  // Public invite signup: the proof UUID in the filename acts as the access token.
+  return true;
+}
+
 async function authorizeKitOrderProof(
   relativePath: string,
   request: Request,
@@ -206,6 +229,10 @@ export async function authorizeUploadAccess(
 
   if (relativePath.startsWith("trial-session-proofs/")) {
     return authorizeTrialSessionPaymentProof(relativePath);
+  }
+
+  if (relativePath.startsWith("training-invite-proofs/")) {
+    return authorizeTrainingInvitePaymentProof(relativePath);
   }
 
   if (relativePath.startsWith("kit-order-proofs/")) {
