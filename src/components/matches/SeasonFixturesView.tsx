@@ -185,11 +185,6 @@ function FixtureRow({
               Cancelled
             </Badge>
           ) : null}
-          {isMemberTeam ? (
-            <Badge className="shrink-0 border-jackals-red/35 bg-jackals-red/15 text-jackals-red-light">
-              Your squad
-            </Badge>
-          ) : null}
         </div>
         <p className="mt-1 truncate text-sm text-zinc-400">{dateLabel}</p>
         <div className="mt-1.5 flex min-w-0 items-center gap-x-3 overflow-hidden text-xs text-zinc-500">
