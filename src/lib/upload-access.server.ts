@@ -126,12 +126,11 @@ async function authorizeTrialSessionPaymentProof(relativePath: string) {
 }
 
 async function authorizeTrainingInvitePaymentProof(relativePath: string) {
-  const prefix = "training-invite-proofs/";
-  if (!relativePath.startsWith(prefix)) return false;
-
-  const filename = relativePath.slice(prefix.length);
-  const match = filename.match(/^([0-9a-f-]{36})-\d+\.[a-z0-9]+$/i);
-  const proofId = match?.[1];
+  // Filenames are `${cuid}-${timestamp}.ext` (cuid has no hyphens).
+  const proofId = extractIdFromFilename(
+    relativePath,
+    "training-invite-proofs",
+  );
   if (!proofId) return false;
 
   const proof = await prisma.trainingInvitePaymentProof.findUnique({
@@ -144,7 +143,7 @@ async function authorizeTrainingInvitePaymentProof(relativePath: string) {
   if (session?.user?.role === "ADMIN") return true;
   if (session?.user?.isCoach) return true;
 
-  // Public invite signup: the proof UUID in the filename acts as the access token.
+  // Public invite signup: the proof id in the filename acts as the access token.
   return true;
 }
 
