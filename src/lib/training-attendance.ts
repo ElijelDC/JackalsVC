@@ -10,7 +10,11 @@ import {
   type TrainingRosterMember,
   type TrainingSessionDetailData,
 } from "@/lib/training-attendance-config";
-import { getCoachResponseGate, listSquadCoaches } from "@/lib/coach-session-coverage";
+import {
+  getCoachResponseGate,
+  listSquadCoaches,
+  userHasSquadCoachAccess,
+} from "@/lib/coach-session-coverage";
 import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { enrichEventRecords, serializeEnrichedEvent } from "@/lib/event-enrichment";
 import { prisma } from "@/lib/prisma";
@@ -273,7 +277,9 @@ export async function getTrainingSessionDetail(
   const roster = groupByStatus(playerMembers);
   const coaches = groupByStatus(coachMembers);
 
-  const isCoachUser = squadCoaches.some((coach) => coach.userId === userId);
+  const isCoachUser =
+    squadCoaches.some((coach) => coach.userId === userId) ||
+    (await userHasSquadCoachAccess(userId, trainingTeamKey));
 
   const rawUserStatus = signupMap.get(userId) ?? "UNANSWERED";
   const userStatus = isCoachUser

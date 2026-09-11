@@ -6,10 +6,15 @@ import type {
   CoachResponseGate,
   SquadCoach,
 } from "@/lib/coach-session-coverage-config";
+import { isCoachOverseerPriority } from "@/lib/coach-session-coverage-config";
 
 export type { CoachResponseGate, SquadCoach };
+export {
+  COACH_OVERSEER_PRIORITY,
+  isCoachOverseerPriority,
+} from "@/lib/coach-session-coverage-config";
 
-/** Lower priority number = higher rank. 0 is head coach. */
+/** Lower priority number = higher rank. 0 is head coach. Overseers excluded. */
 export async function listSquadCoaches(
   trainingTeamKey: string,
 ): Promise<SquadCoach[]> {
@@ -38,6 +43,7 @@ export async function listSquadCoaches(
   const coaches: SquadCoach[] = [];
 
   for (const row of rows) {
+    if (isCoachOverseerPriority(row.priority)) continue;
     const userId = row.clubMember.userId;
     const email = row.clubMember.user?.email;
     if (!userId || !email) continue;
@@ -52,6 +58,25 @@ export async function listSquadCoaches(
   }
 
   return coaches;
+}
+
+/** True when the user has a coach squad link (including overseer). */
+export async function userHasSquadCoachAccess(
+  userId: string,
+  trainingTeamKey: string,
+): Promise<boolean> {
+  const row = await prisma.clubMemberCoachSquad.findFirst({
+    where: {
+      trainingTeamKey,
+      clubMember: {
+        userId,
+        active: true,
+        rosterRole: "COACH",
+      },
+    },
+    select: { id: true },
+  });
+  return Boolean(row);
 }
 
 export async function getHeadCoachForSquad(trainingTeamKey: string) {

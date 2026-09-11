@@ -12,11 +12,11 @@ export type TrainingTeam = {
   name: string;
   dayOfWeek: number;
   dayLabel: string;
-  /** Set for coaches with multiple squads (priority 0 = head, else cover). */
+  /** Set for coaches with multiple squads (priority 0 = head, else cover/overseer). */
   coachRole?: CoachSquadRole;
 };
 
-export type CoachSquadRole = "head" | "cover";
+export type CoachSquadRole = "head" | "cover" | "overseer";
 
 export function getTrainingTeamFromList(
   teams: TrainingTeam[],

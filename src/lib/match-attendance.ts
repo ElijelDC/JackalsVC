@@ -9,7 +9,10 @@ import {
   type TrainingRosterMember,
 } from "@/lib/training-attendance-config";
 import type { CoachReminderStatus } from "@/lib/coach-unanswered-config";
-import { listSquadCoaches } from "@/lib/coach-session-coverage";
+import {
+  listSquadCoaches,
+  userHasSquadCoachAccess,
+} from "@/lib/coach-session-coverage";
 import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
@@ -138,7 +141,9 @@ export async function getMatchDetail(
 
   const roster = groupByStatus(playerMembers);
   const coaches = groupByStatus(coachMembers);
-  const isCoachUser = squadCoaches.some((coach) => coach.userId === userId);
+  const isCoachUser =
+    squadCoaches.some((coach) => coach.userId === userId) ||
+    (await userHasSquadCoachAccess(userId, match.trainingTeamKey));
 
   const rawUserStatus = signupMap.get(userId) ?? "UNANSWERED";
   const userStatus = isCoachUser

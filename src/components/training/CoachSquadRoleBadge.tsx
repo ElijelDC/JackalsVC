@@ -8,7 +8,12 @@ export function CoachSquadRoleBadge({
   role: CoachSquadRole;
   className?: string;
 }) {
-  const label = role === "head" ? "Head coach" : "Cover coach";
+  const label =
+    role === "head"
+      ? "Head coach"
+      : role === "overseer"
+        ? "Overseer"
+        : "Cover coach";
 
   return (
     <span

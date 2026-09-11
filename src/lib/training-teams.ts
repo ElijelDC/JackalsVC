@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isCoachOverseerPriority } from "@/lib/coach-session-coverage-config";
 import { getScheduleMonthWindow } from "@/lib/schedule-month-groups";
 import { prisma } from "@/lib/prisma";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
@@ -67,7 +68,7 @@ export async function getUserTrainingTeamKeys(userId: string | undefined) {
   return clubMember.trainingTeamKey ? [clubMember.trainingTeamKey] : [];
 }
 
-/** Head (priority 0) vs cover for each squad the coach is assigned to. */
+/** Head (priority 0) vs cover / overseer for each squad the coach is assigned to. */
 export async function getUserCoachSquadRoles(userId: string | undefined) {
   if (!userId) return {} as Record<string, CoachSquadRole>;
 
@@ -83,7 +84,11 @@ export async function getUserCoachSquadRoles(userId: string | undefined) {
   return Object.fromEntries(
     clubMember.coachSquads.map((row) => [
       row.trainingTeamKey,
-      row.priority === 0 ? ("head" as const) : ("cover" as const),
+      row.priority === 0
+        ? ("head" as const)
+        : isCoachOverseerPriority(row.priority)
+          ? ("overseer" as const)
+          : ("cover" as const),
     ]),
   ) as Record<string, CoachSquadRole>;
 }

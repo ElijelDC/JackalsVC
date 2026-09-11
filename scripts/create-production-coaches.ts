@@ -2,7 +2,7 @@
  * Idempotent bootstrap / update for production coach accounts.
  *
  * Creates User (role MEMBER) + ClubMember (rosterRole COACH) linked together,
- * assigns squad coach links with priority (0 = head, 100 = cover).
+ * assigns squad coach links with priority (0 = head, 100 = cover, 999 = overseer).
  *
  * Usage (production only):
  *   ALLOW_PRODUCTION_COACH_SEED=1 \
@@ -35,11 +35,14 @@ type CoachSeed = {
   vlyNumber: string | null;
   coachPaymentType: "PAID" | "VOLUNTEER";
   /**
-   * Squad key → priority (0 = head coach, 100 = cover).
+   * Squad key → priority (0 = head coach, 100 = cover, 999 = overseer).
    * Only listed squads are assigned; others are cleared for this coach.
    */
   priorities: Partial<Record<ActiveSquad, number>>;
 };
+
+/** Club overseer — coach UI on all squads, not a duty/cover coach. */
+const OVERSEER_PRIORITY = 999;
 
 const coaches: CoachSeed[] = [
   {
@@ -92,6 +95,17 @@ const coaches: CoachSeed[] = [
     coachPaymentType: "PAID",
     priorities: {
       DIVISION_3_MENS: 0,
+    },
+  },
+  {
+    name: "Club Overseer",
+    email: "thunderjackals@gmail.com",
+    vlyNumber: null,
+    coachPaymentType: "VOLUNTEER",
+    priorities: {
+      DIV2_MENS: OVERSEER_PRIORITY,
+      DIV3_WOMENS: OVERSEER_PRIORITY,
+      DIVISION_3_MENS: OVERSEER_PRIORITY,
     },
   },
 ];
@@ -248,13 +262,21 @@ async function main() {
       .filter(([, p]) => p === 0)
       .map(([k]) => k);
     const coverFor = Object.entries(row.priorities)
-      .filter(([, p]) => p !== 0)
+      .filter(([, p]) => p !== 0 && p < OVERSEER_PRIORITY)
+      .map(([k]) => k);
+    const overseerFor = Object.entries(row.priorities)
+      .filter(([, p]) => p >= OVERSEER_PRIORITY)
       .map(([k]) => k);
     console.log(
       `  Head for: ${headFor.length > 0 ? headFor.join(", ") : "(none)"}`,
     );
     console.log(
       `  Cover for: ${coverFor.length > 0 ? coverFor.join(", ") : "(none)"}`,
+    );
+    console.log(
+      `  Overseer for: ${
+        overseerFor.length > 0 ? overseerFor.join(", ") : "(none)"
+      }`,
     );
     if (row.password) {
       console.log(
