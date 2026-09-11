@@ -20,6 +20,8 @@ export type DashboardScheduleItem = {
   location: string | null;
   /** Match venue when available (`HOME` / `AWAY`). */
   venue?: string | null;
+  /** Prefer this for displayed clock time (match warm-up). */
+  warmUpTime?: string | null;
   userStatus: TrainingAttendanceStatus;
 };
 

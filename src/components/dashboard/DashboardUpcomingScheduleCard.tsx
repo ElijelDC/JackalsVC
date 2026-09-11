@@ -199,18 +199,18 @@ export function DashboardUpcomingScheduleCard({
             <DashboardTileSlots>
               {preview.map((item) => {
                 const startDate = new Date(item.startDate);
+                const displayTime = new Date(item.warmUpTime ?? item.startDate);
                 return (
                   <DashboardScheduleRow
                     key={item.id}
                     href={withDashboardReturn(buildHref(item))}
                     date={startDate}
                     title={item.title}
-                    meta={buildScheduleMeta(startDate, {
+                    meta={buildScheduleMeta(displayTime, {
                       teamName: item.teamName,
                       showTeam: showTeamInMeta,
                       venue: item.venue,
                     })}
-                    detail={item.location}
                     status={item.userStatus}
                     eventDate={startDate}
                   />

@@ -61,13 +61,11 @@ export function DashboardEventRow({
   date,
   title,
   meta,
-  detail,
 }: {
   href: string;
   date: Date;
   title: string;
   meta: string;
-  detail?: string | null;
   dense?: boolean;
 }) {
   return (
@@ -80,11 +78,6 @@ export function DashboardEventRow({
         <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-300 sm:text-[11px]">
           {meta}
         </p>
-        {detail ? (
-          <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-500 sm:text-[11px]">
-            {detail}
-          </p>
-        ) : null}
       </div>
     </Link>
   );
@@ -95,7 +88,6 @@ export function DashboardScheduleRow({
   date,
   title,
   meta,
-  detail,
   status,
   eventDate,
 }: {
@@ -103,7 +95,6 @@ export function DashboardScheduleRow({
   date: Date;
   title: string;
   meta: string;
-  detail?: string | null;
   status: TrainingAttendanceStatus;
   eventDate: Date;
   dense?: boolean;
@@ -146,13 +137,13 @@ export function DashboardScheduleRow({
         <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-300 sm:text-[11px]">
           {meta}
         </p>
-        <p className="mt-0.5 flex min-w-0 items-baseline gap-1.5 text-[10px] leading-snug sm:text-[11px]">
-          <span className={cn("shrink-0", getDashboardStatusInlineClass(display, status))}>
-            {display.label}
-          </span>
-          {detail ? (
-            <span className="min-w-0 truncate text-zinc-500">{detail}</span>
-          ) : null}
+        <p
+          className={cn(
+            "mt-0.5 text-[10px] leading-snug sm:text-[11px]",
+            getDashboardStatusInlineClass(display, status),
+          )}
+        >
+          {display.label}
         </p>
       </div>
     </Link>
