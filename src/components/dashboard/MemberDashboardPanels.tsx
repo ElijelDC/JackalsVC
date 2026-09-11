@@ -61,9 +61,8 @@ export function DashboardUpcomingClubEventsPanel({
                     href={withDashboardReturn(`/calendar/${event.id}`)}
                     date={startDate}
                     title={event.title}
-                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}${
-                      event.location ? ` · ${event.location}` : ""
-                    }`}
+                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE · HH:mm")}`}
+                    detail={event.location}
                   />
                 );
               })}

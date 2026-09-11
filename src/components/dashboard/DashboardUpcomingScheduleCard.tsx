@@ -17,7 +17,7 @@ import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-confi
 import { cn } from "@/lib/utils";
 
 export const DASHBOARD_TILE_CARD_CLASS =
-  "flex h-full min-h-[12.75rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[14rem]";
+  "flex h-full min-h-[14.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[15.5rem]";
 
 export const DASHBOARD_TILE_FOOTER_CLASS =
   "mt-auto flex h-9 shrink-0 items-center justify-center gap-1 border-t border-white/10 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light";
@@ -208,8 +208,9 @@ export function DashboardUpcomingScheduleCard({
                     meta={buildScheduleMeta(startDate, {
                       teamName: item.teamName,
                       showTeam: showTeamInMeta,
-                      location: item.location,
+                      venue: item.venue,
                     })}
+                    detail={item.location}
                     status={item.userStatus}
                     eventDate={startDate}
                   />

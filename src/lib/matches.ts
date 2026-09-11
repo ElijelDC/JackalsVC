@@ -244,6 +244,7 @@ async function getUpcomingTeamMatchesForKey(
       teamKey: trainingTeamKey,
       startDate: match.matchStart.toISOString(),
       location: match.location,
+      venue: match.venue,
       userStatus: isCoach
         ? resolveCoachAttendanceStatus(
             statuses.get(match.id) ?? "UNANSWERED",

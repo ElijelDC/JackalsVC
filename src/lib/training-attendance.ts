@@ -164,7 +164,7 @@ async function getUpcomingTeamTrainingEventsForKey(
 
   return activeEvents.map((event) => ({
     id: event.id,
-    title: "Training",
+    title: event.title?.trim() || (team?.name ? `${team.name} training` : "Training"),
     teamName: team?.name ?? null,
     teamKey: trainingTeamKey,
     startDate: event.startDate.toISOString(),

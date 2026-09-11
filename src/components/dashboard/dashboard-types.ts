@@ -18,6 +18,8 @@ export type DashboardScheduleItem = {
   teamName?: string | null;
   startDate: string;
   location: string | null;
+  /** Match venue when available (`HOME` / `AWAY`). */
+  venue?: string | null;
   userStatus: TrainingAttendanceStatus;
 };
 

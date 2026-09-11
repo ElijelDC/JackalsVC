@@ -7,6 +7,7 @@ import {
   getDashboardStatusInlineClass,
   type TrainingAttendanceStatus,
 } from "@/lib/training-attendance-config";
+import { formatMatchVenueLabel } from "@/lib/match-config";
 import { cn } from "@/lib/utils";
 
 function DateBlock({
@@ -19,7 +20,7 @@ function DateBlock({
   return (
     <div
       className={cn(
-        "flex h-9 w-8 shrink-0 flex-col items-center justify-center rounded text-center sm:h-10 sm:w-9",
+        "flex h-10 w-8 shrink-0 flex-col items-center justify-center rounded text-center",
         tone === "urgent" && "bg-amber-500/20",
         tone === "attending" && "bg-green-500/20",
         tone === "declined" && "bg-rose-500/15",
@@ -28,7 +29,7 @@ function DateBlock({
     >
       <span
         className={cn(
-          "text-[8px] font-semibold uppercase leading-none tracking-wide sm:text-[9px]",
+          "text-[8px] font-semibold uppercase leading-none tracking-wide",
           tone === "urgent" && "text-amber-300/90",
           tone === "attending" && "text-green-400/90",
           tone === "declined" && "text-rose-300/90",
@@ -39,7 +40,7 @@ function DateBlock({
       </span>
       <span
         className={cn(
-          "mt-0.5 text-[13px] font-bold leading-none sm:text-sm",
+          "mt-0.5 text-sm font-bold leading-none",
           tone === "urgent" && "text-amber-50",
           tone === "attending" && "text-green-50",
           tone === "declined" && "text-rose-50",
@@ -53,18 +54,20 @@ function DateBlock({
 }
 
 const rowBaseClassName =
-  "group relative flex h-full min-h-0 items-center gap-2 px-2.5 transition-colors sm:gap-2.5 sm:px-3";
+  "group relative flex h-full min-h-0 items-center gap-2 px-2.5 py-1.5 transition-colors sm:gap-2.5 sm:px-3";
 
 export function DashboardEventRow({
   href,
   date,
   title,
   meta,
+  detail,
 }: {
   href: string;
   date: Date;
   title: string;
   meta: string;
+  detail?: string | null;
   dense?: boolean;
 }) {
   return (
@@ -74,9 +77,14 @@ export function DashboardEventRow({
         <p className="line-clamp-2 break-words text-[12px] font-medium leading-snug text-white sm:text-[13px]">
           {title}
         </p>
-        <p className="mt-0.5 line-clamp-2 break-words text-[10px] leading-snug text-zinc-400 sm:text-[11px]">
+        <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-300 sm:text-[11px]">
           {meta}
         </p>
+        {detail ? (
+          <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-500 sm:text-[11px]">
+            {detail}
+          </p>
+        ) : null}
       </div>
     </Link>
   );
@@ -87,6 +95,7 @@ export function DashboardScheduleRow({
   date,
   title,
   meta,
+  detail,
   status,
   eventDate,
 }: {
@@ -94,6 +103,7 @@ export function DashboardScheduleRow({
   date: Date;
   title: string;
   meta: string;
+  detail?: string | null;
   status: TrainingAttendanceStatus;
   eventDate: Date;
   dense?: boolean;
@@ -133,10 +143,12 @@ export function DashboardScheduleRow({
         <p className="line-clamp-2 break-words text-[12px] font-medium leading-snug text-white sm:text-[13px]">
           {title}
         </p>
-        <p className="mt-0.5 line-clamp-2 break-words text-[10px] leading-snug text-zinc-400 sm:text-[11px]">
-          <span>{meta}</span>
+        <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug text-zinc-300 sm:text-[11px]">
+          {meta}
+        </p>
+        <p className="mt-0.5 line-clamp-1 text-[10px] leading-snug sm:text-[11px]">
+          {detail ? <span className="text-zinc-500">{detail} · </span> : null}
           <span className={getDashboardStatusInlineClass(display, status)}>
-            {" · "}
             {display.label}
           </span>
         </p>
@@ -150,16 +162,16 @@ export function buildScheduleMeta(
   {
     teamName,
     showTeam,
-    location,
+    venue,
   }: {
     teamName?: string | null;
     showTeam?: boolean;
-    location?: string | null;
+    venue?: string | null;
   },
 ) {
   const parts: string[] = [];
+  if (venue) parts.push(formatMatchVenueLabel(venue));
   if (showTeam && teamName) parts.push(teamName);
-  parts.push(format(date, "EEE HH:mm"));
-  if (location) parts.push(location);
+  parts.push(format(date, "EEE · HH:mm"));
   return parts.join(" · ");
 }
