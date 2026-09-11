@@ -5,7 +5,6 @@ import { ConditionalDashboardBackLink } from "@/components/dashboard/Conditional
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
 import type { GalleryAlbumItem } from "@/components/gallery/GalleryAlbumCard";
-import { isDashboardReturn } from "@/lib/dashboard-return";
 
 export function GalleryShowcase({
   albums,
@@ -15,7 +14,6 @@ export function GalleryShowcase({
   returnFrom?: string | null;
 }) {
   const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0);
-  const showDashboardBack = isDashboardReturn(returnFrom);
 
   return (
     <>
@@ -23,13 +21,6 @@ export function GalleryShowcase({
         title="Club"
         highlight="Gallery"
         description="Browse photo albums from matches, training, socials, and club events — tap an album to see more inside."
-        action={
-          showDashboardBack ? (
-            <div className="mb-8 flex justify-center sm:mb-10">
-              <ConditionalDashboardBackLink from={returnFrom} className="mb-0" />
-            </div>
-          ) : undefined
-        }
         stats={
           albums.length > 0
             ? [
@@ -53,6 +44,9 @@ export function GalleryShowcase({
       />
 
       <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
+        {returnFrom ? (
+          <ConditionalDashboardBackLink from={returnFrom} className="mb-6" />
+        ) : null}
         <GalleryGrid albums={albums} />
       </div>
     </>

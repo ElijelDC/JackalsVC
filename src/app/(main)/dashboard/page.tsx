@@ -251,7 +251,7 @@ export default async function DashboardPage() {
           />
         )}
 
-        <div className="grid min-w-0 grid-cols-2 items-stretch gap-3.5 sm:gap-5 lg:gap-8 [&>*]:min-w-0">
+        <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-5 lg:gap-8 [&>*]:min-w-0">
           <DashboardUpcomingTrainingCard
             teamName={team?.name ?? null}
             sessions={upcomingTraining}
@@ -266,7 +266,7 @@ export default async function DashboardPage() {
           />
         </div>
 
-        <div className="grid min-w-0 grid-cols-2 items-stretch gap-3.5 sm:gap-5 lg:grid-cols-3 lg:gap-8 [&>*]:min-w-0">
+        <div className="grid min-w-0 grid-cols-1 items-stretch gap-5 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-8 [&>*]:min-w-0">
           <div className="flex h-full min-w-0 lg:col-span-2">
             <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
           </div>
