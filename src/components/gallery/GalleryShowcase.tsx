@@ -1,15 +1,28 @@
 "use client";
 
 import { Images, Layers } from "lucide-react";
+import { ConditionalDashboardBackLink } from "@/components/dashboard/ConditionalDashboardBackLink";
 import { GalleryGrid } from "@/components/gallery/GalleryGrid";
 import { ShowcaseHero } from "@/components/layout/ShowcaseHero";
 import type { GalleryAlbumItem } from "@/components/gallery/GalleryAlbumCard";
 
-export function GalleryShowcase({ albums }: { albums: GalleryAlbumItem[] }) {
+export function GalleryShowcase({
+  albums,
+  returnFrom,
+}: {
+  albums: GalleryAlbumItem[];
+  returnFrom?: string | null;
+}) {
   const totalPhotos = albums.reduce((sum, album) => sum + album.photoCount, 0);
 
   return (
     <>
+      {returnFrom ? (
+        <div className="mx-auto max-w-6xl px-4 pt-6 sm:px-6 lg:px-8">
+          <ConditionalDashboardBackLink from={returnFrom} className="mb-0" />
+        </div>
+      ) : null}
+
       <ShowcaseHero
         title="Club"
         highlight="Gallery"

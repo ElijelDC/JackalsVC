@@ -1,4 +1,5 @@
 import { MerchandiseOrderForm } from "@/components/merchandise-order/MerchandiseOrderForm";
+import { ConditionalDashboardBackLink } from "@/components/dashboard/ConditionalDashboardBackLink";
 import { PageContainer, PageHeader } from "@/components/layout/PageShell";
 import { pageMetadata } from "@/lib/seo";
 
@@ -10,9 +11,16 @@ export const metadata = pageMetadata({
   noIndex: true,
 });
 
-export default function MerchandiseOrderPage() {
+export default async function MerchandiseOrderPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
+
   return (
     <PageContainer className="max-w-4xl">
+      <ConditionalDashboardBackLink from={from} />
       <PageHeader
         title="2026/27 merchandise order"
         description="Choose a training t-shirt or one or more club jackets. Pick a size for each item, review your order, then pay by bank transfer."

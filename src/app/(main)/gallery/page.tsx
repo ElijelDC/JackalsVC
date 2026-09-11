@@ -11,7 +11,12 @@ export const metadata = pageMetadata({
 
 export const revalidate = 3600;
 
-export default async function GalleryPage() {
+export default async function GalleryPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
+  const { from } = await searchParams;
   const albums = await prisma.galleryAlbum.findMany({
     orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     include: {
@@ -21,6 +26,7 @@ export default async function GalleryPage() {
 
   return (
     <GalleryShowcase
+      returnFrom={from}
       albums={albums.map((album) => ({
         id: album.id,
         title: album.title,
