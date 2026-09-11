@@ -102,9 +102,10 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
           <CardTitle>Install Jackals — mandatory for this season</CardTitle>
           <CardDescription className="mt-2 max-w-xl text-zinc-400">
             Installing the club app on your home screen is{" "}
-            <strong className="text-zinc-200">mandatory</strong> for this season —
-            we&apos;ll use it a lot for training, matches, and club updates. Step 1 of
-            2; after that we&apos;ll help you turn on notifications.
+            <strong className="text-zinc-200">mandatory</strong>
+            {" "}for this season — we&apos;ll use it a lot for training, matches, and
+            club updates. Step 1 of 2; after that we&apos;ll help you turn on
+            notifications.
           </CardDescription>
 
           <ol className="mt-4 space-y-2 text-sm text-zinc-300">
