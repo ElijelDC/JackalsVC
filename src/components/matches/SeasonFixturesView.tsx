@@ -6,7 +6,6 @@ import {
   CalendarRange,
   ChevronRight,
   MapPin,
-  Trophy,
 } from "lucide-react";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
@@ -80,7 +79,14 @@ function TeamFilter({
 
   return (
     <nav aria-label="Filter fixtures by team" className="w-full">
-      <div className="flex flex-wrap gap-2">
+      <div
+        className={cn(
+          "grid gap-1.5",
+          options.length <= 4
+            ? "grid-cols-4"
+            : "grid-cols-2 sm:grid-cols-4 md:grid-cols-5",
+        )}
+      >
         {options.map((option) => {
           const selected = selectedTeamKey === option.key;
           const isMine = option.key === memberTeamKey;
@@ -90,27 +96,30 @@ function TeamFilter({
               href={fixturesHref(option.key, returnFrom)}
               scroll={false}
               aria-current={selected ? "page" : undefined}
+              title={option.hint ?? option.label}
               className={cn(
-                "min-h-11 shrink-0 rounded-full border px-3.5 py-2 text-left transition-all",
+                "flex min-h-11 min-w-0 flex-col items-center justify-center rounded-full border px-1.5 py-1.5 text-center transition-all sm:px-2.5",
                 selected
                   ? "border-jackals-red/50 bg-jackals-red/15 text-white shadow-[0_0_20px_rgba(232,34,42,0.15)]"
                   : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
                 isMine && !selected && "border-jackals-red/25",
               )}
             >
-              <span className="block text-xs font-semibold uppercase tracking-wider">
+              <span className="truncate text-[10px] font-semibold uppercase tracking-wider sm:text-xs">
                 {option.label}
               </span>
-              {option.hint ? (
-                <span
-                  className={cn(
-                    "mt-0.5 block text-[11px]",
-                    selected ? "text-zinc-300" : "text-zinc-600",
-                  )}
-                >
-                  {option.hint}
-                </span>
-              ) : null}
+              <span
+                className={cn(
+                  "mt-0.5 h-3 truncate text-[9px] font-medium uppercase tracking-wide sm:text-[10px]",
+                  isMine
+                    ? selected
+                      ? "text-jackals-red-light"
+                      : "text-zinc-500"
+                    : "text-transparent",
+                )}
+              >
+                {isMine ? "Your squad" : "·"}
+              </span>
             </Link>
           );
         })}
@@ -140,7 +149,7 @@ function FixtureRow({
     <Link
       href={href}
       className={cn(
-        "group flex items-stretch gap-3 px-4 py-3.5 transition-colors sm:gap-4 sm:px-5",
+        "group flex min-h-[5.75rem] items-stretch gap-3 px-4 py-3.5 transition-colors sm:min-h-[6.25rem] sm:gap-4 sm:px-5",
         past
           ? "bg-transparent opacity-55 hover:opacity-80"
           : "hover:bg-white/[0.03]",
@@ -166,46 +175,44 @@ function FixtureRow({
         </span>
       </div>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex flex-wrap items-center gap-2">
-          <p className="font-display text-base font-semibold text-white sm:text-lg">
+      <div className="flex min-w-0 flex-1 flex-col justify-center">
+        <div className="flex min-h-[1.5rem] items-center gap-2">
+          <p className="min-w-0 flex-1 truncate font-display text-base font-semibold text-white sm:text-lg">
             {formatMatchTitle(match.opponentName, match.venue)}
           </p>
           {match.cancelled ? (
-            <Badge className="border-red-500/40 bg-red-500/15 text-red-200">
+            <Badge className="shrink-0 border-red-500/40 bg-red-500/15 text-red-200">
               Cancelled
             </Badge>
           ) : null}
           {isMemberTeam ? (
-            <Badge className="border-jackals-red/35 bg-jackals-red/15 text-jackals-red-light">
+            <Badge className="shrink-0 border-jackals-red/35 bg-jackals-red/15 text-jackals-red-light">
               Your squad
             </Badge>
           ) : null}
         </div>
-        <p className="mt-1 text-sm text-zinc-400">{dateLabel}</p>
-        <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500">
+        <p className="mt-1 truncate text-sm text-zinc-400">{dateLabel}</p>
+        <div className="mt-1.5 flex min-w-0 items-center gap-x-3 overflow-hidden text-xs text-zinc-500">
           <span
             className={cn(
-              "font-semibold uppercase tracking-wider",
+              "shrink-0 font-semibold uppercase tracking-wider",
               match.venue === "HOME" ? "text-emerald-300/90" : "text-sky-300/90",
             )}
           >
             {formatMatchVenueLabel(match.venue)}
           </span>
-          <span className="inline-flex items-center gap-1">
-            <MapPin className="h-3 w-3" />
-            {match.location}
+          <span className="inline-flex min-w-0 items-center gap-1 truncate">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate">{match.location}</span>
           </span>
-          <span>{timeLabel}</span>
-          <span className="inline-flex items-center gap-1 text-zinc-400">
-            <Trophy className="h-3 w-3" />
-            {squadShortLabel(match.trainingTeamKey)?.toUpperCase() ??
-              match.teamName}
+          <span className="hidden shrink-0 sm:inline">{timeLabel}</span>
+          <span className="inline-flex shrink-0 items-center gap-1 text-zinc-400 sm:hidden">
+            {timeLabel}
           </span>
         </div>
       </div>
 
-      <ChevronRight className="mt-3 h-4 w-4 shrink-0 text-zinc-600 transition-colors group-hover:text-jackals-red-light" />
+      <ChevronRight className="mt-auto mb-auto h-4 w-4 shrink-0 self-center text-zinc-600 transition-colors group-hover:text-jackals-red-light" />
     </Link>
   );
 }
