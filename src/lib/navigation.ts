@@ -231,8 +231,6 @@ const ADMIN_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
-  "/merchandise-order",
-  "/gallery",
 ] as const;
 
 const GUEST_PRIMARY_NAV_HREFS = [

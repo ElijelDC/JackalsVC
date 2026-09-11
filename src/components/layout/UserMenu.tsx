@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import type { Session } from "next-auth";
-import { ChevronDown, LogOut, Settings } from "lucide-react";
+import { ChevronDown, LayoutDashboard, LogOut, Settings } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { MemberAvatar } from "@/components/member/MemberAvatar";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,9 @@ export function UserMenu({
   const containerRef = useRef<HTMLDivElement>(null);
   const isAdmin = session.user.role === "ADMIN";
   const isActive =
-    pathname.startsWith("/profile") || pathname.startsWith("/admin");
+    pathname.startsWith("/profile") ||
+    pathname.startsWith("/admin") ||
+    (isAdmin && pathname.startsWith("/dashboard"));
   const displayName = session.user.name?.split(" ")[0] ?? "Account";
   const profileImageUrl = session.user.profileImageUrl;
 
@@ -66,6 +68,21 @@ export function UserMenu({
           />
           Profile
         </Link>
+        {isAdmin ? (
+          <Link
+            href="/admin"
+            onClick={onNavigate}
+            className={cn(
+              "flex min-h-11 items-center gap-2 px-3 py-3 text-sm font-medium",
+              pathname.startsWith("/admin")
+                ? "bg-jackals-red/10 text-jackals-red-light"
+                : "text-jackals-red-light active:bg-white/5",
+            )}
+          >
+            <Settings className="h-4 w-4 shrink-0" />
+            Admin Panel
+          </Link>
+        ) : null}
         <button
           type="button"
           onClick={() => signOut({ callbackUrl: "/" })}
@@ -124,7 +141,22 @@ export function UserMenu({
             />
             Profile
           </Link>
-          {isAdmin && (
+          {isAdmin ? (
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-colors",
+                pathname.startsWith("/dashboard")
+                  ? "bg-jackals-red/10 text-jackals-red-light"
+                  : "text-zinc-400 hover:bg-white/5 hover:text-white",
+              )}
+            >
+              <LayoutDashboard className="h-4 w-4 shrink-0" />
+              Dashboard
+            </Link>
+          ) : null}
+          {isAdmin ? (
             <Link
               href="/admin"
               onClick={() => setOpen(false)}
@@ -138,7 +170,7 @@ export function UserMenu({
               <Settings className="h-4 w-4 shrink-0" />
               Admin Panel
             </Link>
-          )}
+          ) : null}
           <button
             type="button"
             onClick={() => signOut({ callbackUrl: "/" })}

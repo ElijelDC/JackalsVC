@@ -35,7 +35,9 @@ function AuthActions({
     if (variant === "desktop") {
       return (
         <div className="flex items-center gap-3">
-          <DashboardNavLink pathname={pathname} isCoach={isCoach} />
+          {!isAdmin && (
+            <DashboardNavLink pathname={pathname} isCoach={isCoach} />
+          )}
           {isAdmin && <AdminNavLink pathname={pathname} />}
           <div className="h-6 w-px bg-white/10" aria-hidden />
           <UserMenu session={session} />
@@ -130,17 +132,21 @@ export function Header({ session }: { session: Session | null }) {
           isPaygPlayer={isPaygPlayer}
         />
 
-        <nav className="hidden items-center gap-0.5 lg:flex">
-          <NavLinks
-            pathname={pathname}
-            variant="desktop"
-            isLoggedIn={isLoggedIn}
-            isAdmin={isAdmin}
-            isCoach={isCoach}
-            isPaidCoach={isPaidCoach}
-            isPaygPlayer={isPaygPlayer}
-          />
-        </nav>
+        {!(isAdmin && pathname.startsWith("/admin")) ? (
+          <nav className="hidden items-center gap-0.5 lg:flex">
+            <NavLinks
+              pathname={pathname}
+              variant="desktop"
+              isLoggedIn={isLoggedIn}
+              isAdmin={isAdmin}
+              isCoach={isCoach}
+              isPaidCoach={isPaidCoach}
+              isPaygPlayer={isPaygPlayer}
+            />
+          </nav>
+        ) : (
+          <div className="hidden flex-1 lg:block" aria-hidden />
+        )}
 
         <div className="hidden items-center lg:flex">
           <AuthActions
