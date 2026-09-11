@@ -6,7 +6,12 @@ import { ChevronRight, CreditCard, PartyPopper } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { DashboardEventRow } from "@/components/dashboard/DashboardScheduleRow";
-import { DashboardTileHeader } from "@/components/dashboard/DashboardUpcomingScheduleCard";
+import {
+  DashboardTileHeader,
+  DashboardTileSlots,
+  DASHBOARD_TILE_CARD_CLASS,
+  DASHBOARD_TILE_FOOTER_CLASS,
+} from "@/components/dashboard/DashboardUpcomingScheduleCard";
 import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 import type { DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import { getEventTypeLabel } from "@/lib/event-filters";
@@ -40,14 +45,14 @@ export function DashboardUpcomingClubEventsPanel({
         subtitle="Next 4 weeks"
       />
 
-      <Card className="flex min-h-[14.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[16rem]">
+      <Card className={DASHBOARD_TILE_CARD_CLASS}>
         <div className="flex min-h-0 flex-1 flex-col">
           {clubEvents.length === 0 ? (
             <p className="flex flex-1 items-center justify-center px-3 py-5 text-center text-xs text-zinc-500">
               No club events soon
             </p>
           ) : (
-            <div className="divide-y divide-white/10">
+            <DashboardTileSlots>
               {preview.map((event) => {
                 const startDate = new Date(event.startDate);
                 return (
@@ -59,15 +64,14 @@ export function DashboardUpcomingClubEventsPanel({
                     meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}${
                       event.location ? ` · ${event.location}` : ""
                     }`}
-                    dense
                   />
                 );
               })}
-            </div>
+            </DashboardTileSlots>
           )}
           <Link
             href={withDashboardReturn("/events")}
-            className="mt-auto flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
+            className={DASHBOARD_TILE_FOOTER_CLASS}
           >
             {remaining > 0 ? `+${remaining} · ` : ""}
             View all

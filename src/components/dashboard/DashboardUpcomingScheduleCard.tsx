@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { LucideIcon } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { Children } from "react";
 import type { DashboardScheduleItem } from "@/components/dashboard/dashboard-types";
 import { Card } from "@/components/ui/Card";
 import {
@@ -14,6 +15,12 @@ import { itemNeedsUrgentResponse } from "@/lib/training-attendance-config";
 import { withDashboardReturn } from "@/lib/dashboard-return";
 import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 import { cn } from "@/lib/utils";
+
+export const DASHBOARD_TILE_CARD_CLASS =
+  "flex h-full min-h-[12.75rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[14rem]";
+
+export const DASHBOARD_TILE_FOOTER_CLASS =
+  "mt-auto flex h-9 shrink-0 items-center justify-center gap-1 border-t border-white/10 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light";
 
 function squadCount(items: DashboardScheduleItem[]) {
   return new Set(items.map((item) => item.teamName).filter(Boolean)).size;
@@ -60,7 +67,7 @@ export function DashboardTileHeader({
   subtitle: string;
 }) {
   return (
-    <div className="mb-3">
+    <div className="mb-2.5 min-h-[2.85rem] sm:mb-3 sm:min-h-[3.1rem]">
       <h2 className="font-display text-[0.95rem] font-semibold tracking-wide text-white sm:text-xl">
         <span className="inline-flex items-center gap-1.5 sm:gap-2">
           <Icon className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
@@ -68,7 +75,7 @@ export function DashboardTileHeader({
           <span className="hidden sm:inline">{title}</span>
         </span>
       </h2>
-      <p className="mt-1 truncate text-[11px] text-zinc-500 sm:text-xs">{subtitle}</p>
+      <p className="mt-1 line-clamp-1 text-[11px] text-zinc-500 sm:text-xs">{subtitle}</p>
     </div>
   );
 }
@@ -89,6 +96,35 @@ function ScheduleEmptyState({
       >
         {viewAllLabel}
       </Link>
+    </div>
+  );
+}
+
+/** Two equal-height slots so panels stay symmetrical with 1 or 2 items. */
+export function DashboardTileSlots({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  const slots = Children.toArray(children).filter(Boolean);
+  while (slots.length < DASHBOARD_SCHEDULE_PREVIEW_LIMIT) {
+    slots.push(<div key={`empty-${slots.length}`} className="h-full" aria-hidden />);
+  }
+
+  return (
+    <div
+      className={cn(
+        "grid min-h-0 flex-1 grid-rows-2 divide-y divide-white/10",
+        className,
+      )}
+    >
+      {slots.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT).map((slot, index) => (
+        <div key={index} className="min-h-0 overflow-hidden">
+          {slot}
+        </div>
+      ))}
     </div>
   );
 }
@@ -130,7 +166,7 @@ export function DashboardUpcomingScheduleCard({
         subtitle={summary}
       />
 
-      <Card className="flex min-h-[14.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[16rem]">
+      <Card className={DASHBOARD_TILE_CARD_CLASS}>
         {topBanner}
         {unavailableMessage ? (
           <p className="flex flex-1 items-center justify-center px-3 py-5 text-center text-xs leading-snug text-zinc-500">
@@ -140,7 +176,7 @@ export function DashboardUpcomingScheduleCard({
           <ScheduleEmptyState viewAllHref={viewAllHref} viewAllLabel={viewAllLabel} />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
-            <div className="divide-y divide-white/10">
+            <DashboardTileSlots>
               {preview.map((item) => {
                 const startDate = new Date(item.startDate);
                 return (
@@ -156,18 +192,13 @@ export function DashboardUpcomingScheduleCard({
                     })}
                     status={item.userStatus}
                     eventDate={startDate}
-                    dense
                   />
                 );
               })}
-            </div>
+            </DashboardTileSlots>
             <Link
               href={withDashboardReturn(viewAllHref)}
-              className={cn(
-                "mt-auto flex items-center justify-center gap-1 border-t border-white/10",
-                "py-2.5 text-[11px] font-medium text-zinc-500 transition-colors",
-                "hover:bg-white/[0.03] hover:text-jackals-red-light",
-              )}
+              className={DASHBOARD_TILE_FOOTER_CLASS}
             >
               {remaining > 0 ? `+${remaining} · ` : ""}
               View all
