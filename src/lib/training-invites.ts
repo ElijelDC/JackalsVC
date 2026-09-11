@@ -343,6 +343,14 @@ export const getPublicTrainingInviteByToken = cache(async function getPublicTrai
     ? await listSquadMembersAttendingEvent(invite.eventId, trainingTeamKey)
     : [];
 
+  // Public page may show approved guests (names only) — never pending/rejected.
+  const approvedGuestAttendees = invite.signups
+    .filter((signup) => signup.status === TRAINING_INVITE_SIGNUP_APPROVED)
+    .map((signup) => ({
+      id: signup.id,
+      displayName: signup.displayName,
+    }));
+
   return {
     ok: true,
     invite: {
@@ -361,6 +369,7 @@ export const getPublicTrainingInviteByToken = cache(async function getPublicTrai
       active: true,
       registrationOpen,
       squadAttendees,
+      approvedGuestAttendees,
     },
     viewerRegistered: viewerSignup?.status === TRAINING_INVITE_SIGNUP_APPROVED,
     viewerPendingApproval:

@@ -104,6 +104,21 @@ export function TrainingInvitePublicView({
   const hasPaymentStep = trainingInviteRequiresPaymentProof(invite);
   const registrationOpen = invite.registrationOpen;
 
+  const attendingPeople = [
+    ...invite.squadAttendees.map((person) => ({
+      ...person,
+      kind: "squad" as const,
+    })),
+    ...(invite.approvedGuestAttendees ?? []).map((person) => ({
+      ...person,
+      kind: "guest" as const,
+    })),
+  ];
+  const viewerAttendingKey =
+    viewerRegistered && form.displayName.trim()
+      ? form.displayName.trim().toLowerCase()
+      : null;
+
   useEffect(() => {
     const stored = localStorage.getItem(storageKey(token));
     const proof = localStorage.getItem(paymentProofKey(token));
@@ -334,7 +349,7 @@ export function TrainingInvitePublicView({
                   step={hasPaymentStep ? 3 : 1}
                   title={
                     viewerRegistered
-                      ? "You're approved"
+                      ? "You're confirmed"
                       : viewerPendingApproval
                         ? "Awaiting approval"
                         : viewerRejected
@@ -344,9 +359,25 @@ export function TrainingInvitePublicView({
                   isLast
                 >
                   {viewerRegistered ? (
-                    <p className="mb-4 text-sm text-zinc-400">
-                      You&apos;re on the attending list for this training session.
-                    </p>
+                    <div className="mb-4 space-y-3">
+                      <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-100">
+                        <div className="flex items-start gap-2">
+                          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-300" />
+                          <div>
+                            <p className="font-semibold text-emerald-50">
+                              You&apos;re confirmed for this session
+                            </p>
+                            <p className="mt-1 text-emerald-100/85">
+                              A coach approved your request
+                              {form.displayName.trim()
+                                ? ` — you're listed as ${form.displayName.trim()} in Who's attending`
+                                : " — you're on the attending list"}
+                              .
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : viewerPendingApproval ? (
                     <p className="mb-4 text-sm text-zinc-400">
                       Your request has been submitted. A coach will review it
@@ -433,32 +464,45 @@ export function TrainingInvitePublicView({
           <Card>
             <CardTitle className="text-base">Who&apos;s attending</CardTitle>
             <CardDescription className="mt-2">
-              Squad members who have marked themselves as attending.
+              Squad members and approved guests for this session.
             </CardDescription>
             <div className="mt-6">
-              {invite.squadAttendees.length === 0 ? (
+              {attendingPeople.length === 0 ? (
                 <p className="text-sm text-zinc-600">
-                  No squad members attending yet.
+                  No one attending yet.
                 </p>
               ) : (
                 <ul className="grid grid-cols-[repeat(auto-fill,minmax(4.5rem,1fr))] gap-x-2 gap-y-4">
-                  {invite.squadAttendees.map((attendee) => (
-                    <li
-                      key={attendee.id}
-                      className="flex min-w-0 flex-col items-center gap-1.5 text-center"
-                    >
-                      <TeamMemberAvatar
-                        name={attendee.displayName}
-                        className="h-10 w-10 ring-2 ring-green-500/35"
-                      />
-                      <span
-                        className="w-full truncate text-[11px] font-medium leading-tight text-zinc-400"
-                        title={attendee.displayName}
+                  {attendingPeople.map((attendee) => {
+                    const isYou =
+                      viewerAttendingKey !== null &&
+                      attendee.displayName.trim().toLowerCase() ===
+                        viewerAttendingKey;
+                    return (
+                      <li
+                        key={`${attendee.kind}-${attendee.id}`}
+                        className="flex min-w-0 flex-col items-center gap-1.5 text-center"
                       >
-                        {firstName(attendee.displayName)}
-                      </span>
-                    </li>
-                  ))}
+                        <TeamMemberAvatar
+                          name={attendee.displayName}
+                          className={
+                            isYou
+                              ? "h-10 w-10 ring-2 ring-jackals-red/70"
+                              : "h-10 w-10 ring-2 ring-green-500/35"
+                          }
+                        />
+                        <span
+                          className="w-full truncate text-[11px] font-medium leading-tight text-zinc-400"
+                          title={attendee.displayName}
+                        >
+                          {isYou ? "You" : firstName(attendee.displayName)}
+                        </span>
+                        {attendee.kind === "guest" && !isYou ? (
+                          <span className="text-[10px] text-zinc-600">Guest</span>
+                        ) : null}
+                      </li>
+                    );
+                  })}
                 </ul>
               )}
             </div>
