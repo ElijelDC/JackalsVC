@@ -99,10 +99,12 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
           <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-jackals-red-light">
             <Smartphone className="h-5 w-5" />
           </div>
-          <CardTitle>Install Jackals on your home screen</CardTitle>
+          <CardTitle>Install Jackals — mandatory for this season</CardTitle>
           <CardDescription className="mt-2 max-w-xl text-zinc-400">
-            Please install (or re-check) the club app on your phone — step 1 of 2.
-            After that we&apos;ll help you turn on training &amp; match notifications.
+            Installing the club app on your home screen is{" "}
+            <strong className="text-zinc-200">mandatory</strong> for this season —
+            we&apos;ll use it a lot for training, matches, and club updates. Step 1 of
+            2; after that we&apos;ll help you turn on notifications.
           </CardDescription>
 
           <ol className="mt-4 space-y-2 text-sm text-zinc-300">

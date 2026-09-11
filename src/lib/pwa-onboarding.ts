@@ -1,5 +1,5 @@
 /** Bump these keys to re-show onboarding cards club-wide. */
 export const HOMESCREEN_CONFIRMED_KEY =
-  "jackals-homescreen-installed-confirmed-v2";
+  "jackals-homescreen-installed-confirmed-v3";
 
-export const PUSH_DISMISSED_KEY = "jackals-push-prompt-dismissed-v2";
+export const PUSH_DISMISSED_KEY = "jackals-push-prompt-dismissed-v3";
