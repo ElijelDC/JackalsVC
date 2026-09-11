@@ -60,11 +60,13 @@ export function DashboardTileHeader({
   title,
   shortTitle,
   subtitle,
+  subtitleTone = "default",
 }: {
   icon: LucideIcon;
   title: string;
   shortTitle?: string;
   subtitle: string;
+  subtitleTone?: "default" | "urgent";
 }) {
   return (
     <div className="mb-2.5 min-h-[2.85rem] sm:mb-3 sm:min-h-[3.1rem]">
@@ -75,7 +77,14 @@ export function DashboardTileHeader({
           <span className="hidden sm:inline">{title}</span>
         </span>
       </h2>
-      <p className="mt-1 line-clamp-1 text-[11px] text-zinc-500 sm:text-xs">{subtitle}</p>
+      <p
+        className={cn(
+          "mt-1 line-clamp-1 text-[11px] sm:text-xs",
+          subtitleTone === "urgent" ? "font-medium text-amber-300" : "text-zinc-500",
+        )}
+      >
+        {subtitle}
+      </p>
     </div>
   );
 }
@@ -154,8 +163,18 @@ export function DashboardUpcomingScheduleCard({
   viewAllHref: string;
   viewAllLabel: string;
 }) {
-  const preview = items.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT);
+  const needsResponseTotal = countNeedsResponse(items);
+  // Surface reply-needed sessions first so they aren't buried past the 2-row preview.
+  const prioritized = [...items].sort((a, b) => {
+    const aUrgent = itemNeedsUrgentResponse(a.userStatus, new Date(a.startDate)) ? 0 : 1;
+    const bUrgent = itemNeedsUrgentResponse(b.userStatus, new Date(b.startDate)) ? 0 : 1;
+    if (aUrgent !== bUrgent) return aUrgent - bUrgent;
+    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+  });
+  const preview = prioritized.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT);
   const remaining = items.length - preview.length;
+  const previewNeedsResponse = countNeedsResponse(preview);
+  const moreNeedReply = Math.max(0, needsResponseTotal - previewNeedsResponse);
 
   return (
     <section className="flex h-full min-w-0 flex-col">
@@ -164,6 +183,7 @@ export function DashboardUpcomingScheduleCard({
         title={heading}
         shortTitle={shortHeading}
         subtitle={summary}
+        subtitleTone={needsResponseTotal > 0 ? "urgent" : "default"}
       />
 
       <Card className={DASHBOARD_TILE_CARD_CLASS}>
@@ -198,11 +218,24 @@ export function DashboardUpcomingScheduleCard({
             </DashboardTileSlots>
             <Link
               href={withDashboardReturn(viewAllHref)}
-              className={DASHBOARD_TILE_FOOTER_CLASS}
+              className={cn(
+                DASHBOARD_TILE_FOOTER_CLASS,
+                moreNeedReply > 0 &&
+                  "bg-amber-500/[0.08] font-semibold text-amber-300 hover:bg-amber-500/[0.14] hover:text-amber-200",
+              )}
             >
-              {remaining > 0 ? `+${remaining} · ` : ""}
-              View all
-              <ChevronRight className="h-3 w-3" />
+              {moreNeedReply > 0 ? (
+                <>
+                  {moreNeedReply} more {moreNeedReply === 1 ? "needs" : "need"} a reply
+                  <ChevronRight className="h-3 w-3" />
+                </>
+              ) : (
+                <>
+                  {remaining > 0 ? `+${remaining} · ` : ""}
+                  View all
+                  <ChevronRight className="h-3 w-3" />
+                </>
+              )}
             </Link>
           </div>
         )}
