@@ -1,7 +1,9 @@
 /**
- * Fills a demo member account so every dashboard panel has content.
+ * LOCAL ONLY — fills a demo member account so every dashboard panel has content.
  *
- *   DATABASE_URL=file:/data/jackals.db npx tsx scripts/setup-dashboard-demo-member.ts
+ * Do NOT run against production.
+ *
+ *   DATABASE_URL="file:./prisma/dev.db" npx tsx scripts/setup-dashboard-demo-member.ts
  */
 import bcrypt from "bcryptjs";
 import { addDays, setHours, setMinutes, startOfDay } from "date-fns";
@@ -13,6 +15,18 @@ function vodKey(teamKey: string, kind: "training" | "matches") {
 }
 
 const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
+
+if (
+  process.env.ALLOW_PRODUCTION_DASHBOARD_DEMO === "1" ||
+  /\/data\/jackals\.db|jackalsvolleyball|production/i.test(dbUrl)
+) {
+  console.error(
+    "Refusing to seed dashboard demo data. This script is local-only.",
+  );
+  console.error("Use a local DATABASE_URL like file:./prisma/dev.db");
+  process.exit(1);
+}
+
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
 const prisma = new PrismaClient({ adapter });
 
@@ -164,9 +178,6 @@ async function main() {
     where: { notes: "dashboard-demo", trainingTeamKey: TEAM_KEY },
   });
 
-  const matchOneStart = atTime(addDays(startOfDay(now), 5), 14, 0);
-  const matchTwoStart = atTime(addDays(startOfDay(now), 12), 15, 30);
-
   const matchOne = await prisma.teamMatch.create({
     data: {
       trainingTeamKey: TEAM_KEY,
@@ -174,7 +185,7 @@ async function main() {
       venue: "HOME",
       location: "Luttrellstown",
       warmUpTime: atTime(addDays(startOfDay(now), 5), 13, 15),
-      matchStart: matchOneStart,
+      matchStart: atTime(addDays(startOfDay(now), 5), 14, 0),
       notes: "dashboard-demo",
     },
   });
@@ -185,7 +196,7 @@ async function main() {
       venue: "AWAY",
       location: "UCD Sport",
       warmUpTime: atTime(addDays(startOfDay(now), 12), 14, 45),
-      matchStart: matchTwoStart,
+      matchStart: atTime(addDays(startOfDay(now), 12), 15, 30),
       notes: "dashboard-demo",
     },
   });
@@ -235,8 +246,10 @@ async function main() {
     ],
   });
 
-  const trainingUrl = "https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6nuLMOVuxt7RULOAxWbG";
-  const matchesUrl = "https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6nuLMOzxt7RULOAxWbH";
+  const trainingUrl =
+    "https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6nuLMOVuxt7RULOAxWbG";
+  const matchesUrl =
+    "https://www.youtube.com/playlist?list=PLrAXtmRdnEQy6nuLMOzxt7RULOAxWbH";
 
   await prisma.siteContent.upsert({
     where: { key: vodKey(TEAM_KEY, "training") },
@@ -266,7 +279,7 @@ async function main() {
     select: { id: true, title: true, startDate: true },
   });
 
-  console.log("Dashboard demo member ready");
+  console.log("LOCAL dashboard demo member ready");
   console.log(`  Email:    ${DEMO_EMAIL}`);
   console.log(`  Password: ${DEMO_PASSWORD}`);
   console.log(`  Squad:    ${TEAM_KEY}`);
