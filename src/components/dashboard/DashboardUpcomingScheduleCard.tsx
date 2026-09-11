@@ -157,8 +157,7 @@ export function DashboardUpcomingScheduleCard({
               className="mt-auto flex items-center justify-center gap-1 border-t border-white/10 py-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light sm:py-2.5 sm:text-xs"
             >
               {remaining > 0 ? `+${remaining} · ` : ""}
-              <span className="@[14rem]/dash-tile:hidden">View</span>
-              <span className="hidden @[14rem]/dash-tile:inline">{viewAllLabel}</span>
+              View all
               <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
             </Link>
           </div>
