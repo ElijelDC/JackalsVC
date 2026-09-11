@@ -2,21 +2,18 @@
 
 import { Clapperboard, ExternalLink, Play, Trophy } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { DashboardTileHeader } from "@/components/dashboard/DashboardUpcomingScheduleCard";
 import type { TeamVodPlaylists } from "@/lib/vod-playlists";
 import { cn } from "@/lib/utils";
 
-function PlaylistLinkCard({
+function PlaylistRow({
   href,
-  title,
-  shortTitle,
-  subtitle,
+  label,
   icon: Icon,
   accentClass,
 }: {
   href: string;
-  title: string;
-  shortTitle: string;
-  subtitle: string;
+  label: string;
   icon: typeof Play;
   accentClass: string;
 }) {
@@ -25,27 +22,18 @@ function PlaylistLinkCard({
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className={cn(
-        "group flex min-w-0 items-center gap-2.5 rounded-lg border border-white/10 bg-white/[0.02] p-2.5 transition-colors sm:items-start sm:gap-3 sm:p-4",
-        "hover:border-jackals-red/30 hover:bg-jackals-red/[0.04]",
-      )}
+      className="group flex items-center gap-2.5 px-3 py-2.5 transition-colors hover:bg-white/[0.03]"
     >
       <div
         className={cn(
-          "flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-white/10 sm:h-10 sm:w-10",
+          "flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-white/10",
           accentClass,
         )}
       >
-        <Icon className="h-3.5 w-3.5 sm:h-5 sm:w-5" />
+        <Icon className="h-4 w-4" />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="font-display text-xs font-semibold text-white sm:text-sm">
-          <span className="sm:hidden">{shortTitle}</span>
-          <span className="hidden sm:inline">{title}</span>
-        </p>
-        <p className="mt-0.5 hidden text-xs text-zinc-500 sm:block">{subtitle}</p>
-      </div>
-      <ExternalLink className="h-3 w-3 shrink-0 text-zinc-600 transition-colors group-hover:text-jackals-red-light sm:mt-1 sm:h-3.5 sm:w-3.5" />
+      <p className="min-w-0 flex-1 truncate text-sm font-medium text-white">{label}</p>
+      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-jackals-red-light" />
     </a>
   );
 }
@@ -62,43 +50,33 @@ export function DashboardVodPlaylistsPanel({
   const teamLabel = playlists?.teamName ?? "Your squad";
 
   return (
-    <section className={cn("@container/dash-tile flex h-full min-w-0 flex-col", className)}>
-      <div className="mb-2.5 sm:mb-4">
-        <h2 className="font-display text-base font-semibold text-white sm:text-xl">
-          <span className="inline-flex items-center gap-1.5 sm:gap-2">
-            <Clapperboard className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
-            <span className="@[14rem]/dash-tile:hidden">Videos</span>
-            <span className="hidden @[14rem]/dash-tile:inline">Video library</span>
-          </span>
-        </h2>
-        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-zinc-500 sm:text-xs">
-          YouTube · {teamLabel}
-        </p>
-      </div>
+    <section className={cn("flex h-full min-w-0 flex-col", className)}>
+      <DashboardTileHeader
+        icon={Clapperboard}
+        title="Video library"
+        shortTitle="Videos"
+        subtitle={teamLabel}
+      />
 
-      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
+      <Card className="flex min-h-[11.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[13rem]">
         {!trainingUrl && !matchesUrl ? (
-          <p className="flex flex-1 items-center justify-center px-2.5 py-4 text-center text-[11px] leading-snug text-zinc-500 sm:px-5 sm:py-5 sm:text-sm">
+          <p className="flex flex-1 items-center justify-center px-3 py-5 text-center text-xs text-zinc-500">
             Playlists not set yet
           </p>
         ) : (
-          <div className="flex flex-1 flex-col justify-start gap-2 p-2 sm:gap-3 sm:p-4">
+          <div className="flex flex-1 flex-col divide-y divide-white/10">
             {trainingUrl ? (
-              <PlaylistLinkCard
+              <PlaylistRow
                 href={trainingUrl}
-                title="VOD Training"
-                shortTitle="Training"
-                subtitle="Training clips & sessions"
+                label="Training clips"
                 icon={Play}
                 accentClass="bg-jackals-red/15 text-jackals-red-light"
               />
             ) : null}
             {matchesUrl ? (
-              <PlaylistLinkCard
+              <PlaylistRow
                 href={matchesUrl}
-                title="Match playlist"
-                shortTitle="Matches"
-                subtitle="Match footage & highlights"
+                label="Match footage"
                 icon={Trophy}
                 accentClass="bg-sky-500/15 text-sky-300"
               />

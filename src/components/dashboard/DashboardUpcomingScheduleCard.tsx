@@ -6,15 +6,14 @@ import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
 import type { DashboardScheduleItem } from "@/components/dashboard/dashboard-types";
 import { Card } from "@/components/ui/Card";
-import { StaggerIn } from "@/components/motion/StaggerIn";
 import {
   buildScheduleMeta,
   DashboardScheduleRow,
 } from "@/components/dashboard/DashboardScheduleRow";
 import { itemNeedsUrgentResponse } from "@/lib/training-attendance-config";
 import { withDashboardReturn } from "@/lib/dashboard-return";
-
 import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
+import { cn } from "@/lib/utils";
 
 function squadCount(items: DashboardScheduleItem[]) {
   return new Set(items.map((item) => item.teamName).filter(Boolean)).size;
@@ -34,40 +33,61 @@ export function buildDashboardScheduleSummary(
   }
 
   if (items.length === 0) {
-    return `No ${noun.many} in the next 2 weeks`;
+    return `No ${noun.many} soon`;
   }
 
   if (needsResponse > 0) {
-    return `${needsResponse} ${needsResponse === 1 ? noun.one : noun.many} need your response this week`;
+    const verb = needsResponse === 1 ? "needs" : "need";
+    return `${needsResponse} ${needsResponse === 1 ? noun.one : noun.many} ${verb} a reply`;
   }
 
   const squads = squadCount(items);
   const squadLabel =
     options?.showSquadCount && squads > 1 ? `${squads} squads · ` : "";
 
-  return `${squadLabel}${items.length} upcoming · next 2 weeks`;
+  return `${squadLabel}${items.length} upcoming`;
+}
+
+export function DashboardTileHeader({
+  icon: Icon,
+  title,
+  shortTitle,
+  subtitle,
+}: {
+  icon: LucideIcon;
+  title: string;
+  shortTitle?: string;
+  subtitle: string;
+}) {
+  return (
+    <div className="mb-3">
+      <h2 className="font-display text-[0.95rem] font-semibold tracking-wide text-white sm:text-xl">
+        <span className="inline-flex items-center gap-1.5 sm:gap-2">
+          <Icon className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
+          <span className="sm:hidden">{shortTitle ?? title}</span>
+          <span className="hidden sm:inline">{title}</span>
+        </span>
+      </h2>
+      <p className="mt-1 truncate text-[11px] text-zinc-500 sm:text-xs">{subtitle}</p>
+    </div>
+  );
 }
 
 function ScheduleEmptyState({
-  icon: Icon,
   viewAllHref,
   viewAllLabel,
 }: {
-  icon: LucideIcon;
   viewAllHref: string;
   viewAllLabel: string;
 }) {
   return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 px-2.5 py-4 text-center sm:min-h-[9.5rem] sm:gap-3 sm:px-6 sm:py-6">
-      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-zinc-500 sm:h-10 sm:w-10">
-        <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" strokeWidth={1.75} />
-      </div>
+    <div className="flex flex-1 flex-col items-center justify-center px-3 py-6 text-center">
+      <p className="text-xs text-zinc-500">Nothing scheduled yet</p>
       <Link
         href={withDashboardReturn(viewAllHref)}
-        className="inline-flex max-w-full items-center justify-center gap-0.5 text-[11px] font-medium leading-snug text-zinc-500 transition-colors hover:text-jackals-red-light sm:gap-1 sm:text-xs"
+        className="mt-2 text-[11px] font-medium text-jackals-red-light hover:text-jackals-red"
       >
-        <span className="truncate">{viewAllLabel}</span>
-        <ChevronRight className="h-3 w-3 shrink-0 sm:h-3.5 sm:w-3.5" />
+        {viewAllLabel}
       </Link>
     </div>
   );
@@ -100,38 +120,27 @@ export function DashboardUpcomingScheduleCard({
 }) {
   const preview = items.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT);
   const remaining = items.length - preview.length;
-  const compactHeading = shortHeading ?? heading;
 
   return (
-    <section className="@container/dash-tile flex h-full min-w-0 flex-col">
-      <div className="mb-2.5 flex min-h-[3.25rem] flex-col justify-end sm:mb-4 sm:min-h-[3.75rem]">
-        <h2 className="font-display text-base font-semibold text-white sm:text-xl">
-          <span className="inline-flex items-center gap-1.5 sm:gap-2">
-            <Icon className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
-            <span className="@[16rem]/dash-tile:hidden">{compactHeading}</span>
-            <span className="hidden @[16rem]/dash-tile:inline">{heading}</span>
-          </span>
-        </h2>
-        <p className="mt-1 line-clamp-2 min-h-[2.25rem] text-[11px] leading-snug text-zinc-500 sm:min-h-0 sm:text-xs">
-          {summary}
-        </p>
-      </div>
+    <section className="flex h-full min-w-0 flex-col">
+      <DashboardTileHeader
+        icon={Icon}
+        title={heading}
+        shortTitle={shortHeading}
+        subtitle={summary}
+      />
 
-      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
+      <Card className="flex min-h-[11.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[13rem]">
         {topBanner}
         {unavailableMessage ? (
-          <p className="flex flex-1 items-center justify-center px-2.5 py-4 text-center text-[11px] leading-snug text-zinc-500 sm:px-4 sm:py-6 sm:text-sm">
+          <p className="flex flex-1 items-center justify-center px-3 py-5 text-center text-xs leading-snug text-zinc-500">
             {unavailableMessage}
           </p>
         ) : items.length === 0 ? (
-          <ScheduleEmptyState
-            icon={Icon}
-            viewAllHref={viewAllHref}
-            viewAllLabel={viewAllLabel}
-          />
+          <ScheduleEmptyState viewAllHref={viewAllHref} viewAllLabel={viewAllLabel} />
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
-            <StaggerIn className="divide-y divide-white/10" stagger={50}>
+            <div className="divide-y divide-white/10">
               {preview.map((item) => {
                 const startDate = new Date(item.startDate);
                 return (
@@ -151,14 +160,18 @@ export function DashboardUpcomingScheduleCard({
                   />
                 );
               })}
-            </StaggerIn>
+            </div>
             <Link
               href={withDashboardReturn(viewAllHref)}
-              className="mt-auto flex items-center justify-center gap-1 border-t border-white/10 py-2 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light sm:py-2.5 sm:text-xs"
+              className={cn(
+                "mt-auto flex items-center justify-center gap-1 border-t border-white/10",
+                "py-2.5 text-[11px] font-medium text-zinc-500 transition-colors",
+                "hover:bg-white/[0.03] hover:text-jackals-red-light",
+              )}
             >
               {remaining > 0 ? `+${remaining} · ` : ""}
               View all
-              <ChevronRight className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+              <ChevronRight className="h-3 w-3" />
             </Link>
           </div>
         )}

@@ -5,8 +5,8 @@ import { format } from "date-fns";
 import { ChevronRight, CreditCard, PartyPopper } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
-import { StaggerIn } from "@/components/motion/StaggerIn";
 import { DashboardEventRow } from "@/components/dashboard/DashboardScheduleRow";
+import { DashboardTileHeader } from "@/components/dashboard/DashboardUpcomingScheduleCard";
 import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 import type { DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import { getEventTypeLabel } from "@/lib/event-filters";
@@ -28,34 +28,27 @@ export function DashboardUpcomingClubEventsPanel({
   upcomingEvents: DashboardClubEvent[];
 }) {
   const clubEvents = upcomingEvents.filter((event) => event.type !== "TRAINING");
+  const preview = clubEvents.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT);
+  const remaining = clubEvents.length - preview.length;
 
   return (
-    <section className="@container/dash-tile flex h-full w-full min-w-0 flex-col">
-      <div className="mb-2.5 sm:mb-4">
-        <h2 className="font-display text-base font-semibold text-white sm:text-xl">
-          <span className="inline-flex items-center gap-1.5 sm:gap-2">
-            <PartyPopper className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
-            <span className="@[16rem]/dash-tile:hidden">Events</span>
-            <span className="hidden @[16rem]/dash-tile:inline">Upcoming club events</span>
-          </span>
-        </h2>
-        <p className="mt-1 line-clamp-2 text-[11px] leading-snug text-zinc-500 sm:text-xs">
-          <span className="sm:hidden">Next 4 weeks</span>
-          <span className="hidden sm:inline">
-            Tournaments and socials · within the next 4 weeks
-          </span>
-        </p>
-      </div>
+    <section className="flex h-full w-full min-w-0 flex-col">
+      <DashboardTileHeader
+        icon={PartyPopper}
+        title="Upcoming club events"
+        shortTitle="Events"
+        subtitle="Next 4 weeks"
+      />
 
-      <Card className="flex min-w-0 flex-1 flex-col overflow-hidden p-0">
-        <div className="flex min-h-0 flex-1 flex-col divide-y divide-white/10">
+      <Card className="flex min-h-[11.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[13rem]">
+        <div className="flex min-h-0 flex-1 flex-col">
           {clubEvents.length === 0 ? (
-            <p className="flex flex-1 items-center justify-center px-2.5 py-4 text-center text-[11px] leading-snug text-zinc-500 sm:px-5 sm:py-5 sm:text-sm">
-              No club events in the next 4 weeks
+            <p className="flex flex-1 items-center justify-center px-3 py-5 text-center text-xs text-zinc-500">
+              No club events soon
             </p>
           ) : (
-            <StaggerIn className="divide-y divide-white/10" stagger={60}>
-              {clubEvents.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT).map((event) => {
+            <div className="divide-y divide-white/10">
+              {preview.map((event) => {
                 const startDate = new Date(event.startDate);
                 return (
                   <DashboardEventRow
@@ -63,24 +56,20 @@ export function DashboardUpcomingClubEventsPanel({
                     href={withDashboardReturn(`/calendar/${event.id}`)}
                     date={startDate}
                     title={event.title}
-                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}${
-                      event.location ? ` · ${event.location}` : ""
-                    }`}
+                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE HH:mm")}`}
                     dense
                   />
                 );
               })}
-            </StaggerIn>
+            </div>
           )}
           <Link
             href={withDashboardReturn("/events")}
-            className="mt-auto flex items-center justify-center gap-0.5 border-t border-white/10 py-1.5 text-[10px] font-medium leading-none text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light sm:py-2 sm:text-[11px]"
+            className="mt-auto flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
           >
-            {clubEvents.length > DASHBOARD_SCHEDULE_PREVIEW_LIMIT
-              ? `+${clubEvents.length - DASHBOARD_SCHEDULE_PREVIEW_LIMIT} more · `
-              : ""}
+            {remaining > 0 ? `+${remaining} · ` : ""}
             View all
-            <ChevronRight className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+            <ChevronRight className="h-3 w-3" />
           </Link>
         </div>
       </Card>
