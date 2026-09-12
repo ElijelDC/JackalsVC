@@ -15,8 +15,10 @@ import {
   reclubMeetUrl,
 } from "@/lib/reclub-config";
 import {
+  clearReclubRequestCache,
   RECLUB_CACHE_TTL_MS,
   withReclubRequestCache,
+  type ReclubFetchOptions,
 } from "@/lib/reclub-request-cache";
 import { prisma } from "@/lib/prisma";
 
@@ -25,6 +27,10 @@ export type ReclubSyncResult = {
   action: "created" | "updated" | "deleted" | "skipped";
   eventId?: string;
   reason?: string;
+};
+
+type SyncOptions = ReclubFetchOptions & {
+  notifyMembers?: boolean;
 };
 
 function inferEventType(event: { name: string; notes: string | null }) {
@@ -91,12 +97,50 @@ function buildCompetitionEventData(competition: ReclubCompetition) {
   };
 }
 
+async function upsertReclubEvent(
+  referenceCode: string,
+  data: ReturnType<typeof buildMeetEventData>,
+  options: SyncOptions,
+): Promise<ReclubSyncResult> {
+  const existing = await prisma.event.findUnique({
+    where: { reclubReferenceCode: referenceCode },
+    select: { id: true },
+  });
+
+  if (existing) {
+    const event = await prisma.event.update({
+      where: { id: existing.id },
+      data,
+    });
+
+    return {
+      referenceCode,
+      action: "updated",
+      eventId: event.id,
+    };
+  }
+
+  const event = await prisma.event.create({ data });
+
+  if (options.notifyMembers) {
+    await sendEventNewsletter(event.id);
+  }
+
+  return {
+    referenceCode,
+    action: "created",
+    eventId: event.id,
+  };
+}
+
 export async function syncReclubMeetByReferenceCode(
   referenceCode: string,
-  options: { notifyMembers?: boolean } = {},
+  options: SyncOptions = {},
 ): Promise<ReclubSyncResult> {
   const code = referenceCode.trim().toUpperCase();
-  const meet = await fetchReclubMeet(code);
+  const meet = await fetchReclubMeet(code, {
+    forceRefresh: options.forceRefresh,
+  });
 
   if (!meet) {
     return {
@@ -118,7 +162,15 @@ export async function syncReclubMeetByReferenceCode(
     };
   }
 
-  if (meet.isPast) {
+  const data = buildMeetEventData(meet);
+  const existing = await prisma.event.findUnique({
+    where: { reclubReferenceCode: code },
+    select: { id: true },
+  });
+
+  // Past meets: update existing rows so reschedules/edits reflect locally,
+  // but do not create brand-new past clutter.
+  if (meet.isPast && !existing) {
     return {
       referenceCode: code,
       action: "skipped",
@@ -126,44 +178,17 @@ export async function syncReclubMeetByReferenceCode(
     };
   }
 
-  const data = buildMeetEventData(meet);
-  const existing = await prisma.event.findUnique({
-    where: { reclubReferenceCode: code },
-    select: { id: true },
-  });
-
-  if (existing) {
-    const event = await prisma.event.update({
-      where: { id: existing.id },
-      data,
-    });
-
-    return {
-      referenceCode: code,
-      action: "updated",
-      eventId: event.id,
-    };
-  }
-
-  const event = await prisma.event.create({ data });
-
-  if (options.notifyMembers) {
-    await sendEventNewsletter(event.id);
-  }
-
-  return {
-    referenceCode: code,
-    action: "created",
-    eventId: event.id,
-  };
+  return upsertReclubEvent(code, data, options);
 }
 
 export async function syncReclubCompetitionById(
   competitionId: string,
-  options: { notifyMembers?: boolean } = {},
+  options: SyncOptions = {},
 ): Promise<ReclubSyncResult> {
   const id = competitionId.trim();
-  const competition = await fetchReclubCompetition(id);
+  const competition = await fetchReclubCompetition(id, {
+    forceRefresh: options.forceRefresh,
+  });
 
   if (!competition) {
     return {
@@ -185,7 +210,13 @@ export async function syncReclubCompetitionById(
     };
   }
 
-  if (competition.startDate.getTime() < Date.now()) {
+  const data = buildCompetitionEventData(competition);
+  const existing = await prisma.event.findUnique({
+    where: { reclubReferenceCode: id },
+    select: { id: true },
+  });
+
+  if (competition.startDate.getTime() < Date.now() && !existing) {
     return {
       referenceCode: id,
       action: "skipped",
@@ -193,41 +224,12 @@ export async function syncReclubCompetitionById(
     };
   }
 
-  const data = buildCompetitionEventData(competition);
-  const existing = await prisma.event.findUnique({
-    where: { reclubReferenceCode: id },
-    select: { id: true },
-  });
-
-  if (existing) {
-    const event = await prisma.event.update({
-      where: { id: existing.id },
-      data,
-    });
-
-    return {
-      referenceCode: id,
-      action: "updated",
-      eventId: event.id,
-    };
-  }
-
-  const event = await prisma.event.create({ data });
-
-  if (options.notifyMembers) {
-    await sendEventNewsletter(event.id);
-  }
-
-  return {
-    referenceCode: id,
-    action: "created",
-    eventId: event.id,
-  };
+  return upsertReclubEvent(id, data, options);
 }
 
 export async function syncReclubReferenceOrCompetitionId(
   referenceOrCompetitionId: string,
-  options: { notifyMembers?: boolean } = {},
+  options: SyncOptions = {},
 ): Promise<ReclubSyncResult> {
   const value = referenceOrCompetitionId.trim();
   if (isReclubCompetitionId(value)) {
@@ -239,7 +241,7 @@ export async function syncReclubReferenceOrCompetitionId(
 
 export async function syncReclubReferenceCodes(
   referenceCodes: string[],
-  options: { notifyMembers?: boolean } = {},
+  options: SyncOptions = {},
 ) {
   const results: ReclubSyncResult[] = [];
 
@@ -256,6 +258,7 @@ export async function syncTrackedReclubMeets(options: {
   notifyMembers?: boolean;
   includeStored?: boolean;
   extraCodes?: string[];
+  forceRefresh?: boolean;
 } = {}) {
   const codes = new Set<string>(options.extraCodes ?? []);
 
@@ -272,7 +275,10 @@ export async function syncTrackedReclubMeets(options: {
     }
   }
 
-  return syncReclubReferenceCodes([...codes], options);
+  return syncReclubReferenceCodes([...codes], {
+    notifyMembers: options.notifyMembers,
+    forceRefresh: options.forceRefresh ?? true,
+  });
 }
 
 export type ReclubClubSyncResult = {
@@ -282,14 +288,21 @@ export type ReclubClubSyncResult = {
 };
 
 export async function syncReclubClubUpcomingActivities(
-  options: { notifyMembers?: boolean } = {},
+  options: SyncOptions = {},
 ): Promise<ReclubClubSyncResult> {
+  const forceRefresh = options.forceRefresh ?? true;
+  if (forceRefresh) {
+    clearReclubRequestCache();
+  }
+
   const groupId = await resolveReclubGroupId();
   if (!groupId) {
     return { groupId: null, upcomingCount: 0, results: [] };
   }
 
-  const upcoming = await fetchUpcomingReclubClubActivities(groupId);
+  const upcoming = await fetchUpcomingReclubClubActivities(groupId, {
+    forceRefresh,
+  });
   const syncedKeys = new Set(
     upcoming.map((activity) =>
       activity.kind === "meet"
@@ -298,17 +311,21 @@ export async function syncReclubClubUpcomingActivities(
     ),
   );
   const results: ReclubSyncResult[] = [];
+  const syncOptions: SyncOptions = {
+    notifyMembers: options.notifyMembers,
+    forceRefresh,
+  };
 
   for (const activity of upcoming) {
     if (activity.kind === "meet") {
       results.push(
-        await syncReclubMeetByReferenceCode(activity.referenceCode, options),
+        await syncReclubMeetByReferenceCode(activity.referenceCode, syncOptions),
       );
       continue;
     }
 
     results.push(
-      await syncReclubCompetitionById(activity.competitionId, options),
+      await syncReclubCompetitionById(activity.competitionId, syncOptions),
     );
   }
 
@@ -330,7 +347,7 @@ export async function syncReclubClubUpcomingActivities(
     const key = event.reclubReferenceCode;
     if (!key || syncedKeys.has(key)) continue;
 
-    results.push(await syncReclubReferenceOrCompetitionId(key, options));
+    results.push(await syncReclubReferenceOrCompetitionId(key, syncOptions));
   }
 
   return {
@@ -345,6 +362,10 @@ export async function syncReclubClubUpcomingActivitiesForBrowse(): Promise<Reclu
   return withReclubRequestCache(
     "club-sync:browse",
     RECLUB_CACHE_TTL_MS.clubSync,
-    () => syncReclubClubUpcomingActivities({ notifyMembers: false }),
+    () =>
+      syncReclubClubUpcomingActivities({
+        notifyMembers: false,
+        forceRefresh: true,
+      }),
   );
 }

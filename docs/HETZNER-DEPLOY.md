@@ -158,9 +158,11 @@ The trial-session-reminders job also deletes one-off session payment receipts ol
 
 ### Reclub event sync
 
-Fun sessions and other Reclub meets are stored in the site database by `POST /api/cron/reclub-sync`. Without this, production only updates when someone visits `/events` (and only after the sync finishes).
+Fun sessions and other Reclub meets are stored in the site database by `POST /api/cron/reclub-sync`. Sync **upserts by `reclubReferenceCode`**, so title/time/location changes on Reclub update existing Event rows (they are not create-only).
 
-On the VPS, install a cron job (every 15 minutes is a good default):
+Without a scheduled job, production only refreshes when someone visits `/events` (throttled to about every 5 minutes).
+
+**Preferred on the VPS** (every 15 minutes):
 
 ```bash
 chmod +x /opt/app/scripts/trigger-reclub-sync.sh   # adjust path
@@ -168,6 +170,8 @@ chmod +x /opt/app/scripts/trigger-reclub-sync.sh   # adjust path
 # crontab -e
 */15 * * * * /opt/app/scripts/trigger-reclub-sync.sh >> /var/log/jackals-reclub-sync.log 2>&1
 ```
+
+**GitHub Actions backup:** workflow `.github/workflows/reclub-sync.yml` runs on the same cadence when repo secrets `CRON_SECRET` (and optionally `RECLUB_SYNC_SITE_URL`) are set.
 
 To run a one-off sync immediately:
 

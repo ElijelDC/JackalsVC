@@ -2,6 +2,7 @@ import {
   fetchReclubJson,
   RECLUB_CACHE_TTL_MS,
   withReclubRequestCache,
+  type ReclubFetchOptions,
 } from "@/lib/reclub-request-cache";
 
 export type PayloadRoot = unknown[];
@@ -89,7 +90,9 @@ function readNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
-function formatLocation(location: ReclubLocation | null): string | null {
+export function formatReclubLocation(
+  location: ReclubLocation | null,
+): string | null {
   if (!location) return null;
 
   const parts = [
@@ -100,6 +103,27 @@ function formatLocation(location: ReclubLocation | null): string | null {
   ].filter((part): part is string => Boolean(part && part.trim()));
 
   return parts.length > 0 ? parts.join(", ") : null;
+}
+
+/** Reclub meets/competitions usually expose `venue`, not a flat `location`. */
+export function formatReclubVenueOrLocation(
+  venue: unknown,
+  location: unknown,
+): string | null {
+  if (isRecord(venue)) {
+    const name = readString(venue.name);
+    if (name) return name;
+
+    if (isRecord(venue.location)) {
+      return formatReclubLocation(venue.location as ReclubLocation);
+    }
+  }
+
+  if (isRecord(location)) {
+    return formatReclubLocation(location as ReclubLocation);
+  }
+
+  return null;
 }
 
 function extractPaymentUrl(notes: string | null): string | null {
@@ -205,9 +229,7 @@ export function parseReclubMeetPayload(
   const endUnix = readNumber(meet.endDatetime);
   const durationSeconds = readNumber(meet.duration);
   const notes = readString(meet.notes);
-  const location = formatLocation(
-    isRecord(meet.location) ? (meet.location as ReclubLocation) : null,
-  );
+  const location = formatReclubVenueOrLocation(meet.venue, meet.location);
 
   const startDate = new Date(startUnix * 1000);
   const endDate = endUnix
@@ -232,11 +254,12 @@ export function parseReclubMeetPayload(
 
 async function fetchReclubMeetPayload(
   referenceCode: string,
+  options: ReclubFetchOptions = {},
 ): Promise<ReclubMeet | null> {
   const code = referenceCode.trim().toUpperCase();
   const response = await fetchReclubJson(
     `https://reclub.co/m/${code}/_payload.json`,
-    { next: { revalidate: 120 } },
+    { next: { revalidate: 120 }, forceRefresh: options.forceRefresh },
   );
 
   if (!response.ok) {
@@ -249,12 +272,14 @@ async function fetchReclubMeetPayload(
 
 export async function fetchReclubMeet(
   referenceCode: string,
+  options: ReclubFetchOptions = {},
 ): Promise<ReclubMeet | null> {
   const code = referenceCode.trim().toUpperCase();
   return withReclubRequestCache(
     `meet-payload:${code}`,
     RECLUB_CACHE_TTL_MS.payload,
-    () => fetchReclubMeetPayload(code),
+    () => fetchReclubMeetPayload(code, options),
+    options,
   );
 }
 

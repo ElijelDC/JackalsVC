@@ -1,0 +1,37 @@
+name: Reclub sync
+
+# Backup for the VPS crontab in docs/HETZNER-DEPLOY.md.
+# Keeps Event rows upserted when Reclub times/locations change.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  group: reclub-sync
+  cancel-in-progress: true
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    if: github.repository == 'ElijelDC/JackalsVC'
+    steps:
+      - name: Trigger production Reclub sync
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          SITE_URL: ${{ secrets.RECLUB_SYNC_SITE_URL }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${CRON_SECRET:-}" ]]; then
+            echo "::warning::CRON_SECRET secret is not set — skipping Reclub sync."
+            exit 0
+          fi
+          BASE_URL="${SITE_URL:-https://jackalsvolleyball.com}"
+          BASE_URL="${BASE_URL%/}"
+          echo "POST ${BASE_URL}/api/cron/reclub-sync"
+          curl -fsS -X POST \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            -H "Accept: application/json" \
+            "${BASE_URL}/api/cron/reclub-sync"
+          echo

@@ -14,7 +14,7 @@ const SOCIAL_PATTERN =
   /\b(socials?|club\s+nights?|end\s+of\s+season|parties|party|pub\s+nights?|pizza\s+nights?|awards?\s+nights?)\b/i;
 
 const FUN_PATTERN =
-  /\b(fun\s+sessions?|open\s+sessions?|mixed\s+(?:fun\s+)?sessions?|fun\s+play|drop[- ]?ins?|open\s+play|(?:beginner|intermediate|advanced)\s+fun)\b/i;
+  /\b(fun\s+sessions?|fun\s+sesh(?:es)?|open\s+sessions?|mixed\s+(?:fun\s+)?sessions?|fun\s+play|drop[- ]?ins?|open\s+play|(?:beginner|intermediate|advanced)\s+fun)\b/i;
 
 function matches(pattern: RegExp, value: string) {
   return pattern.test(value);

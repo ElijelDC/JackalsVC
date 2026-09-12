@@ -1,5 +1,6 @@
 import {
   createPayloadResolver,
+  formatReclubVenueOrLocation,
   getPayloadState,
   type PayloadRoot,
 } from "@/lib/reclub-payload";
@@ -7,14 +8,8 @@ import {
   fetchReclubJson,
   RECLUB_CACHE_TTL_MS,
   withReclubRequestCache,
+  type ReclubFetchOptions,
 } from "@/lib/reclub-request-cache";
-
-type ReclubLocation = {
-  address?: string | null;
-  locality?: string | null;
-  region?: string | null;
-  country?: string | null;
-};
 
 export type ReclubCompetition = {
   id: string;
@@ -39,19 +34,6 @@ function readString(value: unknown): string | null {
 
 function readNumber(value: unknown): number | null {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-function formatLocation(location: ReclubLocation | null): string | null {
-  if (!location) return null;
-
-  const parts = [
-    location.address,
-    location.locality,
-    location.region,
-    location.country,
-  ].filter((part): part is string => Boolean(part && part.trim()));
-
-  return parts.length > 0 ? parts.join(", ") : null;
 }
 
 function extractPaymentUrl(notes: string | null): string | null {
@@ -138,10 +120,9 @@ export function parseReclubCompetitionPayload(
     notes,
     startDate,
     endDate,
-    location: formatLocation(
-      isRecord(competition.location)
-        ? (competition.location as ReclubLocation)
-        : null,
+    location: formatReclubVenueOrLocation(
+      competition.venue,
+      competition.location,
     ),
     sessionFee: readNumber(competition.feeAmount),
     paymentUrl: extractPaymentUrl(notes),
@@ -152,11 +133,12 @@ export function parseReclubCompetitionPayload(
 
 async function fetchReclubCompetitionPayload(
   competitionId: string,
+  options: ReclubFetchOptions = {},
 ): Promise<ReclubCompetition | null> {
   const id = competitionId.trim();
   const response = await fetchReclubJson(
     `https://reclub.co/c/${id}/_payload.json`,
-    { next: { revalidate: 120 } },
+    { next: { revalidate: 120 }, forceRefresh: options.forceRefresh },
   );
 
   if (!response.ok) {
@@ -169,11 +151,13 @@ async function fetchReclubCompetitionPayload(
 
 export async function fetchReclubCompetition(
   competitionId: string,
+  options: ReclubFetchOptions = {},
 ): Promise<ReclubCompetition | null> {
   const id = competitionId.trim();
   return withReclubRequestCache(
     `competition-payload:${id}`,
     RECLUB_CACHE_TTL_MS.payload,
-    () => fetchReclubCompetitionPayload(id),
+    () => fetchReclubCompetitionPayload(id, options),
+    options,
   );
 }

@@ -11,10 +11,14 @@ async function handle(request: Request) {
 
   try {
     const [clubSync, trackedResults] = await Promise.all([
-      syncReclubClubUpcomingActivities({ notifyMembers: false }),
+      syncReclubClubUpcomingActivities({
+        notifyMembers: false,
+        forceRefresh: true,
+      }),
       syncTrackedReclubMeets({
         extraCodes: getReclubWatchReferenceCodes(),
         notifyMembers: false,
+        forceRefresh: true,
       }),
     ]);
 

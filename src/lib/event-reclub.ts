@@ -1,4 +1,8 @@
-export const OPEN_RECLUB_EVENT_TYPES = ["TOURNAMENT", "SKILLS_CLINIC"] as const;
+export const OPEN_RECLUB_EVENT_TYPES = [
+  "TOURNAMENT",
+  "SKILLS_CLINIC",
+  "FUN",
+] as const;
 
 export type OpenReclubEventType = (typeof OPEN_RECLUB_EVENT_TYPES)[number];
 

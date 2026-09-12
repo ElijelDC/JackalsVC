@@ -78,7 +78,11 @@ export function filterEventsForViewer<T extends { type: string }>(
 export const FUN_SESSION_CALENDAR_WEEKS = 3;
 
 export function filterFunSessionsWithinCalendarHorizon<
-  T extends { type: string; startDate: string | Date },
+  T extends {
+    type: string;
+    startDate: string | Date;
+    reclubReferenceCode?: string | null;
+  },
 >(
   events: T[],
   weeksAhead = FUN_SESSION_CALENDAR_WEEKS,
@@ -88,6 +92,9 @@ export function filterFunSessionsWithinCalendarHorizon<
 
   return events.filter((event) => {
     if (event.type !== "FUN") return true;
+    // Reclub-synced fun sessions should always appear while upcoming;
+    // the 3-week horizon only applies to recurring admin fun sessions.
+    if (event.reclubReferenceCode) return true;
     return new Date(event.startDate) <= through;
   });
 }

@@ -19,6 +19,11 @@ export const RECLUB_CACHE_TTL_MS = {
 
 const MAX_CACHE_ENTRIES = 128;
 
+export type ReclubFetchOptions = {
+  /** Bypass in-memory + Next fetch caches (cron / forced sync). */
+  forceRefresh?: boolean;
+};
+
 function pruneExpiredEntries(now = Date.now()) {
   for (const [key, entry] of resultCache) {
     if (entry.expiresAt <= now) {
@@ -39,6 +44,20 @@ function pruneExpiredEntries(now = Date.now()) {
   }
 }
 
+/** Drop cached Reclub reads so the next sync sees time/location changes. */
+export function clearReclubRequestCache(prefix?: string) {
+  if (!prefix) {
+    resultCache.clear();
+    return;
+  }
+
+  for (const key of resultCache.keys()) {
+    if (key.startsWith(prefix)) {
+      resultCache.delete(key);
+    }
+  }
+}
+
 /**
  * Coalesce concurrent Reclub reads and keep short-lived in-memory results so
  * rapid navigation cannot stampede the external API.
@@ -47,17 +66,22 @@ export async function withReclubRequestCache<T>(
   key: string,
   ttlMs: number,
   fetcher: () => Promise<T>,
+  options: ReclubFetchOptions = {},
 ): Promise<T> {
   const now = Date.now();
   pruneExpiredEntries(now);
 
-  const cached = resultCache.get(key);
-  if (cached && cached.expiresAt > now) {
-    return cached.value as T;
+  if (options.forceRefresh) {
+    resultCache.delete(key);
+  } else {
+    const cached = resultCache.get(key);
+    if (cached && cached.expiresAt > now) {
+      return cached.value as T;
+    }
   }
 
   const inflight = inflightRequests.get(key);
-  if (inflight) {
+  if (inflight && !options.forceRefresh) {
     return inflight as Promise<T>;
   }
 
@@ -80,9 +104,13 @@ export const RECLUB_FETCH_TIMEOUT_MS = 12_000;
 
 export async function fetchReclubJson(
   url: string,
-  init: RequestInit & { next?: { revalidate?: number } } = {},
+  init: RequestInit & {
+    next?: { revalidate?: number };
+    forceRefresh?: boolean;
+  } = {},
 ): Promise<Response> {
-  const { next, ...requestInit } = init;
+  const { next, forceRefresh = false, cache, ...requestInit } = init;
+  const bypassCache = forceRefresh || cache === "no-store";
 
   return fetch(url, {
     ...requestInit,
@@ -92,6 +120,8 @@ export async function fetchReclubJson(
       Accept: "application/json",
       ...requestInit.headers,
     },
-    next: next ?? { revalidate: 120 },
+    ...(bypassCache
+      ? { cache: "no-store" as const }
+      : { cache, next: next ?? { revalidate: 120 } }),
   });
 }

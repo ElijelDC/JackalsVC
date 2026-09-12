@@ -1,5 +1,6 @@
 import {
   createPayloadResolver,
+  formatReclubVenueOrLocation,
   getPayloadState,
   type PayloadRoot,
 } from "@/lib/reclub-payload";
@@ -8,6 +9,7 @@ import {
   fetchReclubJson,
   RECLUB_CACHE_TTL_MS,
   withReclubRequestCache,
+  type ReclubFetchOptions,
 } from "@/lib/reclub-request-cache";
 
 export type ReclubClub = {
@@ -24,6 +26,7 @@ export type ReclubActivitySummary =
       name: string;
       startDate: Date;
       endDate: Date | null;
+      location: string | null;
       status: number;
     }
   | {
@@ -33,6 +36,7 @@ export type ReclubActivitySummary =
       name: string;
       startDate: Date;
       endDate: Date | null;
+      location: string | null;
       status: number;
     };
 
@@ -118,6 +122,7 @@ function parseReclubActivitySummary(
     : durationSeconds
       ? new Date(startDate.getTime() + durationSeconds * 1000)
       : null;
+  const location = formatReclubVenueOrLocation(item.venue, item.location);
 
   if (context === "competition" || (!referenceCode && competitionId)) {
     if (!competitionId) return null;
@@ -129,6 +134,7 @@ function parseReclubActivitySummary(
       name,
       startDate,
       endDate,
+      location,
       status,
     };
   }
@@ -141,6 +147,7 @@ function parseReclubActivitySummary(
     name,
     startDate,
     endDate,
+    location,
     status,
   };
 }
@@ -164,20 +171,23 @@ export async function fetchReclubClub(slug: string): Promise<ReclubClub | null> 
 
 export async function fetchReclubClubActivities(
   groupId: number,
+  options: ReclubFetchOptions = {},
 ): Promise<ReclubActivitySummary[]> {
   return withReclubRequestCache(
     `club-activities:${groupId}`,
     RECLUB_CACHE_TTL_MS.activities,
-    () => fetchReclubClubActivitiesPayload(groupId),
+    () => fetchReclubClubActivitiesPayload(groupId, options),
+    options,
   );
 }
 
 async function fetchReclubClubActivitiesPayload(
   groupId: number,
+  options: ReclubFetchOptions = {},
 ): Promise<ReclubActivitySummary[]> {
   const response = await fetchReclubJson(
     `https://api.reclub.co/groups/${groupId}/activities`,
-    { next: { revalidate: 120 } },
+    { next: { revalidate: 120 }, forceRefresh: options.forceRefresh },
   );
 
   if (!response.ok) {
@@ -198,14 +208,18 @@ export function filterUpcomingReclubActivities(
   activities: ReclubActivitySummary[],
   now = new Date(),
 ): ReclubActivitySummary[] {
-  const nowUnix = now.getTime() / 1000;
+  const nowMs = now.getTime();
 
   return activities
-    .filter(
-      (activity) =>
-        UPCOMING_RECLUB_ACTIVITY_STATUSES.has(activity.status) &&
-        activity.startDate.getTime() / 1000 >= nowUnix,
-    )
+    .filter((activity) => {
+      if (!UPCOMING_RECLUB_ACTIVITY_STATUSES.has(activity.status)) {
+        return false;
+      }
+
+      // Keep sessions until they finish so mid-session time/location edits still sync.
+      const endMs = (activity.endDate ?? activity.startDate).getTime();
+      return endMs >= nowMs;
+    })
     .sort((left, right) => left.startDate.getTime() - right.startDate.getTime());
 }
 
@@ -223,12 +237,13 @@ export async function resolveReclubGroupId(): Promise<number | null> {
 
 export async function fetchUpcomingReclubClubActivities(
   groupId?: number,
+  options: ReclubFetchOptions = {},
 ): Promise<ReclubActivitySummary[]> {
   const resolvedGroupId = groupId ?? (await resolveReclubGroupId());
   if (!resolvedGroupId) {
     return [];
   }
 
-  const activities = await fetchReclubClubActivities(resolvedGroupId);
+  const activities = await fetchReclubClubActivities(resolvedGroupId, options);
   return filterUpcomingReclubActivities(activities);
 }
