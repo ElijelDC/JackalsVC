@@ -62,8 +62,12 @@ function IosInstallGuide() {
           <Share className="h-3.5 w-3.5" aria-hidden />
         </span>
         <span>
-          Tap <strong className="text-white">Share</strong> in Safari (bottom
-          bar on iPhone, top on iPad).
+          Tap the{" "}
+          <Share
+            className="mx-0.5 inline h-3.5 w-3.5 align-text-bottom text-white"
+            aria-hidden
+          />{" "}
+          <strong className="text-white">Share</strong> icon in Safari.
         </span>
       </li>
       <li className="flex items-start gap-3">
