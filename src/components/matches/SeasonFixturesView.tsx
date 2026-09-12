@@ -132,10 +132,12 @@ function TeamFilter({
 function FixtureRow({
   match,
   isMemberTeam,
+  showTeamLabel,
   returnFrom,
 }: {
   match: SeasonFixtureItem;
   isMemberTeam: boolean;
+  showTeamLabel: boolean;
   returnFrom?: string | null;
 }) {
   const kickOff = parseISO(match.matchStart);
@@ -145,6 +147,9 @@ function FixtureRow({
     match.matchStart,
   );
   const href = appendReturnFrom(`/matches/${match.id}`, returnFrom);
+  const squadCode =
+    squadShortLabel(match.trainingTeamKey)?.toUpperCase() ?? null;
+  const teamLabel = squadCode ?? match.teamName;
 
   return (
     <Link
@@ -181,6 +186,14 @@ function FixtureRow({
           <p className="min-w-0 flex-1 truncate font-display text-base font-semibold text-white sm:text-lg">
             {formatMatchTitle(match.opponentName, match.venue)}
           </p>
+          {showTeamLabel && teamLabel ? (
+            <span
+              title={match.teamName}
+              className="shrink-0 rounded border border-white/10 bg-white/[0.04] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-zinc-400"
+            >
+              {teamLabel}
+            </span>
+          ) : null}
           {match.cancelled ? (
             <Badge className="shrink-0 border-red-500/40 bg-red-500/15 text-red-200">
               Cancelled
@@ -238,6 +251,7 @@ export function SeasonFixturesView({
     selectedTeamKey === FIXTURES_ALL_TEAMS
       ? null
       : teams.find((team) => team.key === selectedTeamKey) ?? null;
+  const showTeamLabel = selectedTeamKey === FIXTURES_ALL_TEAMS;
 
   return (
     <PageContainer className="py-8 sm:py-12">
@@ -314,6 +328,7 @@ export function SeasonFixturesView({
                             Boolean(memberTeamKey) &&
                             match.trainingTeamKey === memberTeamKey
                           }
+                          showTeamLabel={showTeamLabel}
                           returnFrom={returnFrom}
                         />
                       ))}
