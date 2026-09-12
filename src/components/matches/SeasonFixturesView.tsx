@@ -18,6 +18,7 @@ import {
   appendReturnFrom,
   isDashboardReturn,
 } from "@/lib/dashboard-return";
+import { FIXTURES_ALL_TEAMS } from "@/lib/fixtures";
 import {
   formatMatchDateTime,
   formatMatchTitle,
@@ -27,7 +28,7 @@ import { groupItemsByMonthParam } from "@/lib/schedule-month-groups";
 import type { TrainingTeam } from "@/lib/training-teams-config";
 import { cn } from "@/lib/utils";
 
-export const FIXTURES_ALL_TEAMS = "all";
+export { FIXTURES_ALL_TEAMS };
 
 export type SeasonFixtureItem = {
   id: string;
@@ -101,21 +102,21 @@ function TeamFilter({
               }
               title={option.hint ?? option.label}
               className={cn(
-                "relative flex min-h-11 min-w-0 items-center justify-center rounded-full border px-1.5 py-1.5 text-center transition-all sm:px-2.5",
+                "relative z-0 isolate flex min-h-11 min-w-0 items-center justify-center overflow-hidden rounded-full border px-1.5 py-1.5 text-center transition-all sm:px-2.5",
                 selected
                   ? "border-jackals-red/50 bg-jackals-red/15 text-white shadow-[0_0_20px_rgba(232,34,42,0.15)]"
                   : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
                 isMine && !selected && "border-jackals-red/25",
               )}
             >
-              <span className="truncate text-[10px] font-semibold uppercase tracking-wider sm:text-xs">
+              <span className="relative z-10 truncate text-[10px] font-semibold uppercase tracking-wider sm:text-xs">
                 {option.label}
               </span>
               {isMine ? (
                 <span
                   aria-hidden
                   className={cn(
-                    "pointer-events-none absolute bottom-1.5 left-1/2 h-0.5 w-3.5 -translate-x-1/2 rounded-full",
+                    "pointer-events-none absolute bottom-1.5 left-1/2 z-0 h-0.5 w-3.5 -translate-x-1/2 rounded-full",
                     selected ? "bg-jackals-red-light" : "bg-jackals-red/60",
                   )}
                 />

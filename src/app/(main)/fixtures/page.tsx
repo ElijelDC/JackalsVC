@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
-import {
-  FIXTURES_ALL_TEAMS,
-  SeasonFixturesView,
-} from "@/components/matches/SeasonFixturesView";
+import { SeasonFixturesView } from "@/components/matches/SeasonFixturesView";
+import { FIXTURES_ALL_TEAMS } from "@/lib/fixtures";
 import { getAllMatchesForTeams } from "@/lib/matches";
 import {
   getTrainingSquads,
