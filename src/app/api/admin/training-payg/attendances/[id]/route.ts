@@ -42,7 +42,9 @@ export async function PATCH(
       attendance: result.attendance,
       message:
         data.status === "APPROVED"
-          ? "Attendance approved"
+          ? result.attendance.proofScreenshotUrl
+            ? "Attendance approved"
+            : "Attendance approved without receipt"
           : "Attendance rejected",
     });
   } catch (error) {

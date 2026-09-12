@@ -189,21 +189,48 @@ async function authorizeMerchandiseOrderProof(
 }
 
 async function authorizeTrainingPaygProof(relativePath: string) {
+  // Filenames are `${cuid}-${timestamp}.ext` (cuid has no hyphens).
   const attendanceId = extractIdFromFilename(
     relativePath,
     "training-payg-proofs",
   );
-  if (!attendanceId) return false;
+  const proofUrl = `/uploads/${relativePath}`;
 
   const session = await auth();
   if (!session?.user?.id) return false;
-  if (session.user.role === "ADMIN") return true;
 
-  const attendance = await prisma.trainingPaygAttendance.findFirst({
-    where: { id: attendanceId, userId: session.user.id },
+  const isStaff =
+    session.user.role === "ADMIN" || Boolean(session.user.isCoach);
+
+  if (isStaff) {
+    if (attendanceId) {
+      const byId = await prisma.trainingPaygAttendance.findFirst({
+        where: { id: attendanceId },
+        select: { id: true },
+      });
+      if (byId) return true;
+    }
+    // Fallback when filename parsing drifts but DB still has the stored URL.
+    const byUrl = await prisma.trainingPaygAttendance.findFirst({
+      where: { proofScreenshotUrl: proofUrl },
+      select: { id: true },
+    });
+    return Boolean(byUrl);
+  }
+
+  if (attendanceId) {
+    const attendance = await prisma.trainingPaygAttendance.findFirst({
+      where: { id: attendanceId, userId: session.user.id },
+      select: { id: true },
+    });
+    if (attendance) return true;
+  }
+
+  const ownByUrl = await prisma.trainingPaygAttendance.findFirst({
+    where: { proofScreenshotUrl: proofUrl, userId: session.user.id },
     select: { id: true },
   });
-  return Boolean(attendance);
+  return Boolean(ownByUrl);
 }
 
 export async function authorizeUploadAccess(

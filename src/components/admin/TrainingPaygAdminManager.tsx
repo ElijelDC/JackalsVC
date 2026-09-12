@@ -20,6 +20,125 @@ import { cn, formatPrice } from "@/lib/utils";
 type StatusFilter = "PENDING" | "APPROVED" | "REJECTED" | "ALL";
 type SquadFilter = "ALL" | "d2m" | "d3w" | "d3m";
 
+function isAwaitingReview(status: string) {
+  return status === "PENDING" || status === "AWAITING_PROOF";
+}
+
+function PaygReceiptThumb({
+  url,
+  alt,
+  onOpen,
+}: {
+  url: string | null;
+  alt: string;
+  onOpen: () => void;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [url]);
+
+  if (!url || failed) {
+    return (
+      <button
+        type="button"
+        onClick={onOpen}
+        className="flex h-24 w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-white/10 bg-black/20 px-2 text-center hover:border-white/20 sm:h-28"
+      >
+        <span className="text-[10px] font-medium text-zinc-400">
+          {url && failed ? "Receipt unavailable" : "No receipt"}
+        </span>
+        <span className="text-[10px] leading-snug text-zinc-600">
+          You can still approve
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group relative block h-24 w-full overflow-hidden rounded-lg border border-white/15 bg-black/40 text-left hover:border-white/30 sm:h-28"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt={alt}
+        className="h-full w-full bg-zinc-950 object-cover object-top"
+        onError={() => setFailed(true)}
+      />
+      <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/75 py-1 text-[10px] font-medium text-white">
+        <Expand className="h-3 w-3" /> Full size
+      </span>
+    </button>
+  );
+}
+
+function PaygReceiptModalImage({
+  url,
+  onApprove,
+  approving,
+}: {
+  url: string;
+  onApprove?: () => void;
+  approving: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [url]);
+
+  if (failed) {
+    return (
+      <div className="space-y-4">
+        <p className="rounded-lg border border-dashed border-white/10 px-4 py-8 text-center text-sm text-zinc-500">
+          Receipt image could not be loaded. You can still approve this
+          attendance.
+        </p>
+        {onApprove ? (
+          <Button
+            type="button"
+            className="w-full gap-1"
+            disabled={approving}
+            onClick={onApprove}
+          >
+            <Check className="h-4 w-4" />
+            Approve without receipt
+          </Button>
+        ) : null}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <a href={url} target="_blank" rel="noreferrer" className="block">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={url}
+          alt="Payment receipt"
+          className="max-h-[75vh] w-full rounded-lg border border-white/10 bg-black object-contain"
+          onError={() => setFailed(true)}
+        />
+      </a>
+      {onApprove ? (
+        <Button
+          type="button"
+          className="w-full gap-1"
+          disabled={approving}
+          onClick={onApprove}
+        >
+          <Check className="h-4 w-4" />
+          Approve
+        </Button>
+      ) : null}
+    </div>
+  );
+}
+
 const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
   { id: "PENDING", label: "Awaiting" },
   { id: "APPROVED", label: "Approved" },
@@ -117,11 +236,11 @@ export function TrainingPaygAdminManager({
   }, [attendances, statusFilter, squadFilter]);
 
   const pendingVisible = useMemo(
-    () => visible.filter((row) => row.status === "PENDING"),
+    () => visible.filter((row) => isAwaitingReview(row.status)),
     [visible],
   );
 
-  const pendingCount = attendances.filter((row) => row.status === "PENDING")
+  const pendingCount = attendances.filter((row) => isAwaitingReview(row.status))
     .length;
 
   const allPendingSelected =
@@ -339,7 +458,7 @@ export function TrainingPaygAdminManager({
             </h2>
             <p className="text-sm text-zinc-400">
               {pendingCount === 0
-                ? "No receipts waiting"
+                ? "Nothing waiting for review"
                 : `${pendingCount} waiting for review`}
             </p>
           </div>
@@ -420,7 +539,8 @@ export function TrainingPaygAdminManager({
           <div className="space-y-3">
             {visible.map((row) => {
               const busy = updatingIds.includes(row.id) || batchBusy;
-              const pending = row.status === "PENDING";
+              const awaitingReview = isAwaitingReview(row.status);
+              const hasReceipt = Boolean(row.proofScreenshotUrl);
               const squad = squadShortLabel(row.trainingTeamKey);
 
               return (
@@ -430,7 +550,7 @@ export function TrainingPaygAdminManager({
                 >
                   <div className="flex flex-col gap-4 lg:flex-row">
                     <div className="flex items-start gap-3 lg:w-[14rem] lg:shrink-0">
-                      {pending ? (
+                      {awaitingReview ? (
                         <input
                           type="checkbox"
                           checked={selectedIds.includes(row.id)}
@@ -490,31 +610,15 @@ export function TrainingPaygAdminManager({
                     </div>
 
                     <div className="w-28 shrink-0 sm:w-32">
-                      {row.proofScreenshotUrl ? (
-                        <button
-                          type="button"
-                          onClick={() => setReceipt(row)}
-                          className="group relative block h-24 w-full overflow-hidden rounded-lg border border-white/15 bg-black/40 text-left hover:border-white/30 sm:h-28"
-                        >
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={row.proofScreenshotUrl}
-                            alt={`Receipt for ${row.memberName ?? "member"}`}
-                            className="h-full w-full bg-zinc-950 object-cover object-top"
-                          />
-                          <span className="absolute inset-x-0 bottom-0 flex items-center justify-center gap-1 bg-black/75 py-1 text-[10px] font-medium text-white">
-                            <Expand className="h-3 w-3" /> Full size
-                          </span>
-                        </button>
-                      ) : (
-                        <div className="flex h-24 items-center justify-center rounded-lg border border-dashed border-white/10 bg-black/20 text-[10px] text-zinc-500 sm:h-28">
-                          No receipt
-                        </div>
-                      )}
+                      <PaygReceiptThumb
+                        url={row.proofScreenshotUrl}
+                        alt={`Receipt for ${row.memberName ?? "member"}`}
+                        onOpen={() => setReceipt(row)}
+                      />
                     </div>
 
                     <div className="flex flex-wrap gap-2 lg:w-36 lg:shrink-0 lg:flex-col">
-                      {pending ? (
+                      {awaitingReview ? (
                         <>
                           <Button
                             type="button"
@@ -528,7 +632,7 @@ export function TrainingPaygAdminManager({
                             ) : (
                               <Check className="h-3.5 w-3.5" />
                             )}
-                            Approve
+                            {hasReceipt ? "Approve" : "Approve without receipt"}
                           </Button>
                           <Button
                             type="button"
@@ -560,27 +664,47 @@ export function TrainingPaygAdminManager({
           receipt ? (
             <p className="text-sm text-zinc-400">
               {receipt.memberName} · {receipt.paymentReference}
+              {!receipt.proofScreenshotUrl
+                ? " · Receipt optional — you can approve without it"
+                : null}
             </p>
           ) : null
         }
         className="max-w-3xl"
       >
         {receipt?.proofScreenshotUrl ? (
-          <a
-            href={receipt.proofScreenshotUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block"
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={receipt.proofScreenshotUrl}
-              alt="Payment receipt"
-              className="max-h-[75vh] w-full rounded-lg border border-white/10 bg-black object-contain"
-            />
-          </a>
+          <PaygReceiptModalImage
+            url={receipt.proofScreenshotUrl}
+            onApprove={
+              isAwaitingReview(receipt.status)
+                ? () => {
+                    void reviewOne(receipt, "APPROVED");
+                    setReceipt(null);
+                  }
+                : undefined
+            }
+            approving={updatingIds.includes(receipt.id) || batchBusy}
+          />
         ) : (
-          <p className="text-sm text-zinc-500">No receipt uploaded.</p>
+          <div className="space-y-4">
+            <p className="rounded-lg border border-dashed border-white/10 px-4 py-8 text-center text-sm text-zinc-500">
+              No receipt uploaded. You can still approve this attendance.
+            </p>
+            {receipt && isAwaitingReview(receipt.status) ? (
+              <Button
+                type="button"
+                className="w-full gap-1"
+                disabled={updatingIds.includes(receipt.id) || batchBusy}
+                onClick={() => {
+                  void reviewOne(receipt, "APPROVED");
+                  setReceipt(null);
+                }}
+              >
+                <Check className="h-4 w-4" />
+                Approve without receipt
+              </Button>
+            ) : null}
+          </div>
         )}
       </Modal>
     </AdminSection>
