@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 export const TRAINING_INVITE_PRICING_TYPES = ["PAID", "FREE"] as const;
 export type TrainingInvitePricingType =
   (typeof TRAINING_INVITE_PRICING_TYPES)[number];
@@ -49,6 +51,18 @@ export function trainingInvitePublicPath(token: string) {
 
 export function normalizeTrainingInviteEmail(email: string) {
   return email.trim().toLowerCase();
+}
+
+/** Bank-transfer reference for paid guest training invites (matches PAYG style). */
+export function buildTrainingInvitePaymentReference(
+  guestName: string | null | undefined,
+  sessionDate: Date | string,
+) {
+  const date =
+    typeof sessionDate === "string" ? new Date(sessionDate) : sessionDate;
+  const dateLabel = format(date, "d MMM yyyy");
+  const base = guestName?.trim().replace(/\s+/g, " ") || "Guest";
+  return `Guest ${base} · ${dateLabel}`;
 }
 
 /** Shown when a rejected applicant tries to resubmit with the same receipt. */

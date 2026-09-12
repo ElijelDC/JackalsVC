@@ -85,9 +85,14 @@ export function TrainingInvitePaymentProofUpload({
         return;
       }
 
+      // Stale/missing local proof id — calm empty state, not a scary error.
       confirmedProofIdRef.current = null;
       setUploadedProof(null);
-      setError(result.error);
+      if (result.error.toLowerCase().includes("not found")) {
+        setError(null);
+      } else {
+        setError(result.error);
+      }
       onProofChange(null);
     });
 
@@ -172,6 +177,8 @@ export function TrainingInvitePaymentProofUpload({
         confirmedProofIdRef.current = null;
         setUploadedProof(null);
         onProofChange(null);
+        setError(null);
+        return;
       }
       setError(result.error);
       return;

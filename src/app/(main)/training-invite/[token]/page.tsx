@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { TrainingInvitePublicView } from "@/components/training/TrainingInvitePublicView";
+import { getClubBankDetails } from "@/lib/payments";
 import { getPublicTrainingInviteByToken } from "@/lib/training-invites";
 import { privatePageMetadata } from "@/lib/seo";
 
@@ -34,6 +35,7 @@ export default async function TrainingInvitePage({
     <TrainingInvitePublicView
       token={token}
       initialInvite={result.invite}
+      clubBank={getClubBankDetails()}
       initialViewerRegistered={result.viewerRegistered}
       initialViewerPendingApproval={result.viewerPendingApproval}
       initialViewerRejected={result.viewerRejected}

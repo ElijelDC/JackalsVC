@@ -9,9 +9,11 @@ import {
   MapPin,
 } from "lucide-react";
 import { SessionPaymentSection } from "@/components/training/FunSessionJoinFlow";
-import { EntryFeeBadge, JoinFlowStep } from "@/components/training/JoinFlowStep";
+import { JoinFlowStep } from "@/components/training/JoinFlowStep";
+import { PaymentLink } from "@/components/training/PaymentLink";
 import { TeamMemberAvatar } from "@/components/teams/TeamMemberCard";
 import { TrainingInvitePaymentProofUpload } from "@/components/training/TrainingInvitePaymentProofUpload";
+import { IbanTransferDetails } from "@/components/payments/IbanTransferDetails";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { FormError, SuccessBanner } from "@/components/ui/FormMessage";
@@ -20,9 +22,11 @@ import { Button } from "@/components/ui/Button";
 import { PageContainer } from "@/components/layout/PageShell";
 import { apiGet, apiPost } from "@/lib/client-api";
 import { formatEventDateTime } from "@/lib/event-display";
+import type { ClubBankDetails } from "@/lib/payments";
 import type { PublicTrainingInvite } from "@/lib/training-invite-types";
 import {
   TRAINING_INVITE_NEW_RECEIPT_REQUIRED,
+  buildTrainingInvitePaymentReference,
   trainingInviteRequiresPaymentProof,
 } from "@/lib/training-invite-types";
 
@@ -76,12 +80,14 @@ function firstName(name: string) {
 export function TrainingInvitePublicView({
   token,
   initialInvite,
+  clubBank,
   initialViewerRegistered,
   initialViewerPendingApproval,
   initialViewerRejected,
 }: {
   token: string;
   initialInvite: PublicTrainingInvite;
+  clubBank: ClubBankDetails;
   initialViewerRegistered: boolean;
   initialViewerPendingApproval: boolean;
   initialViewerRejected: boolean;
@@ -299,24 +305,37 @@ export function TrainingInvitePublicView({
             </CardDescription>
 
             <div className="mt-6">
-              {hasPaymentStep && invite.paymentUrl && (
+              {hasPaymentStep && invite.sessionFeeEur != null && (
                 <JoinFlowStep step={1} title="Pay session fee">
-                  <SessionPaymentSection
-                    paymentUrl={invite.paymentUrl}
-                    payLabel="Payment link"
-                    sessionFee={invite.sessionFeeEur}
-                    showInstructions={false}
-                  />
+                  <div className="space-y-4">
+                    <IbanTransferDetails
+                      accountHolder={clubBank.accountHolder}
+                      iban={clubBank.iban}
+                      accountLabel={clubBank.accountLabel}
+                      paymentReference={buildTrainingInvitePaymentReference(
+                        form.displayName,
+                        invite.startDate,
+                      )}
+                      amount={invite.sessionFeeEur}
+                    />
+                    {invite.paymentUrl ? (
+                      <PaymentLink
+                        href={invite.paymentUrl}
+                        label="Open payment link"
+                      />
+                    ) : null}
+                  </div>
                 </JoinFlowStep>
               )}
 
               {hasPaymentStep &&
-                !invite.paymentUrl &&
-                invite.sessionFeeEur != null && (
-                  <JoinFlowStep step={1} title="Session fee">
-                    <EntryFeeBadge
-                      amount={invite.sessionFeeEur}
-                      label="session fee"
+                invite.sessionFeeEur == null &&
+                invite.paymentUrl && (
+                  <JoinFlowStep step={1} title="Pay session fee">
+                    <SessionPaymentSection
+                      paymentUrl={invite.paymentUrl}
+                      payLabel="Payment link"
+                      showInstructions={false}
                     />
                   </JoinFlowStep>
                 )}
