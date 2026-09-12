@@ -96,9 +96,12 @@ function TeamFilter({
               href={fixturesHref(option.key, returnFrom)}
               scroll={false}
               aria-current={selected ? "page" : undefined}
+              aria-label={
+                isMine ? `${option.label}, your squad` : undefined
+              }
               title={option.hint ?? option.label}
               className={cn(
-                "flex min-h-11 min-w-0 flex-col items-center justify-center rounded-full border px-1.5 py-1.5 text-center transition-all sm:px-2.5",
+                "relative flex min-h-11 min-w-0 items-center justify-center rounded-full border px-1.5 py-1.5 text-center transition-all sm:px-2.5",
                 selected
                   ? "border-jackals-red/50 bg-jackals-red/15 text-white shadow-[0_0_20px_rgba(232,34,42,0.15)]"
                   : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
@@ -108,18 +111,15 @@ function TeamFilter({
               <span className="truncate text-[10px] font-semibold uppercase tracking-wider sm:text-xs">
                 {option.label}
               </span>
-              <span
-                className={cn(
-                  "mt-0.5 h-3 truncate text-[9px] font-medium uppercase tracking-wide sm:text-[10px]",
-                  isMine
-                    ? selected
-                      ? "text-jackals-red-light"
-                      : "text-zinc-500"
-                    : "text-transparent",
-                )}
-              >
-                {isMine ? "Your squad" : "·"}
-              </span>
+              {isMine ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "pointer-events-none absolute bottom-1.5 left-1/2 h-0.5 w-3.5 -translate-x-1/2 rounded-full",
+                    selected ? "bg-jackals-red-light" : "bg-jackals-red/60",
+                  )}
+                />
+              ) : null}
             </Link>
           );
         })}
