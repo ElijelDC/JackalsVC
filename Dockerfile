@@ -36,6 +36,10 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
+# next start re-loads this at runtime for images.localPatterns (and other
+# config). Without it, Next 16 defaults to search:"" and blocks ?v= cache-bust
+# URLs used by the navbar Logo via next/image.
+COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/scripts ./scripts
 COPY scripts/fly-entrypoint.sh /fly-entrypoint.sh
