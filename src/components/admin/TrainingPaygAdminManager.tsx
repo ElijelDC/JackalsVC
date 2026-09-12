@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, Expand, Loader2, X } from "lucide-react";
+import { Check, ChevronDown, Expand, Loader2, Undo2, X } from "lucide-react";
 import { AdminSection } from "@/components/admin/AdminShell";
 import { useRefreshAdminNotifications } from "@/components/admin/AdminNotificationsProvider";
 import { Button } from "@/components/ui/Button";
@@ -285,7 +285,10 @@ export function TrainingPaygAdminManager({
     setMessage("Pay Per Training settings saved");
   };
 
-  const applyLocalStatus = (ids: string[], status: "APPROVED" | "REJECTED") => {
+  const applyLocalStatus = (
+    ids: string[],
+    status: TrainingPaygAttendanceRecord["status"],
+  ) => {
     const idSet = new Set(ids);
     setAttendances((current) =>
       current.map((row) => (idSet.has(row.id) ? { ...row, status } : row)),
@@ -295,10 +298,23 @@ export function TrainingPaygAdminManager({
 
   const reviewOne = async (
     row: TrainingPaygAttendanceRecord,
-    status: "APPROVED" | "REJECTED",
-  ) => {
+    status: "APPROVED" | "REJECTED" | "WAITING",
+  ): Promise<boolean> => {
+    if (status === "WAITING") {
+      const confirmed = window.confirm(
+        `Move ${row.memberName ?? "this member"} back to waiting? They will no longer be marked attending and will be notified.`,
+      );
+      if (!confirmed) return false;
+    }
+
     const previous = attendances;
-    applyLocalStatus([row.id], status);
+    const optimisticStatus =
+      status === "WAITING"
+        ? row.proofScreenshotUrl
+          ? "PENDING"
+          : "AWAITING_PROOF"
+        : status;
+    applyLocalStatus([row.id], optimisticStatus);
     setUpdatingIds((ids) => [...ids, row.id]);
     setError(null);
 
@@ -316,7 +332,7 @@ export function TrainingPaygAdminManager({
     if (!result.ok) {
       setAttendances(previous);
       setError(result.error);
-      return;
+      return false;
     }
 
     setAttendances((current) =>
@@ -326,6 +342,7 @@ export function TrainingPaygAdminManager({
     );
     void refreshNotifications();
     setMessage(result.data.message);
+    return true;
   };
 
   const reviewBatch = async (status: "APPROVED" | "REJECTED") => {
@@ -647,6 +664,23 @@ export function TrainingPaygAdminManager({
                           </Button>
                         </>
                       ) : null}
+                      {row.status === "APPROVED" ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          disabled={busy}
+                          onClick={() => void reviewOne(row, "WAITING")}
+                          className="gap-1"
+                        >
+                          {busy ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Undo2 className="h-3.5 w-3.5" />
+                          )}
+                          Move back to waiting
+                        </Button>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -706,6 +740,22 @@ export function TrainingPaygAdminManager({
             ) : null}
           </div>
         )}
+        {receipt?.status === "APPROVED" ? (
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-4 w-full gap-1"
+            disabled={updatingIds.includes(receipt.id) || batchBusy}
+            onClick={() => {
+              void reviewOne(receipt, "WAITING").then((ok) => {
+                if (ok) setReceipt(null);
+              });
+            }}
+          >
+            <Undo2 className="h-4 w-4" />
+            Move back to waiting
+          </Button>
+        ) : null}
       </Modal>
     </AdminSection>
   );

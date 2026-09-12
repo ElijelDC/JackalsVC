@@ -1,10 +1,11 @@
 import "server-only";
 
 import { getClubBankDetails } from "@/lib/payments";
-import { isPaygPlayer } from "@/lib/player-payment-type";
 import {
+  isPaygPlayer,
   serializeTrainingPaygAttendance,
   type TrainingPaygAttendanceRecord,
+  type TrainingPaygAttendanceStatus,
 } from "@/lib/player-payment-type";
 import { prisma } from "@/lib/prisma";
 import { ensureTrainingSignupReminder } from "@/lib/training-signups";
@@ -19,6 +20,7 @@ import {
 } from "@/lib/training-payg-settings";
 import {
   notifyTrainingPaygApproved,
+  notifyTrainingPaygMovedToWaiting,
   notifyTrainingPaygRejected,
 } from "@/lib/send-training-payg-email";
 import { userCanSignUpForTrainingEvent } from "@/lib/training-teams";
@@ -382,9 +384,49 @@ export async function listTrainingPaygAttendancesForAdmin(status?: string) {
   });
 }
 
+function waitingStatusForAttendance(proofScreenshotUrl: string | null) {
+  return proofScreenshotUrl ? "PENDING" : "AWAITING_PROOF";
+}
+
+async function clearPaygEventAttending(userId: string, eventId: string) {
+  await prisma.eventSignup.deleteMany({
+    where: {
+      userId,
+      eventId,
+      status: "ATTENDING",
+    },
+  });
+}
+
+async function withPaygEventDetails(
+  attendance: Parameters<typeof serializeTrainingPaygAttendance>[0] & {
+    eventId: string;
+  },
+) {
+  const event = await prisma.event.findUnique({
+    where: { id: attendance.eventId },
+    select: {
+      title: true,
+      startDate: true,
+      trainingSession: { select: { trainingTeamKey: true } },
+    },
+  });
+
+  return serializeTrainingPaygAttendance({
+    ...attendance,
+    event: event
+      ? {
+          title: event.title,
+          startDate: event.startDate,
+          trainingTeamKey: event.trainingSession?.trainingTeamKey ?? null,
+        }
+      : undefined,
+  });
+}
+
 export async function reviewTrainingPaygAttendance(input: {
   attendanceId: string;
-  status: "APPROVED" | "REJECTED";
+  status: "APPROVED" | "REJECTED" | "WAITING";
   reviewerUserId: string;
 }): Promise<
   | { ok: true; attendance: TrainingPaygAttendanceRecord }
@@ -396,6 +438,38 @@ export async function reviewTrainingPaygAttendance(input: {
   });
   if (!existing) {
     return { ok: false, error: "Attendance not found", status: 404 };
+  }
+
+  if (input.status === "WAITING") {
+    if (existing.status !== "APPROVED") {
+      return {
+        ok: false,
+        error: "Only approved attendances can be moved back to waiting",
+        status: 400,
+      };
+    }
+
+    const waitingStatus = waitingStatusForAttendance(
+      existing.proofScreenshotUrl,
+    ) as TrainingPaygAttendanceStatus;
+
+    const updated = await prisma.trainingPaygAttendance.update({
+      where: { id: input.attendanceId },
+      data: {
+        status: waitingStatus,
+        reviewedAt: null,
+        reviewedByUserId: null,
+      },
+      include: ATTENDANCE_INCLUDE,
+    });
+
+    await clearPaygEventAttending(updated.userId, updated.eventId);
+    void notifyTrainingPaygMovedToWaiting(updated.id);
+
+    return {
+      ok: true,
+      attendance: await withPaygEventDetails(updated),
+    };
   }
 
   const updated = await prisma.trainingPaygAttendance.update({
@@ -412,37 +486,13 @@ export async function reviewTrainingPaygAttendance(input: {
     await markEventAttending(updated.userId, updated.eventId);
     void notifyTrainingPaygApproved(updated.id);
   } else {
-    await prisma.eventSignup.deleteMany({
-      where: {
-        userId: updated.userId,
-        eventId: updated.eventId,
-        status: "ATTENDING",
-      },
-    });
+    await clearPaygEventAttending(updated.userId, updated.eventId);
     void notifyTrainingPaygRejected(updated.id);
   }
 
-  const event = await prisma.event.findUnique({
-    where: { id: updated.eventId },
-    select: {
-      title: true,
-      startDate: true,
-      trainingSession: { select: { trainingTeamKey: true } },
-    },
-  });
-
   return {
     ok: true,
-    attendance: serializeTrainingPaygAttendance({
-      ...updated,
-      event: event
-        ? {
-            title: event.title,
-            startDate: event.startDate,
-            trainingTeamKey: event.trainingSession?.trainingTeamKey ?? null,
-          }
-        : undefined,
-    }),
+    attendance: await withPaygEventDetails(updated),
   };
 }
 

@@ -11,7 +11,7 @@ import { reviewTrainingPaygAttendance } from "@/lib/training-payg";
 export const dynamic = "force-dynamic";
 
 const reviewSchema = z.object({
-  status: z.enum(["APPROVED", "REJECTED"]),
+  status: z.enum(["APPROVED", "REJECTED", "WAITING"]),
 });
 
 export async function PATCH(
@@ -38,14 +38,18 @@ export async function PATCH(
       return jsonError(result.error, result.status);
     }
 
+    const message =
+      data.status === "APPROVED"
+        ? result.attendance.proofScreenshotUrl
+          ? "Attendance approved"
+          : "Attendance approved without receipt"
+        : data.status === "WAITING"
+          ? "Moved back to waiting"
+          : "Attendance rejected";
+
     return NextResponse.json({
       attendance: result.attendance,
-      message:
-        data.status === "APPROVED"
-          ? result.attendance.proofScreenshotUrl
-            ? "Attendance approved"
-            : "Attendance approved without receipt"
-          : "Attendance rejected",
+      message,
     });
   } catch (error) {
     return jsonServerError("Could not update PAYG attendance", {
