@@ -36,7 +36,18 @@ export const metadata: Metadata = {
   },
   description: SEO_DEFAULT_DESCRIPTION,
   keywords: SEO_KEYWORDS,
-  manifest: "/manifest.json",
+  // File-based src/app/icon.png + apple-icon.png still apply; these
+  // versioned brand paths help bookmarks / PWAs pick up the padded set.
+  icons: {
+    icon: [
+      { url: "/brand/icon-16.png?v=20260912", sizes: "16x16", type: "image/png" },
+      { url: "/brand/icon-32.png?v=20260912", sizes: "32x32", type: "image/png" },
+      { url: "/brand/icon-192.png?v=20260912", sizes: "192x192", type: "image/png" },
+      { url: "/brand/icon-512.png?v=20260912", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/brand/apple-touch-icon.png?v=20260912", sizes: "180x180" }],
+  },
+  manifest: "/manifest.json?v=20260912",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

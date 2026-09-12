@@ -3,7 +3,12 @@ export const PUBLIC_PATHS = {
   brand: {
     logo: "/brand/logo.png",
     logoTransparent: "/brand/logo-transparent.png",
-    favicon: "/brand/favicon.png",
+    favicon: "/brand/favicon.png?v=20260912",
+    icon16: "/brand/icon-16.png?v=20260912",
+    icon32: "/brand/icon-32.png?v=20260912",
+    icon192: "/brand/icon-192.png?v=20260912",
+    icon512: "/brand/icon-512.png?v=20260912",
+    appleTouchIcon: "/brand/apple-touch-icon.png?v=20260912",
     reclubMark: "/brand/reclub-mark.png",
     reclubLogo: "/brand/reclub-logo.png",
   },
