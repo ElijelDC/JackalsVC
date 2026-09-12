@@ -25,7 +25,12 @@ function isStandaloneDisplay() {
 
 function detectPlatform(): Platform {
   const ua = navigator.userAgent;
-  if (/iPad|iPhone|iPod/.test(ua)) return "ios";
+  if (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  ) {
+    return "ios";
+  }
   if (/Android/i.test(ua)) return "android";
   return "desktop";
 }

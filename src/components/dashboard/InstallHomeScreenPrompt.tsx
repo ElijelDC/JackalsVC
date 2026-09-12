@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Download, Share, Smartphone } from "lucide-react";
+import { Check, ChevronDown, Download, Share, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
+import { Modal } from "@/components/ui/Modal";
 import { HOMESCREEN_CONFIRMED_KEY } from "@/lib/pwa-onboarding";
 import { cn } from "@/lib/utils";
 
@@ -27,9 +28,41 @@ function isStandaloneDisplay() {
 
 function detectPlatform(): Platform {
   const ua = navigator.userAgent;
-  if (/iPad|iPhone|iPod/.test(ua)) return "ios";
+  // iPadOS 13+ may report as MacIntel with touch
+  if (
+    /iPad|iPhone|iPod/.test(ua) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  ) {
+    return "ios";
+  }
   if (/Android/i.test(ua)) return "android";
   return "desktop";
+}
+
+function IosInstallGuide() {
+  return (
+    <ol className="space-y-3 text-sm text-zinc-300">
+      <li className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-jackals-red/40 bg-jackals-red/15 text-jackals-red-light">
+          <Share className="h-3.5 w-3.5" aria-hidden />
+        </span>
+        <span>
+          Tap <strong className="text-white">Share</strong> in Safari (bottom
+          bar on iPhone, top on iPad).
+        </span>
+      </li>
+      <li className="flex items-start gap-3">
+        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-jackals-red/40 bg-jackals-red/15 text-xs font-bold text-jackals-red-light">
+          +
+        </span>
+        <span>
+          Choose <strong className="text-white">Add to Home Screen</strong>, then{" "}
+          <strong className="text-white">Add</strong>. Open Jackals from the new
+          home screen icon.
+        </span>
+      </li>
+    </ol>
+  );
 }
 
 export function InstallHomeScreenPrompt({ className }: { className?: string }) {
@@ -38,6 +71,8 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
   const [platform, setPlatform] = useState<Platform>("desktop");
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
+  const [iosGuideOpen, setIosGuideOpen] = useState(false);
+  const [howToOpen, setHowToOpen] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY) === "true") {
@@ -52,32 +87,44 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
       return;
     }
 
-    const nextPlatform = detectPlatform();
-    setPlatform(nextPlatform);
+    setPlatform(detectPlatform());
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
       setDeferredPrompt(event as BeforeInstallPromptEvent);
     };
 
+    const handleAppInstalled = () => {
+      localStorage.setItem(STORAGE_KEY, "true");
+      setVisible(false);
+      setDeferredPrompt(null);
+      window.dispatchEvent(new Event("jackals-homescreen-confirmed"));
+    };
+
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
     setVisible(true);
     setReady(true);
 
     return () => {
-      window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt,
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
   const confirmInstalled = () => {
     localStorage.setItem(STORAGE_KEY, "true");
     setVisible(false);
+    setIosGuideOpen(false);
     window.dispatchEvent(new Event("jackals-homescreen-confirmed"));
   };
 
   const handleNativeInstall = async () => {
     if (!deferredPrompt) return;
-    deferredPrompt.prompt();
+    await deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     setDeferredPrompt(null);
     if (outcome === "accepted") {
@@ -87,128 +134,150 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
 
   if (!ready || !visible) return null;
 
+  const canNativeInstall = Boolean(deferredPrompt);
+  const isIos = platform === "ios";
+
   return (
-    <Card
-      className={cn(
-        "mb-6 border-jackals-red/25 bg-gradient-to-br from-jackals-red/[0.1] to-transparent sm:mb-8",
-        className,
-      )}
-    >
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-        <div className="min-w-0 flex-1">
-          <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-jackals-red-light">
-            <Smartphone className="h-5 w-5" />
+    <>
+      <Card
+        className={cn(
+          "mb-6 border-jackals-red/25 bg-gradient-to-br from-jackals-red/[0.1] to-transparent sm:mb-8",
+          className,
+        )}
+      >
+        <div className="flex flex-col gap-4">
+          <div className="min-w-0">
+            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-jackals-red-light">
+              <Smartphone className="h-5 w-5" />
+            </div>
+            <CardTitle>Install Jackals — mandatory for this season</CardTitle>
+            <CardDescription className="mt-2 max-w-xl text-zinc-400">
+              Put the club app on your home screen — required for training,
+              matches, and updates. Step 1 of 2; next we&apos;ll turn on
+              notifications.
+            </CardDescription>
           </div>
-          <CardTitle>Install Jackals — mandatory for this season</CardTitle>
-          <CardDescription className="mt-2 max-w-xl text-zinc-400">
-            Installing the club app on your home screen is{" "}
-            <strong className="text-zinc-200">mandatory</strong>
-            {" "}for this season — we&apos;ll use it a lot for training, matches, and
-            club updates. Step 1 of 2; after that we&apos;ll help you turn on
-            notifications.
-          </CardDescription>
 
-          <ol className="mt-4 space-y-2 text-sm text-zinc-300">
-            {platform === "ios" ? (
+          <div className="flex w-full flex-col gap-2 sm:max-w-xs">
+            {canNativeInstall ? (
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                className="w-full"
+                onClick={handleNativeInstall}
+              >
+                <Download className="h-4 w-4" />
+                Install
+              </Button>
+            ) : isIos ? (
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                className="w-full"
+                onClick={() => setIosGuideOpen(true)}
+              >
+                <Share className="h-4 w-4" />
+                Add to Home Screen
+              </Button>
+            ) : platform === "android" || platform === "desktop" ? (
               <>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">1.</span>
-                  <span>
-                    Tap the <Share className="inline h-3.5 w-3.5 align-text-bottom" />{" "}
-                    <strong>Share</strong> button in Safari
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">2.</span>
-                  <span>
-                    Scroll and tap <strong>Add to Home Screen</strong>
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">3.</span>
-                  <span>
-                    Tap <strong>Add</strong>, then open Jackals from your{" "}
-                    <strong>home screen icon</strong> (not Safari)
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">4.</span>
-                  <span>
-                    Next step: enable notifications on the card that appears
-                  </span>
-                </li>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  className="w-full"
+                  onClick={() => setHowToOpen((open) => !open)}
+                  aria-expanded={howToOpen}
+                >
+                  <Download className="h-4 w-4" />
+                  Install
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      howToOpen && "rotate-180",
+                    )}
+                  />
+                </Button>
+                {howToOpen ? (
+                  <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-3 text-sm text-zinc-300">
+                    {platform === "android" ? (
+                      <p>
+                        Tap browser menu (
+                        <strong className="text-white">⋮</strong>) →{" "}
+                        <strong className="text-white">Install app</strong> or{" "}
+                        <strong className="text-white">
+                          Add to Home screen
+                        </strong>
+                        , then open Jackals from the icon.
+                      </p>
+                    ) : (
+                      <p>
+                        On your phone, open{" "}
+                        <strong className="text-white">
+                          jackalsvolleyball.com
+                        </strong>{" "}
+                        in Chrome or Safari and use{" "}
+                        <strong className="text-white">Install</strong> /{" "}
+                        <strong className="text-white">
+                          Add to Home Screen
+                        </strong>
+                        .
+                      </p>
+                    )}
+                  </div>
+                ) : null}
               </>
-            ) : platform === "android" ? (
-              <>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">1.</span>
-                  <span>
-                    Tap <strong>Install app</strong> below (or browser menu →
-                    Install / Add to Home screen)
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">2.</span>
-                  <span>Confirm, then open Jackals from your home screen</span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">3.</span>
-                  <span>
-                    Next step: enable notifications on the card that appears
-                  </span>
-                </li>
-              </>
-            ) : (
-              <>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">1.</span>
-                  <span>
-                    On your phone, open{" "}
-                    <strong>jackalsvolleyball.com</strong> in Safari or Chrome
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">2.</span>
-                  <span>
-                    Use <strong>Add to Home Screen</strong> / <strong>Install app</strong>
-                  </span>
-                </li>
-                <li className="flex gap-2">
-                  <span className="font-semibold text-jackals-red-light">3.</span>
-                  <span>
-                    Open the home screen app, then enable notifications when asked
-                  </span>
-                </li>
-              </>
-            )}
-          </ol>
-        </div>
+            ) : null}
 
-        <div className="flex w-full shrink-0 flex-col gap-2 sm:w-52">
-          {deferredPrompt ? (
             <Button
               type="button"
-              variant="primary"
+              variant="outline"
               size="md"
               className="w-full"
-              onClick={handleNativeInstall}
+              onClick={confirmInstalled}
             >
-              <Download className="h-4 w-4" />
-              Install app
+              <Check className="h-4 w-4" />
+              I&apos;ve installed it
             </Button>
-          ) : null}
+          </div>
+        </div>
+      </Card>
+
+      <Modal
+        open={iosGuideOpen}
+        onClose={() => setIosGuideOpen(false)}
+        title="Add to Home Screen"
+        description={
+          <p className="text-sm text-zinc-400">
+            iPhone can&apos;t install with one tap — two quick steps in Safari:
+          </p>
+        }
+      >
+        <IosInstallGuide />
+        <div className="mt-5 flex flex-col gap-2">
           <Button
             type="button"
-            variant={deferredPrompt ? "outline" : "primary"}
+            variant="primary"
             size="md"
             className="w-full"
             onClick={confirmInstalled}
           >
             <Check className="h-4 w-4" />
-            I&apos;ve installed it
+            Done — I&apos;ve added it
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="md"
+            className="w-full"
+            onClick={() => setIosGuideOpen(false)}
+          >
+            Close
           </Button>
         </div>
-      </div>
-    </Card>
+      </Modal>
+    </>
   );
 }
