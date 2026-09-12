@@ -297,13 +297,16 @@ async function upsertPlayer(
     update: {
       name: seed.name,
       role: existingUser?.role === "ADMIN" ? "ADMIN" : "MEMBER",
-      ...(password ? { passwordHash } : {}),
+      ...(password
+        ? { passwordHash, mustChangePassword: true }
+        : {}),
     },
     create: {
       name: seed.name,
       email,
       role: "MEMBER",
       passwordHash,
+      mustChangePassword: true,
     },
   });
 

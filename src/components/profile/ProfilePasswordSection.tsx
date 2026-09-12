@@ -1,12 +1,16 @@
 "use client";
 
 import { useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Label } from "@/components/ui/Input";
 import { apiPatch } from "@/lib/client-api";
 
 export function ProfilePasswordSection() {
+  const { update } = useSession();
+  const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -54,7 +58,10 @@ export function ProfilePasswordSection() {
 
     setLoading(true);
 
-    const result = await apiPatch<{ success: boolean }>(
+    const result = await apiPatch<{
+      success: boolean;
+      mustChangePassword?: boolean;
+    }>(
       "/api/profile/password",
       {
         currentPassword,
@@ -74,6 +81,8 @@ export function ProfilePasswordSection() {
     resetForm();
     setSaved(true);
     setIsEditing(false);
+    await update({ mustChangePassword: false });
+    router.refresh();
   };
 
   return (

@@ -141,13 +141,16 @@ async function upsertCoach(
       name: seed.name,
       // Never demote an existing admin (e.g. club overseer account).
       role: preservedRole,
-      ...(password ? { passwordHash } : {}),
+      ...(password
+        ? { passwordHash, mustChangePassword: true }
+        : {}),
     },
     create: {
       name: seed.name,
       email,
       role: seed.role === "ADMIN" ? "ADMIN" : "MEMBER",
       passwordHash,
+      mustChangePassword: true,
     },
   });
 

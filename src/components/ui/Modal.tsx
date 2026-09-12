@@ -21,6 +21,7 @@ export function Modal({
   variant = "panel",
   closeOnBackdrop = true,
   closeOnEscape = true,
+  showCloseButton = true,
 }: {
   open: boolean;
   onClose: () => void;
@@ -31,6 +32,7 @@ export function Modal({
   variant?: "panel" | "fullscreen";
   closeOnBackdrop?: boolean;
   closeOnEscape?: boolean;
+  showCloseButton?: boolean;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = "modal-title";
@@ -88,14 +90,16 @@ export function Modal({
             </h2>
             {description && <div className="mt-2">{description}</div>}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded p-1 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
-            aria-label="Close"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          {showCloseButton ? (
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded p-1 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+              aria-label="Close"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          ) : null}
         </div>
         <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-5 py-6 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6">
           <div className="my-auto flex flex-col gap-3">{children}</div>
@@ -132,7 +136,7 @@ export function Modal({
             className={cn(PANEL_BASE_CLASS, className)}
           >
             <div className="mb-5 flex items-start justify-between gap-4">
-              <div className="min-w-0 pr-2">
+              <div className={showCloseButton ? "min-w-0 pr-2" : "min-w-0"}>
                 <h2
                   id={titleId}
                   className="font-display text-lg font-bold uppercase tracking-wide text-white sm:text-xl"
@@ -141,14 +145,16 @@ export function Modal({
                 </h2>
                 {description && <div className="mt-2">{description}</div>}
               </div>
-              <button
-                type="button"
-                onClick={onClose}
-                className="shrink-0 rounded p-1 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
-                aria-label="Close"
-              >
-                <X className="h-5 w-5" />
-              </button>
+              {showCloseButton ? (
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="shrink-0 rounded p-1 text-zinc-400 transition-colors hover:bg-white/5 hover:text-white"
+                  aria-label="Close"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              ) : null}
             </div>
             {children}
           </div>

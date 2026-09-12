@@ -66,6 +66,7 @@ export async function POST(request: Request) {
           name: clubMember.name,
           email,
           passwordHash,
+          mustChangePassword: false,
         },
         select: { id: true, name: true, email: true },
       });

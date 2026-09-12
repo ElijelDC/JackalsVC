@@ -44,8 +44,8 @@ export async function PATCH(request: Request) {
 
   await prisma.user.update({
     where: { id: session!.user.id },
-    data: { passwordHash },
+    data: { passwordHash, mustChangePassword: false },
   });
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, mustChangePassword: false });
 }

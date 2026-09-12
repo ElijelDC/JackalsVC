@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
+import { ForceChangePasswordPrompt } from "@/components/auth/ForceChangePasswordPrompt";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -48,6 +49,7 @@ export default async function AppLayout({
               userEmail={session?.user?.email ?? null}
               eventNewsletterSubscribed={eventNewsletterSubscribed}
             />
+            {isLoggedIn ? <ForceChangePasswordPrompt /> : null}
           </AuthModalProvider>
         </Suspense>
       </SiteEditProvider>

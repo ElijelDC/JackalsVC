@@ -78,6 +78,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           name: user.name,
           email: user.email,
           role: user.role,
+          mustChangePassword: user.mustChangePassword,
         };
       },
     }),
@@ -92,18 +93,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? "MEMBER";
         token.email = user.email;
+        token.mustChangePassword = Boolean(
+          (user as { mustChangePassword?: boolean }).mustChangePassword,
+        );
       }
 
       if (trigger === "update" && updateSession?.email) {
         token.email = updateSession.email as string;
       }
 
+      if (
+        trigger === "update" &&
+        typeof updateSession?.mustChangePassword === "boolean"
+      ) {
+        token.mustChangePassword = updateSession.mustChangePassword;
+      }
+
       if (token.id) {
         try {
-          const [user, clubMember] = await Promise.all([
+          const [dbUser, clubMember] = await Promise.all([
             prisma.user.findUnique({
               where: { id: token.id as string },
-              select: { role: true },
+              select: { role: true, mustChangePassword: true },
             }),
             prisma.clubMember.findUnique({
               where: { userId: token.id as string },
@@ -118,8 +129,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             }),
           ]);
 
-          if (user?.role) {
-            token.role = user.role;
+          if (dbUser?.role) {
+            token.role = dbUser.role;
+          }
+          if (dbUser) {
+            token.mustChangePassword = dbUser.mustChangePassword;
           }
 
           Object.assign(token, clubMemberFieldsFromClubMember(clubMember));
@@ -136,6 +150,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (session.user) {
           session.user.id = token.id as string;
           session.user.role = (token.role as string) ?? "MEMBER";
+          session.user.mustChangePassword = Boolean(token.mustChangePassword);
           if (token.email) {
             session.user.email = token.email as string;
           }

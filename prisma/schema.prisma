@@ -12,6 +12,8 @@ model User {
   name               String
   email              String            @unique
   passwordHash       String
+  /// True when the account still has a club-issued temporary password.
+  mustChangePassword Boolean           @default(false)
   role               String            @default("MEMBER")
   registrationCodeId String?
   registrationCode   RegistrationCode? @relation(fields: [registrationCodeId], references: [id])
