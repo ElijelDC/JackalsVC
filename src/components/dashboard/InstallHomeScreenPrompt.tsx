@@ -1,7 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, ChevronDown, Download, Share, Smartphone } from "lucide-react";
+import {
+  Bookmark,
+  Check,
+  ChevronDown,
+  Download,
+  Share,
+  Smartphone,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
@@ -39,6 +46,14 @@ function detectPlatform(): Platform {
   return "desktop";
 }
 
+function isAppleDesktop() {
+  return (
+    typeof navigator !== "undefined" &&
+    (/Mac|iPhone|iPad|iPod/.test(navigator.platform) ||
+      navigator.userAgent.includes("Mac"))
+  );
+}
+
 function IosInstallGuide() {
   return (
     <ol className="space-y-3 text-sm text-zinc-300">
@@ -73,6 +88,7 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
     useState<BeforeInstallPromptEvent | null>(null);
   const [iosGuideOpen, setIosGuideOpen] = useState(false);
   const [howToOpen, setHowToOpen] = useState(false);
+  const [useCmdShortcut, setUseCmdShortcut] = useState(false);
 
   useEffect(() => {
     if (localStorage.getItem(STORAGE_KEY) === "true") {
@@ -88,6 +104,7 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
     }
 
     setPlatform(detectPlatform());
+    setUseCmdShortcut(isAppleDesktop());
 
     const handleBeforeInstallPrompt = (event: Event) => {
       event.preventDefault();
@@ -136,6 +153,15 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
 
   const canNativeInstall = Boolean(deferredPrompt);
   const isIos = platform === "ios";
+  const isDesktop = platform === "desktop";
+  const isDesktopBookmark = isDesktop && !canNativeInstall;
+  const bookmarkShortcut = useCmdShortcut ? "⌘D" : "Ctrl+D";
+
+  const bodyCopy = isDesktopBookmark
+    ? "Bookmark this site in your browser — required for training, matches, and updates. Step 1 of 2; next we'll turn on notifications."
+    : isDesktop && canNativeInstall
+      ? "Install Jackals as a desktop app — required for training, matches, and updates. Step 1 of 2; next we'll turn on notifications."
+      : "Put the club app on your home screen — required for training, matches, and updates. Step 1 of 2; next we'll turn on notifications.";
 
   return (
     <>
@@ -148,13 +174,17 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
         <div className="flex flex-col gap-4">
           <div className="min-w-0">
             <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-jackals-red-light">
-              <Smartphone className="h-5 w-5" />
+              {isDesktopBookmark ? (
+                <Bookmark className="h-5 w-5" />
+              ) : (
+                <Smartphone className="h-5 w-5" />
+              )}
             </div>
-            <CardTitle>Install Jackals — mandatory for this season</CardTitle>
+            <CardTitle>
+              Install Jackals WebApp — mandatory for this season
+            </CardTitle>
             <CardDescription className="mt-2 max-w-xl text-zinc-400">
-              Put the club app on your home screen — required for training,
-              matches, and updates. Step 1 of 2; next we&apos;ll turn on
-              notifications.
+              {bodyCopy}
             </CardDescription>
           </div>
 
@@ -181,7 +211,37 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
                 <Share className="h-4 w-4" />
                 Add to Home Screen
               </Button>
-            ) : platform === "android" || platform === "desktop" ? (
+            ) : isDesktopBookmark ? (
+              <>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="md"
+                  className="w-full"
+                  onClick={() => setHowToOpen((open) => !open)}
+                  aria-expanded={howToOpen}
+                >
+                  <Bookmark className="h-4 w-4" />
+                  Bookmark this site
+                  <ChevronDown
+                    className={cn(
+                      "h-4 w-4 transition-transform",
+                      howToOpen && "rotate-180",
+                    )}
+                  />
+                </Button>
+                {howToOpen ? (
+                  <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-3 text-sm text-zinc-300">
+                    <p>
+                      Press{" "}
+                      <strong className="text-white">{bookmarkShortcut}</strong>{" "}
+                      (or use your browser&apos;s bookmark / star control), then
+                      open Jackals from Bookmarks when you need the club app.
+                    </p>
+                  </div>
+                ) : null}
+              </>
+            ) : platform === "android" ? (
               <>
                 <Button
                   type="button"
@@ -202,30 +262,13 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
                 </Button>
                 {howToOpen ? (
                   <div className="rounded-lg border border-white/10 bg-black/20 px-3 py-3 text-sm text-zinc-300">
-                    {platform === "android" ? (
-                      <p>
-                        Tap browser menu (
-                        <strong className="text-white">⋮</strong>) →{" "}
-                        <strong className="text-white">Install app</strong> or{" "}
-                        <strong className="text-white">
-                          Add to Home screen
-                        </strong>
-                        , then open Jackals from the icon.
-                      </p>
-                    ) : (
-                      <p>
-                        On your phone, open{" "}
-                        <strong className="text-white">
-                          jackalsvolleyball.com
-                        </strong>{" "}
-                        in Chrome or Safari and use{" "}
-                        <strong className="text-white">Install</strong> /{" "}
-                        <strong className="text-white">
-                          Add to Home Screen
-                        </strong>
-                        .
-                      </p>
-                    )}
+                    <p>
+                      Tap browser menu (
+                      <strong className="text-white">⋮</strong>) →{" "}
+                      <strong className="text-white">Install app</strong> or{" "}
+                      <strong className="text-white">Add to Home screen</strong>
+                      , then open Jackals from the icon.
+                    </p>
                   </div>
                 ) : null}
               </>
@@ -239,7 +282,9 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
               onClick={confirmInstalled}
             >
               <Check className="h-4 w-4" />
-              I&apos;ve installed it
+              {isDesktopBookmark
+                ? "I've bookmarked it"
+                : "I've installed it"}
             </Button>
           </div>
         </div>
