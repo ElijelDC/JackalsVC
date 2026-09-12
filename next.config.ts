@@ -38,6 +38,19 @@ const nextConfig: NextConfig = {
     };
   },
   images: {
+    // Brand assets use ?v= cache-bust query strings; Next 16 requires an
+    // explicit localPatterns entry when src includes search params.
+    localPatterns: [
+      { pathname: "/brand/**" },
+      { pathname: "/uploads/**" },
+      { pathname: "/downloads/**" },
+      { pathname: "/sponsors/**" },
+      { pathname: "/tournaments/**" },
+      { pathname: "/tutorials/**" },
+      { pathname: "/models/**" },
+      { pathname: "/favicon.png" },
+      { pathname: "/favicon.ico" },
+    ],
     remotePatterns: [
       {
         protocol: "https",
