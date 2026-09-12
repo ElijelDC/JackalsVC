@@ -5,7 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input, Label } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Modal } from "@/components/ui/Modal";
 import { apiPatch } from "@/lib/client-api";
 
@@ -85,9 +86,8 @@ export function ForceChangePasswordPrompt() {
       <div className="space-y-4">
         <div>
           <Label htmlFor="force-current-password">Temporary password</Label>
-          <Input
+          <PasswordInput
             id="force-current-password"
-            type="password"
             autoComplete="current-password"
             value={currentPassword}
             onChange={(event) => {
@@ -99,9 +99,8 @@ export function ForceChangePasswordPrompt() {
 
         <div>
           <Label htmlFor="force-new-password">New password</Label>
-          <Input
+          <PasswordInput
             id="force-new-password"
-            type="password"
             autoComplete="new-password"
             value={newPassword}
             onChange={(event) => {
@@ -113,9 +112,8 @@ export function ForceChangePasswordPrompt() {
 
         <div>
           <Label htmlFor="force-confirm-password">Confirm new password</Label>
-          <Input
+          <PasswordInput
             id="force-confirm-password"
-            type="password"
             autoComplete="new-password"
             value={confirmPassword}
             onChange={(event) => {

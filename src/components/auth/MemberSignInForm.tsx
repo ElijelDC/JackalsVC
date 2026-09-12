@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label, Checkbox } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { MemberForgotPasswordForm } from "@/components/auth/MemberForgotPasswordForm";
 import { sanitizeCallbackUrl } from "@/lib/safe-callback-url";
 
@@ -116,9 +117,8 @@ export function MemberSignInForm({
               Forgot password?
             </button>
           </div>
-          <Input
+          <PasswordInput
             id="member-signin-password"
-            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required

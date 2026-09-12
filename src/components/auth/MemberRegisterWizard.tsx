@@ -9,6 +9,7 @@ import { ArrowLeft, CheckCircle2, Clock3, Loader2, Mail, Upload } from "lucide-r
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { GALLERY_ACCEPTED_IMAGE_TYPES } from "@/lib/gallery-upload-config";
 import { apiPost, apiPostForm } from "@/lib/client-api";
 import {
@@ -731,9 +732,8 @@ export function MemberRegisterWizard({
       <form onSubmit={createAccount} className="space-y-4">
         <div>
           <Label htmlFor="member-register-password">Create password</Label>
-          <Input
+          <PasswordInput
             id="member-register-password"
-            type="password"
             value={password}
             onChange={(event) => setPassword(event.target.value)}
             required
@@ -743,9 +743,8 @@ export function MemberRegisterWizard({
         </div>
         <div>
           <Label htmlFor="member-register-confirm-password">Confirm password</Label>
-          <Input
+          <PasswordInput
             id="member-register-confirm-password"
-            type="password"
             value={confirmPassword}
             onChange={(event) => setConfirmPassword(event.target.value)}
             required

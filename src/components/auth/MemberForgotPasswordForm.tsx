@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { FormError } from "@/components/ui/FormMessage";
 import { Input, Label } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { apiPost } from "@/lib/client-api";
 
 type ForgotStep = "email" | "reset";
@@ -190,9 +191,8 @@ export function MemberForgotPasswordForm({
 
           <div>
             <Label htmlFor="forgot-password-new">New password</Label>
-            <Input
+            <PasswordInput
               id="forgot-password-new"
-              type="password"
               value={newPassword}
               onChange={(event) => {
                 setNewPassword(event.target.value);
@@ -206,9 +206,8 @@ export function MemberForgotPasswordForm({
 
           <div>
             <Label htmlFor="forgot-password-confirm">Confirm new password</Label>
-            <Input
+            <PasswordInput
               id="forgot-password-confirm"
-              type="password"
               value={confirmPassword}
               onChange={(event) => {
                 setConfirmPassword(event.target.value);

@@ -5,7 +5,8 @@ import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { Input, Label } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
 import { apiPatch } from "@/lib/client-api";
 
 export function ProfilePasswordSection() {
@@ -112,9 +113,8 @@ export function ProfilePasswordSection() {
         <div className="mt-3 space-y-4">
           <div>
             <Label htmlFor="profile-current-password">Current password</Label>
-            <Input
+            <PasswordInput
               id="profile-current-password"
-              type="password"
               autoComplete="current-password"
               value={currentPassword}
               onChange={(event) => {
@@ -127,9 +127,8 @@ export function ProfilePasswordSection() {
 
           <div>
             <Label htmlFor="profile-new-password">New password</Label>
-            <Input
+            <PasswordInput
               id="profile-new-password"
-              type="password"
               autoComplete="new-password"
               value={newPassword}
               onChange={(event) => {
@@ -142,9 +141,8 @@ export function ProfilePasswordSection() {
 
           <div>
             <Label htmlFor="profile-confirm-password">Confirm new password</Label>
-            <Input
+            <PasswordInput
               id="profile-confirm-password"
-              type="password"
               autoComplete="new-password"
               value={confirmPassword}
               onChange={(event) => {
