@@ -1,14 +1,14 @@
 /** Centralised public URL paths — keep upload folders under /uploads/. */
 export const PUBLIC_PATHS = {
   brand: {
-    logo: "/brand/logo.png",
-    logoTransparent: "/brand/logo-transparent.png",
-    favicon: "/brand/favicon.png?v=20260912",
-    icon16: "/brand/icon-16.png?v=20260912",
-    icon32: "/brand/icon-32.png?v=20260912",
-    icon192: "/brand/icon-192.png?v=20260912",
-    icon512: "/brand/icon-512.png?v=20260912",
-    appleTouchIcon: "/brand/apple-touch-icon.png?v=20260912",
+    logo: "/brand/logo.png?v=20260912b",
+    logoTransparent: "/brand/logo-transparent.png?v=20260912b",
+    favicon: "/brand/favicon.png?v=20260912b",
+    icon16: "/brand/icon-16.png?v=20260912b",
+    icon32: "/brand/icon-32.png?v=20260912b",
+    icon192: "/brand/icon-192.png?v=20260912b",
+    icon512: "/brand/icon-512.png?v=20260912b",
+    appleTouchIcon: "/brand/apple-touch-icon.png?v=20260912b",
     reclubMark: "/brand/reclub-mark.png",
     reclubLogo: "/brand/reclub-logo.png",
   },
