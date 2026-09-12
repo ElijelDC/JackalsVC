@@ -1,11 +1,11 @@
 /**
- * Demo data for the coach mobile walkthrough video.
+ * LOCAL ONLY — demo data for the coach mobile walkthrough video.
  *
  * Creates coach.demo@jackalsvc.com (head D2M, cover D3W) with upcoming
  * training, matches, player responses, VLY photos, and payment records.
  *
- *   npx tsx scripts/seed-test-users.ts
- *   npx tsx scripts/setup-coach-mobile-demo.ts
+ *   DATABASE_URL=file:./prisma/dev.db npx tsx scripts/seed-test-users.ts
+ *   DATABASE_URL=file:./prisma/dev.db npx tsx scripts/setup-coach-mobile-demo.ts
  */
 import bcrypt from "bcryptjs";
 import { addDays, addMinutes, startOfMonth } from "date-fns";
@@ -14,6 +14,15 @@ import { PrismaClient } from "../src/generated/prisma/client";
 import { syncAllTrainingSessionEvents } from "../src/lib/training-events";
 
 const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
+
+if (/\/data\/jackals\.db|jackalsvolleyball|production/i.test(dbUrl)) {
+  console.error(
+    "Refusing to seed coach mobile demo data. This script is local-only.",
+  );
+  console.error("Use a local DATABASE_URL like file:./prisma/dev.db");
+  process.exit(1);
+}
+
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
 const prisma = new PrismaClient({ adapter });
 

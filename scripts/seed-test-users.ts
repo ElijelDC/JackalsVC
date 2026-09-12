@@ -1,12 +1,28 @@
 /**
- * Idempotent test users for staging / first-time production bootstrap.
- * Run on Fly: DATABASE_URL=file:/data/jackals.db node scripts/seed-test-users.mjs
+ * LOCAL / staging demo users only.
+ *
+ * Do NOT run against production — these @jackalsvc.com accounts are fake
+ * roster fixtures for local demos and coach-mobile video setup.
+ *
+ *   DATABASE_URL=file:./prisma/dev.db npx tsx scripts/seed-test-users.ts
  */
 import bcrypt from "bcryptjs";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
+
+if (/\/data\/jackals\.db|jackalsvolleyball|production/i.test(dbUrl)) {
+  console.error(
+    "Refusing to seed demo/test users. This script is local-only.",
+  );
+  console.error("Use a local DATABASE_URL like file:./prisma/dev.db");
+  console.error(
+    "For real coaches/players on production use create-production-coaches.ts / create-production-squad-players.ts",
+  );
+  process.exit(1);
+}
+
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
 const prisma = new PrismaClient({ adapter });
 

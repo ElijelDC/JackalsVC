@@ -1,5 +1,5 @@
 /**
- * Local demo coaches for head-coach cover flow testing.
+ * LOCAL ONLY — demo coaches for head-coach cover flow testing.
  * Uses fake @jackalsvc.com emails only — never real coach Gmail addresses.
  *
  * Head: Demo Head Coach (DIV3_WOMENS priority 0)
@@ -12,6 +12,15 @@ import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client";
 
 const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
+
+if (/\/data\/jackals\.db|jackalsvolleyball|production/i.test(dbUrl)) {
+  console.error(
+    "Refusing to seed local coach cover demo. This script is local-only.",
+  );
+  console.error("Use a local DATABASE_URL like file:./prisma/dev.db");
+  process.exit(1);
+}
+
 const adapter = new PrismaBetterSqlite3({ url: dbUrl });
 const prisma = new PrismaClient({ adapter });
 
