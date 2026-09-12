@@ -4,10 +4,10 @@ import { PUBLIC_PATHS } from "@/lib/public-paths";
 import { cn } from "@/lib/utils";
 
 const sizes = {
-  sm: { px: 36, className: "h-9 w-9" },
-  nav: { px: 56, className: "h-14 w-14" },
-  lg: { px: 64, className: "h-16 w-16" },
-  footer: { px: 104, className: "h-[6.5rem] w-[6.5rem]" },
+  sm: { px: 32, className: "h-8 w-8" },
+  nav: { px: 52, className: "h-[52px] w-[52px]" },
+  lg: { px: 56, className: "h-14 w-14" },
+  footer: { px: 96, className: "h-24 w-24" },
   hero: { px: 320, className: "h-64 w-64 sm:h-80 sm:w-80 lg:h-96 lg:w-96" },
 } as const;
 
