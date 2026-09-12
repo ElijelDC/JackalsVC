@@ -6,9 +6,17 @@
  *   DATABASE_URL="file:./prisma/dev.db" npx tsx scripts/setup-dashboard-demo-member.ts
  */
 import bcrypt from "bcryptjs";
-import { addDays, setHours, setMinutes, startOfDay } from "date-fns";
+import {
+  addDays,
+  addWeeks,
+  setHours,
+  setMinutes,
+  startOfDay,
+  startOfMonth,
+} from "date-fns";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "../src/generated/prisma/client";
+import { syncAllTrainingSessionEvents } from "../src/lib/training-events";
 
 function vodKey(teamKey: string, kind: "training" | "matches") {
   return `vod.playlist.${teamKey}.${kind}`;
@@ -32,7 +40,7 @@ const prisma = new PrismaClient({ adapter });
 
 const DEMO_EMAIL = "demo.dashboard@jackalsvc.com";
 const DEMO_PASSWORD = process.env.DASHBOARD_DEMO_PASSWORD?.trim() || "DemoDash123!";
-const DEMO_NAME = "Dashboard Demo";
+const DEMO_NAME = "Alex Member";
 const DEMO_VLY = "VLYD88001";
 const TEAM_KEY = "DIV2_MENS";
 
@@ -40,7 +48,52 @@ function atTime(base: Date, hour: number, minute = 0) {
   return setMinutes(setHours(base, hour), minute);
 }
 
+async function ensureSquadTraining() {
+  const recurringFrom = startOfMonth(new Date());
+  const recurringTo = addWeeks(new Date(), 16);
+  const existing = await prisma.trainingSession.findFirst({
+    where: { category: "WEEKLY", trainingTeamKey: TEAM_KEY },
+  });
+
+  if (existing) {
+    await prisma.trainingSession.update({
+      where: { id: existing.id },
+      data: {
+        title: "Division 2 Mens Training",
+        startTime: "19:00",
+        endTime: "21:00",
+        location: "Meakstown",
+        recurring: true,
+        recurrenceWeeks: 1,
+        recurringFrom,
+        recurringTo,
+        dayOfWeek: existing.dayOfWeek ?? 2,
+      },
+    });
+  } else {
+    await prisma.trainingSession.create({
+      data: {
+        category: "WEEKLY",
+        trainingTeamKey: TEAM_KEY,
+        title: "Division 2 Mens Training",
+        dayOfWeek: 2,
+        startTime: "19:00",
+        endTime: "21:00",
+        location: "Meakstown",
+        level: "",
+        recurring: true,
+        recurrenceWeeks: 1,
+        recurringFrom,
+        recurringTo,
+      },
+    });
+  }
+
+  await syncAllTrainingSessionEvents();
+}
+
 async function main() {
+  await ensureSquadTraining();
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 12);
   const now = new Date();
 
@@ -171,40 +224,46 @@ async function main() {
   await prisma.matchSignup.deleteMany({
     where: {
       userId: user.id,
-      match: { notes: "dashboard-demo" },
+      match: {
+        trainingTeamKey: TEAM_KEY,
+        opponentName: { in: ["UCD Volleyball", "Trinity VC", "Demo Athletic", "Sample Vikings"] },
+      },
     },
   });
   await prisma.teamMatch.deleteMany({
-    where: { notes: "dashboard-demo", trainingTeamKey: TEAM_KEY },
+    where: {
+      trainingTeamKey: TEAM_KEY,
+      opponentName: { in: ["UCD Volleyball", "Trinity VC", "Demo Athletic", "Sample Vikings"] },
+    },
   });
 
   const matchOne = await prisma.teamMatch.create({
     data: {
       trainingTeamKey: TEAM_KEY,
-      opponentName: "Demo Athletic",
+      opponentName: "UCD Volleyball",
       venue: "HOME",
       location: "Luttrellstown",
       warmUpTime: atTime(addDays(startOfDay(now), 5), 13, 15),
       matchStart: atTime(addDays(startOfDay(now), 5), 14, 0),
-      notes: "dashboard-demo",
+      notes: "",
     },
   });
   const matchTwo = await prisma.teamMatch.create({
     data: {
       trainingTeamKey: TEAM_KEY,
-      opponentName: "Sample Vikings",
+      opponentName: "Trinity VC",
       venue: "AWAY",
       location: "UCD Sport",
       warmUpTime: atTime(addDays(startOfDay(now), 12), 14, 45),
       matchStart: atTime(addDays(startOfDay(now), 12), 15, 30),
-      notes: "dashboard-demo",
+      notes: "",
     },
   });
 
   await prisma.matchSignup.createMany({
     data: [
-      { userId: user.id, matchId: matchOne.id, status: "ATTENDING" },
-      { userId: user.id, matchId: matchTwo.id, status: "PENDING" },
+      { userId: user.id, matchId: matchOne.id, status: "PENDING" },
+      { userId: user.id, matchId: matchTwo.id, status: "ATTENDING" },
     ],
   });
 
@@ -220,7 +279,7 @@ async function main() {
   await prisma.event.createMany({
     data: [
       {
-        title: "[Demo] Squad social night",
+        title: "Squad social night",
         description: "dashboard-demo-event",
         type: "SOCIAL",
         location: "Clubhouse · Meakstown",
@@ -228,7 +287,7 @@ async function main() {
         endDate: atTime(addDays(startOfDay(now), 8), 22, 0),
       },
       {
-        title: "[Demo] Skills clinic",
+        title: "Skills clinic",
         description: "dashboard-demo-event",
         type: "SKILLS_CLINIC",
         location: "Meakstown Sports Hall",
@@ -236,7 +295,7 @@ async function main() {
         endDate: atTime(addDays(startOfDay(now), 18), 20, 0),
       },
       {
-        title: "[Demo] Mini tournament",
+        title: "Club mini tournament",
         description: "dashboard-demo-event",
         type: "TOURNAMENT",
         location: "Luttrellstown",

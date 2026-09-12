@@ -1,8 +1,9 @@
 /**
  * Record a polished mobile member-app tutorial with Playwright.
  *
- * Covers: member-nav login, dashboard, training, matches, fixtures, membership,
- * merch, gallery, videos, events, profile, and install.
+ * Covers: Members Only login, install + notifications, dashboard reply colours,
+ * training RSVP, match RSVP, fixtures, membership, merch, gallery, events,
+ * profile, and menu.
  *
  *   npm run demo:member-tutorial:setup
  *   npm run demo:member-tutorial:record
@@ -20,12 +21,12 @@ const DEMO_PASSWORD =
   process.env.MEMBER_DEMO_PASSWORD ?? "DemoDash123!";
 const OUTPUT_DIR = path.join(process.cwd(), "docs/member-app-tutorial");
 const PUBLIC_DIR = path.join(process.cwd(), "public/tutorials");
-/** Slightly snappier than the original ~3:14 cut; still readable captions. */
-const PAUSE_MS = Number(process.env.DEMO_STEP_PAUSE_MS ?? "3000");
-const TOTAL_STEPS = 16;
+/** Slightly snappier holds — readable captions without dead air. */
+const PAUSE_MS = Number(process.env.DEMO_STEP_PAUSE_MS ?? "2100");
+const TOTAL_STEPS = 12;
 
 const VIEWPORT = { width: 390, height: 844 };
-const COMPACT_CAPTION_H = 64;
+const COMPACT_CAPTION_H = 58;
 
 type StepOptions = {
   step: number;
@@ -45,6 +46,16 @@ function isProtectedAuthDialog(text: string) {
 
 async function injectRecordingStyles(page: Page) {
   await page.addInitScript(() => {
+    try {
+      localStorage.setItem("jackals-event-newsletter-subscribed", "true");
+      localStorage.setItem(
+        "jackals-event-newsletter-overlay-snooze",
+        String(Date.now()),
+      );
+    } catch {
+      // ignore storage failures in private contexts
+    }
+
     const hideDevUi = () => {
       document.querySelectorAll("nextjs-portal").forEach((el) => {
         const node = el as HTMLElement;
@@ -54,13 +65,15 @@ async function injectRecordingStyles(page: Page) {
       });
       document.querySelectorAll(".fixed.inset-0.z-999").forEach((wrap) => {
         const text = wrap.textContent ?? "";
-        // Never hide the member sign-in / register modal during recording.
         if (/members only|sign in with your email|member register|member-signin/i.test(text)) {
           return;
         }
-        // Hide blocking marketing/install/newsletter overlays.
+        // Hide blocking marketing overlays only — keep dashboard install cards.
         if (
-          /cookie|install|home screen|notification|subscribe|welcome|stay in the loop|event email/i.test(
+          /cookie|subscribe|stay in the loop|welcome|event email|notify me/i.test(
+            text,
+          ) &&
+          !/install jackals|add to home|notifications|members only|sign in with your email/i.test(
             text,
           )
         ) {
@@ -112,7 +125,7 @@ async function titleCard(
     title,
     body,
   }: { eyebrow: string; title: string; body: string },
-  ms = 3200,
+  ms = 2600,
 ) {
   await hideDemoChrome(page);
   await page.evaluate(
@@ -151,8 +164,7 @@ async function titleCard(
   await hideDemoChrome(page);
 }
 
-/** Large narration card — easy to read on phone screens. */
-async function narrate(page: Page, { step, title, body }: StepOptions, ms = 2600) {
+async function narrate(page: Page, { step, title, body }: StepOptions, ms = 2000) {
   await hideDemoChrome(page);
   await page.evaluate(
     ({ step, total, title, body }) => {
@@ -162,10 +174,10 @@ async function narrate(page: Page, { step, title, body }: StepOptions, ms = 2600
         <div style="
           position:fixed;left:0;right:0;bottom:0;z-index:99990;pointer-events:none;
           font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-          padding:0 12px calc(14px + env(safe-area-inset-bottom,0px));
+          padding:0 12px calc(12px + env(safe-area-inset-bottom,0px));
         ">
           <div style="
-            padding:16px 16px 18px;border-radius:18px;
+            padding:14px 16px 16px;border-radius:18px;
             background:rgba(8,8,12,0.97);border:1px solid rgba(255,255,255,0.14);
             box-shadow:0 -8px 40px rgba(0,0,0,0.55);
           ">
@@ -226,7 +238,15 @@ async function showCompactCaption(page: Page, step: number, title: string) {
 }
 
 async function dismissOverlays(page: Page) {
-  for (let i = 0; i < 5; i += 1) {
+  for (let i = 0; i < 6; i += 1) {
+    // Prefer explicit newsletter / marketing dismissals first.
+    const notNow = page.getByRole("button", { name: /not now|maybe later|no thanks/i });
+    if (await notNow.first().isVisible().catch(() => false)) {
+      await notNow.first().click({ force: true }).catch(() => undefined);
+      await page.waitForTimeout(200);
+      continue;
+    }
+
     const dialogs = page.locator('[role="dialog"]');
     const count = await dialogs.count();
     let closed = false;
@@ -235,34 +255,65 @@ async function dismissOverlays(page: Page) {
       if (!(await dialog.isVisible().catch(() => false))) continue;
       const text = (await dialog.innerText().catch(() => "")) || "";
       if (isProtectedAuthDialog(text)) continue;
+      if (/add to home screen/i.test(text) && !/stay in the loop|subscribe/i.test(text)) {
+        continue;
+      }
       const close = dialog.locator(
         'button[aria-label="Close"], button:has-text("Close"), button:has-text("Not now"), button:has-text("Maybe later")',
       );
       if (await close.first().isVisible().catch(() => false)) {
         await close.first().click({ force: true }).catch(() => undefined);
         closed = true;
-        await page.waitForTimeout(300);
+        await page.waitForTimeout(200);
       }
     }
     if (!closed) break;
   }
-  // Force-remove leftover marketing modal layers — never the member auth modal.
   await page.evaluate(() => {
     document.querySelectorAll(".fixed.inset-0.z-999").forEach((el) => {
       const text = el.textContent ?? "";
       if (/members only|sign in with your email|member register|member-signin/i.test(text)) {
         return;
       }
-      (el as HTMLElement).style.display = "none";
-      (el as HTMLElement).style.pointerEvents = "none";
-      el.remove();
+      if (/install jackals|add to home screen|turn on notifications|enable notifications/i.test(text)) {
+        return;
+      }
+      if (
+        /cookie|subscribe|stay in the loop|event email|welcome|notify me/i.test(
+          text,
+        )
+      ) {
+        (el as HTMLElement).style.display = "none";
+        (el as HTMLElement).style.pointerEvents = "none";
+        el.remove();
+      }
     });
   });
 }
 
+async function ensureMemberSession(page: Page) {
+  const csrfResponse = await page.request.get(`${BASE_URL}/api/auth/csrf`);
+  const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
+  await page.request.post(`${BASE_URL}/api/auth/callback/credentials`, {
+    form: {
+      csrfToken,
+      email: DEMO_EMAIL,
+      password: DEMO_PASSWORD,
+      callbackUrl: `${BASE_URL}/dashboard`,
+      json: "true",
+    },
+  });
+  const session = (await page.request
+    .get(`${BASE_URL}/api/auth/session`)
+    .then((r) => r.json())) as { user?: { email?: string } };
+  if (!session?.user?.email) {
+    throw new Error("Failed to establish demo member session for recording.");
+  }
+}
+
 async function scrollToTop(page: Page) {
   await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-  await page.waitForTimeout(280);
+  await page.waitForTimeout(220);
 }
 
 async function scrollToFocus(
@@ -285,7 +336,7 @@ async function scrollToFocus(
     },
     { el: handle, reservedBottom, viewportH: VIEWPORT.height },
   );
-  await page.waitForTimeout(900);
+  await page.waitForTimeout(650);
 }
 
 async function highlightLocator(page: Page, locator: Locator) {
@@ -335,11 +386,14 @@ async function focus(
   step: number,
   title: string,
   holdMs = PAUSE_MS,
+  options?: { scroll?: boolean },
 ) {
   if (!(await locator.first().isVisible().catch(() => false))) return;
   await hideDemoChrome(page);
   await hideDevUi(page);
-  await scrollToFocus(page, locator);
+  if (options?.scroll !== false) {
+    await scrollToFocus(page, locator);
+  }
   await showCompactCaption(page, step, title);
   await highlightLocator(page, locator);
   await page.waitForTimeout(holdMs);
@@ -350,45 +404,90 @@ async function tap(page: Page, locator: Locator) {
   if (!(await locator.first().isVisible().catch(() => false))) return false;
   await scrollToFocus(page, locator);
   await highlightLocator(page, locator);
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(350);
   await hideDemoChrome(page);
-  await locator.first().click();
+  await locator.first().click({ force: true });
   await page.waitForLoadState("networkidle").catch(() => undefined);
-  await page.waitForTimeout(550);
+  await page.waitForTimeout(400);
   return true;
 }
 
-async function gotoSafe(page: Page, pathName: string) {
-  await page.goto(`${BASE_URL}${pathName}`, { waitUntil: "networkidle" });
-  await hideDevUi(page);
-  await dismissOverlays(page);
-  await scrollToTop(page);
+async function closeBlockingDialogs(page: Page) {
+  for (let i = 0; i < 4; i += 1) {
+    const dialog = page.locator('[role="dialog"]').first();
+    if (!(await dialog.isVisible().catch(() => false))) break;
+    const text = (await dialog.innerText().catch(() => "")) || "";
+    if (isProtectedAuthDialog(text)) break;
+    const close = dialog.locator(
+      'button[aria-label="Close"], button:has-text("Close"), button:has-text("Done"), button:has-text("Not now")',
+    );
+    if (await close.first().isVisible().catch(() => false)) {
+      await close.first().click({ force: true }).catch(() => undefined);
+      await page.waitForTimeout(300);
+      continue;
+    }
+    await page.keyboard.press("Escape").catch(() => undefined);
+    await page.waitForTimeout(300);
+  }
 }
 
-/** Open Members Only from the site nav (mobile menu) — not footer event emails. */
+async function gotoSafe(page: Page, pathName: string) {
+  await page.goto(`${BASE_URL}${pathName}`, { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => undefined);
+  await hideDevUi(page);
+  await dismissOverlays(page);
+  await scrollToTop(page);
+  // Avoid filming Next.js route loading skeletons.
+  await page
+    .locator("text=/Loading\\.\\.\\./i")
+    .first()
+    .waitFor({ state: "hidden", timeout: 8000 })
+    .catch(() => undefined);
+  await page.waitForTimeout(250);
+}
+
 async function openMemberLoginFromNav(page: Page) {
-  await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+  await page.waitForLoadState("networkidle").catch(() => undefined);
   await hideDevUi(page);
   await dismissOverlays(page);
   await scrollToTop(page);
 
-  await dismissOverlays(page);
   const menuBtn = page.getByRole("button", { name: /open menu/i }).first();
-  await focus(page, menuBtn, 1, "Open the menu", 1600);
+  await menuBtn.waitFor({ state: "visible", timeout: 8000 });
+  await showCompactCaption(page, 1, "Open the menu");
+  await highlightLocator(page, menuBtn);
+  await page.waitForTimeout(1000);
+  await hideDemoChrome(page);
   await dismissOverlays(page);
   await menuBtn.click({ force: true });
-  await page.waitForTimeout(700);
 
-  const membersOnly = page
-    .getByRole("navigation", { name: /mobile navigation/i })
-    .getByRole("button", { name: /members only/i })
-    .first();
-  await focus(page, membersOnly, 1, "Tap Members Only", 1800);
+  const mobileNav = page.locator("nav[aria-label='Mobile navigation']");
+  await mobileNav.waitFor({ state: "visible", timeout: 5000 });
+  await page.waitForTimeout(300);
+  await dismissOverlays(page);
+
+  const membersOnly = mobileNav.getByRole("button", { name: /members only/i });
+  await membersOnly.waitFor({ state: "visible", timeout: 8000 });
+  await showCompactCaption(page, 1, "Tap Members Only");
+  await highlightLocator(page, membersOnly);
+  await page.waitForTimeout(1200);
+  await hideDemoChrome(page);
   await membersOnly.click({ force: true });
-  await page.waitForTimeout(800);
 
   const emailInput = page.locator("#member-signin-email");
-  await emailInput.waitFor({ state: "visible", timeout: 8000 });
+  try {
+    await emailInput.waitFor({ state: "visible", timeout: 5000 });
+  } catch {
+    await page.goto(`${BASE_URL}/?auth=signin&callbackUrl=/dashboard`, {
+      waitUntil: "domcontentloaded",
+    });
+    await page.waitForLoadState("networkidle").catch(() => undefined);
+    await hideDevUi(page);
+    await dismissOverlays(page);
+    await emailInput.waitFor({ state: "visible", timeout: 8000 });
+  }
+  await dismissOverlays(page);
 }
 
 async function main() {
@@ -414,128 +513,144 @@ async function main() {
   page.on("dialog", (dialog) => dialog.accept());
 
   try {
-    // —— 1. Login via Members Only in the site nav ——
-    await page.goto(`${BASE_URL}/`, { waitUntil: "networkidle" });
+    // —— Title ——
+    await page.goto(`${BASE_URL}/`, { waitUntil: "domcontentloaded" });
+    await page.waitForLoadState("networkidle").catch(() => undefined);
     await hideDevUi(page);
     await dismissOverlays(page);
     await titleCard(page, {
       eyebrow: "Jackals Volleyball Club",
       title: "Member app guide",
-      body: "A calm walkthrough of everything in your member account — easy steps, nothing missed.",
+      body: "Everything you need in your member account — clear steps, nothing missed.",
     });
 
+    // —— 1. Sign in ——
     await narrate(page, {
       step: 1,
       title: "Sign in",
-      body: "From the site menu, tap Members Only. Use the email and temporary password the club sent you.",
-    });
+      body: "Menu → Members Only. Use the email and temporary password the club sent you.",
+    }, 1800);
 
     await openMemberLoginFromNav(page);
 
     const emailInput = page.locator("#member-signin-email");
     const passwordInput = page.locator("#member-signin-password");
-    await emailInput.waitFor({ state: "visible", timeout: 8000 });
 
-    await focus(page, emailInput, 1, "Enter your email", 1400);
-    await emailInput.fill(DEMO_EMAIL);
-    await wait(page, 400);
+    await focus(page, emailInput, 1, "Enter your email", 1000, { scroll: false });
+    await emailInput.click({ force: true });
+    await emailInput.fill("");
+    await emailInput.pressSequentially(DEMO_EMAIL, { delay: 18 });
+    await wait(page, 300);
 
-    await focus(page, passwordInput, 1, "Enter your password", 1400);
-    await passwordInput.fill(DEMO_PASSWORD);
-    await wait(page, 400);
+    await focus(page, passwordInput, 1, "Enter your password", 1000, { scroll: false });
+    await passwordInput.click({ force: true });
+    await passwordInput.fill("");
+    await passwordInput.pressSequentially(DEMO_PASSWORD, { delay: 18 });
+    await wait(page, 300);
 
-    const signIn = page.getByRole("button", { name: /^sign in$/i }).first();
-    await focus(page, signIn, 1, "Tap Sign in", 1400);
-    await signIn.click();
-    await page.waitForURL(/\/dashboard/, { timeout: 15000 }).catch(() => undefined);
-    await page.waitForLoadState("networkidle").catch(() => undefined);
+    const signIn = page.locator('form').filter({ has: page.locator("#member-signin-email") }).getByRole("button", { name: /^sign in$/i });
+    await focus(page, signIn, 1, "Tap Sign in", 1100, { scroll: false });
+    await signIn.click({ force: true });
+    await page.waitForTimeout(1200);
 
-    // Ensure session even if UI sign-in raced.
-    if (!page.url().includes("/dashboard")) {
-      const csrfResponse = await page.request.get(`${BASE_URL}/api/auth/csrf`);
-      const { csrfToken } = (await csrfResponse.json()) as { csrfToken: string };
-      await page.request.post(`${BASE_URL}/api/auth/callback/credentials`, {
-        form: {
-          csrfToken,
-          email: DEMO_EMAIL,
-          password: DEMO_PASSWORD,
-          callbackUrl: `${BASE_URL}/dashboard`,
-          json: "true",
-        },
-      });
-      await gotoSafe(page, "/dashboard");
-    }
-
-    await dismissOverlays(page);
+    // Always establish a real session for the rest of the walkthrough.
+    await ensureMemberSession(page);
     await gotoSafe(page, "/dashboard");
+    // Clear any sticky auth query/modal from the login demo.
+    await page.keyboard.press("Escape").catch(() => undefined);
+    await page.evaluate(() => {
+      document.querySelectorAll(".fixed.inset-0.z-999").forEach((el) => {
+        const text = el.textContent ?? "";
+        if (/members only|sign in with your email|member register/i.test(text)) {
+          el.remove();
+        }
+      });
+    });
+    await dismissOverlays(page);
 
-    // —— 2. Dashboard ——
+    const dashboardReady = page.getByRole("heading", { name: /^Training$/i }).or(
+      page.getByText(/Install Jackals WebApp/i),
+    );
+    await dashboardReady.first().waitFor({ state: "visible", timeout: 15000 });
+    await scrollToTop(page);
+
+    // —— 2. Install + notifications ——
     await narrate(page, {
       step: 2,
-      title: "Your dashboard",
-      body: "This is home. Training, matches, events, videos, membership, and shortcuts live here.",
-    });
-    await focus(
-      page,
-      page.getByRole("heading", { name: /welcome|training|dashboard/i }).first(),
-      2,
-      "Welcome to your home screen",
-      2400,
-    );
+      title: "Install the club app",
+      body: "Add Jackals to your Home Screen — required this season for training, matches, and updates.",
+    }, 1900);
 
+    const installCard = page.getByText(/Install Jackals WebApp/i).first();
+    if (await installCard.isVisible().catch(() => false)) {
+      await focus(page, installCard, 2, "Install is mandatory this season", 2000);
+      const installCta = page.getByRole("button", {
+        name: /Add to Home Screen|Install|Bookmark this site/i,
+      }).first();
+      if (await installCta.isVisible().catch(() => false)) {
+        await focus(page, installCta, 2, "Tap to install / add to Home Screen", 1600, {
+          scroll: false,
+        });
+      }
+      const confirmed = page.getByRole("button", {
+        name: /I've installed it|I've bookmarked it/i,
+      }).first();
+      if (await confirmed.isVisible().catch(() => false)) {
+        await showCompactCaption(page, 2, "Confirm once it’s on your phone");
+        await highlightLocator(page, confirmed);
+        await page.waitForTimeout(900);
+        await hideDemoChrome(page);
+        await confirmed.click({ force: true });
+        await page.waitForTimeout(700);
+      }
+      await closeBlockingDialogs(page);
+    }
+
+    const notifyCard = page.getByText(/notification|turn on alerts|enable notifications/i).first();
+    if (await notifyCard.isVisible().catch(() => false)) {
+      await narrate(page, {
+        step: 2,
+        title: "Turn on notifications",
+        body: "After install, enable alerts so you don’t miss training and match reminders.",
+      }, 1800);
+      await focus(page, notifyCard, 2, "Enable notifications next", 1800);
+    }
+
+    // —— 3. Dashboard ——
     await narrate(page, {
       step: 3,
-      title: "Training & Matches",
-      body: "Yellow = reply needed. Green = you’re attending. Tap a row to respond.",
-    });
+      title: "Your dashboard",
+      body: "Home base for training, matches, events, videos, and shortcuts.",
+    }, 1700);
+
     await focus(
       page,
       page.getByRole("heading", { name: /^Training$/i }).first(),
       3,
-      "Training panel",
-      2300,
+      "Yellow = reply needed · Green = attending",
+      2000,
     );
     await focus(
       page,
       page.getByRole("heading", { name: /^Matches$/i }).first(),
       3,
-      "Matches panel",
-      2300,
-    );
-
-    await narrate(page, {
-      step: 4,
-      title: "Events, videos & links",
-      body: "Club events, squad video playlists, plus Fixtures, Merch, and Gallery shortcuts.",
-    });
-    await focus(
-      page,
-      page.getByRole("heading", { name: /^Events$/i }).first(),
-      4,
-      "Club events",
-      2000,
-    );
-    await focus(
-      page,
-      page.getByRole("heading", { name: /^Videos$/i }).first(),
-      4,
-      "Squad video library",
-      2000,
+      "Upcoming matches for your squad",
+      1700,
     );
     await focus(
       page,
       page.getByRole("heading", { name: /^Links$/i }).first(),
-      4,
-      "Quick links",
-      2000,
+      3,
+      "Shortcuts: Fixtures, Merch, Gallery…",
+      1500,
     );
 
-    // —— 5. Training RSVP ——
+    // —— 4. Training RSVP ——
     await narrate(page, {
-      step: 5,
+      step: 4,
       title: "Reply to training",
       body: "Open Training → pick a session → Attend or Can’t attend.",
-    });
+    }, 1700);
     const trainingViewAll = page
       .locator('a[href*="/training"]')
       .filter({ hasText: /view all|all training/i })
@@ -545,227 +660,189 @@ async function main() {
     } else {
       await gotoSafe(page, "/training?from=dashboard");
     }
+    await page
+      .locator("text=/Loading\\.\\.\\./i")
+      .first()
+      .waitFor({ state: "hidden", timeout: 10000 })
+      .catch(() => undefined);
+    await page
+      .getByRole("heading", { name: /training|september|october|november/i })
+      .first()
+      .waitFor({ state: "visible", timeout: 10000 })
+      .catch(() => undefined);
     await scrollToTop(page);
-    await narrate(page, {
-      step: 5,
-      title: "Your training month",
-      body: "Browse by month. Sessions that need a reply are highlighted.",
-    });
-    const sessionLink = page.locator('a[href*="/training/session/"]').first();
-    if (await sessionLink.isVisible().catch(() => false)) {
-      await tap(page, sessionLink);
+    await showCompactCaption(page, 4, "Your training month");
+    await wait(page, 1400);
+
+    const sessionLink = page
+      .locator('a[href*="/training/session/"]')
+      .filter({ hasText: /response needed|respond now|unanswered/i })
+      .first()
+      .or(page.locator('a[href*="/training/session/"]').first());
+    if (await sessionLink.first().isVisible().catch(() => false)) {
+      await tap(page, sessionLink.first());
       await scrollToTop(page);
-      await narrate(page, {
-        step: 5,
-        title: "Confirm availability",
-        body: "Tap Attend if you’re coming, or Can’t attend if you’re not.",
-      });
+      await page.waitForTimeout(500);
       const attendBtn = page.getByRole("button", { name: /^Attend$/i });
       const cantBtn = page.getByRole("button", { name: /can.?t attend|not attending/i });
+      await scrollToFocus(page, attendBtn.or(cantBtn).first()).catch(() => undefined);
       if (await attendBtn.isVisible().catch(() => false)) {
-        await focus(page, attendBtn, 5, "Tap Attend", 2500);
+        await focus(page, attendBtn, 4, "Tap Attend if you’re coming", 2400, {
+          scroll: true,
+        });
       } else if (await cantBtn.isVisible().catch(() => false)) {
-        await focus(page, cantBtn, 5, "Or Can’t attend", 2500);
+        await focus(page, cantBtn, 4, "Or Can’t attend", 2400);
+      } else {
+        await showCompactCaption(page, 4, "Confirm your availability here");
+        await wait(page, 1800);
       }
     }
 
-    // —— 6. Matches ——
-    await narrate(page, {
-      step: 6,
-      title: "Reply to matches",
-      body: "Same idea for fixtures — open Matches and confirm you’re available.",
-    });
+    // —— 5. Matches ——
     await gotoSafe(page, "/matches?from=dashboard");
     await narrate(page, {
-      step: 6,
-      title: "Match schedule",
-      body: "Times shown are warm-up times so you know when to arrive.",
-    });
-    const matchLink = page.locator('a[href^="/matches/"]').first();
-    if (await matchLink.isVisible().catch(() => false)) {
-      await tap(page, matchLink);
+      step: 5,
+      title: "Reply to matches",
+      body: "Same idea for fixtures — confirm so coaches can set the lineup.",
+    }, 1700);
+    await showCompactCaption(page, 5, "Times shown are warm-up times");
+    await wait(page, 1400);
+
+    const pendingMatch = page
+      .locator('a[href^="/matches/"]')
+      .filter({ hasText: /response needed|respond|pending|unanswered|not responded/i })
+      .first();
+    const matchLink = (await pendingMatch.isVisible().catch(() => false))
+      ? pendingMatch
+      : page.locator('a[href^="/matches/"]').nth(1).or(page.locator('a[href^="/matches/"]').first());
+    if (await matchLink.first().isVisible().catch(() => false)) {
+      await tap(page, matchLink.first());
       await scrollToTop(page);
-      await narrate(page, {
-        step: 6,
-        title: "Match response",
-        body: "Confirm attending so coaches can set the lineup.",
-      });
+      await page.waitForTimeout(500);
       const matchAttend = page.getByRole("button", { name: /^Attend$/i });
+      await scrollToFocus(page, matchAttend).catch(() => undefined);
       if (await matchAttend.isVisible().catch(() => false)) {
-        await focus(page, matchAttend, 6, "Tap Attend for the match", 2500);
+        await focus(page, matchAttend, 5, "Confirm match attendance", 2400);
+      } else {
+        await showCompactCaption(page, 5, "Confirm you’re available");
+        await wait(page, 1600);
       }
     }
 
-    // —— 7. Season fixtures ——
-    await narrate(page, {
-      step: 7,
-      title: "Season fixtures",
-      body: "Full-year schedule for every squad. Filter by team or view All teams.",
-    });
+    // —— 6. Season fixtures ——
     await gotoSafe(page, "/fixtures?team=all&from=dashboard");
+    await narrate(page, {
+      step: 6,
+      title: "Season fixtures",
+      body: "Full-year schedule for every squad — filter by team or All teams.",
+    }, 1700);
     await focus(
       page,
       page.getByRole("navigation", { name: /filter fixtures by team/i }),
-      7,
-      "Tap a squad or All teams",
-      2800,
+      6,
+      "Filter by squad or All teams",
+      2000,
     );
 
-    // —— 8. Membership ——
+    // —— 7. Membership ——
+    await gotoSafe(page, "/membership?from=dashboard");
     await narrate(page, {
-      step: 8,
+      step: 7,
       title: "Membership & payments",
       body: "See your plan, what’s paid, and what’s due next.",
-    });
-    await gotoSafe(page, "/membership?from=dashboard");
+    }, 1600);
     await focus(
       page,
       page.getByRole("heading", { name: /membership|payment|plan/i }).first(),
-      8,
+      7,
       "Your membership status",
-      2600,
+      2000,
     );
 
-    // —— 9. Merch ——
-    await narrate(page, {
-      step: 9,
-      title: "Club merch",
-      body: "Order kit and club merchandise from Merch when orders are open.",
-    });
+    // —— 8. Merch ——
     await gotoSafe(page, "/merchandise-order?from=dashboard");
+    await narrate(page, {
+      step: 8,
+      title: "Club merch",
+      body: "Order kit and merchandise when club orders are open.",
+    }, 1500);
     await focus(
       page,
       page.getByRole("heading", { name: /merch|merchandise|order|kit/i }).first(),
-      9,
+      8,
       "Merchandise orders",
-      2500,
+      1800,
     );
 
-    // —— 10. Gallery ——
-    await narrate(page, {
-      step: 10,
-      title: "Club gallery",
-      body: "Browse match, training, and social photo albums.",
-    });
+    // —— 9. Gallery & events ——
     await gotoSafe(page, "/gallery?from=dashboard");
+    await narrate(page, {
+      step: 9,
+      title: "Gallery & club events",
+      body: "Photo albums plus socials, clinics, and tournaments.",
+    }, 1600);
     await focus(
       page,
       page.getByRole("heading", { name: /gallery|club/i }).first(),
-      10,
-      "Photo albums",
-      2400,
+      9,
+      "Browse photo albums",
+      1500,
     );
-    const album = page.locator('a[href*="/gallery/"]').first();
-    if (await album.isVisible().catch(() => false)) {
-      await tap(page, album);
-      await wait(page, 1400);
-    }
-
-    // —— 11. Videos ——
-    await narrate(page, {
-      step: 11,
-      title: "Video library",
-      body: "From the dashboard Videos panel, open Training clips or Match footage on YouTube.",
-    });
-    await gotoSafe(page, "/dashboard");
-    await focus(
-      page,
-      page.getByRole("heading", { name: /^Videos$/i }).first(),
-      11,
-      "Open playlists from here",
-      2600,
-    );
-
-    // —— 12. Events ——
-    await narrate(page, {
-      step: 12,
-      title: "Club events",
-      body: "Fun sessions, clinics, and socials — browse and open any event for details.",
-    });
     await gotoSafe(page, "/events?from=dashboard");
     await focus(
       page,
       page.getByRole("heading", { name: /events|fun|what.?s on/i }).first(),
-      12,
+      9,
       "What’s on at the club",
-      2500,
+      1600,
     );
 
-    // —— 13. Profile ——
-    await narrate(page, {
-      step: 13,
-      title: "Your profile",
-      body: "Update email, password, matchday details, and newsletter preferences.",
-    });
+    // —— 10. Profile ——
     await gotoSafe(page, "/profile");
+    await narrate(page, {
+      step: 10,
+      title: "Your profile",
+      body: "Change your password after first login. Update email, matchday info, and newsletter.",
+    }, 1800);
     await focus(
       page,
       page.getByRole("heading", { name: /your profile/i }),
-      13,
+      10,
       "Profile overview",
-      2200,
+      1400,
     );
     await focus(
       page,
       page.getByText(/^Password$/i).first(),
-      13,
-      "Change your password here",
-      2300,
-    );
-    await focus(
-      page,
-      page.getByText(/email|newsletter|matchday|VLY/i).first(),
-      13,
-      "Email, matchday info & newsletter",
-      2400,
+      10,
+      "Update your password here",
+      1800,
     );
 
-    // —— 14. Navigation ——
+    // —— 11. Menu ——
+    await gotoSafe(page, "/dashboard");
+    await closeBlockingDialogs(page);
     await narrate(page, {
-      step: 14,
+      step: 11,
       title: "Find everything in the menu",
-      body: "Use Members Only / the menu for Dashboard, Trainings, Matches, Membership, and more.",
-    });
-    await gotoSafe(page, "/dashboard");
-    const menuBtn = page
-      .getByRole("button", { name: /menu|open|more|members/i })
-      .or(page.locator('button[aria-label*="Menu" i]'))
-      .first();
+      body: "Dashboard, Trainings, Matches, Fixtures, Membership, Merch, Gallery, and more.",
+    }, 1600);
+    const menuBtn = page.getByRole("button", { name: /open menu/i }).first();
     if (await menuBtn.isVisible().catch(() => false)) {
-      await focus(page, menuBtn, 14, "Open the menu", 2000);
-      await tap(page, menuBtn);
-      await wait(page, 1800);
+      await focus(page, menuBtn, 11, "Open the menu anytime", 1200, { scroll: false });
+      await menuBtn.click({ force: true });
+      await wait(page, 1400);
     }
 
-    // —— 15. Install ——
-    await gotoSafe(page, "/dashboard");
-    const homeBtn = page.getByRole("button", {
-      name: /Add to Home Screen|Install App/i,
-    });
-    if (await homeBtn.isVisible().catch(() => false)) {
-      await narrate(page, {
-        step: 15,
-        title: "Add to your phone",
-        body: "Install the app so Jackals opens like a normal app icon.",
-      });
-      await focus(page, homeBtn, 15, "Add to Home Screen / Install App", 2800);
-    } else {
-      await narrate(page, {
-        step: 15,
-        title: "Add to your phone",
-        body: "On iPhone: Share → Add to Home Screen. On Android: Install App when prompted.",
-      });
-    }
-
-    // —— 16. Done ——
+    // —— 12. Closing ——
     await titleCard(
       page,
       {
         eyebrow: "You're ready",
         title: "That's everything",
-        body: "Check the dashboard each week, reply to training & matches, and message admin if you need help.",
+        body: "Each week: check the dashboard, reply to training & matches, and message admin if you need help.",
       },
-      3600,
+      3000,
     );
   } finally {
     await hideDemoChrome(page).catch(() => undefined);
@@ -812,24 +889,45 @@ async function main() {
     { stdio: "inherit" },
   );
 
-  // Quiet warm pads under captions — duck slightly so UI narration stays clear.
   execSync(
     [
       "ffmpeg -y",
       `-i "${targetMp4}"`,
       `-i "${musicPath}"`,
-      '-filter_complex "[1:a]volume=0.18,afade=t=in:st=0:d=2[a]"',
+      '-filter_complex "[1:a]volume=0.22,afade=t=in:st=0:d=1.5[a]"',
       "-map 0:v -map \"[a]\" -c:v copy -c:a aac -shortest -movflags +faststart",
       `"${finalMp4}"`,
     ].join(" "),
     { stdio: "inherit" },
   );
 
-  fs.renameSync(finalMp4, targetMp4);
+  // Soft fade-out on music at the end of the video length.
+  const duration = Number(
+    execSync(
+      `ffprobe -v error -show_entries format=duration -of csv=p=0 "${finalMp4}"`,
+      { encoding: "utf8" },
+    ).trim(),
+  );
+  const fadeStart = Math.max(0, duration - 2.2);
+  const fadedMp4 = path.join(OUTPUT_DIR, "member-app-tutorial-faded.mp4");
+  execSync(
+    [
+      "ffmpeg -y",
+      `-i "${finalMp4}"`,
+      `-af "afade=t=out:st=${fadeStart}:d=2.2"`,
+      "-c:v copy -c:a aac -movflags +faststart",
+      `"${fadedMp4}"`,
+    ].join(" "),
+    { stdio: "inherit" },
+  );
+
+  fs.renameSync(fadedMp4, targetMp4);
+  if (fs.existsSync(finalMp4)) fs.unlinkSync(finalMp4);
   fs.copyFileSync(targetMp4, publicMp4);
   console.log(`Saved: ${targetMp4}`);
   console.log(`Public: ${publicMp4}`);
   console.log(`Also: ${targetWebm}`);
+  console.log(`Duration: ${duration.toFixed(1)}s`);
 }
 
 main().catch((error) => {
