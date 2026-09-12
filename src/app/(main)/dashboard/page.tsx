@@ -30,6 +30,7 @@ import {
   syncMembershipArrearsStatus,
 } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
+import { syncReclubClubUpcomingActivitiesForBrowse } from "@/lib/reclub-sync";
 import { getSiteContentMap } from "@/lib/site-content";
 import { TRAINING_RESPONSE_OPENS_DAYS } from "@/lib/training-attendance-config";
 import { getUpcomingTeamTrainingEvents } from "@/lib/training-attendance";
@@ -54,6 +55,12 @@ export default async function DashboardPage() {
 
   const coach = await getCoachProfile(session.user.id);
   const now = new Date();
+
+  try {
+    await syncReclubClubUpcomingActivitiesForBrowse();
+  } catch (error) {
+    console.error("Reclub club sync failed:", error);
+  }
 
   if (coach) {
     const [

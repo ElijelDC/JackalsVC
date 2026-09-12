@@ -5,7 +5,13 @@ import {
 import type { DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import { prisma } from "@/lib/prisma";
 
-const CLUB_EVENT_TYPES = ["TOURNAMENT", "SKILLS_CLINIC", "SOCIAL"] as const;
+/** Matches `/events` browse types so Reclub fun sessions appear on the dashboard. */
+export const DASHBOARD_CLUB_EVENT_TYPES = [
+  "TOURNAMENT",
+  "SKILLS_CLINIC",
+  "SOCIAL",
+  "FUN",
+] as const;
 
 export function toDashboardClubEvent(
   event: ReturnType<typeof serializeEnrichedEvent>,
@@ -33,7 +39,7 @@ export async function getDashboardClubEvents(
   const events = await prisma.event.findMany({
     where: {
       startDate: { gte: now, lte: eventsThrough },
-      type: { in: [...CLUB_EVENT_TYPES] },
+      type: { in: [...DASHBOARD_CLUB_EVENT_TYPES] },
     },
     orderBy: { startDate: "asc" },
   });
