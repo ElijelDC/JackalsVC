@@ -100,29 +100,50 @@ async function authorizeVlyMembershipPhoto(
   return clubMember?.id === memberId;
 }
 
-async function authorizeTrialSessionPaymentProof(relativePath: string) {
+function extractTrialSessionProofId(relativePath: string): string | null {
   const prefix = "trial-session-proofs/";
-  if (!relativePath.startsWith(prefix)) return false;
-
+  if (!relativePath.startsWith(prefix)) return null;
   const filename = relativePath.slice(prefix.length);
-  const match = filename.match(/^([0-9a-f-]{36})-\d+\.[a-z0-9]+$/i);
-  const proofId = match?.[1];
-  if (!proofId) return false;
+  // Explicit UUIDs: `${uuid}-${timestamp}.ext` (hyphenated id).
+  const uuidMatch = filename.match(
+    /^([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})-\d+\./i,
+  );
+  if (uuidMatch?.[1]) return uuidMatch[1];
+  // Schema default / legacy: `${cuid}-${timestamp}.ext`.
+  return extractIdFromFilename(relativePath, "trial-session-proofs");
+}
 
-  const proof = await prisma.trialSessionPaymentProof.findUnique({
-    where: { id: proofId },
-    select: {
-      id: true,
-      trialSession: { select: { active: true } },
-    },
-  });
-  if (!proof) return false;
+async function authorizeTrialSessionPaymentProof(relativePath: string) {
+  const proofId = extractTrialSessionProofId(relativePath);
+  const proofUrl = `/uploads/${relativePath}`;
 
   const session = await auth();
-  if (session?.user?.role === "ADMIN") return true;
+  const isStaff =
+    session?.user?.role === "ADMIN" || Boolean(session?.user?.isCoach);
 
-  // Public trial signup: the proof UUID in the filename acts as the access token.
-  return proof.trialSession.active;
+  async function findProof() {
+    if (proofId) {
+      const byId = await prisma.trialSessionPaymentProof.findUnique({
+        where: { id: proofId },
+        select: { id: true },
+      });
+      if (byId) return byId;
+    }
+    // Fallback when filename parsing drifts but DB still has the stored URL.
+    return prisma.trialSessionPaymentProof.findFirst({
+      where: { proofScreenshotUrl: proofUrl },
+      select: { id: true },
+    });
+  }
+
+  const proof = await findProof();
+  if (!proof) return false;
+
+  if (isStaff) return true;
+
+  // Public trial signup: the proof id in the filename acts as the access token
+  // (same capability-token pattern as training-invite proofs).
+  return true;
 }
 
 async function authorizeTrainingInvitePaymentProof(relativePath: string) {

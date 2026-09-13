@@ -1,10 +1,9 @@
 "use client";
 
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import {
   Check,
   ChevronDown,
-  ImageIcon,
   Loader2,
   Mail,
   UserMinus,
@@ -43,6 +42,87 @@ function formatSubmittedAt(iso: string) {
     minute: "2-digit",
     hourCycle: "h23",
   });
+}
+
+function TrialSessionReceiptThumb({
+  url,
+  alt,
+  onOpen,
+}: {
+  url: string | null;
+  alt: string;
+  onOpen: () => void;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [url]);
+
+  if (!url || failed) {
+    return (
+      <button
+        type="button"
+        onClick={onOpen}
+        className="mt-2 flex h-28 w-full flex-col items-center justify-center gap-0.5 rounded-lg border border-dashed border-white/10 bg-black/20 px-2 text-center hover:border-white/20"
+      >
+        <span className="text-[10px] font-medium text-zinc-400">
+          {url && failed ? "Receipt unavailable" : "No receipt"}
+        </span>
+        <span className="text-[10px] leading-snug text-zinc-600">
+          You can still approve
+        </span>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="mt-2 block w-full overflow-hidden rounded-lg border border-white/10 bg-black/40"
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={url}
+        alt={alt}
+        className="max-h-48 w-full object-contain"
+        onError={() => setFailed(true)}
+      />
+    </button>
+  );
+}
+
+function TrialSessionReceiptModalImage({
+  url,
+  alt,
+}: {
+  url: string;
+  alt: string;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+  }, [url]);
+
+  if (failed) {
+    return (
+      <p className="rounded-lg border border-dashed border-white/10 px-3 py-8 text-center text-sm text-zinc-500">
+        Receipt unavailable. You can still approve this request.
+      </p>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={url}
+      alt={alt}
+      className="w-full rounded-lg border border-white/10"
+      onError={() => setFailed(true)}
+    />
+  );
 }
 
 function statusTone(status: TrialSessionSignupStatus) {
@@ -400,24 +480,11 @@ export function TrialSessionSignupsPanel({
           <p className="text-xs uppercase tracking-wide text-zinc-500">
             Receipt
           </p>
-          {signup.paymentProofUrl ? (
-            <button
-              type="button"
-              onClick={() => setReceiptSignup(signup)}
-              className="mt-2 block overflow-hidden rounded-lg border border-white/10 bg-black/40"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={signup.paymentProofUrl}
-                alt={`Receipt from ${signup.displayName}`}
-                className="max-h-48 w-full object-contain"
-              />
-            </button>
-          ) : (
-            <div className="mt-2 flex h-28 items-center justify-center rounded-lg border border-dashed border-white/10 text-zinc-600">
-              <ImageIcon className="h-5 w-5" />
-            </div>
-          )}
+          <TrialSessionReceiptThumb
+            url={signup.paymentProofUrl}
+            alt={`Receipt from ${signup.displayName}`}
+            onOpen={() => setReceiptSignup(signup)}
+          />
         </div>
       </div>
     );
@@ -887,14 +954,14 @@ export function TrialSessionSignupsPanel({
         className="max-w-[min(100%,40rem)]"
       >
         {receiptSignup?.paymentProofUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={receiptSignup.paymentProofUrl}
+          <TrialSessionReceiptModalImage
+            url={receiptSignup.paymentProofUrl}
             alt={`Payment receipt from ${receiptSignup.displayName}`}
-            className="w-full rounded-lg border border-white/10"
           />
         ) : (
-          <p className="text-sm text-zinc-500">No receipt uploaded.</p>
+          <p className="text-sm text-zinc-500">
+            No receipt uploaded. You can still approve this request.
+          </p>
         )}
       </Modal>
     </div>

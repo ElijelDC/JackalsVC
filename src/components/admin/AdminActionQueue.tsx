@@ -13,6 +13,7 @@ import {
   Shirt,
   ShoppingBag,
   UserPlus,
+  Users,
   Volleyball,
   Wallet,
 } from "lucide-react";
@@ -30,6 +31,7 @@ const ENTRY_ICONS = {
   "committee-interest": ClipboardCheck,
   "trials-application": Volleyball,
   "trial-session-signup": Calendar,
+  "training-invite-signup": Users,
   "training-payg": Dumbbell,
 } as const;
 

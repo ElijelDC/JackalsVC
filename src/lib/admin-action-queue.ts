@@ -64,6 +64,8 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     trialsApplicationCount,
     trialSessionSignups,
     trialSessionSignupCount,
+    trainingInviteSignups,
+    trainingInviteSignupCount,
     trainingPaygPending,
     trainingPaygPendingCount,
   ] = await Promise.all([
@@ -143,6 +145,29 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       },
     }),
     prisma.trialSessionSignup.count({ where: { status: "PENDING" } }),
+    prisma.trainingInviteSignup.findMany({
+      where: {
+        status: "PENDING",
+        invite: { status: "ACTIVE" },
+      },
+      orderBy: { createdAt: "asc" },
+      take: 4,
+      select: {
+        displayName: true,
+        invite: {
+          select: {
+            eventId: true,
+            event: { select: { title: true } },
+          },
+        },
+      },
+    }),
+    prisma.trainingInviteSignup.count({
+      where: {
+        status: "PENDING",
+        invite: { status: "ACTIVE" },
+      },
+    }),
     prisma.trainingPaygAttendance.findMany({
       where: { status: "PENDING" },
       orderBy: { createdAt: "asc" },
@@ -302,6 +327,25 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       count: trialSessionSignupCount,
       previews: trialSessionSignups.map(
         (signup) => `${signup.displayName} · ${signup.trialSession.title}`,
+      ),
+    });
+  }
+
+  if (trainingInviteSignupCount > 0) {
+    const firstEventId = trainingInviteSignups[0]?.invite.eventId;
+    entries.push({
+      kind: "training-invite-signup",
+      href: firstEventId
+        ? `/training/session/${firstEventId}`
+        : "/admin/one-off-sessions",
+      title: "Training guests",
+      summary:
+        trainingInviteSignupCount === 1
+          ? "1 training invite guest waiting for approval"
+          : `${trainingInviteSignupCount} training invite guests waiting for approval`,
+      count: trainingInviteSignupCount,
+      previews: trainingInviteSignups.map(
+        (signup) => `${signup.displayName} · ${signup.invite.event.title}`,
       ),
     });
   }

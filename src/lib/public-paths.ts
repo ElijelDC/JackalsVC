@@ -3,6 +3,8 @@ export const PUBLIC_PATHS = {
   brand: {
     logo: "/brand/logo.png?v=20260912c",
     logoTransparent: "/brand/logo-transparent.png?v=20260912c",
+    /** 1200×630 Open Graph / link-preview image (not the nav logo). */
+    ogImage: "/brand/og-image.png?v=20260913a",
     favicon: "/brand/favicon.png?v=20260912c",
     icon16: "/brand/icon-16.png?v=20260912c",
     icon32: "/brand/icon-32.png?v=20260912c",

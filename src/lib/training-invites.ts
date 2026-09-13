@@ -9,6 +9,7 @@ import {
   deleteTrainingInvitePaymentProofFile,
   saveTrainingInvitePaymentProofFile,
 } from "@/lib/training-invite-payment-proof";
+import { notifyTrainingInviteSignupPending } from "@/lib/send-session-guest-signup-email";
 import type {
   PublicTrainingInvite,
   TrainingInviteGuestAttendee,
@@ -509,6 +510,8 @@ export async function registerForTrainingInvite(
           await deleteTrainingInvitePaymentProofFile(proofUrl);
         }
 
+        await notifyTrainingInviteSignupPending(signup.id);
+
         return {
           ok: true as const,
           signup: serializeSignup({
@@ -538,6 +541,8 @@ export async function registerForTrainingInvite(
         reviewedByUserId: null,
       },
     });
+
+    await notifyTrainingInviteSignupPending(signup.id);
 
     return {
       ok: true as const,
@@ -652,6 +657,8 @@ export async function registerForTrainingInvite(
 
     throw error;
   }
+
+  await notifyTrainingInviteSignupPending(signup.id);
 
   return {
     ok: true as const,

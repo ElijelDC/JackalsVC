@@ -8,6 +8,7 @@ import {
   saveTrialSessionPaymentProofFile,
 } from "@/lib/trial-session-payment-proof";
 import { notifyTrialSessionSignupApproved } from "@/lib/send-trial-session-signup-approved-email";
+import { notifyTrialSessionSignupPending } from "@/lib/send-session-guest-signup-email";
 import type {
   PublicTrialSession,
   TrialSessionRecord,
@@ -386,6 +387,8 @@ export async function registerForTrialSession(
           await deleteTrialSessionPaymentProofFile(proofUrl);
         }
 
+        await notifyTrialSessionSignupPending(signup.id);
+
         return {
           ok: true as const,
           signup: serializeSignup(signup),
@@ -410,6 +413,8 @@ export async function registerForTrialSession(
         status: TRIAL_SESSION_SIGNUP_PENDING,
       },
     });
+
+    await notifyTrialSessionSignupPending(signup.id);
 
     return {
       ok: true as const,
@@ -521,6 +526,8 @@ export async function registerForTrialSession(
 
     throw error;
   }
+
+  await notifyTrialSessionSignupPending(signup.id);
 
   return {
     ok: true as const,

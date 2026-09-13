@@ -53,7 +53,7 @@ export function pageMetadata({
   absoluteTitle,
 }: PageMetadataOptions): Metadata {
   const url = absoluteUrl(path);
-  const ogImage = absoluteUrl(PUBLIC_PATHS.brand.logo);
+  const ogImage = absoluteUrl(PUBLIC_PATHS.brand.ogImage);
   const resolvedTitle = absoluteTitle ?? fullPageTitle(title);
 
   return {
@@ -71,7 +71,14 @@ export function pageMetadata({
       siteName: SEO_SITE_NAME,
       title: resolvedTitle,
       description,
-      images: [{ url: ogImage, alt: SEO_SITE_NAME }],
+      images: [
+        {
+          url: ogImage,
+          width: 1200,
+          height: 630,
+          alt: SEO_SITE_NAME,
+        },
+      ],
     },
     twitter: {
       card: "summary_large_image",
@@ -101,8 +108,8 @@ export function organizationJsonLd() {
   };
 }
 
-export function privatePageMetadata(title: string) {
-  return pageMetadata({ title, noIndex: true });
+export function privatePageMetadata(title: string, path?: string) {
+  return pageMetadata({ title, path, noIndex: true });
 }
 
 export function adminPageMetadata(title: string) {
