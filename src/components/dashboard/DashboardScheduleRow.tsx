@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { format } from "date-fns";
 import {
   getDashboardResponseDisplay,
   getDashboardStatusInlineClass,
   type TrainingAttendanceStatus,
 } from "@/lib/training-attendance-config";
 import { formatMatchVenueLabel } from "@/lib/match-config";
+import { formatInClubTime } from "@/lib/datetime-form";
 import { cn } from "@/lib/utils";
 
 function DateBlock({
@@ -36,7 +36,7 @@ function DateBlock({
           tone === "neutral" && "text-zinc-500",
         )}
       >
-        {format(date, "MMM")}
+        {formatInClubTime(date, { month: "short" })}
       </span>
       <span
         className={cn(
@@ -47,7 +47,7 @@ function DateBlock({
           tone === "neutral" && "text-white",
         )}
       >
-        {format(date, "d")}
+        {formatInClubTime(date, { day: "numeric" })}
       </span>
     </div>
   );
@@ -165,6 +165,12 @@ export function buildScheduleMeta(
   const parts: string[] = [];
   if (venue) parts.push(formatMatchVenueLabel(venue));
   if (showTeam && teamName) parts.push(teamName);
-  parts.push(format(date, "EEE · HH:mm"));
+  parts.push(
+    `${formatInClubTime(date, { weekday: "short" })} · ${formatInClubTime(date, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    })}`,
+  );
   return parts.join(" · ");
 }

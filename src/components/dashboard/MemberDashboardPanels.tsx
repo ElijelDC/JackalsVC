@@ -15,6 +15,7 @@ import {
 import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 import type { DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import { getEventTypeLabel } from "@/lib/event-filters";
+import { formatInClubTime } from "@/lib/datetime-form";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";
 import type { MembershipPaymentAccess } from "@/lib/membership-overdue";
 import { formatPrice } from "@/lib/utils";
@@ -61,7 +62,7 @@ export function DashboardUpcomingClubEventsPanel({
                     href={withDashboardReturn(`/calendar/${event.id}`)}
                     date={startDate}
                     title={event.title}
-                    meta={`${getEventTypeLabel(event.type)} · ${format(startDate, "EEE · HH:mm")}`}
+                    meta={`${getEventTypeLabel(event.type)} · ${formatInClubTime(startDate, { weekday: "short" })} · ${formatInClubTime(startDate, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}`}
                   />
                 );
               })}

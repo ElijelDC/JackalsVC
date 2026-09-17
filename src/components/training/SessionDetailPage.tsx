@@ -14,6 +14,7 @@ import type {
   ScheduleOccurrence,
   SessionCalendarExport,
 } from "@/lib/session-calendar";
+import { formatInClubTime } from "@/lib/datetime-form";
 import { Badge } from "@/components/ui/Badge";
 import { Card, CardTitle } from "@/components/ui/Card";
 import { PageContainer } from "@/components/layout/PageShell";
@@ -293,10 +294,24 @@ export function SessionDetailPage({
                       )}
                     />
                     <span className={cn("font-medium", isNext ? "text-white" : "text-zinc-300")}>
-                      {format(start, "EEE, d MMM")}
+                      {formatInClubTime(start, {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}
                     </span>
                     <span className="text-zinc-500">
-                      {format(start, "HH:mm")} – {format(end, "HH:mm")}
+                      {formatInClubTime(start, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hourCycle: "h23",
+                      })}{" "}
+                      –{" "}
+                      {formatInClubTime(end, {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hourCycle: "h23",
+                      })}
                     </span>
                     {occurrence.location && occurrence.location !== session.location && (
                       <span className="text-zinc-600">· {occurrence.location}</span>
@@ -349,10 +364,25 @@ export function SessionDetailPage({
                 <div key={occurrence.startDate} className="flex items-center gap-3 text-sm">
                   <span className="inline-block h-2 w-2 rounded-full bg-jackals-red-light" />
                   <span className="font-medium text-white">
-                    {format(start, "EEEE, d MMMM yyyy")}
+                    {formatInClubTime(start, {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}
                   </span>
                   <span className="text-zinc-500">
-                    {format(start, "HH:mm")} – {format(end, "HH:mm")}
+                    {formatInClubTime(start, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hourCycle: "h23",
+                    })}{" "}
+                    –{" "}
+                    {formatInClubTime(end, {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hourCycle: "h23",
+                    })}
                   </span>
                   {occurrence.location && (
                     <span className="text-zinc-600">· {occurrence.location}</span>

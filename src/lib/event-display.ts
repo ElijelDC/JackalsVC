@@ -106,10 +106,13 @@ export function formatEventDateTime(
   const start = new Date(startDate);
   const end = endDate ? new Date(endDate) : null;
   const isTournament = options?.eventType === "TOURNAMENT";
-  const useClubTime =
-    options?.timeZone === CLUB_TIMEZONE || options?.timeZone === "club";
+  // Always club wall-clock unless an explicit device-local override is requested.
+  // Using date-fns format() without a zone follows the runtime TZ (UTC on the
+  // production server → 18:00–20:00) while Irish browsers show 19:00–21:00.
+  const useDeviceLocal =
+    options?.timeZone === "local" || options?.timeZone === "device";
 
-  if (useClubTime) {
+  if (!useDeviceLocal) {
     const dateLabel = formatInClubTime(start, {
       weekday: "long",
       day: "numeric",
