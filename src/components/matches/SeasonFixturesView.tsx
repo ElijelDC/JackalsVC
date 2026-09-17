@@ -68,8 +68,8 @@ function TeamFilter({
   const options = [
     {
       key: FIXTURES_ALL_TEAMS,
-      label: "All teams",
-      hint: null as string | null,
+      label: "All",
+      hint: "All teams" as string | null,
     },
     ...ordered.map((team) => ({
       key: team.key,
@@ -98,7 +98,11 @@ function TeamFilter({
               scroll={false}
               aria-current={selected ? "page" : undefined}
               aria-label={
-                isMine ? `${option.label}, your squad` : undefined
+                option.key === FIXTURES_ALL_TEAMS
+                  ? "All teams"
+                  : isMine
+                    ? `${option.label}, your squad`
+                    : undefined
               }
               title={option.hint ?? option.label}
               className={cn(
@@ -146,7 +150,7 @@ function FixtureRow({
     match.warmUpTime,
     match.matchStart,
   );
-  const href = appendReturnFrom(`/matches/${match.id}`, returnFrom);
+  const href = appendReturnFrom(`/matches/${match.id}`, returnFrom ?? "fixtures");
   const squadCode =
     squadShortLabel(match.trainingTeamKey)?.toUpperCase() ?? null;
   const teamLabel = squadCode ?? match.teamName;

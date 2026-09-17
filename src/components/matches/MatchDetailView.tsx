@@ -191,6 +191,24 @@ export function MatchDetailView({
         </AnimateIn>
       )}
 
+      {!detail.isSquadMember ? (
+        <AnimateIn delay={100}>
+          <Card>
+            <CardTitle className="text-base">Another squad&apos;s fixture</CardTitle>
+            <CardDescription className="mt-2">
+              You can view the match details here. Only {team.name} players and
+              coaches can respond or see attendance.
+            </CardDescription>
+            <Link
+              href="/fixtures?team=all"
+              className="mt-6 inline-flex items-center gap-1 text-sm font-medium text-jackals-red-light hover:text-jackals-red"
+            >
+              Back to season fixtures
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </Card>
+        </AnimateIn>
+      ) : (
       <div className="grid gap-6 lg:grid-cols-5">
         <AnimateIn delay={100} className="lg:col-span-2">
           <Card>
@@ -309,6 +327,7 @@ export function MatchDetailView({
           </Card>
         </AnimateIn>
       </div>
+      )}
     </PageContainer>
   );
 }

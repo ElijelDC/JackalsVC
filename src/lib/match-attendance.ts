@@ -36,6 +36,8 @@ export type MatchDetailData = {
     name: string;
     dayLabel: string;
   };
+  /** False when viewing another squad's fixture (details only). */
+  isSquadMember: boolean;
   userStatus: TrainingAttendanceStatus;
   isCoachUser: boolean;
   coachReminder: CoachReminderStatus | null;
@@ -47,6 +49,12 @@ export type MatchDetailData = {
     unanswered: number;
     total: number;
   };
+};
+
+const EMPTY_ROSTER_GROUPS: TrainingRosterGroups = {
+  attending: [],
+  notAttending: [],
+  unanswered: [],
 };
 
 export async function getUserMatchAttendanceStatuses(
@@ -75,13 +83,42 @@ export async function getMatchDetail(
   const match = await prisma.teamMatch.findUnique({ where: { id: matchId } });
   if (!match) notFound();
 
-  const userTeamKeys = await getUserTrainingTeamKeys(userId);
-  if (!userTeamKeys.includes(match.trainingTeamKey)) {
-    notFound();
-  }
-
   const team = await getTrainingTeamByKey(match.trainingTeamKey);
   if (!team) notFound();
+
+  const userTeamKeys = await getUserTrainingTeamKeys(userId);
+  const isSquadMember = userTeamKeys.includes(match.trainingTeamKey);
+
+  const matchPayload = {
+    id: match.id,
+    opponentName: match.opponentName,
+    venue: match.venue,
+    location: match.location,
+    warmUpTime: match.warmUpTime.toISOString(),
+    matchStart: match.matchStart.toISOString(),
+    notes: match.notes,
+    title: formatMatchTitle(match.opponentName, match.venue),
+    cancelled: match.cancelled,
+  };
+
+  if (!isSquadMember) {
+    return {
+      match: matchPayload,
+      team,
+      isSquadMember: false,
+      userStatus: "UNANSWERED",
+      isCoachUser: false,
+      coachReminder: null,
+      roster: EMPTY_ROSTER_GROUPS,
+      coaches: EMPTY_ROSTER_GROUPS,
+      counts: {
+        attending: 0,
+        notAttending: 0,
+        unanswered: 0,
+        total: 0,
+      },
+    };
+  }
 
   const [teammates, squadCoaches, signups] = await Promise.all([
     prisma.clubMember.findMany({
@@ -156,18 +193,9 @@ export async function getMatchDetail(
       : null;
 
   return {
-    match: {
-      id: match.id,
-      opponentName: match.opponentName,
-      venue: match.venue,
-      location: match.location,
-      warmUpTime: match.warmUpTime.toISOString(),
-      matchStart: match.matchStart.toISOString(),
-      notes: match.notes,
-      title: formatMatchTitle(match.opponentName, match.venue),
-      cancelled: match.cancelled,
-    },
+    match: matchPayload,
     team,
+    isSquadMember: true,
     userStatus,
     isCoachUser,
     coachReminder,

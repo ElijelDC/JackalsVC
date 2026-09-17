@@ -19,6 +19,9 @@ export function resolveDetailBackLink(
   if (isDashboardReturn(from)) {
     return { path: "/dashboard", label: "Dashboard" };
   }
+  if (from === "fixtures") {
+    return { path: "/fixtures?team=all", label: "Season fixtures" };
+  }
   return fallback;
 }
 
@@ -26,8 +29,15 @@ export function appendReturnFrom(
   href: string,
   from: string | null | undefined,
 ): string {
-  if (!isDashboardReturn(from)) return href;
-  return withDashboardReturn(href);
+  if (isDashboardReturn(from)) return withDashboardReturn(href);
+  if (from === "fixtures") {
+    const [path, search = ""] = href.split("?");
+    const params = new URLSearchParams(search);
+    params.set("from", "fixtures");
+    const query = params.toString();
+    return query ? `${path}?${query}` : `${path}?from=fixtures`;
+  }
+  return href;
 }
 
 export function buildScheduleListHref(

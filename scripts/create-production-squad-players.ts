@@ -100,12 +100,6 @@ const players: PlayerSeed[] = [
     squadLabel: "Tomas",
   },
   {
-    name: "Harrison Kye",
-    email: "kharro2009@gmail.com",
-    trainingTeamKey: "DIV2_MENS",
-    squadLabel: "Kye",
-  },
-  {
     name: "Moustafa Saadon",
     email: "moustafasaadon2004@gmail.com",
     trainingTeamKey: "DIV2_MENS",
@@ -270,6 +264,18 @@ const players: PlayerSeed[] = [
     email: "smanalo595@gmail.com",
     trainingTeamKey: "DIVISION_3_MENS",
     squadLabel: "Sean M",
+  },
+  {
+    name: "Davis Kols",
+    email: "kolsdavis05@gmail.com",
+    trainingTeamKey: "DIVISION_3_MENS",
+    squadLabel: "Davis",
+  },
+  {
+    name: "Anthony Ryan",
+    email: "anto2001ryan@gmail.com",
+    trainingTeamKey: "DIVISION_3_MENS",
+    squadLabel: "Anthony",
   },
 ];
 
