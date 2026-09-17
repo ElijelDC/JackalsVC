@@ -1,6 +1,6 @@
 import "server-only";
 
-import { format } from "date-fns";
+import { formatInClubTime } from "@/lib/datetime-form";
 import { enrichEventRecords } from "@/lib/event-enrichment";
 import { formatMatchTitle } from "@/lib/match-config";
 import type {
@@ -242,7 +242,19 @@ export async function getCoachUnansweredTrainingSession(
 }
 
 export function formatCoachSessionDate(isoDate: string) {
-  return format(new Date(isoDate), "EEEE d MMMM yyyy 'at' HH:mm");
+  const date = new Date(isoDate);
+  const dateLabel = formatInClubTime(date, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+  const timeLabel = formatInClubTime(date, {
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+  return `${dateLabel} at ${timeLabel}`;
 }
 
 export async function getCoachReminderTargetItem(

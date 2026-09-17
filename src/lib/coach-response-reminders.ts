@@ -118,6 +118,7 @@ export async function sendCoachUnansweredReminders(input: {
     getCoachUnansweredItemUrl(item),
   );
   const sessionLabel = formatCoachSessionDate(item.startDate);
+  const teamName = item.teamName?.trim() || input.coach.teamName;
 
   let delivered = 0;
   let logged = 0;
@@ -126,8 +127,7 @@ export async function sendCoachUnansweredReminders(input: {
     const result = await sendTrainingResponseReminderEmail({
       email: player.email,
       playerName: player.name,
-      coachName: input.coach.name,
-      teamName: input.coach.teamName,
+      teamName,
       sessionLabel,
       sessionUrl: itemUrl,
       kind: item.kind,
@@ -138,9 +138,9 @@ export async function sendCoachUnansweredReminders(input: {
     await sendPushToUser(player.userId, {
       title:
         item.kind === "match"
-          ? "Match response needed"
-          : "Training response needed",
-      body: `${input.coach.name} needs your attendance for ${sessionLabel}`,
+          ? "Match reminder"
+          : "Training reminder",
+      body: `Please respond for ${sessionLabel}`,
       url: itemUrl,
     });
   }

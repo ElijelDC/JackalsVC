@@ -1,5 +1,5 @@
 import { format } from "date-fns";
-import { CLUB_TIMEZONE, formatInClubTime } from "@/lib/datetime-form";
+import { formatInClubTime } from "@/lib/datetime-form";
 import { isSkillsClinicEvent } from "@/lib/events-config";
 
 export const EVENT_TYPE_STYLES: Record<
