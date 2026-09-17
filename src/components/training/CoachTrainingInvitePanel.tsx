@@ -6,6 +6,7 @@ import { Check, Copy, Link2, Loader2, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Input, Label } from "@/components/ui/Input";
 import { FormError } from "@/components/ui/FormMessage";
 import { apiDelete, apiGet, apiPatch, apiPost } from "@/lib/client-api";
 import type {
@@ -36,9 +37,15 @@ function absoluteInviteUrl(path: string) {
 }
 
 function statusClass(status: string) {
-  if (status === "APPROVED") return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
-  if (status === "REJECTED") return "border-rose-500/40 bg-rose-500/10 text-rose-300";
+  if (status === "APPROVED")
+    return "border-emerald-500/40 bg-emerald-500/10 text-emerald-300";
+  if (status === "REJECTED")
+    return "border-rose-500/40 bg-rose-500/10 text-rose-300";
   return "border-amber-500/40 bg-amber-500/10 text-amber-200";
+}
+
+function formatFeeLabel(fee: number) {
+  return Number.isInteger(fee) ? `€${fee}` : `€${fee.toFixed(2)}`;
 }
 
 export function CoachTrainingInvitePanel({
@@ -58,6 +65,8 @@ export function CoachTrainingInvitePanel({
   const [copiedType, setCopiedType] = useState<TrainingInvitePricingType | null>(
     null,
   );
+  const [savingFee, setSavingFee] = useState(false);
+  const [paidFeeInput, setPaidFeeInput] = useState("10");
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -73,11 +82,26 @@ export function CoachTrainingInvitePanel({
       return;
     }
     setInvites(result.data.invites);
+    const paid = result.data.invites.find(
+      (invite) => invite.pricingType === "PAID",
+    );
+    if (paid?.sessionFeeEur != null && paid.sessionFeeEur > 0) {
+      setPaidFeeInput(String(paid.sessionFeeEur));
+    }
   }, [eventId]);
 
   useEffect(() => {
     void load();
   }, [load]);
+
+  const parsePaidFee = () => {
+    const fee = Number(paidFeeInput);
+    if (!Number.isFinite(fee) || fee <= 0) {
+      setError("Enter a valid guest session fee greater than 0.");
+      return null;
+    }
+    return Math.round(fee * 100) / 100;
+  };
 
   const ensureInvite = async (
     pricingType: TrainingInvitePricingType,
@@ -85,12 +109,23 @@ export function CoachTrainingInvitePanel({
   ) => {
     setBusyType(pricingType);
     setError(null);
+    const sessionFeeEur =
+      pricingType === "PAID" ? parsePaidFee() : undefined;
+    if (pricingType === "PAID" && sessionFeeEur == null) {
+      setBusyType(null);
+      return null;
+    }
     const result = await apiPost<{
       invite: InviteWithSignups;
       created: boolean;
     }>(
       "/api/coach/training/invites",
-      { eventId, pricingType, regenerate },
+      {
+        eventId,
+        pricingType,
+        regenerate,
+        ...(sessionFeeEur != null ? { sessionFeeEur } : {}),
+      },
       "Could not create invite",
     );
     setBusyType(null);
@@ -102,6 +137,27 @@ export function CoachTrainingInvitePanel({
     return result.data.invite;
   };
 
+  const savePaidFee = async () => {
+    const sessionFeeEur = parsePaidFee();
+    if (sessionFeeEur == null) return;
+    setSavingFee(true);
+    setError(null);
+    const result = await apiPost<{
+      invite: InviteWithSignups;
+      created: boolean;
+    }>(
+      "/api/coach/training/invites",
+      { eventId, pricingType: "PAID", sessionFeeEur },
+      "Could not update guest fee",
+    );
+    setSavingFee(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    await load();
+  };
+
   const copyLink = async (pricingType: TrainingInvitePricingType) => {
     let invite: InviteWithSignups | undefined = invites.find(
       (item) => item.pricingType === pricingType,
@@ -110,6 +166,9 @@ export function CoachTrainingInvitePanel({
       const created = await ensureInvite(pricingType);
       if (!created) return;
       invite = created;
+    } else if (pricingType === "PAID") {
+      const updated = await ensureInvite("PAID");
+      if (updated) invite = updated;
     }
 
     try {
@@ -166,6 +225,12 @@ export function CoachTrainingInvitePanel({
 
   const paidInvite = invites.find((invite) => invite.pricingType === "PAID");
   const freeInvite = invites.find((invite) => invite.pricingType === "FREE");
+  const paidFee =
+    paidInvite?.sessionFeeEur != null && paidInvite.sessionFeeEur > 0
+      ? paidInvite.sessionFeeEur
+      : Number(paidFeeInput) > 0
+        ? Number(paidFeeInput)
+        : 10;
 
   return (
     <Card className={compact ? "h-full" : undefined}>
@@ -177,12 +242,12 @@ export function CoachTrainingInvitePanel({
           <CardTitle className="text-base">Guest invites</CardTitle>
           {!compact ? (
             <CardDescription className="mt-1">
-              Invite players not on this squad. Paid links use the €
-              {paidInvite?.sessionFeeEur ?? 10} training fee.
+              Invite players not on this squad. Set the paid guest fee below —
+              currently {formatFeeLabel(paidFee)}.
             </CardDescription>
           ) : (
             <CardDescription className="mt-1 text-xs">
-              Paid (€{paidInvite?.sessionFeeEur ?? 10}) or free invite links.
+              Paid ({formatFeeLabel(paidFee)}) or free invite links.
             </CardDescription>
           )}
         </div>
@@ -190,14 +255,60 @@ export function CoachTrainingInvitePanel({
 
       <div
         className={cn(
+          "rounded-lg border border-white/10 bg-black/20 p-3",
+          compact ? "mt-3" : "mt-5",
+        )}
+      >
+        <Label htmlFor={`guest-fee-${eventId}`} className="text-xs text-zinc-400">
+          Paid guest fee (€)
+        </Label>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <Input
+            id={`guest-fee-${eventId}`}
+            type="number"
+            min={1}
+            step={1}
+            inputMode="decimal"
+            value={paidFeeInput}
+            onChange={(event) => setPaidFeeInput(event.target.value)}
+            className="max-w-[8rem]"
+          />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={savingFee || busyType === "PAID"}
+            onClick={() => void savePaidFee()}
+          >
+            {savingFee ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : null}
+            {paidInvite ? "Update fee" : "Set fee"}
+          </Button>
+        </div>
+        <p className="mt-2 text-[11px] text-zinc-500">
+          Applies to the paid invite link for this session only.
+        </p>
+      </div>
+
+      <div
+        className={cn(
           "grid gap-2",
-          compact ? "mt-3 grid-cols-1" : "mt-5 sm:grid-cols-2 gap-3",
+          compact ? "mt-3 grid-cols-1" : "mt-4 gap-3 sm:grid-cols-2",
         )}
       >
         {(
           [
-            { type: "PAID" as const, label: "Paid invite (€10)", invite: paidInvite },
-            { type: "FREE" as const, label: "Free invite", invite: freeInvite },
+            {
+              type: "PAID" as const,
+              label: `Paid invite (${formatFeeLabel(paidFee)})`,
+              invite: paidInvite,
+            },
+            {
+              type: "FREE" as const,
+              label: "Free invite",
+              invite: freeInvite,
+            },
           ] as const
         ).map(({ type, label, invite }) => (
           <div
@@ -225,7 +336,11 @@ export function CoachTrainingInvitePanel({
                 ) : (
                   <Copy className="h-3.5 w-3.5" />
                 )}
-                {copiedType === type ? "Copied" : invite ? "Copy link" : "Create & copy"}
+                {copiedType === type
+                  ? "Copied"
+                  : invite
+                    ? "Copy link"
+                    : "Create & copy"}
               </Button>
               {invite ? (
                 <Button
@@ -249,7 +364,9 @@ export function CoachTrainingInvitePanel({
       <div
         className={cn(
           "border-t border-white/10",
-          compact ? "mt-3 max-h-40 overflow-y-auto overscroll-contain pt-3" : "mt-5 pt-4",
+          compact
+            ? "mt-3 max-h-40 overflow-y-auto overscroll-contain pt-3"
+            : "mt-5 pt-4",
         )}
       >
         <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
@@ -258,7 +375,9 @@ export function CoachTrainingInvitePanel({
         {loading ? (
           <p className="mt-3 text-sm text-zinc-500">Loading…</p>
         ) : allSignups.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-600">No guest registrations yet.</p>
+          <p className="mt-3 text-sm text-zinc-600">
+            No guest registrations yet.
+          </p>
         ) : (
           <ul className="mt-3 space-y-3">
             {allSignups.map((signup) => (
@@ -268,8 +387,12 @@ export function CoachTrainingInvitePanel({
               >
                 <div className="min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-white">{signup.displayName}</p>
-                    <Badge className={cn("text-[10px]", statusClass(signup.status))}>
+                    <p className="font-medium text-white">
+                      {signup.displayName}
+                    </p>
+                    <Badge
+                      className={cn("text-[10px]", statusClass(signup.status))}
+                    >
                       {TRAINING_INVITE_SIGNUP_STATUS_LABELS[signup.status]}
                     </Badge>
                     <Badge className="border-white/10 bg-white/5 text-[10px] text-zinc-400">

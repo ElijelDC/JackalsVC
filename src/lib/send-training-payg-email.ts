@@ -1,7 +1,7 @@
 import "server-only";
 
 import { formatEventDateTime } from "@/lib/event-display";
-import { emailSiteUrl, sendNotificationEmail } from "@/lib/notify";
+import { emailSiteUrl, notifyAdmins, sendNotificationEmail } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 
 function firstNameFrom(displayName: string) {
@@ -284,6 +284,81 @@ export async function notifyTrainingPaygMovedToWaiting(
   } catch (error) {
     console.error(
       "[notify] failed to send training PAYG moved-to-waiting email",
+      error,
+    );
+    return { delivered: false };
+  }
+}
+
+/** Email admins only once a PAYG receipt has been attached. */
+export async function notifyTrainingPaygProofSubmitted(
+  attendanceId: string,
+): Promise<{ delivered: boolean }> {
+  try {
+    const attendance = await prisma.trainingPaygAttendance.findUnique({
+      where: { id: attendanceId },
+      include: {
+        clubMember: {
+          select: {
+            name: true,
+            user: { select: { name: true } },
+          },
+        },
+      },
+    });
+    if (!attendance?.proofScreenshotUrl) return { delivered: false };
+    if (attendance.status !== "PENDING") return { delivered: false };
+
+    const event = await prisma.event.findUnique({
+      where: { id: attendance.eventId },
+      select: {
+        title: true,
+        startDate: true,
+        endDate: true,
+      },
+    });
+    if (!event) return { delivered: false };
+
+    const { dateLabel, timeLabel } = formatEventDateTime(
+      event.startDate.toISOString(),
+      event.endDate?.toISOString() ?? null,
+      { timeZone: "club" },
+    );
+
+    const memberName =
+      attendance.clubMember.name ||
+      attendance.clubMember.user?.name ||
+      "A member";
+
+    return await notifyAdmins({
+      subject: `PAYG receipt — ${memberName}`,
+      content: {
+        heading: "Pay Per Training receipt uploaded",
+        paragraphs: [
+          `${memberName} uploaded a payment receipt for ${event.title} and is waiting for review.`,
+          "They are not marked attending until you approve.",
+        ],
+        details: [
+          { label: "Member", value: memberName },
+          { label: "Session", value: event.title },
+          { label: "Date", value: dateLabel },
+          { label: "Time", value: timeLabel },
+          {
+            label: "Amount due",
+            value: `€${attendance.amountDue}`,
+          },
+          {
+            label: "Payment reference",
+            value: attendance.paymentReference,
+          },
+        ],
+        ctaUrl: emailSiteUrl("/admin/training-payg"),
+        ctaLabel: "Review receipts",
+      },
+    });
+  } catch (error) {
+    console.error(
+      "[notify] failed to send training PAYG proof-submitted email",
       error,
     );
     return { delivered: false };

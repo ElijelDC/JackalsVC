@@ -45,6 +45,7 @@ export async function POST(request: Request) {
     createdByUserId: session!.user.id,
     createdByClubMemberId: coach!.clubMemberId,
     regenerate: data.regenerate,
+    sessionFeeEur: data.sessionFeeEur,
   });
 
   if (!result.ok) {

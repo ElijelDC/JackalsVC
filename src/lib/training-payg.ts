@@ -21,6 +21,7 @@ import {
 import {
   notifyTrainingPaygApproved,
   notifyTrainingPaygMovedToWaiting,
+  notifyTrainingPaygProofSubmitted,
   notifyTrainingPaygRejected,
 } from "@/lib/send-training-payg-email";
 import { userCanSignUpForTrainingEvent } from "@/lib/training-teams";
@@ -326,6 +327,8 @@ export async function submitTrainingPaygProof(input: {
       trainingSession: { select: { trainingTeamKey: true } },
     },
   });
+
+  void notifyTrainingPaygProofSubmitted(updated.id);
 
   return {
     ok: true,

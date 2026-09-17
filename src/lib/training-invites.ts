@@ -106,6 +106,7 @@ export async function createOrGetTrainingInvite(input: {
   createdByUserId: string;
   createdByClubMemberId?: string | null;
   regenerate?: boolean;
+  sessionFeeEur?: number | null;
 }) {
   const event = await getTrainingEventForInvite(input.eventId);
   if (!event) {
@@ -128,19 +129,57 @@ export async function createOrGetTrainingInvite(input: {
     orderBy: { createdAt: "desc" },
   });
 
-  if (existing && !input.regenerate) {
-    return { ok: true as const, invite: serializeInvite(existing), created: false };
-  }
-
   const payg =
     input.pricingType === "PAID" ? await getTrainingPaygSettings() : null;
+
+  const resolvePaidFee = () => {
+    if (input.pricingType !== "PAID") return null;
+    if (
+      input.sessionFeeEur != null &&
+      Number.isFinite(input.sessionFeeEur) &&
+      input.sessionFeeEur > 0
+    ) {
+      return Math.round(input.sessionFeeEur * 100) / 100;
+    }
+    if (existing?.sessionFeeEur != null && existing.sessionFeeEur > 0) {
+      return existing.sessionFeeEur;
+    }
+    return payg!.sessionFeeEur;
+  };
+
+  if (existing && !input.regenerate) {
+    const nextFee = resolvePaidFee();
+    if (
+      input.pricingType === "PAID" &&
+      nextFee != null &&
+      existing.sessionFeeEur !== nextFee
+    ) {
+      const updated = await prisma.trainingInvite.update({
+        where: { id: existing.id },
+        data: {
+          sessionFeeEur: nextFee,
+          paymentUrl: payg!.paymentUrl.trim() || null,
+        },
+      });
+      return {
+        ok: true as const,
+        invite: serializeInvite(updated),
+        created: false,
+      };
+    }
+    return {
+      ok: true as const,
+      invite: serializeInvite(existing),
+      created: false,
+    };
+  }
 
   if (existing && input.regenerate) {
     const updated = await prisma.trainingInvite.update({
       where: { id: existing.id },
       data: {
         token: randomBytes(18).toString("hex"),
-        sessionFeeEur: input.pricingType === "PAID" ? payg!.sessionFeeEur : null,
+        sessionFeeEur: resolvePaidFee(),
         paymentUrl:
           input.pricingType === "PAID"
             ? payg!.paymentUrl.trim() || null
@@ -154,7 +193,7 @@ export async function createOrGetTrainingInvite(input: {
     data: {
       eventId: input.eventId,
       pricingType: input.pricingType,
-      sessionFeeEur: input.pricingType === "PAID" ? payg!.sessionFeeEur : null,
+      sessionFeeEur: resolvePaidFee(),
       paymentUrl:
         input.pricingType === "PAID"
           ? payg!.paymentUrl.trim() || null

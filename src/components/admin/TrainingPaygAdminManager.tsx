@@ -17,11 +17,17 @@ import {
 } from "@/lib/player-payment-type";
 import { cn, formatPrice } from "@/lib/utils";
 
-type StatusFilter = "PENDING" | "APPROVED" | "REJECTED" | "ALL";
+type StatusFilter =
+  | "PENDING"
+  | "AWAITING_PROOF"
+  | "APPROVED"
+  | "REJECTED"
+  | "ALL";
 type SquadFilter = "ALL" | "d2m" | "d3w" | "d3m";
 
+/** Only receipt-submitted rows should alert / need admin action. */
 function isAwaitingReview(status: string) {
-  return status === "PENDING" || status === "AWAITING_PROOF";
+  return status === "PENDING";
 }
 
 function PaygReceiptThumb({
@@ -140,7 +146,8 @@ function PaygReceiptModalImage({
 }
 
 const STATUS_FILTERS: { id: StatusFilter; label: string }[] = [
-  { id: "PENDING", label: "Awaiting" },
+  { id: "PENDING", label: "Receipts" },
+  { id: "AWAITING_PROOF", label: "No receipt yet" },
   { id: "APPROVED", label: "Approved" },
   { id: "REJECTED", label: "Rejected" },
   { id: "ALL", label: "All" },
@@ -226,11 +233,7 @@ export function TrainingPaygAdminManager({
   const visible = useMemo(() => {
     return attendances.filter((row) => {
       const statusOk =
-        statusFilter === "ALL"
-          ? true
-          : statusFilter === "PENDING"
-            ? row.status === "PENDING" || row.status === "AWAITING_PROOF"
-            : row.status === statusFilter;
+        statusFilter === "ALL" ? true : row.status === statusFilter;
       return statusOk && matchesSquadFilter(row, squadFilter);
     });
   }, [attendances, statusFilter, squadFilter]);
@@ -475,8 +478,8 @@ export function TrainingPaygAdminManager({
             </h2>
             <p className="text-sm text-zinc-400">
               {pendingCount === 0
-                ? "Nothing waiting for review"
-                : `${pendingCount} waiting for review`}
+                ? "No receipts waiting for review"
+                : `${pendingCount} receipt${pendingCount === 1 ? "" : "s"} waiting for review`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">

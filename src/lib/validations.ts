@@ -894,6 +894,8 @@ export const trainingInviteCreateSchema = z.object({
   eventId: z.string().min(1, "Training session is required"),
   pricingType: z.enum(["PAID", "FREE"]),
   regenerate: z.boolean().optional(),
+  /** Paid invite fee in EUR. Defaults to club Pay Per Training fee when omitted. */
+  sessionFeeEur: z.number().positive().max(500).optional(),
 });
 
 export const trainingInviteSignupSchema = z.object({

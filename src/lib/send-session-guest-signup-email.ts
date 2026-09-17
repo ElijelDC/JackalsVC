@@ -92,6 +92,7 @@ export async function notifyTrainingInviteSignupPending(signupId: string) {
         invite: {
           select: {
             pricingType: true,
+            sessionFeeEur: true,
             eventId: true,
             event: {
               select: {
@@ -128,6 +129,15 @@ export async function notifyTrainingInviteSignupPending(signupId: string) {
         value: signup.invite.pricingType === "PAID" ? "Paid" : "Free",
       },
     ];
+    if (
+      signup.invite.pricingType === "PAID" &&
+      signup.invite.sessionFeeEur != null
+    ) {
+      details.push({
+        label: "Session fee",
+        value: `€${signup.invite.sessionFeeEur}`,
+      });
+    }
     if (event.location) {
       details.push({ label: "Location", value: event.location });
     }
