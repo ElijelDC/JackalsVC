@@ -105,6 +105,18 @@ const players: PlayerSeed[] = [
     trainingTeamKey: "DIV2_MENS",
     squadLabel: "Moustafa",
   },
+  {
+    name: "Sean Manalo",
+    email: "smanalo595@gmail.com",
+    trainingTeamKey: "DIV2_MENS",
+    squadLabel: "Sean M",
+  },
+  {
+    name: "Leo Magalhaes",
+    email: "itsleo852@gmail.com",
+    trainingTeamKey: "DIV2_MENS",
+    squadLabel: "Leo",
+  },
 
   // D3 Women
   {
@@ -258,12 +270,6 @@ const players: PlayerSeed[] = [
     email: "ivan.li6475@gmail.com",
     trainingTeamKey: "DIVISION_3_MENS",
     squadLabel: "Ivan",
-  },
-  {
-    name: "Sean Manalo",
-    email: "smanalo595@gmail.com",
-    trainingTeamKey: "DIVISION_3_MENS",
-    squadLabel: "Sean M",
   },
   {
     name: "Davis Kols",

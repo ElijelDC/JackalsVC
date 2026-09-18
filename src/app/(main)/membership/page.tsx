@@ -12,6 +12,7 @@ import {
   formatPaymentScheduleLabel,
   type PaymentSchedule,
 } from "@/lib/membership-config";
+import { MembershipDueNotice } from "@/components/membership/MembershipDueNotice";
 import { getClubBankDetails } from "@/lib/payments";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import { syncMembershipArrearsStatus } from "@/lib/membership";
@@ -34,12 +35,9 @@ export default async function MembershipPage({
     redirect("/login?callbackUrl=/membership");
   }
 
-  if (session.user.isPaygPlayer) {
-    redirect("/dashboard");
-  }
-
   const { from } = await searchParams;
   const showDashboardBack = isDashboardReturn(from);
+  const isPaygPlayer = Boolean(session.user.isPaygPlayer);
 
   const [membership, activePlans] = await Promise.all([
     prisma.membership.findFirst({
@@ -92,6 +90,13 @@ export default async function MembershipPage({
           description={`${session.user.name} — your membership payments`}
           centered
         />
+
+        {membershipStatus === "PENDING_PAYMENT" ||
+        payments.some((payment) => payment.status === "PENDING") ? (
+          <AnimatedBlock delay={40} className="mb-6">
+            <MembershipDueNotice />
+          </AnimatedBlock>
+        ) : null}
 
         <MemberPaymentStatus
           memberName={session.user.name ?? "Member"}
@@ -175,6 +180,10 @@ export default async function MembershipPage({
         description="Choose your membership type, then pick how you want to pay."
         centered
       />
+
+      <AnimatedBlock delay={40} className="mb-6">
+        <MembershipDueNotice isPaygPlayer={isPaygPlayer} />
+      </AnimatedBlock>
 
       <MembershipCheckout
         plans={activePlans.map((plan) => ({

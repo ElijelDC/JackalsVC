@@ -133,25 +133,10 @@ const MEMBER_PRIMARY_NAV_HREFS = [
   "/merchandise-order",
 ] as const;
 
-const MEMBER_PAYG_PRIMARY_NAV_HREFS = [
-  "/",
-  "/fixtures",
-  "/events",
-  "/training",
-  "/matches",
-  "/merchandise-order",
-] as const;
-
 export const MEMBER_MOBILE_QUICK_NAV_HREFS = [
   "/training",
   "/matches",
   "/membership",
-] as const;
-
-const MEMBER_PAYG_MOBILE_QUICK_NAV_HREFS = [
-  "/training",
-  "/matches",
-  "/events",
 ] as const;
 
 const MEMBER_MOBILE_MENU_EXTRA_HREFS = ["/gallery", "/teams"] as const;
@@ -247,7 +232,7 @@ function primaryNavHrefs(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
-  isPaygPlayer = false,
+  _isPaygPlayer = false,
 ) {
   if (isAdmin) return ADMIN_PRIMARY_NAV_HREFS;
   if (isLoggedIn && isCoach) {
@@ -256,9 +241,7 @@ function primaryNavHrefs(
       : COACH_VOLUNTEER_PRIMARY_NAV_HREFS;
   }
   if (isLoggedIn) {
-    return isPaygPlayer
-      ? MEMBER_PAYG_PRIMARY_NAV_HREFS
-      : MEMBER_PRIMARY_NAV_HREFS;
+    return MEMBER_PRIMARY_NAV_HREFS;
   }
   return GUEST_PRIMARY_NAV_HREFS;
 }
@@ -268,7 +251,7 @@ function mobileQuickNavHrefs(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
-  isPaygPlayer = false,
+  _isPaygPlayer = false,
 ) {
   if (!isLoggedIn) return [];
   if (isAdmin) return ADMIN_MOBILE_QUICK_NAV_HREFS;
@@ -277,9 +260,7 @@ function mobileQuickNavHrefs(
       ? COACH_PAID_MOBILE_QUICK_NAV_HREFS
       : COACH_VOLUNTEER_MOBILE_QUICK_NAV_HREFS;
   }
-  return isPaygPlayer
-    ? MEMBER_PAYG_MOBILE_QUICK_NAV_HREFS
-    : MEMBER_MOBILE_QUICK_NAV_HREFS;
+  return MEMBER_MOBILE_QUICK_NAV_HREFS;
 }
 
 export const INFO_NAV_ITEMS: NavItem[] = [
@@ -393,15 +374,14 @@ export function visibleNavItems(
   isAdmin = false,
   isCoach = false,
   isPaidCoach = false,
-  isPaygPlayer = false,
+  _isPaygPlayer = false,
 ) {
   return NAV_ITEMS.filter(
     (item) =>
       (!item.coachOnly || (isLoggedIn && isCoach && !isAdmin)) &&
       (!item.paidCoachOnly || (isLoggedIn && isCoach && isPaidCoach && !isAdmin)) &&
       (!item.requiresAuth || isLoggedIn || isAdmin) &&
-      (SHOP_ENABLED || item.href !== "/shop") &&
-      !(isPaygPlayer && item.href === "/membership"),
+      (SHOP_ENABLED || item.href !== "/shop"),
   );
 }
 
@@ -536,10 +516,6 @@ export function visibleMoreNavItems(
         item.href !== "/membership" &&
         !COACH_MORE_HIDE_HREFS.has(item.href),
     );
-  }
-
-  if (isPaygPlayer && !isAdmin) {
-    items = items.filter((item) => item.href !== "/membership");
   }
 
   if (options?.mobileMemberMenu && isLoggedIn && !isAdmin) {

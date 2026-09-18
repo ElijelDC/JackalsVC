@@ -42,6 +42,10 @@ export const CLUB_MEMBERSHIP_SEASON_LABEL =
 
 export const CLUB_MEMBERSHIP_PLAN_NAME = "Club Membership 2026/27";
 
+/** First membership payment due date shown to members (instalment 1 / season start). */
+export const MEMBERSHIP_FIRST_PAYMENT_DUE_LABEL = "2 October 2026";
+export const MEMBERSHIP_FIRST_PAYMENT_DUE_SHORT = "2 Oct";
+
 export const MEMBERSHIP_PLAN_ADULT_NAME = "Adult";
 export const MEMBERSHIP_PLAN_STUDENT_NAME = "Student / U18";
 export const MEMBERSHIP_PLAN_ADULT_PRICE = 450;

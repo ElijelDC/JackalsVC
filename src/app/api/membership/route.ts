@@ -88,6 +88,16 @@ export async function POST(request: Request) {
         installments,
       });
 
+      // Season membership starts — stop weekly pay-per-session billing.
+      await tx.clubMember.updateMany({
+        where: {
+          userId: session!.user.id,
+          rosterRole: "PLAYER",
+          playerPaymentType: "PAYG",
+        },
+        data: { playerPaymentType: "MEMBERSHIP" },
+      });
+
       return created;
     });
 

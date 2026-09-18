@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { auth } from "@/auth";
 import { ForceChangePasswordPrompt } from "@/components/auth/ForceChangePasswordPrompt";
+import { MembershipDueReminderPrompt } from "@/components/membership/MembershipDueReminderPrompt";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransition } from "@/components/motion/PageTransition";
@@ -50,6 +51,7 @@ export default async function AppLayout({
               eventNewsletterSubscribed={eventNewsletterSubscribed}
             />
             {isLoggedIn ? <ForceChangePasswordPrompt /> : null}
+            {isLoggedIn ? <MembershipDueReminderPrompt /> : null}
           </AuthModalProvider>
         </Suspense>
       </SiteEditProvider>
