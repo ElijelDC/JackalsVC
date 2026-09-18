@@ -1,5 +1,6 @@
 import { formatEuroFee } from "@/lib/utils";
 import { MEMBERSHIP_INCLUDES } from "@/lib/membership-2026-27";
+import { parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
 
 export type MembershipInstallmentAmounts = [number, number, number];
 
@@ -46,10 +47,23 @@ export const CLUB_MEMBERSHIP_PLAN_NAME = "Club Membership 2026/27";
 export const MEMBERSHIP_FIRST_PAYMENT_DUE_LABEL = "2 October 2026";
 export const MEMBERSHIP_FIRST_PAYMENT_DUE_SHORT = "2 Oct";
 
+/**
+ * From this instant (Ireland local midnight on the due date), squad players can
+ * no longer use Pay Per Training — membership is required. Guest invite links
+ * are unaffected.
+ */
+export const SQUAD_TRAINING_PAYG_ENDS_AT = parseDatetimeLocalAsClubTime(
+  "2026-10-02T00:00",
+);
+
+export function isSquadTrainingPaygAvailable(now: Date = new Date()) {
+  return now.getTime() < SQUAD_TRAINING_PAYG_ENDS_AT.getTime();
+}
+
 export const MEMBERSHIP_PLAN_ADULT_NAME = "Adult";
 export const MEMBERSHIP_PLAN_STUDENT_NAME = "Student / U18";
-export const MEMBERSHIP_PLAN_ADULT_PRICE = 450;
-export const MEMBERSHIP_PLAN_STUDENT_PRICE = 385;
+export const MEMBERSHIP_PLAN_ADULT_PRICE = 365;
+export const MEMBERSHIP_PLAN_STUDENT_PRICE = 315;
 export const MEMBERSHIP_PLAN_DURATION_MONTHS = 7;
 
 /** All 2026/27 club memberships end mid-May 2027. */

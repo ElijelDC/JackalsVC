@@ -21,6 +21,7 @@ import {
   type PaymentSchedule,
   type PaymentScheduleOption,
 } from "@/lib/membership-config";
+import { MEMBERSHIP_EXCLUDES } from "@/lib/membership-2026-27";
 import { apiPost } from "@/lib/client-api";
 import { useAuthModal } from "@/components/providers/AuthModalProvider";
 import { AnimateIn } from "@/components/motion/AnimateIn";
@@ -107,18 +108,33 @@ export function MembershipLockedView({ membership }: { membership: LockedMembers
 
 function MembershipBenefitsPanel({ features }: { features: string[] }) {
   return (
-    <div className="rounded-xl border border-white/10 bg-white/[0.02] px-5 py-4 sm:px-6">
-      <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
-        What&apos;s included in the membership?
-      </p>
-      <ul className="mt-3 grid gap-2 sm:grid-cols-2">
-        {features.map((feature) => (
-          <li key={feature} className="flex items-center gap-2 text-sm text-zinc-300">
-            <Check className="h-3.5 w-3.5 shrink-0 text-jackals-red-light" />
-            {feature}
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-4 rounded-xl border border-white/10 bg-white/[0.02] px-5 py-4 sm:px-6">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+          What&apos;s included
+        </p>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {features.map((feature) => (
+            <li key={feature} className="flex items-start gap-2 text-sm text-zinc-300">
+              <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-jackals-red-light" />
+              {feature}
+            </li>
+          ))}
+        </ul>
+      </div>
+      <div className="border-t border-white/10 pt-4">
+        <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
+          Not included
+        </p>
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {MEMBERSHIP_EXCLUDES.map((item) => (
+            <li key={item} className="flex items-start gap-2 text-sm text-zinc-400">
+              <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-zinc-500" />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }

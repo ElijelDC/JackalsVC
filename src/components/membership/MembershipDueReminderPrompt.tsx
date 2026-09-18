@@ -81,8 +81,8 @@ export function MembershipDueReminderPrompt() {
           <span className="font-medium text-white">
             {MEMBERSHIP_FIRST_PAYMENT_DUE_LABEL}
           </span>
-          . Until you set up membership, you can keep attending training
-          pay-per-session.
+          . Until then you can keep attending training pay-per-session. From that
+          date, squad training is membership-only.
         </p>
         <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
           <Button type="button" variant="ghost" onClick={dismiss}>

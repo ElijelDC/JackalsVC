@@ -6,6 +6,7 @@ import {
 } from "@/lib/membership-overdue";
 import { isPaygPlayer } from "@/lib/player-payment-type";
 import { getTrainingPaygSettings } from "@/lib/training-payg-settings";
+import { isSquadTrainingPaygAvailable } from "@/lib/membership-config";
 
 export type AttendanceBlockReason = "no_membership" | "overdue";
 
@@ -106,11 +107,13 @@ export async function getMembershipPaymentAccess(
 }
 
 /**
- * While roster flag is PAYG, weekly training always uses the pay-per-session flow.
- * Admins flip the flag to MEMBERSHIP when season membership starts — leftover
- * membership rows must not silently bypass the pay wall.
+ * While roster flag is PAYG and the season pay-per-session window is open,
+ * weekly training uses the pay-per-session flow. From 2 Oct 2026 (Ireland),
+ * only membership grants squad training access. Guest invite links are separate.
  */
 async function resolvePaygTrainingState(userId: string): Promise<boolean> {
+  if (!isSquadTrainingPaygAvailable()) return false;
+
   const clubMember = await prisma.clubMember.findUnique({
     where: { userId },
     select: {

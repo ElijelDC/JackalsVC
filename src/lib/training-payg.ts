@@ -18,6 +18,7 @@ import {
   buildTrainingPaygPaymentReference,
   getTrainingPaygSettings,
 } from "@/lib/training-payg-settings";
+import { isSquadTrainingPaygAvailable } from "@/lib/membership-config";
 import {
   notifyTrainingPaygApproved,
   notifyTrainingPaygMovedToWaiting,
@@ -36,6 +37,26 @@ const ATTENDANCE_INCLUDE = {
   },
 } as const;
 
+function squadPaygUnavailableError(): {
+  ok: false;
+  error: string;
+  status: number;
+} {
+  if (!isSquadTrainingPaygAvailable()) {
+    return {
+      ok: false,
+      error:
+        "Pay Per Training ended on 2 October — season membership is required for squad training",
+      status: 403,
+    };
+  }
+  return {
+    ok: false,
+    error: "Pay Per Training payments are currently disabled",
+    status: 403,
+  };
+}
+
 export async function getPaygClubMemberForUser(userId: string) {
   return prisma.clubMember.findUnique({
     where: { userId },
@@ -51,6 +72,7 @@ export async function getPaygClubMemberForUser(userId: string) {
 }
 
 export async function userIsPaygTrainingPlayer(userId: string) {
+  if (!isSquadTrainingPaygAvailable()) return false;
   const member = await getPaygClubMemberForUser(userId);
   if (!member || !member.active) return false;
   return (
@@ -113,12 +135,8 @@ export async function ensureTrainingPaygAttendance(input: {
   | { ok: false; error: string; status: number }
 > {
   const settings = await getTrainingPaygSettings();
-  if (!settings.active) {
-    return {
-      ok: false,
-      error: "Pay Per Training payments are currently disabled",
-      status: 403,
-    };
+  if (!settings.active || !isSquadTrainingPaygAvailable()) {
+    return squadPaygUnavailableError();
   }
 
   const member = await getPaygClubMemberForUser(input.userId);
@@ -287,12 +305,8 @@ export async function submitTrainingPaygProof(input: {
   }
 
   const settings = await getTrainingPaygSettings();
-  if (!settings.active) {
-    return {
-      ok: false,
-      error: "Pay Per Training payments are currently disabled",
-      status: 403,
-    };
+  if (!settings.active || !isSquadTrainingPaygAvailable()) {
+    return squadPaygUnavailableError();
   }
 
   const previousUrl = attendance.proofScreenshotUrl;
