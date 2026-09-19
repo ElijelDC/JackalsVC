@@ -62,7 +62,7 @@ export function isSquadTrainingPaygAvailable(now: Date = new Date()) {
 
 export const MEMBERSHIP_PLAN_ADULT_NAME = "Adult";
 export const MEMBERSHIP_PLAN_STUDENT_NAME = "Student / U18";
-export const MEMBERSHIP_PLAN_ADULT_PRICE = 365;
+export const MEMBERSHIP_PLAN_ADULT_PRICE = 360;
 export const MEMBERSHIP_PLAN_STUDENT_PRICE = 315;
 export const MEMBERSHIP_PLAN_DURATION_MONTHS = 7;
 
