@@ -1,6 +1,8 @@
 import { Membership202627Showcase } from "@/components/membership/Membership202627Showcase";
 import {
+  buildMembershipLeagueTiers,
   buildMembershipPublicPaymentOptions,
+  getDefaultMembershipLeagueTiers,
   getDefaultMembershipPublicPaymentOptions,
 } from "@/lib/membership-config";
 import { prisma } from "@/lib/prisma";
@@ -32,5 +34,15 @@ export default async function Membership202627Page() {
       ? buildMembershipPublicPaymentOptions(activePlans)
       : getDefaultMembershipPublicPaymentOptions();
 
-  return <Membership202627Showcase paymentOptions={paymentOptions} />;
+  const leagueTiers =
+    activePlans.length > 0
+      ? buildMembershipLeagueTiers(activePlans)
+      : getDefaultMembershipLeagueTiers();
+
+  return (
+    <Membership202627Showcase
+      leagueTiers={leagueTiers}
+      paymentOptions={paymentOptions}
+    />
+  );
 }
