@@ -86,7 +86,7 @@ export async function PATCH(
     });
   } catch (error) {
     return jsonServerError("Could not review student ID", {
-      error,
+      cause: error,
       route: "PATCH /api/admin/student-id-reviews/[id]",
     });
   }

@@ -32,7 +32,7 @@ export async function GET() {
     });
   } catch (error) {
     return jsonServerError("Could not load student ID reviews", {
-      error,
+      cause: error,
       route: "GET /api/admin/student-id-reviews",
     });
   }

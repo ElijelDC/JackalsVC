@@ -93,7 +93,7 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     return jsonServerError("Could not upload student ID", {
-      error,
+      cause: error,
       route: "POST /api/membership/student-id-proof",
     });
   }
