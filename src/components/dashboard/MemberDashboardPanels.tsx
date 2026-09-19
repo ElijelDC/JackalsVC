@@ -10,8 +10,9 @@ import {
   DashboardTileHeader,
   DashboardTileSlots,
   DASHBOARD_TILE_CARD_CLASS,
-  DASHBOARD_TILE_FOOTER_CLASS,
+  useDashboardTileFooterClass,
 } from "@/components/dashboard/DashboardUpcomingScheduleCard";
+import { useDashboardAccent } from "@/components/dashboard/DashboardAccentContext";
 import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 import type { DashboardClubEvent } from "@/components/dashboard/dashboard-types";
 import { getEventTypeLabel } from "@/lib/event-filters";
@@ -19,7 +20,7 @@ import { formatInClubTime } from "@/lib/datetime-form";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";
 import type { MembershipPaymentAccess } from "@/lib/membership-overdue";
 import { studentMembershipNeedsIdProof } from "@/lib/student-id-proof";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import { withDashboardReturn } from "@/lib/dashboard-return";
 
 export {
@@ -37,6 +38,7 @@ export function DashboardUpcomingClubEventsPanel({
   const clubEvents = upcomingEvents.filter((event) => event.type !== "TRAINING");
   const preview = clubEvents.slice(0, DASHBOARD_SCHEDULE_PREVIEW_LIMIT);
   const remaining = clubEvents.length - preview.length;
+  const footerClass = useDashboardTileFooterClass();
 
   return (
     <section className="flex h-full w-full min-w-0 flex-col">
@@ -71,7 +73,7 @@ export function DashboardUpcomingClubEventsPanel({
           )}
           <Link
             href={withDashboardReturn("/events")}
-            className={DASHBOARD_TILE_FOOTER_CLASS}
+            className={footerClass}
           >
             {remaining > 0 ? `+${remaining} · ` : ""}
             View all
@@ -114,6 +116,7 @@ export function MemberPaymentsPanel({
   payments,
   paymentAccess,
 }: MemberPaymentsPanelProps) {
+  const accent = useDashboardAccent();
   const currentMembership = memberships.find((m) => new Date(m.endDate) > new Date());
   const activeMembership =
     currentMembership?.status === "ACTIVE" ? currentMembership : undefined;
@@ -145,7 +148,7 @@ export function MemberPaymentsPanel({
         {currentMembership ? (
           <Link
             href={withDashboardReturn("/membership")}
-            className="shrink-0 text-sm text-jackals-red-light hover:text-jackals-red"
+            className={cn("shrink-0 text-sm", accent.icon, accent.iconHover)}
           >
             View more
           </Link>
@@ -154,7 +157,9 @@ export function MemberPaymentsPanel({
 
       <Card className="min-w-0 overflow-hidden p-0">
         <div className="flex items-start gap-3 px-4 py-3 sm:py-4">
-          <CreditCard className="mt-0.5 h-5 w-5 shrink-0 text-jackals-red-light" />
+          <CreditCard
+            className={cn("mt-0.5 h-5 w-5 shrink-0", accent.icon)}
+          />
           <div className="min-w-0 flex-1">
             {currentMembership ? (
               <>
@@ -244,7 +249,10 @@ export function MemberPaymentsPanel({
 
         <Link
           href={withDashboardReturn("/membership")}
-          className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
+          className={cn(
+            "flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03]",
+            accent.iconHoverLight,
+          )}
         >
           {currentMembership
             ? needsStudentId

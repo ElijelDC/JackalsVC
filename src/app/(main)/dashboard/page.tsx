@@ -13,6 +13,8 @@ import {
   MemberPaymentsPanel,
 } from "@/components/dashboard/MemberDashboardPanels";
 import { DASHBOARD_SCHEDULE_FETCH_LIMIT } from "@/lib/dashboard-schedule-config";
+import { DashboardAccentProvider } from "@/components/dashboard/DashboardAccentContext";
+import { dashboardAccentForTeam } from "@/lib/dashboard-accent";
 import { PageContainer } from "@/components/layout/PageShell";
 import { AnimatedPageSections } from "@/components/motion/AnimatedPageSections";
 import { getCoachProfile } from "@/lib/coach-auth";
@@ -218,72 +220,75 @@ export default async function DashboardPage() {
 
   const attendanceAccess = await getAttendanceAccessInfo(session.user);
   const isPaygPlayer = Boolean(session.user.isPaygPlayer);
+  const dashboardAccent = dashboardAccentForTeam(trainingTeamKey);
 
   return (
-    <PageContainer className="overflow-x-hidden py-6 sm:py-12">
-      <DashboardWelcomeSection
-        title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
-        description={
-          isPaygPlayer
-            ? "Your training and matches at a glance — membership is available when you're ready"
-            : "Your membership, training, and matches at a glance"
-        }
-      />
-      <InstallHomeScreenPrompt />
-      <PushNotificationsPrompt />
+    <DashboardAccentProvider accent={dashboardAccent}>
+      <PageContainer className="overflow-x-hidden py-6 sm:py-12">
+        <DashboardWelcomeSection
+          title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
+          description={
+            isPaygPlayer
+              ? "Your training and matches at a glance — membership is available when you're ready"
+              : "Your membership, training, and matches at a glance"
+          }
+        />
+        <InstallHomeScreenPrompt />
+        <PushNotificationsPrompt />
 
-      <AnimatedPageSections className="space-y-6 sm:space-y-8">
-        {!isPaygPlayer && (
-          <MemberPaymentsPanel
-            memberships={memberships.map((m) => ({
-              id: m.id,
-              status:
-                currentMembership?.id === m.id && membershipStatus
-                  ? membershipStatus
-                  : m.status,
-              paymentSchedule: m.paymentSchedule as "MONTHLY" | "INSTALLMENTS" | "FULL",
-              paymentOverdueOverride: m.paymentOverdueOverride,
-              startDate: m.startDate.toISOString(),
-              endDate: m.endDate.toISOString(),
-              plan: { name: m.plan.name, price: m.plan.price },
-              studentIdReviewStatus: m.studentIdReviewStatus,
-              studentIdProofUrl: m.studentIdProofUrl,
-            }))}
-            payments={payments.map((p) => ({
-              id: p.id,
-              amount: p.amount,
-              status: p.status,
-              installmentNumber: p.installmentNumber,
-              dueDate: p.dueDate?.toISOString() ?? null,
-            }))}
-            paymentAccess={paymentAccess}
-          />
-        )}
+        <AnimatedPageSections className="space-y-6 sm:space-y-8">
+          {!isPaygPlayer && (
+            <MemberPaymentsPanel
+              memberships={memberships.map((m) => ({
+                id: m.id,
+                status:
+                  currentMembership?.id === m.id && membershipStatus
+                    ? membershipStatus
+                    : m.status,
+                paymentSchedule: m.paymentSchedule as "MONTHLY" | "INSTALLMENTS" | "FULL",
+                paymentOverdueOverride: m.paymentOverdueOverride,
+                startDate: m.startDate.toISOString(),
+                endDate: m.endDate.toISOString(),
+                plan: { name: m.plan.name, price: m.plan.price },
+                studentIdReviewStatus: m.studentIdReviewStatus,
+                studentIdProofUrl: m.studentIdProofUrl,
+              }))}
+              payments={payments.map((p) => ({
+                id: p.id,
+                amount: p.amount,
+                status: p.status,
+                installmentNumber: p.installmentNumber,
+                dueDate: p.dueDate?.toISOString() ?? null,
+              }))}
+              paymentAccess={paymentAccess}
+            />
+          )}
 
-        <div className="grid min-w-0 grid-cols-2 items-stretch gap-3.5 sm:gap-5 lg:gap-8 [&>*]:min-w-0">
-          <DashboardUpcomingTrainingCard
-            teamName={team?.name ?? null}
-            sessions={upcomingTraining}
-            attendanceBlocked={!attendanceAccess.canAccessTraining}
-            attendanceBlockReason={attendanceAccess.blockReasonTraining}
-          />
-          <DashboardUpcomingMatchesCard
-            teamName={team?.name ?? null}
-            matches={upcomingMatches}
-            attendanceBlocked={!attendanceAccess.canAccessMatches}
-            attendanceBlockReason={attendanceAccess.blockReasonMatches}
-          />
-        </div>
-
-        <div className="grid min-w-0 grid-cols-2 items-stretch gap-3.5 sm:gap-5 lg:grid-cols-3 lg:gap-8 [&>*]:min-w-0">
-          <div className="flex h-full min-w-0 lg:col-span-2">
-            <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
+          <div className="grid min-w-0 grid-cols-2 items-stretch gap-3.5 sm:gap-5 lg:gap-8 [&>*]:min-w-0">
+            <DashboardUpcomingTrainingCard
+              teamName={team?.name ?? null}
+              sessions={upcomingTraining}
+              attendanceBlocked={!attendanceAccess.canAccessTraining}
+              attendanceBlockReason={attendanceAccess.blockReasonTraining}
+            />
+            <DashboardUpcomingMatchesCard
+              teamName={team?.name ?? null}
+              matches={upcomingMatches}
+              attendanceBlocked={!attendanceAccess.canAccessMatches}
+              attendanceBlockReason={attendanceAccess.blockReasonMatches}
+            />
           </div>
-          <DashboardVodPlaylistsPanel playlists={vodPlaylists} />
-        </div>
 
-        <DashboardQuickLinks memberTeamKey={trainingTeamKey} />
-      </AnimatedPageSections>
-    </PageContainer>
+          <div className="grid min-w-0 grid-cols-2 items-stretch gap-3.5 sm:gap-5 lg:grid-cols-3 lg:gap-8 [&>*]:min-w-0">
+            <div className="flex h-full min-w-0 lg:col-span-2">
+              <DashboardUpcomingClubEventsPanel upcomingEvents={upcomingClubEvents} />
+            </div>
+            <DashboardVodPlaylistsPanel playlists={vodPlaylists} />
+          </div>
+
+          <DashboardQuickLinks memberTeamKey={trainingTeamKey} />
+        </AnimatedPageSections>
+      </PageContainer>
+    </DashboardAccentProvider>
   );
 }

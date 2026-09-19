@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { Modal } from "@/components/ui/Modal";
+import { useDashboardAccent } from "@/components/dashboard/DashboardAccentContext";
 import { HOMESCREEN_CONFIRMED_KEY } from "@/lib/pwa-onboarding";
 import { cn } from "@/lib/utils";
 
@@ -55,10 +56,18 @@ function isAppleDesktop() {
 }
 
 function IosInstallGuide() {
+  const accent = useDashboardAccent();
   return (
     <ol className="space-y-3 text-sm text-zinc-300">
       <li className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-jackals-red/40 bg-jackals-red/15 text-jackals-red-light">
+        <span
+          className={cn(
+            "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border",
+            accent.borderCircle,
+            accent.softBgStrong,
+            accent.icon,
+          )}
+        >
           <Share className="h-3.5 w-3.5" aria-hidden />
         </span>
         <span>
@@ -71,7 +80,14 @@ function IosInstallGuide() {
         </span>
       </li>
       <li className="flex items-start gap-3">
-        <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-jackals-red/40 bg-jackals-red/15 text-xs font-bold text-jackals-red-light">
+        <span
+          className={cn(
+            "mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-xs font-bold",
+            accent.borderCircle,
+            accent.softBgStrong,
+            accent.icon,
+          )}
+        >
           +
         </span>
         <span>
@@ -85,6 +101,7 @@ function IosInstallGuide() {
 }
 
 export function InstallHomeScreenPrompt({ className }: { className?: string }) {
+  const accent = useDashboardAccent();
   const [ready, setReady] = useState(false);
   const [visible, setVisible] = useState(false);
   const [platform, setPlatform] = useState<Platform>("desktop");
@@ -171,13 +188,20 @@ export function InstallHomeScreenPrompt({ className }: { className?: string }) {
     <>
       <Card
         className={cn(
-          "mb-6 border-jackals-red/25 bg-gradient-to-br from-jackals-red/[0.1] to-transparent sm:mb-8",
+          "mb-6 bg-gradient-to-br to-transparent sm:mb-8",
+          accent.borderSoft,
+          accent.gradientFrom,
           className,
         )}
       >
         <div className="flex flex-col gap-4">
           <div className="min-w-0">
-            <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-jackals-red-light">
+            <div
+              className={cn(
+                "mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.04]",
+                accent.icon,
+              )}
+            >
               {isDesktopBookmark ? (
                 <Bookmark className="h-5 w-5" />
               ) : (

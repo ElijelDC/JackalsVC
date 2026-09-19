@@ -15,10 +15,20 @@ import { itemNeedsUrgentResponse } from "@/lib/training-attendance-config";
 import { withDashboardReturn } from "@/lib/dashboard-return";
 import { DASHBOARD_SCHEDULE_PREVIEW_LIMIT } from "@/lib/dashboard-schedule-config";
 import { cn } from "@/lib/utils";
+import { useDashboardAccent } from "@/components/dashboard/DashboardAccentContext";
 
 export const DASHBOARD_TILE_CARD_CLASS =
   "flex h-full min-h-[14.5rem] min-w-0 flex-1 flex-col overflow-hidden p-0 sm:min-h-[15.5rem]";
 
+export function useDashboardTileFooterClass() {
+  const accent = useDashboardAccent();
+  return cn(
+    "mt-auto flex h-9 shrink-0 items-center justify-center gap-1 border-t border-white/10 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03]",
+    accent.iconHoverLight,
+  );
+}
+
+/** @deprecated Prefer useDashboardTileFooterClass() for themed dashboards */
 export const DASHBOARD_TILE_FOOTER_CLASS =
   "mt-auto flex h-9 shrink-0 items-center justify-center gap-1 border-t border-white/10 text-[11px] font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light";
 
@@ -68,11 +78,18 @@ export function DashboardTileHeader({
   subtitle: string;
   subtitleTone?: "default" | "urgent";
 }) {
+  const accent = useDashboardAccent();
+
   return (
     <div className="mb-2.5 min-h-[2.85rem] sm:mb-3 sm:min-h-[3.1rem]">
       <h2 className="font-display text-[0.95rem] font-semibold tracking-wide text-white sm:text-xl">
         <span className="inline-flex items-center gap-1.5 sm:gap-2">
-          <Icon className="h-4 w-4 shrink-0 text-jackals-red-light sm:h-5 sm:w-5" />
+          <Icon
+            className={cn(
+              "h-4 w-4 shrink-0 sm:h-5 sm:w-5",
+              accent.icon,
+            )}
+          />
           <span className="sm:hidden">{shortTitle ?? title}</span>
           <span className="hidden sm:inline">{title}</span>
         </span>
@@ -96,12 +113,17 @@ function ScheduleEmptyState({
   viewAllHref: string;
   viewAllLabel: string;
 }) {
+  const accent = useDashboardAccent();
   return (
     <div className="flex flex-1 flex-col items-center justify-center px-3 py-6 text-center">
       <p className="text-xs text-zinc-500">Nothing scheduled yet</p>
       <Link
         href={withDashboardReturn(viewAllHref)}
-        className="mt-2 text-[11px] font-medium text-jackals-red-light hover:text-jackals-red"
+        className={cn(
+          "mt-2 text-[11px] font-medium",
+          accent.icon,
+          accent.iconHover,
+        )}
       >
         {viewAllLabel}
       </Link>
@@ -175,6 +197,7 @@ export function DashboardUpcomingScheduleCard({
   const remaining = items.length - preview.length;
   const previewNeedsResponse = countNeedsResponse(preview);
   const moreNeedReply = Math.max(0, needsResponseTotal - previewNeedsResponse);
+  const footerClass = useDashboardTileFooterClass();
 
   return (
     <section className="flex h-full min-w-0 flex-col">
@@ -220,7 +243,7 @@ export function DashboardUpcomingScheduleCard({
             <Link
               href={withDashboardReturn(viewAllHref)}
               className={cn(
-                DASHBOARD_TILE_FOOTER_CLASS,
+                footerClass,
                 moreNeedReply > 0 &&
                   "bg-amber-500/[0.08] font-semibold text-amber-300 hover:bg-amber-500/[0.14] hover:text-amber-200",
               )}

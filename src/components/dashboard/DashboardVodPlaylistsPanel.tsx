@@ -3,11 +3,12 @@
 import type { ReactNode } from "react";
 import { Clapperboard, ExternalLink, Play, Trophy } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import { useDashboardAccent } from "@/components/dashboard/DashboardAccentContext";
 import {
   DashboardTileHeader,
   DashboardTileSlots,
   DASHBOARD_TILE_CARD_CLASS,
-  DASHBOARD_TILE_FOOTER_CLASS,
+  useDashboardTileFooterClass,
 } from "@/components/dashboard/DashboardUpcomingScheduleCard";
 import type { TeamVodPlaylists } from "@/lib/vod-playlists";
 import { cn } from "@/lib/utils";
@@ -18,12 +19,14 @@ function PlaylistRow({
   description,
   icon: Icon,
   accentClass,
+  linkHoverClass,
 }: {
   href: string;
   label: string;
   description: string;
   icon: typeof Play;
   accentClass: string;
+  linkHoverClass: string;
 }) {
   return (
     <a
@@ -48,7 +51,12 @@ function PlaylistRow({
           {description}
         </p>
       </div>
-      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors group-hover:text-jackals-red-light" />
+      <ExternalLink
+        className={cn(
+          "h-3.5 w-3.5 shrink-0 text-zinc-600 transition-colors",
+          linkHoverClass,
+        )}
+      />
     </a>
   );
 }
@@ -60,6 +68,8 @@ export function DashboardVodPlaylistsPanel({
   playlists: TeamVodPlaylists | null;
   className?: string;
 }) {
+  const accent = useDashboardAccent();
+  const footerClass = useDashboardTileFooterClass();
   const trainingUrl = playlists?.trainingUrl?.trim() || null;
   const matchesUrl = playlists?.matchesUrl?.trim() || null;
   const teamLabel = playlists?.teamName ?? "Your squad";
@@ -74,7 +84,8 @@ export function DashboardVodPlaylistsPanel({
         label="Training clips"
         description="Session footage and drills for your squad"
         icon={Play}
-        accentClass="bg-jackals-red/15 text-jackals-red-light"
+        accentClass={cn(accent.softBgStrong, accent.icon)}
+        linkHoverClass={accent.groupHoverIcon}
       />,
     );
   }
@@ -87,6 +98,7 @@ export function DashboardVodPlaylistsPanel({
         description="Game film and highlights from fixtures"
         icon={Trophy}
         accentClass="bg-sky-500/15 text-sky-300"
+        linkHoverClass={accent.groupHoverIcon}
       />,
     );
   }
@@ -113,7 +125,7 @@ export function DashboardVodPlaylistsPanel({
                 href={primaryUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={DASHBOARD_TILE_FOOTER_CLASS}
+                className={footerClass}
               >
                 Open playlists
                 <ExternalLink className="h-3 w-3" />
