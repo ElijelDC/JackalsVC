@@ -94,7 +94,7 @@ export default async function MembershipPage({
 
         {membershipStatus === "PENDING_PAYMENT" ||
         payments.some((payment) => payment.status === "PENDING") ? (
-          <AnimatedBlock delay={40} className="mb-6">
+          <AnimatedBlock delay={40} className="mx-auto mb-6 max-w-2xl">
             <MembershipDueNotice />
           </AnimatedBlock>
         ) : null}
@@ -188,7 +188,7 @@ export default async function MembershipPage({
         centered
       />
 
-      <AnimatedBlock delay={40} className="mb-6">
+      <AnimatedBlock delay={40} className="mx-auto mb-6 max-w-4xl">
         <MembershipDueNotice isPaygPlayer={isPaygPlayer} />
       </AnimatedBlock>
 
