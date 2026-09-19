@@ -59,7 +59,7 @@ const coaches: CoachSeed[] = [
     },
   },
   {
-    name: "Zubin",
+    name: "Zubin Matthew",
     email: "mattzubin@gmail.com",
     vlyNumber: null,
     coachPaymentType: "PAID",
