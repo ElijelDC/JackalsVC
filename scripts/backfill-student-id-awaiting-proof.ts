@@ -5,34 +5,26 @@
  * members (e.g. Davis/David Kols) see the upload card. Does not touch Adult
  * plans or already-APPROVED / DECLINED / PENDING-with-proof rows.
  *
- * Note: member-facing UI already treats null status on Student/U18 as needing
- * upload — this script makes admin “No ID yet” filtering consistent.
+ * Self-contained for the production Docker image (no @/ imports).
  *
  * Dry run (default):
  *   npx tsx scripts/backfill-student-id-awaiting-proof.ts
  *
  * Apply:
  *   APPLY=1 npx tsx scripts/backfill-student-id-awaiting-proof.ts
- *
- * Production on Hetzner (after code is deployed):
- *   ssh root@46.225.120.67
- *   cd /opt/app   # or HETZNER_APP_DIR
- *   docker compose exec app npx tsx scripts/backfill-student-id-awaiting-proof.ts
- *   docker compose exec -e APPLY=1 app npx tsx scripts/backfill-student-id-awaiting-proof.ts
- *
- * SQLite one-liner (host volume, plan name exact):
- *   sqlite3 /data/jackals.db "UPDATE Membership SET studentIdReviewStatus='AWAITING_PROOF' WHERE id IN (SELECT m.id FROM Membership m JOIN MembershipPlan p ON p.id=m.planId WHERE p.name='Student / U18' AND m.endDate > datetime('now') AND (m.studentIdProofUrl IS NULL OR m.studentIdProofUrl='') AND IFNULL(m.studentIdReviewStatus,'') NOT IN ('APPROVED','DECLINED','PENDING'));"
  */
-import { MEMBERSHIP_PLAN_STUDENT_NAME } from "../src/lib/membership-config";
-import { prisma } from "../src/lib/prisma";
-import { backfillStudentIdAwaitingProof } from "../src/lib/student-id-reviews";
+import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaClient } from "../src/generated/prisma/client";
 
+const STUDENT_PLAN_NAME = "Student / U18";
 const apply = process.env.APPLY === "1";
+const dbUrl = process.env.DATABASE_URL ?? "file:./prisma/dev.db";
+const adapter = new PrismaBetterSqlite3({ url: dbUrl });
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
-  console.log(`Database: ${process.env.DATABASE_URL ?? "file:./prisma/dev.db (default)"}`);
+  console.log(`Database: ${dbUrl}`);
   console.log(`Mode: ${apply ? "APPLY" : "dry-run (set APPLY=1 to write)"}`);
-  console.log(`Student plan name: ${MEMBERSHIP_PLAN_STUDENT_NAME}`);
 
   const kols = await prisma.user.findMany({
     where: {
@@ -62,19 +54,87 @@ async function main() {
     }
   }
 
-  const result = await backfillStudentIdAwaitingProof({ dryRun: !apply });
+  const rows = await prisma.membership.findMany({
+    where: {
+      endDate: { gt: new Date() },
+      plan: { name: STUDENT_PLAN_NAME },
+      OR: [
+        { studentIdReviewStatus: null },
+        {
+          studentIdReviewStatus: {
+            notIn: ["APPROVED", "DECLINED", "PENDING", "AWAITING_PROOF"],
+          },
+        },
+      ],
+    },
+    include: {
+      user: { select: { name: true, email: true } },
+    },
+  });
 
-  console.log(`Matched ${result.matched.length} membership(s):`);
-  for (const row of result.matched) {
+  const updates = rows.flatMap((row) => {
+    if (row.studentIdReviewStatus === "APPROVED") return [];
+    if (row.studentIdReviewStatus === "DECLINED") return [];
+    if (
+      row.studentIdReviewStatus === "PENDING" &&
+      row.studentIdProofUrl?.startsWith("/")
+    ) {
+      return [];
+    }
+
+    const hasProof = Boolean(row.studentIdProofUrl?.startsWith("/"));
+    const nextStatus = hasProof ? ("PENDING" as const) : ("AWAITING_PROOF" as const);
+    if (row.studentIdReviewStatus === nextStatus) return [];
+
+    return [
+      {
+        id: row.id,
+        name: row.user.name,
+        email: row.user.email,
+        previousStatus: row.studentIdReviewStatus,
+        nextStatus,
+      },
+    ];
+  });
+
+  console.log(`Matched ${updates.length} membership(s):`);
+  for (const row of updates) {
     console.log(
       `  - ${row.name} <${row.email}> ${row.previousStatus ?? "null"} → ${row.nextStatus}`,
     );
   }
-  console.log(
-    apply
-      ? `Updated ${result.updatedCount} membership(s).`
-      : "Dry run complete — re-run with APPLY=1 to write.",
-  );
+
+  if (!apply) {
+    console.log("Dry run complete — re-run with APPLY=1 to write.");
+    return;
+  }
+
+  const awaitingIds = updates
+    .filter((row) => row.nextStatus === "AWAITING_PROOF")
+    .map((row) => row.id);
+  const pendingIds = updates
+    .filter((row) => row.nextStatus === "PENDING")
+    .map((row) => row.id);
+
+  if (awaitingIds.length > 0) {
+    await prisma.membership.updateMany({
+      where: { id: { in: awaitingIds } },
+      data: {
+        studentIdReviewStatus: "AWAITING_PROOF",
+        studentIdReviewedAt: null,
+        studentIdReviewedByUserId: null,
+        studentIdReviewNote: null,
+      },
+    });
+  }
+  if (pendingIds.length > 0) {
+    await prisma.membership.updateMany({
+      where: { id: { in: pendingIds } },
+      data: { studentIdReviewStatus: "PENDING" },
+    });
+  }
+
+  console.log(`Updated ${updates.length} membership(s).`);
 }
 
 main()
