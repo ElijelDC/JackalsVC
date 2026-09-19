@@ -4,8 +4,10 @@ import Image from "next/image";
 import { Fragment, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
+  AlertTriangle,
   CheckCircle2,
   ChevronDown,
+  Clock,
   ExternalLink,
   LayoutGrid,
   Loader2,
@@ -20,7 +22,10 @@ import { FormError } from "@/components/ui/FormMessage";
 import { Input, Select } from "@/components/ui/Input";
 import { formatPrice, cn } from "@/lib/utils";
 import { apiApprovePayment } from "@/lib/client-api";
-import { getPendingPaymentDueState, paymentHasUploadedProof } from "@/lib/admin-pending-payments";
+import {
+  getPendingPaymentDueState,
+  paymentHasUploadedProof,
+} from "@/lib/admin-pending-payments";
 import { formatMembershipEuro } from "@/lib/membership-2026-27";
 import {
   formatMembershipPlanShortName,
@@ -33,6 +38,9 @@ export type AdminPaymentRecord = {
   status: string;
   paymentReference: string;
   description: string;
+  /** Null for one-off / non-membership fees. */
+  membershipId?: string | null;
+  installmentNumber?: number | null;
   dueDate: string | null;
   proofSubmittedAt: string | null;
   proofScreenshotUrl: string | null;
@@ -53,6 +61,49 @@ type ViewMode = "table" | "cards";
 type PaymentFilter = "ALL" | "PAID" | "UNPAID" | "OVERDUE";
 type SquadFilter = "ALL" | "d2m" | "d3w" | "d3m";
 type PlanFilter = "ALL" | string;
+
+/**
+ * Member-group payment filters (applied after grouping instalments by user):
+ * - UNPAID: any unpaid instalment (still owes something on the plan)
+ * - OVERDUE: any overdue unpaid instalment
+ * - PAID: current obligation met — no overdue unpaid, and either fully paid
+ *   or every instalment due to date is paid (next open one is still upcoming).
+ *   Admins use this to see who's paid up for the current period.
+ */
+type MemberHealthKind =
+  | "overdue"
+  | "receipt"
+  | "awaiting"
+  | "upcoming_paid_on_time"
+  | "up_to_date"
+  | "all_paid";
+
+type MemberHealth = {
+  kind: MemberHealthKind;
+  label: string;
+  detail: string | null;
+  tone: string;
+};
+
+type MemberPaymentGroup = {
+  key: string;
+  user: AdminPaymentRecord["user"];
+  teamLabel: string | null;
+  trainingTeamKey: string | null;
+  planName: string | null;
+  paymentSchedule: string | null;
+  subscriptionLabel: string | null;
+  payments: AdminPaymentRecord[];
+  paidCount: number;
+  unpaidCount: number;
+  overdueCount: number;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  health: MemberHealth;
+  nextActionPayment: AdminPaymentRecord | null;
+  approvablePayments: AdminPaymentRecord[];
+};
 
 const SQUAD_FILTERS: {
   id: SquadFilter;
@@ -109,25 +160,182 @@ function paymentStatusTone(status: ReturnType<typeof paymentDisplayStatus>) {
   return "text-zinc-400 bg-white/[0.06]";
 }
 
+/** Paid on or before the due date (or paid with no due date). */
+function isPaidOnTime(payment: AdminPaymentRecord) {
+  if (!isPaymentPaid(payment)) return false;
+  if (!payment.dueDate) return true;
+  if (!payment.paidAt) return true;
+
+  const paidDay = new Date(payment.paidAt);
+  paidDay.setHours(0, 0, 0, 0);
+  const dueDay = new Date(payment.dueDate);
+  dueDay.setHours(0, 0, 0, 0);
+  return paidDay.getTime() <= dueDay.getTime();
+}
+
+function isPaidLate(payment: AdminPaymentRecord) {
+  return isPaymentPaid(payment) && !isPaidOnTime(payment);
+}
+
+/**
+ * The instalment that covers the current window: earliest unpaid by due date,
+ * or if everything due-to-date is paid, the latest paid instalment whose due
+ * date is still upcoming (paid ahead / on time for the next one).
+ */
+function findCurrentWindowPayment(payments: AdminPaymentRecord[]) {
+  const sorted = sortByDueDate(payments);
+  const firstUnpaid = sorted.find((payment) => !isPaymentPaid(payment));
+  if (firstUnpaid) return firstUnpaid;
+
+  const upcomingPaid = [...sorted]
+    .reverse()
+    .find(
+      (payment) =>
+        isPaymentPaid(payment) &&
+        payment.dueDate &&
+        getPendingPaymentDueState(payment.dueDate) === "upcoming",
+    );
+  return upcomingPaid ?? sorted[sorted.length - 1] ?? null;
+}
+
+function buildMemberHealth(payments: AdminPaymentRecord[]): MemberHealth {
+  const sorted = sortByDueDate(payments);
+  const overduePayments = sorted.filter(isPaymentOverdue);
+  if (overduePayments.length > 0) {
+    const due = overduePayments[0]?.dueDate;
+    return {
+      kind: "overdue",
+      label:
+        overduePayments.length === 1
+          ? "Overdue"
+          : `${overduePayments.length} overdue`,
+      detail: due ? new Date(due).toLocaleDateString("en-GB") : null,
+      tone: "text-red-300 bg-red-500/15",
+    };
+  }
+
+  // Needs admin action before celebration states.
+  const withReceipt = sorted.find(
+    (payment) => !isPaymentPaid(payment) && canApprovePayment(payment),
+  );
+  if (withReceipt) {
+    return {
+      kind: "receipt",
+      label: "Receipt to review",
+      detail: formatPrice(withReceipt.amount, "EUR"),
+      tone: "text-blue-300 bg-blue-500/15",
+    };
+  }
+
+  // Highlight when the next/current window instalment is already paid before its due date.
+  const upcomingPaid = sorted.find(
+    (payment) =>
+      isPaymentPaid(payment) &&
+      Boolean(payment.dueDate) &&
+      getPendingPaymentDueState(payment.dueDate) === "upcoming" &&
+      isPaidOnTime(payment),
+  );
+  if (upcomingPaid?.dueDate) {
+    return {
+      kind: "upcoming_paid_on_time",
+      label: "Upcoming paid on time",
+      detail: new Date(upcomingPaid.dueDate).toLocaleDateString("en-GB"),
+      tone: "text-emerald-200 bg-emerald-500/20 ring-1 ring-emerald-400/30",
+    };
+  }
+
+  const allPaid = sorted.length > 0 && sorted.every(isPaymentPaid);
+  if (allPaid) {
+    const lateCount = sorted.filter(isPaidLate).length;
+    return {
+      kind: "all_paid",
+      label: lateCount > 0 ? "All paid" : "All paid · on time",
+      detail: null,
+      tone: "text-emerald-300 bg-emerald-500/10",
+    };
+  }
+
+  const firstUnpaid = sorted.find((payment) => !isPaymentPaid(payment));
+  if (firstUnpaid) {
+    const dueState = getPendingPaymentDueState(firstUnpaid.dueDate);
+    // Everything due to date is paid; next open instalment is still upcoming.
+    if (dueState === "upcoming") {
+      const hasPaidSomething = sorted.some(isPaymentPaid);
+      if (hasPaidSomething) {
+        return {
+          kind: "up_to_date",
+          label: "Up to date",
+          detail: firstUnpaid.dueDate
+            ? `Next ${new Date(firstUnpaid.dueDate).toLocaleDateString("en-GB")}`
+            : null,
+          tone: "text-emerald-300 bg-emerald-500/10",
+        };
+      }
+
+      // Nothing paid yet, but first instalment isn't due — calm, not alarming.
+      return {
+        kind: "awaiting",
+        label: "Not due yet",
+        detail: firstUnpaid.dueDate
+          ? `Due ${new Date(firstUnpaid.dueDate).toLocaleDateString("en-GB")}`
+          : null,
+        tone: "text-sky-200 bg-sky-500/10",
+      };
+    }
+
+    return {
+      kind: "awaiting",
+      label: "Awaiting payment",
+      detail: firstUnpaid.dueDate
+        ? new Date(firstUnpaid.dueDate).toLocaleDateString("en-GB")
+        : null,
+      tone: "text-amber-200 bg-amber-500/10",
+    };
+  }
+
+  return {
+    kind: "up_to_date",
+    label: "Up to date",
+    detail: null,
+    tone: "text-emerald-300 bg-emerald-500/10",
+  };
+}
+
+function memberMatchesPaymentFilter(
+  group: MemberPaymentGroup,
+  filter: PaymentFilter,
+) {
+  if (filter === "ALL") return true;
+  if (filter === "UNPAID") return group.unpaidCount > 0;
+  if (filter === "OVERDUE") return group.overdueCount > 0;
+  // PAID: current obligation met (see comment on PaymentFilter above)
+  if (filter === "PAID") {
+    return (
+      group.overdueCount === 0 &&
+      (group.unpaidCount === 0 ||
+        group.health.kind === "upcoming_paid_on_time" ||
+        group.health.kind === "up_to_date" ||
+        group.health.kind === "all_paid")
+    );
+  }
+  return true;
+}
+
 function dueDateLabel(payment: AdminPaymentRecord) {
   if (!payment.dueDate) return "—";
 
+  const text = new Date(payment.dueDate).toLocaleDateString("en-GB");
+  if (isPaymentPaid(payment)) {
+    return { text, suffix: "", tone: "text-zinc-400" };
+  }
+
   const dueState = getPendingPaymentDueState(payment.dueDate);
   const overdue = dueState === "overdue";
-  const upcoming = dueState === "upcoming";
 
   return {
-    text: new Date(payment.dueDate).toLocaleDateString("en-GB"),
-    suffix: overdue
-      ? " · overdue"
-      : upcoming
-        ? " · not yet due"
-        : " · due now",
-    tone: overdue
-      ? "text-red-400"
-      : upcoming
-        ? "text-sky-300"
-        : "text-zinc-300",
+    text,
+    suffix: overdue ? " · overdue" : " · not yet due",
+    tone: overdue ? "text-red-400" : "text-sky-300",
   };
 }
 
@@ -139,8 +347,419 @@ function sortByDueDate(payments: AdminPaymentRecord[]) {
     const bDue = b.dueDate
       ? new Date(b.dueDate).getTime()
       : Number.POSITIVE_INFINITY;
-    return aDue - bDue;
+    if (aDue !== bDue) return aDue - bDue;
+    const aInst = a.installmentNumber ?? Number.POSITIVE_INFINITY;
+    const bInst = b.installmentNumber ?? Number.POSITIVE_INFINITY;
+    return aInst - bInst;
   });
+}
+
+/** One row per membership (instalments clubbed); one-off fees stay their own row. */
+function groupKeyForPayment(payment: AdminPaymentRecord) {
+  const email = payment.user.email.trim().toLowerCase();
+  if (payment.membershipId) return `${email}::membership:${payment.membershipId}`;
+  return `${email}::payment:${payment.id}`;
+}
+
+function groupPaymentsByMember(
+  payments: AdminPaymentRecord[],
+): MemberPaymentGroup[] {
+  const byKey = new Map<string, AdminPaymentRecord[]>();
+
+  for (const payment of payments) {
+    const key = groupKeyForPayment(payment);
+    const list = byKey.get(key);
+    if (list) list.push(payment);
+    else byKey.set(key, [payment]);
+  }
+
+  const groups: MemberPaymentGroup[] = [];
+
+  for (const [key, rawPayments] of byKey) {
+    const sorted = sortByDueDate(rawPayments);
+    const first = sorted[0]!;
+    const planNames = new Set(
+      sorted
+        .map((p) => p.subscriptionLabel?.planName)
+        .filter((name): name is string => Boolean(name)),
+    );
+    const schedules = new Set(
+      sorted
+        .map((p) => p.subscriptionLabel?.paymentSchedule)
+        .filter((s): s is string => Boolean(s)),
+    );
+    const planName = planNames.size === 1 ? [...planNames][0]! : null;
+    const paymentSchedule = schedules.size === 1 ? [...schedules][0]! : null;
+    const subscriptionLabel =
+      planName && paymentSchedule
+        ? formatMembershipSubscriptionLabel(planName, paymentSchedule)
+        : planNames.size > 1
+          ? "Multiple plans"
+          : planName
+            ? formatMembershipPlanShortName(planName)
+            : null;
+
+    let paidCount = 0;
+    let unpaidCount = 0;
+    let overdueCount = 0;
+    let totalAmount = 0;
+    let paidAmount = 0;
+    let remainingAmount = 0;
+
+    for (const payment of sorted) {
+      totalAmount += payment.amount;
+      if (isPaymentPaid(payment)) {
+        paidCount += 1;
+        paidAmount += payment.amount;
+      } else {
+        unpaidCount += 1;
+        remainingAmount += payment.amount;
+        if (isPaymentOverdue(payment)) overdueCount += 1;
+      }
+    }
+
+    const health = buildMemberHealth(sorted);
+    const nextActionPayment =
+      sorted.find(isPaymentOverdue) ??
+      sorted.find((p) => !isPaymentPaid(p) && canApprovePayment(p)) ??
+      sorted.find((p) => !isPaymentPaid(p)) ??
+      null;
+
+    groups.push({
+      key,
+      user: first.user,
+      teamLabel: first.teamLabel,
+      trainingTeamKey: first.trainingTeamKey,
+      planName,
+      paymentSchedule,
+      subscriptionLabel,
+      payments: sorted,
+      paidCount,
+      unpaidCount,
+      overdueCount,
+      totalAmount,
+      paidAmount,
+      remainingAmount,
+      health,
+      nextActionPayment,
+      approvablePayments: sorted.filter(canApprovePayment),
+    });
+  }
+
+  return groups.sort((a, b) => {
+    const rank = (g: MemberPaymentGroup) => {
+      if (g.overdueCount > 0) return 0;
+      if (g.approvablePayments.length > 0) return 1;
+      if (g.unpaidCount > 0) return 2;
+      return 3;
+    };
+    const rankDiff = rank(a) - rank(b);
+    if (rankDiff !== 0) return rankDiff;
+
+    const aDue = a.nextActionPayment?.dueDate
+      ? new Date(a.nextActionPayment.dueDate).getTime()
+      : Number.POSITIVE_INFINITY;
+    const bDue = b.nextActionPayment?.dueDate
+      ? new Date(b.nextActionPayment.dueDate).getTime()
+      : Number.POSITIVE_INFINITY;
+    if (aDue !== bDue) return aDue - bDue;
+
+    return a.user.name.localeCompare(b.user.name);
+  });
+}
+
+function InstalmentProgressDots({
+  payments,
+  currentId,
+}: {
+  payments: AdminPaymentRecord[];
+  currentId?: string | null;
+}) {
+  return (
+    <div className="flex items-center gap-1" aria-hidden>
+      {payments.map((payment) => {
+        const paid = isPaymentPaid(payment);
+        const overdue = isPaymentOverdue(payment);
+        const receipt = !paid && canApprovePayment(payment);
+        const upcomingPaid =
+          paid &&
+          payment.dueDate &&
+          getPendingPaymentDueState(payment.dueDate) === "upcoming" &&
+          isPaidOnTime(payment);
+        const isCurrent = payment.id === currentId;
+
+        return (
+          <span
+            key={payment.id}
+            title={`${formatPrice(payment.amount, "EUR")} · ${paymentStatusShort(paymentDisplayStatus(payment))}`}
+            className={cn(
+              "h-2 w-2 rounded-full",
+              paid && upcomingPaid && "bg-emerald-400",
+              paid && !upcomingPaid && "bg-emerald-600",
+              overdue && "bg-red-400",
+              receipt && "bg-blue-400",
+              !paid && !overdue && !receipt && "bg-zinc-600",
+              isCurrent && "ring-2 ring-white/40 ring-offset-1 ring-offset-black",
+            )}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function HealthBadge({ health }: { health: MemberHealth }) {
+  const Icon =
+    health.kind === "overdue"
+      ? AlertTriangle
+      : health.kind === "upcoming_paid_on_time" ||
+          health.kind === "all_paid" ||
+          health.kind === "up_to_date"
+        ? CheckCircle2
+        : health.kind === "receipt"
+          ? Clock
+          : Clock;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex max-w-full items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium",
+        health.tone,
+      )}
+    >
+      <Icon className="h-3 w-3 shrink-0" />
+      <span className="truncate">{health.label}</span>
+    </span>
+  );
+}
+
+function InstalmentExpandedRow({
+  payment,
+  index,
+  total,
+  loadingId,
+  onApprove,
+}: {
+  payment: AdminPaymentRecord;
+  index: number;
+  total: number;
+  loadingId: string | null;
+  onApprove: (paymentId: string, memberName: string) => void;
+}) {
+  const displayStatus = paymentDisplayStatus(payment);
+  const due = dueDateLabel(payment);
+  const canApprove = canApprovePayment(payment);
+  const paidOnTime = isPaidOnTime(payment);
+  const paidLate = isPaidLate(payment);
+  const upcomingPaid =
+    paidOnTime &&
+    payment.dueDate &&
+    getPendingPaymentDueState(payment.dueDate) === "upcoming";
+
+  return (
+    <div
+      className={cn(
+        "rounded-lg border px-3 py-3",
+        upcomingPaid
+          ? "border-emerald-400/35 bg-emerald-500/10"
+          : paidOnTime
+            ? "border-emerald-500/20 bg-emerald-500/5"
+            : isPaymentOverdue(payment)
+              ? "border-red-500/25 bg-red-500/5"
+              : "border-white/10 bg-white/[0.02]",
+      )}
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-sm font-medium text-white">
+              {payment.installmentNumber != null || total > 1
+                ? `Instalment ${payment.installmentNumber ?? index + 1}`
+                : payment.description?.trim() || "Fee"}
+              {payment.installmentNumber != null && total > 1 ? (
+                <span className="font-normal text-zinc-500"> of {total}</span>
+              ) : null}
+            </p>
+            <span
+              className={cn(
+                "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
+                paymentStatusTone(displayStatus),
+              )}
+            >
+              {paymentStatusShort(displayStatus)}
+            </span>
+            {upcomingPaid ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/20 px-2 py-0.5 text-[11px] font-semibold text-emerald-200 ring-1 ring-emerald-400/40">
+                <CheckCircle2 className="h-3 w-3" />
+                Upcoming paid on time
+              </span>
+            ) : paidOnTime ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
+                <CheckCircle2 className="h-3 w-3" />
+                Paid on time
+              </span>
+            ) : paidLate ? (
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[11px] font-medium text-amber-200">
+                Paid late
+              </span>
+            ) : null}
+          </div>
+          <p className="text-sm text-jackals-gold font-semibold">
+            {formatPrice(payment.amount, "EUR")}
+          </p>
+          {typeof due !== "string" ? (
+            <p className={cn("text-xs", due.tone)}>
+              Due {due.text}
+              {due.suffix}
+            </p>
+          ) : (
+            <p className="text-xs text-zinc-500">No due date</p>
+          )}
+        </div>
+
+        {canApprove ? (
+          <Button
+            type="button"
+            size="sm"
+            disabled={loadingId === payment.id}
+            onClick={() => void onApprove(payment.id, payment.user.name)}
+          >
+            {loadingId === payment.id ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Approving…
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="h-4 w-4" />
+                Mark as paid
+              </>
+            )}
+          </Button>
+        ) : null}
+      </div>
+
+      <div className="mt-3 grid gap-3 text-sm text-zinc-400 lg:grid-cols-2">
+        <div className="space-y-1.5">
+          <p>
+            <span className="text-zinc-500">Reference:</span>{" "}
+            <span className="font-mono text-xs text-zinc-300">
+              {payment.paymentReference}
+            </span>
+          </p>
+          {payment.description ? (
+            <p>
+              <span className="text-zinc-500">Description:</span>{" "}
+              {payment.description}
+            </p>
+          ) : null}
+          {payment.proofSubmittedAt ? (
+            <p>
+              <span className="text-zinc-500">Receipt:</span>{" "}
+              <span className="text-emerald-300">
+                Uploaded{" "}
+                {new Date(payment.proofSubmittedAt).toLocaleDateString("en-GB")}
+              </span>
+            </p>
+          ) : null}
+          {payment.paidAt ? (
+            <p>
+              <span className="text-zinc-500">Paid:</span>{" "}
+              {new Date(payment.paidAt).toLocaleDateString("en-GB")}
+            </p>
+          ) : null}
+          {payment.proofScreenshotUrl ? (
+            <a
+              href={payment.proofScreenshotUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-jackals-gold hover:underline"
+            >
+              View receipt
+              <ExternalLink className="h-3 w-3" />
+            </a>
+          ) : null}
+        </div>
+
+        {payment.proofScreenshotUrl ? (
+          <div>
+            <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
+              Payment screenshot
+            </p>
+            <div className="relative h-40 w-full overflow-hidden rounded-md border border-white/10">
+              <Image
+                src={payment.proofScreenshotUrl}
+                alt={`Payment proof for ${payment.user.name}`}
+                fill
+                className="object-contain"
+                unoptimized
+              />
+            </div>
+          </div>
+        ) : !isPaymentPaid(payment) ? (
+          <p className="text-sm text-zinc-500">
+            No receipt uploaded yet. Approve is only available after the member
+            uploads a transfer screenshot.
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function MemberExpandedDetails({
+  group,
+  loadingId,
+  onApprove,
+}: {
+  group: MemberPaymentGroup;
+  loadingId: string | null;
+  onApprove: (paymentId: string, memberName: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-zinc-400">
+        <p>
+          <span className="text-zinc-500">Email:</span> {group.user.email}
+        </p>
+        {group.subscriptionLabel ? (
+          <p>
+            <span className="text-zinc-500">Plan:</span> {group.subscriptionLabel}
+          </p>
+        ) : null}
+        {group.teamLabel ? (
+          <p>
+            <span className="text-zinc-500">Team:</span> {group.teamLabel}
+          </p>
+        ) : null}
+        <p>
+          <span className="text-zinc-500">Progress:</span>{" "}
+          {group.paidCount} of {group.payments.length} paid ·{" "}
+          {formatMembershipEuro(group.paidAmount)} of{" "}
+          {formatMembershipEuro(group.totalAmount)}
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <p className="text-xs uppercase tracking-wide text-zinc-500">
+          {group.payments.length > 1 ||
+          group.payments.some((p) => p.installmentNumber != null)
+            ? "Instalments"
+            : "Payment"}
+        </p>
+        {group.payments.map((payment, index) => (
+          <InstalmentExpandedRow
+            key={payment.id}
+            payment={payment}
+            index={index}
+            total={group.payments.length}
+            loadingId={loadingId}
+            onApprove={onApprove}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export function AdminPaymentQueue({
@@ -161,7 +780,7 @@ export function AdminPaymentQueue({
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("ALL");
   const [teamFilter, setTeamFilter] = useState<SquadFilter>("ALL");
   const [planFilter, setPlanFilter] = useState<PlanFilter>("ALL");
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   const planOptions = useMemo(() => {
     const plans = new Set<string>();
@@ -213,17 +832,43 @@ export function AdminPaymentQueue({
     });
   }, [payments, teamFilter, planFilter, search]);
 
-  const filtered = useMemo(() => {
-    const rows = filterBase.filter((payment) => {
-      const paid = isPaymentPaid(payment);
-      if (paymentFilter === "PAID" && !paid) return false;
-      if (paymentFilter === "UNPAID" && paid) return false;
-      if (paymentFilter === "OVERDUE" && !isPaymentOverdue(payment)) return false;
-      return true;
-    });
+  // Keep full membership instalment sets when search matches any sibling.
+  const paymentsForGrouping = useMemo(() => {
+    if (!search.trim()) return filterBase;
 
-    return sortByDueDate(rows);
-  }, [filterBase, paymentFilter]);
+    const matchedMembershipIds = new Set(
+      filterBase
+        .map((payment) => payment.membershipId)
+        .filter((id): id is string => Boolean(id)),
+    );
+    const matchedIds = new Set(filterBase.map((payment) => payment.id));
+
+    return payments.filter((payment) => {
+      if (!matchesSquadFilter(payment.trainingTeamKey, teamFilter)) {
+        return false;
+      }
+      if (planFilter !== "ALL") {
+        if (payment.subscriptionLabel?.planName !== planFilter) return false;
+      }
+      if (matchedIds.has(payment.id)) return true;
+      return Boolean(
+        payment.membershipId && matchedMembershipIds.has(payment.membershipId),
+      );
+    });
+  }, [payments, filterBase, search, teamFilter, planFilter]);
+
+  const memberGroups = useMemo(
+    () => groupPaymentsByMember(paymentsForGrouping),
+    [paymentsForGrouping],
+  );
+
+  const filteredGroups = useMemo(
+    () =>
+      memberGroups.filter((group) =>
+        memberMatchesPaymentFilter(group, paymentFilter),
+      ),
+    [memberGroups, paymentFilter],
+  );
 
   const stats = useMemo(() => {
     let unpaid = 0;
@@ -232,7 +877,7 @@ export function AdminPaymentQueue({
     let totalRemaining = 0;
     let totalPaid = 0;
 
-    for (const payment of filterBase) {
+    for (const payment of paymentsForGrouping) {
       if (isPaymentPaid(payment)) {
         paid += 1;
         totalPaid += payment.amount;
@@ -244,7 +889,7 @@ export function AdminPaymentQueue({
     }
 
     return { unpaid, paid, overdue, totalRemaining, totalPaid };
-  }, [filterBase]);
+  }, [paymentsForGrouping]);
 
   const approvePayment = async (paymentId: string, memberName: string) => {
     const payment = payments.find((row) => row.id === paymentId);
@@ -289,12 +934,18 @@ export function AdminPaymentQueue({
     teamFilter !== "ALL" ||
     planFilter !== "ALL";
 
+  const toggleExpanded = (key: string) => {
+    setExpandedKey((current) => (current === key ? null : key));
+  };
+
   return (
     <div className="space-y-4">
       <AdminBankStatementImport
         focus="membership"
         onImported={() => {
-          setMessage("Bank statement imported. Matching payments were auto-approved.");
+          setMessage(
+            "Bank statement imported. Matching payments were auto-approved.",
+          );
           void refreshNotifications();
           router.refresh();
         }}
@@ -321,7 +972,9 @@ export function AdminPaymentQueue({
             <p className="text-[11px] uppercase tracking-wide text-zinc-500">
               {item.label}
             </p>
-            <p className="mt-0.5 text-lg font-semibold text-white">{item.value}</p>
+            <p className="mt-0.5 text-lg font-semibold text-white">
+              {item.value}
+            </p>
           </div>
         ))}
       </div>
@@ -329,7 +982,7 @@ export function AdminPaymentQueue({
       <div className="space-y-3 rounded-xl border border-white/10 bg-white/[0.02] p-3 sm:p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-sm text-zinc-400">
-            Membership instalments and one-off fees
+            Membership instalments grouped by member
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <div className="hidden overflow-hidden rounded-lg border border-white/10 lg:flex">
@@ -362,7 +1015,9 @@ export function AdminPaymentQueue({
               disabled={refreshing}
               onClick={refresh}
             >
-              <RefreshCw className={cn("h-4 w-4", refreshing && "animate-spin")} />
+              <RefreshCw
+                className={cn("h-4 w-4", refreshing && "animate-spin")}
+              />
             </Button>
           </div>
         </div>
@@ -439,11 +1094,21 @@ export function AdminPaymentQueue({
 
         <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
           <span>
-            {filtered.length} shown
-            {filtered.length !== payments.length ? ` of ${payments.length}` : ""}
+            {filteredGroups.length} member
+            {filteredGroups.length === 1 ? "" : "s"}
+            {filteredGroups.length !== memberGroups.length
+              ? ` of ${memberGroups.length}`
+              : ""}
+            {" · "}
+            {filterBase.length} instalment
+            {filterBase.length === 1 ? "" : "s"}
           </span>
           {hasFilters ? (
-            <button type="button" onClick={clearFilters} className="hover:text-zinc-300">
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="hover:text-zinc-300"
+            >
               Clear filters
             </button>
           ) : null}
@@ -459,7 +1124,7 @@ export function AdminPaymentQueue({
 
       <FormError message={error} />
 
-      {filtered.length === 0 ? (
+      {filteredGroups.length === 0 ? (
         <div className="rounded-xl border border-dashed border-white/10 px-6 py-12 text-center">
           <p className="font-semibold text-white">No matching payments</p>
           <p className="mt-1 text-sm text-zinc-500">
@@ -474,302 +1139,268 @@ export function AdminPaymentQueue({
             <div className="hidden overflow-hidden rounded-xl border border-white/10 lg:block">
               <table className="w-full table-fixed text-left text-sm">
                 <colgroup>
-                  <col />
-                  <col className="w-[4.5rem]" />
-                  <col className="w-[5.25rem]" />
-                  <col className="w-[7rem]" />
-                  <col className="w-[3rem]" />
+                  <col className="w-[28%]" />
+                  <col className="w-[16%]" />
+                  <col className="w-[18%]" />
+                  <col className="w-[22%]" />
+                  <col className="w-[10%]" />
+                  <col className="w-[6%]" />
                 </colgroup>
                 <thead className="border-b border-white/10 bg-white/[0.03] text-xs uppercase tracking-wide text-zinc-500">
                   <tr>
                     <th className="px-2 py-2.5 font-medium">Member</th>
-                    <th className="px-2 py-2.5 font-medium">Amount</th>
+                    <th className="px-2 py-2.5 font-medium">Plan</th>
+                    <th className="px-2 py-2.5 font-medium">Progress</th>
                     <th className="px-2 py-2.5 font-medium">Status</th>
-                    <th className="px-2 py-2.5 font-medium">Due</th>
+                    <th className="px-2 py-2.5 font-medium">Next</th>
                     <th className="px-2 py-2.5 text-right font-medium"></th>
                   </tr>
                 </thead>
-            <tbody className="divide-y divide-white/8">
-              {filtered.map((payment) => {
-                const expanded = expandedId === payment.id;
-                const displayStatus = paymentDisplayStatus(payment);
-                const due = dueDateLabel(payment);
-                const subscriptionLabel = payment.subscriptionLabel
-                  ? formatMembershipSubscriptionLabel(
-                      payment.subscriptionLabel.planName,
-                      payment.subscriptionLabel.paymentSchedule,
-                    )
-                  : null;
-                const canApprove = canApprovePayment(payment);
+                <tbody className="divide-y divide-white/8">
+                  {filteredGroups.map((group) => {
+                    const expanded = expandedKey === group.key;
+                    const current = findCurrentWindowPayment(group.payments);
+                    const singleApprove =
+                      group.approvablePayments.length === 1
+                        ? group.approvablePayments[0]!
+                        : null;
 
-                return (
-                  <Fragment key={payment.id}>
-                    <tr className="bg-white/[0.015] transition hover:bg-white/[0.03]">
-                      <td className="px-2 py-2">
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setExpandedId(expanded ? null : payment.id)
-                          }
-                          className="group flex min-w-0 items-center gap-1.5 text-left"
-                        >
-                          <ChevronDown
-                            className={cn(
-                              "h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
-                              expanded && "rotate-180",
-                            )}
-                          />
-                          <span className="truncate font-medium text-white group-hover:text-jackals-gold">
-                            {payment.user.name}
-                          </span>
-                        </button>
-                      </td>
-                      <td className="px-2 py-2 font-semibold text-jackals-gold">
-                        {formatPrice(payment.amount, "EUR")}
-                      </td>
-                      <td className="px-2 py-2">
-                        <span
+                    return (
+                      <Fragment key={group.key}>
+                        <tr
                           className={cn(
-                            "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap",
-                            paymentStatusTone(displayStatus),
+                            "bg-white/[0.015] transition hover:bg-white/[0.03]",
+                            group.health.kind === "upcoming_paid_on_time" &&
+                              "bg-emerald-500/[0.04]",
+                            group.overdueCount > 0 && "bg-red-500/[0.03]",
                           )}
                         >
-                          {paymentStatusShort(displayStatus)}
-                        </span>
-                      </td>
-                      <td className="px-2 py-2">
-                        {typeof due === "string" ? (
-                          <span className="text-zinc-500">{due}</span>
-                        ) : (
-                          <span className={cn("text-xs", due.tone)}>
-                            {due.text}
-                            <span className="hidden text-zinc-500 xl:inline">
-                              {due.suffix}
-                            </span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-2 py-2">
-                        <div className="flex items-center justify-end gap-1">
-                          {canApprove ? (
+                          <td className="px-2 py-2.5">
                             <button
                               type="button"
-                              title="Mark as paid"
-                              disabled={loadingId === payment.id}
-                              onClick={() =>
-                                void approvePayment(payment.id, payment.user.name)
-                              }
-                              className="rounded p-1.5 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:opacity-40"
+                              onClick={() => toggleExpanded(group.key)}
+                              className="group flex min-w-0 items-start gap-1.5 text-left"
                             >
-                              {loadingId === payment.id ? (
-                                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                              ) : (
-                                <CheckCircle2 className="h-3.5 w-3.5" />
-                              )}
-                            </button>
-                          ) : null}
-                        </div>
-                      </td>
-                    </tr>
-                    {expanded ? (
-                      <tr className="bg-black/20">
-                        <td colSpan={5} className="px-4 py-4">
-                          <div className="grid gap-4 lg:grid-cols-2">
-                            <div className="space-y-2 text-sm text-zinc-400">
-                              <p>
-                                <span className="text-zinc-500">Email:</span>{" "}
-                                {payment.user.email}
-                              </p>
-                              {subscriptionLabel ? (
-                                <p>
-                                  <span className="text-zinc-500">Plan:</span>{" "}
-                                  {subscriptionLabel}
-                                </p>
-                              ) : null}
-                              {payment.teamLabel ? (
-                                <p>
-                                  <span className="text-zinc-500">Team:</span>{" "}
-                                  {payment.teamLabel}
-                                </p>
-                              ) : null}
-                              <p>
-                                <span className="text-zinc-500">Reference:</span>{" "}
-                                <span className="font-mono text-xs text-zinc-300">
-                                  {payment.paymentReference}
+                              <ChevronDown
+                                className={cn(
+                                  "mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-600 transition",
+                                  expanded && "rotate-180",
+                                )}
+                              />
+                              <span className="min-w-0">
+                                <span className="block truncate font-medium text-white group-hover:text-jackals-gold">
+                                  {group.user.name}
                                 </span>
+                                <span className="mt-0.5 block truncate text-[11px] text-zinc-500">
+                                  {group.user.email}
+                                  {group.teamLabel
+                                    ? ` · ${group.teamLabel}`
+                                    : ""}
+                                </span>
+                              </span>
+                            </button>
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <span className="line-clamp-2 text-xs text-zinc-400">
+                              {group.subscriptionLabel ?? "—"}
+                            </span>
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <div className="space-y-1.5">
+                              <InstalmentProgressDots
+                                payments={group.payments}
+                                currentId={current?.id}
+                              />
+                              <p className="text-xs text-zinc-300">
+                                {group.paidCount} of {group.payments.length}{" "}
+                                paid
                               </p>
-                              {payment.description ? (
-                                <p>
-                                  <span className="text-zinc-500">Description:</span>{" "}
-                                  {payment.description}
+                              <p className="text-[11px] text-zinc-500">
+                                {formatMembershipEuro(group.paidAmount)} of{" "}
+                                {formatMembershipEuro(group.totalAmount)}
+                              </p>
+                            </div>
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <div className="space-y-1">
+                              <HealthBadge health={group.health} />
+                              {group.health.detail ? (
+                                <p className="text-[11px] text-zinc-500">
+                                  {group.health.detail}
                                 </p>
-                              ) : null}
-                              {payment.proofSubmittedAt ? (
-                                <p>
-                                  <span className="text-zinc-500">Receipt:</span>{" "}
-                                  <span className="text-emerald-300">
-                                    Uploaded{" "}
-                                    {new Date(
-                                      payment.proofSubmittedAt,
-                                    ).toLocaleDateString("en-GB")}
-                                  </span>
-                                </p>
-                              ) : null}
-                              {payment.paidAt ? (
-                                <p>
-                                  <span className="text-zinc-500">Paid:</span>{" "}
-                                  {new Date(payment.paidAt).toLocaleDateString("en-GB")}
-                                </p>
-                              ) : null}
-                              {payment.proofScreenshotUrl ? (
-                                <a
-                                  href={payment.proofScreenshotUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 text-xs text-jackals-gold hover:underline"
-                                >
-                                  View receipt
-                                  <ExternalLink className="h-3 w-3" />
-                                </a>
                               ) : null}
                             </div>
-
-                            {payment.proofScreenshotUrl ? (
-                              <div>
-                                <p className="mb-2 text-xs uppercase tracking-wide text-zinc-500">
-                                  Payment screenshot
-                                </p>
-                                <div className="relative h-48 w-full overflow-hidden rounded-md border border-white/10">
-                                  <Image
-                                    src={payment.proofScreenshotUrl}
-                                    alt={`Payment proof for ${payment.user.name}`}
-                                    fill
-                                    className="object-contain"
-                                    unoptimized
-                                  />
-                                </div>
-                              </div>
+                          </td>
+                          <td className="px-2 py-2.5">
+                            {group.nextActionPayment?.dueDate ? (
+                              <span
+                                className={cn(
+                                  "text-xs",
+                                  isPaymentOverdue(group.nextActionPayment)
+                                    ? "text-red-400"
+                                    : "text-zinc-300",
+                                )}
+                              >
+                                {new Date(
+                                  group.nextActionPayment.dueDate,
+                                ).toLocaleDateString("en-GB")}
+                              </span>
+                            ) : group.health.kind ===
+                                "upcoming_paid_on_time" ||
+                              group.health.kind === "all_paid" ? (
+                              <span className="text-xs text-emerald-400">—</span>
                             ) : (
-                              <p className="text-sm text-zinc-500">
-                                No receipt uploaded yet. Approve is only available
-                                after the member uploads a transfer screenshot.
-                              </p>
+                              <span className="text-xs text-zinc-600">—</span>
                             )}
-
-                            {canApprove ? (
-                              <div className="lg:col-span-2">
-                                <Button
+                          </td>
+                          <td className="px-2 py-2.5">
+                            <div className="flex items-center justify-end gap-1">
+                              {singleApprove ? (
+                                <button
                                   type="button"
-                                  size="sm"
-                                  disabled={loadingId === payment.id}
+                                  title="Mark as paid"
+                                  disabled={loadingId === singleApprove.id}
                                   onClick={() =>
                                     void approvePayment(
-                                      payment.id,
-                                      payment.user.name,
+                                      singleApprove.id,
+                                      group.user.name,
                                     )
                                   }
+                                  className="rounded p-1.5 text-emerald-500 hover:bg-emerald-500/10 hover:text-emerald-300 disabled:opacity-40"
                                 >
-                                  {loadingId === payment.id ? (
-                                    <>
-                                      <Loader2 className="h-4 w-4 animate-spin" />
-                                      Approving…
-                                    </>
+                                  {loadingId === singleApprove.id ? (
+                                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                   ) : (
-                                    <>
-                                      <CheckCircle2 className="h-4 w-4" />
-                                      Mark as paid
-                                    </>
+                                    <CheckCircle2 className="h-3.5 w-3.5" />
                                   )}
-                                </Button>
-                              </div>
-                            ) : null}
-                          </div>
-                        </td>
-                      </tr>
-                    ) : null}
-                  </Fragment>
-                );
-              })}
-            </tbody>
-          </table>
+                                </button>
+                              ) : group.approvablePayments.length > 1 ? (
+                                <button
+                                  type="button"
+                                  title="Review receipts"
+                                  onClick={() => toggleExpanded(group.key)}
+                                  className="rounded px-1.5 py-1 text-[10px] font-medium text-blue-300 hover:bg-blue-500/10"
+                                >
+                                  {group.approvablePayments.length} receipts
+                                </button>
+                              ) : null}
+                            </div>
+                          </td>
+                        </tr>
+                        {expanded ? (
+                          <tr className="bg-black/20">
+                            <td colSpan={6} className="px-4 py-4">
+                              <MemberExpandedDetails
+                                group={group}
+                                loadingId={loadingId}
+                                onApprove={approvePayment}
+                              />
+                            </td>
+                          </tr>
+                        ) : null}
+                      </Fragment>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           ) : null}
 
           <div className={cn("space-y-2", view === "table" && "lg:hidden")}>
-          {filtered.map((payment) => {
-            const displayStatus = paymentDisplayStatus(payment);
-            const canApprove = canApprovePayment(payment);
-            const subscriptionLabel = payment.subscriptionLabel
-              ? formatMembershipSubscriptionLabel(
-                  payment.subscriptionLabel.planName,
-                  payment.subscriptionLabel.paymentSchedule,
-                )
-              : null;
-            const due = dueDateLabel(payment);
-            return (
-              <article
-                key={payment.id}
-                className="rounded-lg border border-white/10 bg-white/[0.02] p-4"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium text-white">
-                      {payment.user.name}{" "}
-                      <span className="text-jackals-gold">
-                        {formatPrice(payment.amount, "EUR")}
-                      </span>
-                    </p>
-                    <p className="truncate text-sm text-zinc-500">
-                      {payment.user.email}
-                    </p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <span
-                        className={cn(
-                          "inline-block rounded-full px-2 py-0.5 text-[11px] font-medium",
-                          paymentStatusTone(displayStatus),
-                        )}
-                      >
-                        {paymentStatusShort(displayStatus)}
-                      </span>
-                      {typeof due !== "string" ? (
-                        <span className={cn("text-xs", due.tone)}>
-                          Due {due.text}
-                          {due.suffix}
-                        </span>
-                      ) : null}
-                      {subscriptionLabel ? (
-                        <span className="text-xs text-zinc-500">
-                          {subscriptionLabel}
-                        </span>
-                      ) : null}
-                      {payment.teamLabel ? (
-                        <span className="text-xs text-zinc-500">
-                          {payment.teamLabel}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                  {canApprove ? (
-                    <Button
+            {filteredGroups.map((group) => {
+              const expanded = expandedKey === group.key;
+              const current = findCurrentWindowPayment(group.payments);
+              const singleApprove =
+                group.approvablePayments.length === 1
+                  ? group.approvablePayments[0]!
+                  : null;
+
+              return (
+                <article
+                  key={group.key}
+                  className={cn(
+                    "rounded-lg border border-white/10 bg-white/[0.02] p-4",
+                    group.health.kind === "upcoming_paid_on_time" &&
+                      "border-emerald-400/30 bg-emerald-500/[0.06]",
+                    group.overdueCount > 0 && "border-red-500/25",
+                  )}
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <button
                       type="button"
-                      size="sm"
-                      variant="outline"
-                      disabled={loadingId === payment.id}
-                      onClick={() =>
-                        void approvePayment(payment.id, payment.user.name)
-                      }
+                      onClick={() => toggleExpanded(group.key)}
+                      className="group flex min-w-0 flex-1 items-start gap-2 text-left"
                     >
-                      {loadingId === payment.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <CheckCircle2 className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
+                      <ChevronDown
+                        className={cn(
+                          "mt-1 h-4 w-4 shrink-0 text-zinc-600 transition",
+                          expanded && "rotate-180",
+                        )}
+                      />
+                      <span className="min-w-0 space-y-2">
+                        <span className="block">
+                          <span className="font-medium text-white group-hover:text-jackals-gold">
+                            {group.user.name}
+                          </span>
+                          <span className="mt-0.5 block truncate text-sm text-zinc-500">
+                            {group.user.email}
+                          </span>
+                        </span>
+                        <span className="flex flex-wrap items-center gap-2">
+                          <HealthBadge health={group.health} />
+                          <InstalmentProgressDots
+                            payments={group.payments}
+                            currentId={current?.id}
+                          />
+                          <span className="text-xs text-zinc-400">
+                            {group.paidCount}/{group.payments.length} ·{" "}
+                            {formatMembershipEuro(group.paidAmount)}/
+                            {formatMembershipEuro(group.totalAmount)}
+                          </span>
+                        </span>
+                        {group.subscriptionLabel || group.teamLabel ? (
+                          <span className="block text-xs text-zinc-500">
+                            {[group.subscriptionLabel, group.teamLabel]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                    {singleApprove ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={loadingId === singleApprove.id}
+                        onClick={() =>
+                          void approvePayment(
+                            singleApprove.id,
+                            group.user.name,
+                          )
+                        }
+                      >
+                        {loadingId === singleApprove.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    ) : null}
+                  </div>
+
+                  {expanded ? (
+                    <div className="mt-4 border-t border-white/10 pt-4">
+                      <MemberExpandedDetails
+                        group={group}
+                        loadingId={loadingId}
+                        onApprove={approvePayment}
+                      />
+                    </div>
                   ) : null}
-                </div>
-              </article>
-            );
-          })}
+                </article>
+              );
+            })}
           </div>
         </>
       )}

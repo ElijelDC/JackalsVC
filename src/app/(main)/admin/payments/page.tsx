@@ -8,10 +8,25 @@ export const metadata = {
   title: "Admin · Payments",
 };
 
+const paymentInclude = {
+  user: {
+    select: {
+      name: true,
+      email: true,
+      clubMember: { select: { trainingTeamKey: true } },
+    },
+  },
+  membership: {
+    include: {
+      plan: { select: { name: true } },
+    },
+  },
+} as const;
+
 export default async function AdminPaymentsPage() {
   const completedSince = subMonths(new Date(), 6);
 
-  const [payments, squads] = await Promise.all([
+  const [seedPayments, squads] = await Promise.all([
     prisma.payment.findMany({
       where: {
         OR: [
@@ -19,24 +34,43 @@ export default async function AdminPaymentsPage() {
           { status: "COMPLETED", paidAt: { gte: completedSince } },
         ],
       },
-      include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-            clubMember: { select: { trainingTeamKey: true } },
-          },
-        },
-        membership: {
-          include: {
-            plan: { select: { name: true } },
-          },
-        },
-      },
+      include: paymentInclude,
       orderBy: [{ status: "asc" }, { dueDate: "asc" }, { createdAt: "asc" }],
     }),
     getTrainingSquads(),
   ]);
+
+  // Pull sibling instalments for the same membership so member progress
+  // (e.g. "1 of 3 paid") stays accurate even when older COMPLETED rows
+  // fall outside the recent paidAt window.
+  const membershipIds = [
+    ...new Set(
+      seedPayments
+        .map((payment) => payment.membershipId)
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  const seedIds = new Set(seedPayments.map((payment) => payment.id));
+
+  const siblingPayments =
+    membershipIds.length > 0
+      ? await prisma.payment.findMany({
+          where: {
+            membershipId: { in: membershipIds },
+            id: { notIn: [...seedIds] },
+          },
+          include: paymentInclude,
+        })
+      : [];
+
+  const payments = [...seedPayments, ...siblingPayments].sort((a, b) => {
+    const aDue = a.dueDate?.getTime() ?? Number.POSITIVE_INFINITY;
+    const bDue = b.dueDate?.getTime() ?? Number.POSITIVE_INFINITY;
+    if (aDue !== bDue) return aDue - bDue;
+    const aInst = a.installmentNumber ?? Number.POSITIVE_INFINITY;
+    const bInst = b.installmentNumber ?? Number.POSITIVE_INFINITY;
+    return aInst - bInst;
+  });
 
   const squadNameByKey = new Map(squads.map((squad) => [squad.key, squad.name]));
 
@@ -62,6 +96,8 @@ export default async function AdminPaymentsPage() {
               status: payment.status,
               paymentReference: payment.paymentReference,
               description: payment.description,
+              membershipId: payment.membershipId,
+              installmentNumber: payment.installmentNumber,
               dueDate: payment.dueDate?.toISOString() ?? null,
               proofSubmittedAt: payment.proofSubmittedAt?.toISOString() ?? null,
               proofScreenshotUrl: payment.proofScreenshotUrl,
