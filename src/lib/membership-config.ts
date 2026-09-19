@@ -66,6 +66,14 @@ export const MEMBERSHIP_PLAN_ADULT_PRICE = 360;
 export const MEMBERSHIP_PLAN_STUDENT_PRICE = 315;
 export const MEMBERSHIP_PLAN_DURATION_MONTHS = 7;
 
+/** Fixed Oct / Jan / Mar instalments for published 2026/27 plans. */
+export const MEMBERSHIP_PLAN_ADULT_INSTALLMENTS: MembershipInstallmentAmounts = [
+  150, 110, 100,
+];
+export const MEMBERSHIP_PLAN_STUDENT_INSTALLMENTS: MembershipInstallmentAmounts = [
+  135, 95, 85,
+];
+
 /** All 2026/27 club memberships end mid-May 2027. */
 export const CLUB_MEMBERSHIP_SEASON_END_DATE = new Date(2027, 4, 15, 23, 59, 59, 999);
 
@@ -80,6 +88,7 @@ export const MEMBERSHIP_FEATURES = [...MEMBERSHIP_INCLUDES];
 export const DEFAULT_MEMBERSHIP_PRICING = createMembershipPricing(
   MEMBERSHIP_PLAN_ADULT_PRICE,
   MEMBERSHIP_PLAN_DURATION_MONTHS,
+  MEMBERSHIP_PLAN_ADULT_INSTALLMENTS,
 );
 
 /** Schedules members can choose at checkout. */
@@ -153,6 +162,12 @@ const INSTALLMENT_WEIGHTS = [3, 2, 2] as const;
 export function defaultInstallmentAmounts(
   seasonTotalPrice: number,
 ): MembershipInstallmentAmounts {
+  if (seasonTotalPrice === MEMBERSHIP_PLAN_ADULT_PRICE) {
+    return [...MEMBERSHIP_PLAN_ADULT_INSTALLMENTS];
+  }
+  if (seasonTotalPrice === MEMBERSHIP_PLAN_STUDENT_PRICE) {
+    return [...MEMBERSHIP_PLAN_STUDENT_INSTALLMENTS];
+  }
   const amounts = proportionalAmounts(seasonTotalPrice, [...INSTALLMENT_WEIGHTS]);
   return [amounts[0]!, amounts[1]!, amounts[2]!];
 }

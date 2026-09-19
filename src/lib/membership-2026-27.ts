@@ -127,9 +127,9 @@ export const MEMBERSHIP_PAYMENT_OPTIONS = [
   {
     id: "installments",
     label: "3 instalments",
-    summary: "Instalment 1 · 2 · 3",
+    summary: "Oct · Jan · Mar",
     description:
-      "Three payments: Instalment 1 in October, Instalment 2 in January, Instalment 3 in March.",
+      "Three payments: October, January, and March. Adult €150 + €110 + €100. Student/U18 €135 + €95 + €85.",
   },
   {
     id: "full",
