@@ -122,23 +122,6 @@ export const MEMBERSHIP_FEES_BY_LEAGUE_INTRO =
 export const MEMBERSHIP_PRICE_CHANGE_NOTICE =
   "Fees have changed this season. The club is adding Division 3 Men instead of Regional League, so all three squads are on the National League price.";
 
-/** Matches payment schedules on the member checkout. */
-export const MEMBERSHIP_PAYMENT_OPTIONS = [
-  {
-    id: "installments",
-    label: "3 instalments",
-    summary: "Oct · Jan · Mar",
-    description:
-      "Three payments: October, January, and March. Adult €150 + €110 + €100. Student/U18 €135 + €95 + €85 (student or under-18 ID required for admin approval).",
-  },
-  {
-    id: "full",
-    label: "Pay in full",
-    summary: "One payment",
-    description: "Pay the full season fee upfront when you register.",
-  },
-] as const;
-
 export type MembershipLeagueTier202627 = {
   id: string;
   league: string;

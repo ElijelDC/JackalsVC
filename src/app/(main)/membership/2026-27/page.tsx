@@ -1,4 +1,9 @@
 import { Membership202627Showcase } from "@/components/membership/Membership202627Showcase";
+import {
+  buildMembershipPublicPaymentOptions,
+  getDefaultMembershipPublicPaymentOptions,
+} from "@/lib/membership-config";
+import { prisma } from "@/lib/prisma";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -8,6 +13,24 @@ export const metadata = pageMetadata({
   path: "/membership/2026-27",
 });
 
-export default function Membership202627Page() {
-  return <Membership202627Showcase />;
+export default async function Membership202627Page() {
+  const activePlans = await prisma.membershipPlan.findMany({
+    where: { active: true },
+    orderBy: [{ price: "desc" }, { name: "asc" }],
+    select: {
+      name: true,
+      price: true,
+      durationMonths: true,
+      installment1Eur: true,
+      installment2Eur: true,
+      installment3Eur: true,
+    },
+  });
+
+  const paymentOptions =
+    activePlans.length > 0
+      ? buildMembershipPublicPaymentOptions(activePlans)
+      : getDefaultMembershipPublicPaymentOptions();
+
+  return <Membership202627Showcase paymentOptions={paymentOptions} />;
 }

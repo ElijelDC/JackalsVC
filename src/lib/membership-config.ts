@@ -437,3 +437,93 @@ export function getScheduleDueNowLabel(
       return formatEuroFee(getFirstInstallmentAmount(schedule, pricing));
   }
 }
+
+export type MembershipPublicPaymentOption = {
+  id: "installments" | "full";
+  label: string;
+  summary: string;
+  description: string;
+};
+
+export type MembershipPlanInstallmentSource = {
+  name: string;
+  price: number;
+  durationMonths: number;
+  installment1Eur?: number | null;
+  installment2Eur?: number | null;
+  installment3Eur?: number | null;
+};
+
+function pricingFromPlanSource(plan: MembershipPlanInstallmentSource): MembershipPricing {
+  return createMembershipPricing(
+    plan.price,
+    plan.durationMonths,
+    planInstallmentAmounts(plan),
+  );
+}
+
+function formatInstallmentAmountsLine(amounts: MembershipInstallmentAmounts): string {
+  return amounts.map((amount) => formatEuroFee(amount)).join(" + ");
+}
+
+export function buildMembershipPublicPaymentOptions(
+  plans: MembershipPlanInstallmentSource[],
+): MembershipPublicPaymentOption[] {
+  const adultPlan = plans.find((plan) => !isStudentMembershipPlanName(plan.name));
+  const studentPlan = plans.find((plan) => isStudentMembershipPlanName(plan.name));
+
+  let installmentDescription =
+    "Three payments in October, January, and March.";
+
+  if (adultPlan) {
+    const amounts = resolveInstallmentAmounts(pricingFromPlanSource(adultPlan));
+    installmentDescription += ` Adult ${formatInstallmentAmountsLine(amounts)}.`;
+  }
+
+  if (studentPlan) {
+    const amounts = resolveInstallmentAmounts(pricingFromPlanSource(studentPlan));
+    installmentDescription +=
+      ` Student/U18 ${formatInstallmentAmountsLine(amounts)}` +
+      " (student or under-18 ID required for admin approval).";
+  }
+
+  if (!adultPlan && !studentPlan) {
+    installmentDescription += " Amounts depend on your membership type at checkout.";
+  }
+
+  return [
+    {
+      id: "installments",
+      label: "3 instalments",
+      summary: "Oct · Jan · Mar",
+      description: installmentDescription,
+    },
+    {
+      id: "full",
+      label: "Pay in full",
+      summary: "One payment",
+      description: "Pay the full season fee upfront when you register.",
+    },
+  ];
+}
+
+export function getDefaultMembershipPublicPaymentOptions(): MembershipPublicPaymentOption[] {
+  return buildMembershipPublicPaymentOptions([
+    {
+      name: MEMBERSHIP_PLAN_ADULT_NAME,
+      price: MEMBERSHIP_PLAN_ADULT_PRICE,
+      durationMonths: MEMBERSHIP_PLAN_DURATION_MONTHS,
+      installment1Eur: MEMBERSHIP_PLAN_ADULT_INSTALLMENTS[0],
+      installment2Eur: MEMBERSHIP_PLAN_ADULT_INSTALLMENTS[1],
+      installment3Eur: MEMBERSHIP_PLAN_ADULT_INSTALLMENTS[2],
+    },
+    {
+      name: MEMBERSHIP_PLAN_STUDENT_NAME,
+      price: MEMBERSHIP_PLAN_STUDENT_PRICE,
+      durationMonths: MEMBERSHIP_PLAN_DURATION_MONTHS,
+      installment1Eur: MEMBERSHIP_PLAN_STUDENT_INSTALLMENTS[0],
+      installment2Eur: MEMBERSHIP_PLAN_STUDENT_INSTALLMENTS[1],
+      installment3Eur: MEMBERSHIP_PLAN_STUDENT_INSTALLMENTS[2],
+    },
+  ]);
+}

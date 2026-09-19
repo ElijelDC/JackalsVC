@@ -22,11 +22,11 @@ import {
   MEMBERSHIP_INCLUDES,
   MEMBERSHIP_LEAGUE_COVERAGE_COPY,
   MEMBERSHIP_LEAGUE_TIERS_2026_27,
-  MEMBERSHIP_PAYMENT_OPTIONS,
   MEMBERSHIP_PRICE_CHANGE_NOTICE,
   MEMBERSHIP_SEASON_LABEL,
   type MembershipLeagueTier202627,
 } from "@/lib/membership-2026-27";
+import type { MembershipPublicPaymentOption } from "@/lib/membership-config";
 import { cn } from "@/lib/utils";
 
 function LeagueMembershipCard({ tier }: { tier: MembershipLeagueTier202627 }) {
@@ -153,7 +153,11 @@ function ValuePillar({
   );
 }
 
-export function Membership202627Showcase() {
+export function Membership202627Showcase({
+  paymentOptions,
+}: {
+  paymentOptions: MembershipPublicPaymentOption[];
+}) {
   return (
     <>
       <ShowcaseHero
@@ -205,7 +209,7 @@ export function Membership202627Showcase() {
             </p>
           </AnimateIn>
           <StaggerIn className="mt-10 grid gap-4 md:grid-cols-2 md:max-w-3xl md:mx-auto" stagger={80}>
-            {MEMBERSHIP_PAYMENT_OPTIONS.map((option) => (
+            {paymentOptions.map((option) => (
               <PaymentOptionCard
                 key={option.id}
                 label={option.label}
