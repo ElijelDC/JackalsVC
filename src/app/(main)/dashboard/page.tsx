@@ -246,6 +246,8 @@ export default async function DashboardPage() {
               startDate: m.startDate.toISOString(),
               endDate: m.endDate.toISOString(),
               plan: { name: m.plan.name, price: m.plan.price },
+              studentIdReviewStatus: m.studentIdReviewStatus,
+              studentIdProofUrl: m.studentIdProofUrl,
             }))}
             payments={payments.map((p) => ({
               id: p.id,

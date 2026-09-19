@@ -18,6 +18,7 @@ import { getEventTypeLabel } from "@/lib/event-filters";
 import { formatInClubTime } from "@/lib/datetime-form";
 import { formatPaymentScheduleLabel, type PaymentSchedule } from "@/lib/membership-config";
 import type { MembershipPaymentAccess } from "@/lib/membership-overdue";
+import { studentMembershipNeedsIdProof } from "@/lib/student-id-proof";
 import { formatPrice } from "@/lib/utils";
 import { withDashboardReturn } from "@/lib/dashboard-return";
 
@@ -98,6 +99,8 @@ type MembershipRecord = {
   startDate: string;
   endDate: string;
   plan: { name: string; price: number };
+  studentIdReviewStatus?: string | null;
+  studentIdProofUrl?: string | null;
 };
 
 type MemberPaymentsPanelProps = {
@@ -126,6 +129,12 @@ export function MemberPaymentsPanel({
     payments.length > 0 ? Math.round((completedPayments.length / payments.length) * 100) : 0;
   const schedule = currentMembership?.paymentSchedule;
   const instalmentLabel = schedule === "MONTHLY" ? "months" : "instalments";
+  const needsStudentId =
+    currentMembership != null &&
+    studentMembershipNeedsIdProof({
+      planName: currentMembership.plan.name,
+      studentIdReviewStatus: currentMembership.studentIdReviewStatus ?? null,
+    });
 
   return (
     <section className="min-w-0">
@@ -219,6 +228,11 @@ export function MemberPaymentsPanel({
                       match access.
                     </p>
                   )}
+                {needsStudentId ? (
+                  <p className="mt-2 text-sm text-amber-300/90">
+                    Upload your student or under-18 ID to confirm the Student/U18 rate.
+                  </p>
+                ) : null}
               </>
             ) : (
               <p className="text-sm text-zinc-400">
@@ -233,9 +247,11 @@ export function MemberPaymentsPanel({
           className="flex items-center justify-center gap-1 border-t border-white/10 py-2.5 text-xs font-medium text-zinc-500 transition-colors hover:bg-white/[0.03] hover:text-jackals-red-light"
         >
           {currentMembership
-            ? pendingMembership
-              ? "Pay membership & upload proof"
-              : "View membership & payment schedule"
+            ? needsStudentId
+              ? "Upload student / U18 ID"
+              : pendingMembership
+                ? "Pay membership & upload proof"
+                : "View membership & payment schedule"
             : "Set up membership"}
           <ChevronRight className="h-3.5 w-3.5" />
         </Link>

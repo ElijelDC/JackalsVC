@@ -7,13 +7,14 @@ import { Button } from "@/components/ui/Button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import { FormError } from "@/components/ui/FormMessage";
 import { apiPostForm } from "@/lib/client-api";
+import type { StudentIdReviewStatus } from "@/lib/student-id-proof";
 
 export function StudentIdStatusCard({
   reviewStatus,
   proofUrl,
   reviewNote,
 }: {
-  reviewStatus: string | null;
+  reviewStatus: StudentIdReviewStatus | string | null;
   proofUrl: string | null;
   reviewNote: string | null;
 }) {
@@ -23,6 +24,13 @@ export function StudentIdStatusCard({
   const [error, setError] = useState<string | null>(null);
 
   if (!reviewStatus) return null;
+
+  const needsUpload =
+    reviewStatus === "AWAITING_PROOF" ||
+    reviewStatus === "DECLINED" ||
+    (reviewStatus === "PENDING" && !proofUrl);
+
+  const canReplacePending = reviewStatus === "PENDING" && Boolean(proofUrl);
 
   const upload = async (file: File) => {
     setLoading(true);
@@ -46,15 +54,25 @@ export function StudentIdStatusCard({
     <Card className="mb-6 border-amber-500/20 bg-amber-500/[0.04]">
       <CardTitle className="text-base">Student / U18 ID</CardTitle>
       <CardDescription className="mt-2">
-        {reviewStatus === "PENDING"
-          ? "Your ID is with the club for review. You can keep paying while we check it."
-          : reviewStatus === "APPROVED"
-            ? "Your Student/U18 rate is confirmed."
-            : "Your ID was not approved. Upload a clearer student card or under-18 ID."}
+        {reviewStatus === "AWAITING_PROOF" ||
+        (reviewStatus === "PENDING" && !proofUrl)
+          ? "Upload a clear photo of your student card or under-18 ID to confirm your Student/U18 rate."
+          : reviewStatus === "PENDING"
+            ? "Your ID is with the club for review. You can keep paying while we check it."
+            : reviewStatus === "APPROVED"
+              ? "Your Student/U18 rate is confirmed."
+              : "Your ID was not approved. Upload a clearer student card or under-18 ID."}
       </CardDescription>
 
       <div className="mt-4 flex items-center gap-2 text-sm">
-        {reviewStatus === "PENDING" ? (
+        {reviewStatus === "AWAITING_PROOF" ||
+        (reviewStatus === "PENDING" && !proofUrl) ? (
+          <>
+            <Upload className="h-4 w-4 text-amber-300" />
+            <span className="text-amber-100">ID upload required</span>
+          </>
+        ) : null}
+        {reviewStatus === "PENDING" && proofUrl ? (
           <>
             <Clock3 className="h-4 w-4 text-amber-300" />
             <span className="text-amber-100">Awaiting admin approval</span>
@@ -78,11 +96,11 @@ export function StudentIdStatusCard({
         <p className="mt-3 text-sm text-zinc-400">Club note: {reviewNote}</p>
       ) : null}
 
-      {proofUrl && reviewStatus !== "DECLINED" ? (
+      {proofUrl && reviewStatus !== "DECLINED" && reviewStatus !== "AWAITING_PROOF" ? (
         <p className="mt-3 text-xs text-zinc-500">ID photo on file with the club.</p>
       ) : null}
 
-      {(reviewStatus === "DECLINED" || reviewStatus === "PENDING") && (
+      {(needsUpload || canReplacePending) && (
         <div className="mt-4 space-y-3">
           <FormError message={error} />
           <input
@@ -98,7 +116,7 @@ export function StudentIdStatusCard({
           />
           <Button
             type="button"
-            variant="outline"
+            variant={needsUpload ? "primary" : "outline"}
             disabled={loading}
             className="gap-2"
             onClick={() => inputRef.current?.click()}
@@ -108,7 +126,9 @@ export function StudentIdStatusCard({
               ? "Uploading..."
               : reviewStatus === "DECLINED"
                 ? "Upload a new ID"
-                : "Replace ID photo"}
+                : needsUpload
+                  ? "Upload student / U18 ID"
+                  : "Replace ID photo"}
           </Button>
         </div>
       )}

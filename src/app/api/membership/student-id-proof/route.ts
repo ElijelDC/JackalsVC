@@ -6,7 +6,7 @@ import {
   deleteStudentIdProofFile,
   saveStudentIdProofFile,
   validateStudentIdProofFile,
-} from "@/lib/student-id-proof";
+} from "@/lib/student-id-proof.server";
 import { NextResponse } from "next/server";
 
 /** Re-upload student ID after a decline (or replace a pending proof). */

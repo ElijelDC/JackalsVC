@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import {
   saveStudentIdProofFile,
   validateStudentIdProofFile,
-} from "@/lib/student-id-proof";
+} from "@/lib/student-id-proof.server";
 import { createMembershipPayments } from "@/lib/sumup-reconcile";
 import { membershipSubscribeSchema } from "@/lib/validations";
 import { NextResponse } from "next/server";

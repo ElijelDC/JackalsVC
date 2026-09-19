@@ -10,6 +10,7 @@ import { Card, CardDescription, CardTitle } from "@/components/ui/Card";
 import {
   CLUB_MEMBERSHIP_PLAN_NAME,
   formatPaymentScheduleLabel,
+  isStudentMembershipPlanName,
   type PaymentSchedule,
 } from "@/lib/membership-config";
 import { MembershipDueNotice } from "@/components/membership/MembershipDueNotice";
@@ -21,6 +22,7 @@ import { getCoachProfile } from "@/lib/coach-auth";
 import { isDashboardReturn } from "@/lib/dashboard-return";
 import { isCoachMembershipStatus } from "@/lib/membership-status";
 import { prisma } from "@/lib/prisma";
+import { resolveStudentIdReviewStatus } from "@/lib/student-id-proof";
 
 export const metadata = {
   title: CLUB_MEMBERSHIP_PLAN_NAME,
@@ -99,11 +101,17 @@ export default async function MembershipPage({
           </AnimatedBlock>
         ) : null}
 
-        <StudentIdStatusCard
-          reviewStatus={membership.studentIdReviewStatus}
-          proofUrl={membership.studentIdProofUrl}
-          reviewNote={membership.studentIdReviewNote}
-        />
+        {isStudentMembershipPlanName(membership.plan.name) ? (
+          <StudentIdStatusCard
+            reviewStatus={resolveStudentIdReviewStatus({
+              planName: membership.plan.name,
+              studentIdReviewStatus: membership.studentIdReviewStatus,
+              studentIdProofUrl: membership.studentIdProofUrl,
+            })}
+            proofUrl={membership.studentIdProofUrl}
+            reviewNote={membership.studentIdReviewNote}
+          />
+        ) : null}
 
         <MemberPaymentStatus
           memberName={session.user.name ?? "Member"}

@@ -330,7 +330,7 @@ model Membership {
   /// Student / U18 rate: photo of student or age ID for admin approval.
   studentIdProofUrl           String?
   studentIdProofSubmittedAt   DateTime?
-  /// null (adult) | PENDING | APPROVED | DECLINED
+  /// null (adult) | AWAITING_PROOF | PENDING | APPROVED | DECLINED
   studentIdReviewStatus       String?
   studentIdReviewedAt         DateTime?
   studentIdReviewedByUserId   String?

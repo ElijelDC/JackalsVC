@@ -1,15 +1,10 @@
 import {
-  DOCUMENT_SCREENSHOT_SIZE_ERROR,
-  IMAGE_UPLOAD_MAX_5MB,
-  validateImageFile,
-} from "@/lib/image-upload-types";
-import {
-  deleteManagedUploadFile,
-  saveManagedImageFile,
-} from "@/lib/save-upload.server";
-import { PUBLIC_PATHS } from "@/lib/public-paths";
+  isStudentMembershipPlanName,
+  MEMBERSHIP_PLAN_STUDENT_NAME,
+} from "@/lib/membership-config";
 
 export const STUDENT_ID_REVIEW_STATUSES = [
+  "AWAITING_PROOF",
   "PENDING",
   "APPROVED",
   "DECLINED",
@@ -17,28 +12,67 @@ export const STUDENT_ID_REVIEW_STATUSES = [
 
 export type StudentIdReviewStatus = (typeof STUDENT_ID_REVIEW_STATUSES)[number];
 
-export function validateStudentIdProofFile(file: File): string | null {
-  return validateImageFile(file, {
-    maxBytes: IMAGE_UPLOAD_MAX_5MB,
-    sizeError: DOCUMENT_SCREENSHOT_SIZE_ERROR,
-  });
+export const STUDENT_ID_REVIEW_STATUS_LABELS: Record<
+  StudentIdReviewStatus,
+  string
+> = {
+  AWAITING_PROOF: "No ID yet",
+  PENDING: "Awaiting review",
+  APPROVED: "Approved",
+  DECLINED: "Declined",
+};
+
+export type StudentIdReviewRecord = {
+  id: string;
+  planName: string;
+  studentIdProofUrl: string | null;
+  studentIdProofSubmittedAt: string | null;
+  studentIdReviewStatus: StudentIdReviewStatus;
+  studentIdReviewNote: string | null;
+  user: { id: string; name: string; email: string };
+};
+
+/** Active Student/U18 memberships still need an approved ID on file. */
+export function studentMembershipNeedsIdProof(input: {
+  planName: string;
+  studentIdReviewStatus: string | null;
+}): boolean {
+  return (
+    isStudentMembershipPlanName(input.planName) &&
+    input.studentIdReviewStatus !== "APPROVED"
+  );
 }
 
-export async function saveStudentIdProofFile(
-  userId: string,
-  file: File,
-): Promise<string> {
-  return saveManagedImageFile({
-    file,
-    preset: "document",
-    relativeDir: ["student-id-proofs"],
-    urlPrefix: PUBLIC_PATHS.uploads.studentIdProofs,
-    maxBytes: IMAGE_UPLOAD_MAX_5MB,
-    sizeError: "must be smaller than 5 MB.",
-    buildFilename: (extension) => `${userId}-${Date.now()}.${extension}`,
-  });
+/**
+ * Normalize legacy null statuses (pre-feature checkouts) for UI.
+ * Members with a photo but no status are treated as pending review.
+ */
+export function resolveStudentIdReviewStatus(input: {
+  planName: string;
+  studentIdReviewStatus: string | null;
+  studentIdProofUrl: string | null;
+}): StudentIdReviewStatus | null {
+  if (!isStudentMembershipPlanName(input.planName)) return null;
+
+  const status = input.studentIdReviewStatus;
+  if (status === "APPROVED" || status === "DECLINED" || status === "PENDING") {
+    return status;
+  }
+  if (status === "AWAITING_PROOF") return "AWAITING_PROOF";
+
+  // Legacy / checkout-bypass: null status before the ID feature existed.
+  if (input.studentIdProofUrl?.startsWith("/")) return "PENDING";
+  return "AWAITING_PROOF";
 }
 
-export async function deleteStudentIdProofFile(proofUrl: string): Promise<void> {
-  await deleteManagedUploadFile(proofUrl, PUBLIC_PATHS.uploads.studentIdProofs);
+export function isStudentIdAwaitingAdminReview(input: {
+  studentIdReviewStatus: string | null;
+  studentIdProofUrl: string | null;
+}): boolean {
+  return (
+    input.studentIdReviewStatus === "PENDING" &&
+    Boolean(input.studentIdProofUrl?.startsWith("/"))
+  );
 }
+
+export { MEMBERSHIP_PLAN_STUDENT_NAME };

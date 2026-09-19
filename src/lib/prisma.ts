@@ -22,7 +22,7 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 // Bump when schema changes so dev hot-reload picks up a fresh client.
-const PRISMA_SCHEMA_VERSION = 63;
+const PRISMA_SCHEMA_VERSION = 64;
 
 type RuntimeModel = {
   fields: { name: string }[];
@@ -101,7 +101,9 @@ function isPrismaClientCurrent(client: PrismaClient) {
     clientHasModelField(client, "KitOrder", "freeLineItemIds") &&
     clientHasModelField(client, "ClubMemberCoachSquad", "priority") &&
     typeof client.trainingPaygSettings?.findUnique === "function" &&
-    typeof client.trainingPaygAttendance?.findMany === "function"
+    typeof client.trainingPaygAttendance?.findMany === "function" &&
+    clientHasModelField(client, "Membership", "studentIdProofUrl") &&
+    clientHasModelField(client, "Membership", "studentIdReviewStatus")
   );
 }
 
