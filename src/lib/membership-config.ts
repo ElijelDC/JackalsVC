@@ -66,6 +66,10 @@ export const MEMBERSHIP_PLAN_ADULT_PRICE = 360;
 export const MEMBERSHIP_PLAN_STUDENT_PRICE = 315;
 export const MEMBERSHIP_PLAN_DURATION_MONTHS = 7;
 
+export function isStudentMembershipPlanName(planName: string) {
+  return planName.trim().toLowerCase() === MEMBERSHIP_PLAN_STUDENT_NAME.toLowerCase();
+}
+
 /** Fixed Oct / Jan / Mar instalments for published 2026/27 plans. */
 export const MEMBERSHIP_PLAN_ADULT_INSTALLMENTS: MembershipInstallmentAmounts = [
   150, 110, 100,

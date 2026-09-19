@@ -327,6 +327,14 @@ model Membership {
   paymentDeferralExcuse       String?
   paymentDeferralDueDate      DateTime?
   paymentDeferralRequestedAt  DateTime?
+  /// Student / U18 rate: photo of student or age ID for admin approval.
+  studentIdProofUrl           String?
+  studentIdProofSubmittedAt   DateTime?
+  /// null (adult) | PENDING | APPROVED | DECLINED
+  studentIdReviewStatus       String?
+  studentIdReviewedAt         DateTime?
+  studentIdReviewedByUserId   String?
+  studentIdReviewNote         String?
   startDate                 DateTime       @default(now())
   endDate                   DateTime
   user                      User           @relation(fields: [userId], references: [id], onDelete: Cascade)

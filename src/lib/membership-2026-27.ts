@@ -129,7 +129,7 @@ export const MEMBERSHIP_PAYMENT_OPTIONS = [
     label: "3 instalments",
     summary: "Oct · Jan · Mar",
     description:
-      "Three payments: October, January, and March. Adult €150 + €110 + €100. Student/U18 €135 + €95 + €85.",
+      "Three payments: October, January, and March. Adult €150 + €110 + €100. Student/U18 €135 + €95 + €85 (student or under-18 ID required for admin approval).",
   },
   {
     id: "full",

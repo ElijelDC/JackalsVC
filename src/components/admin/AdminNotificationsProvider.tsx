@@ -24,6 +24,7 @@ const AdminNotificationsContext =
 
 const HREF_TO_ENTRY_KIND: Record<string, AdminActionQueueEntry["kind"]> = {
   "/admin/registration-reviews": "registration",
+  "/admin/student-id-reviews": "student-id",
   "/admin/payments": "payment",
   "/admin/kit-orders": "kit-payment",
   "/admin/merchandise-orders": "merchandise-payment",

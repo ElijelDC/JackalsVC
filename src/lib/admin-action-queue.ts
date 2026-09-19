@@ -68,6 +68,8 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     trainingInviteSignupCount,
     trainingPaygPending,
     trainingPaygPendingCount,
+    studentIdReviews,
+    studentIdReviewCount,
   ] = await Promise.all([
     prisma.clubMember.findMany({
       where: REGISTRATION_REVIEW_WHERE,
@@ -177,6 +179,21 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       },
     }),
     prisma.trainingPaygAttendance.count({ where: { status: "PENDING" } }),
+    prisma.membership.findMany({
+      where: {
+        studentIdReviewStatus: "PENDING",
+        studentIdProofUrl: { startsWith: "/" },
+      },
+      orderBy: { studentIdProofSubmittedAt: "asc" },
+      take: 4,
+      include: { user: { select: { name: true } } },
+    }),
+    prisma.membership.count({
+      where: {
+        studentIdReviewStatus: "PENDING",
+        studentIdProofUrl: { startsWith: "/" },
+      },
+    }),
   ]);
 
   const pendingPaymentDueDates = await prisma.payment.findMany({
@@ -206,6 +223,20 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
         (review) =>
           `${review.name} · ${review.vlyNumber ?? "VLY pending"}`,
       ),
+    });
+  }
+
+  if (studentIdReviewCount > 0) {
+    entries.push({
+      kind: "student-id",
+      href: "/admin/student-id-reviews",
+      title: "Student/U18 IDs",
+      summary:
+        studentIdReviewCount === 1
+          ? "1 student or under-18 ID to approve"
+          : `${studentIdReviewCount} student or under-18 IDs to approve`,
+      count: studentIdReviewCount,
+      previews: studentIdReviews.map((row) => row.user.name),
     });
   }
 
@@ -395,6 +426,9 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
   if (trainingPaygPendingCount > 0) {
     badgeCounts["/admin/training-payg"] = trainingPaygPendingCount;
   }
+  if (studentIdReviewCount > 0) {
+    badgeCounts["/admin/student-id-reviews"] = studentIdReviewCount;
+  }
 
   return {
     entries,
@@ -408,7 +442,8 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       committeeInterestCount +
       trialsApplicationCount +
       trialSessionSignupCount +
-      trainingPaygPendingCount,
+      trainingPaygPendingCount +
+      studentIdReviewCount,
     badgeCounts,
   };
 }

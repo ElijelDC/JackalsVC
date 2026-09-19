@@ -16,13 +16,14 @@ import {
   createMembershipPricing,
   formatPaymentScheduleLabel,
   getPaymentScheduleOptions,
+  isStudentMembershipPlanName,
   planInstallmentAmounts,
   type MembershipPricing,
   type PaymentSchedule,
   type PaymentScheduleOption,
 } from "@/lib/membership-config";
 import { MEMBERSHIP_EXCLUDES } from "@/lib/membership-2026-27";
-import { apiPost } from "@/lib/client-api";
+import { apiPost, apiPostForm } from "@/lib/client-api";
 import { useAuthModal } from "@/components/providers/AuthModalProvider";
 import { AnimateIn } from "@/components/motion/AnimateIn";
 import { StaggerIn } from "@/components/motion/StaggerIn";
@@ -266,8 +267,13 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
   const [confirmedLock, setConfirmedLock] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [studentIdFile, setStudentIdFile] = useState<File | null>(null);
+  const [studentIdPreview, setStudentIdPreview] = useState<string | null>(null);
 
   const selectedPlan = plans.find((plan) => plan.id === selectedPlanId);
+  const requiresStudentId = Boolean(
+    selectedPlan && isStudentMembershipPlanName(selectedPlan.name),
+  );
 
   const pricing = useMemo(
     () =>
@@ -315,14 +321,31 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
       return;
     }
 
+    if (requiresStudentId && !studentIdFile) {
+      setMessage("Upload a photo of your student card or under-18 ID for the Student/U18 rate.");
+      return;
+    }
+
     setLoading(true);
     setMessage(null);
 
-    const result = await apiPost(
-      "/api/membership",
-      { planId: selectedPlan.id, paymentSchedule: selectedSchedule },
-      "Failed to create membership",
-    );
+    const result = requiresStudentId
+      ? await (() => {
+          const form = new FormData();
+          form.set("planId", selectedPlan.id);
+          form.set("paymentSchedule", selectedSchedule);
+          form.set("studentIdProof", studentIdFile!);
+          return apiPostForm(
+            "/api/membership",
+            form,
+            "Failed to create membership",
+          );
+        })()
+      : await apiPost(
+          "/api/membership",
+          { planId: selectedPlan.id, paymentSchedule: selectedSchedule },
+          "Failed to create membership",
+        );
 
     setLoading(false);
 
@@ -344,6 +367,8 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
     setCheckoutStep(1);
     setConfirmedLock(false);
     setMessage(null);
+    setStudentIdFile(null);
+    setStudentIdPreview(null);
   };
 
   const scheduleStep = plans.length > 1 ? 2 : 1;
@@ -534,6 +559,43 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
             </ul>
           </Card>
 
+          {requiresStudentId ? (
+            <Card className="space-y-3 border-amber-500/25 bg-amber-500/[0.05] p-5 sm:p-6">
+              <div>
+                <p className="text-sm font-semibold text-amber-100">
+                  Student / U18 ID required
+                </p>
+                <p className="mt-1 text-sm leading-relaxed text-amber-50/85">
+                  Upload a clear photo of your student card or under-18 ID. An
+                  admin will review it before confirming the Student/U18 rate.
+                </p>
+              </div>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  setMessage(null);
+                  setStudentIdFile(file);
+                  setStudentIdPreview((prev) => {
+                    if (prev) URL.revokeObjectURL(prev);
+                    return file ? URL.createObjectURL(file) : null;
+                  });
+                }}
+                className="block w-full text-sm text-zinc-300 file:mr-3 file:rounded-md file:border-0 file:bg-jackals-red file:px-3 file:py-2 file:text-sm file:font-semibold file:text-white"
+              />
+              {studentIdPreview ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={studentIdPreview}
+                  alt="Selected student ID preview"
+                  className="max-h-48 rounded-lg border border-white/10 object-contain"
+                />
+              ) : null}
+            </Card>
+          ) : null}
+
           <Card className="border-jackals-red/20 bg-jackals-red/[0.04] p-5 sm:p-6">
             {message && (
               <p className="mb-4 text-sm text-jackals-red-light">{message}</p>
@@ -553,7 +615,12 @@ export function MembershipCheckout({ plans }: { plans: MembershipPlanCheckout[] 
             <Button
               type="button"
               className="mt-5 w-full"
-              disabled={loading || !confirmedLock || sessionStatus === "loading"}
+              disabled={
+                loading ||
+                !confirmedLock ||
+                sessionStatus === "loading" ||
+                (requiresStudentId && !studentIdFile)
+              }
               onClick={subscribe}
             >
               {loading

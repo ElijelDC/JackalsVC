@@ -24,6 +24,16 @@ function extractIdFromFilename(relativePath: string, folder: string): string | n
   return id || null;
 }
 
+async function authorizeStudentIdProof(relativePath: string) {
+  const userId = extractIdFromFilename(relativePath, "student-id-proofs");
+  if (!userId) return false;
+
+  const session = await auth();
+  if (!session?.user?.id) return false;
+  if (session.user.role === "ADMIN") return true;
+  return session.user.id === userId;
+}
+
 async function authorizePaymentProof(relativePath: string) {
   const paymentId = extractIdFromFilename(
     relativePath,
@@ -264,6 +274,10 @@ export async function authorizeUploadAccess(
 
   if (relativePath.startsWith("payment-proofs/")) {
     return authorizePaymentProof(relativePath);
+  }
+
+  if (relativePath.startsWith("student-id-proofs/")) {
+    return authorizeStudentIdProof(relativePath);
   }
 
   if (relativePath.startsWith("coach-invoices/")) {

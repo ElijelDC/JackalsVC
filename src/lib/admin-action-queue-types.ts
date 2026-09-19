@@ -10,7 +10,8 @@ export type AdminActionQueueEntry = {
     | "trials-application"
     | "trial-session-signup"
     | "training-invite-signup"
-    | "training-payg";
+    | "training-payg"
+    | "student-id";
   href: string;
   title: string;
   summary: string;

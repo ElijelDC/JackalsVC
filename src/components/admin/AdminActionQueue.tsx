@@ -33,6 +33,7 @@ const ENTRY_ICONS = {
   "trial-session-signup": Calendar,
   "training-invite-signup": Users,
   "training-payg": Dumbbell,
+  "student-id": GraduationCap,
 } as const;
 
 function ActionQueueCard({ entry }: { entry: AdminActionQueueEntry }) {

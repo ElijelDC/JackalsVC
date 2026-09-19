@@ -74,6 +74,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: UserPlus,
         keywords: "vly photo approve",
       },
+      {
+        href: "/admin/student-id-reviews",
+        label: "Student/U18 IDs",
+        icon: GraduationCap,
+        keywords: "student id under 18 proof approve",
+      },
     ],
   },
   {
@@ -218,6 +224,7 @@ const QUICK_LINK_HREFS = [
   "/admin/kit-orders",
   "/admin/merchandise-orders",
   "/admin/registration-reviews",
+  "/admin/student-id-reviews",
   "/admin/one-off-sessions",
   "/admin/coach-payments",
 ] as const;

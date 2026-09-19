@@ -26,6 +26,7 @@ export const PUBLIC_PATHS = {
     trainingPaygProofs: "/uploads/training-payg-proofs",
     kitOrderProofs: "/uploads/kit-order-proofs",
     merchandiseOrderProofs: "/uploads/merchandise-order-proofs",
+    studentIdProofs: "/uploads/student-id-proofs",
     adminDocs: "/uploads/admin-docs",
     tournamentDocs: "/uploads/tournament-docs",
     tournamentWinners: "/uploads/tournament-winners",

@@ -13,6 +13,7 @@ import {
   type PaymentSchedule,
 } from "@/lib/membership-config";
 import { MembershipDueNotice } from "@/components/membership/MembershipDueNotice";
+import { StudentIdStatusCard } from "@/components/membership/StudentIdStatusCard";
 import { getClubBankDetails } from "@/lib/payments";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
 import { syncMembershipArrearsStatus } from "@/lib/membership";
@@ -97,6 +98,12 @@ export default async function MembershipPage({
             <MembershipDueNotice />
           </AnimatedBlock>
         ) : null}
+
+        <StudentIdStatusCard
+          reviewStatus={membership.studentIdReviewStatus}
+          proofUrl={membership.studentIdProofUrl}
+          reviewNote={membership.studentIdReviewNote}
+        />
 
         <MemberPaymentStatus
           memberName={session.user.name ?? "Member"}
