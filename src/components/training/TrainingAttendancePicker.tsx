@@ -225,7 +225,7 @@ function TrainingAttendancePickerInner({
       )}
       {needsPayg && status !== "ATTENDING" && canRespond && !coverLocked && (
         <p className="text-xs text-amber-200/80">
-          Pay Per Training until membership starts in October.
+          Pay Per Training until 1 October.
         </p>
       )}
       <div

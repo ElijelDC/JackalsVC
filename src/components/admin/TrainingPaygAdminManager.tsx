@@ -402,7 +402,7 @@ export function TrainingPaygAdminManager({
   return (
     <AdminSection
       title="Pay Per Training"
-      description="Club-wide session fee and receipt review for squad players paying per session. Squad Pay Per Training ends automatically on 2 October 2026 (guest invite links stay available)."
+      description="Club-wide session fee and receipt review for squad players paying per session. Squad Pay Per Training ends automatically on 1 October 2026 (guest invite links stay available)."
     >
       <SuccessBanner message={message} />
       <FormError message={error} />

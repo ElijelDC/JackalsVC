@@ -4,6 +4,7 @@ import {
   createMembershipPricing,
   formatPaymentScheduleLabel,
   getClubMembershipSeasonEndDate,
+  isSquadTrainingPaygAvailable,
   isStudentMembershipPlanName,
   planInstallmentAmounts,
   validateMembershipPlanPrice,
@@ -174,14 +175,18 @@ export async function POST(request: Request) {
         installments,
       });
 
-      await tx.clubMember.updateMany({
-        where: {
-          userId: session!.user.id,
-          rosterRole: "PLAYER",
-          playerPaymentType: "PAYG",
-        },
-        data: { playerPaymentType: "MEMBERSHIP" },
-      });
+      // Keep Pay Per Training until 1 Oct even after membership signup/payment.
+      // Only flip the roster flag once the PAYG window has closed.
+      if (!isSquadTrainingPaygAvailable()) {
+        await tx.clubMember.updateMany({
+          where: {
+            userId: session!.user.id,
+            rosterRole: "PLAYER",
+            playerPaymentType: "PAYG",
+          },
+          data: { playerPaymentType: "MEMBERSHIP" },
+        });
+      }
 
       return created;
     });

@@ -2,7 +2,6 @@ import "server-only";
 
 import { getClubBankDetails } from "@/lib/payments";
 import {
-  isPaygPlayer,
   serializeTrainingPaygAttendance,
   type TrainingPaygAttendanceRecord,
   type TrainingPaygAttendanceStatus,
@@ -46,7 +45,7 @@ function squadPaygUnavailableError(): {
     return {
       ok: false,
       error:
-        "Pay Per Training ended on 2 October — season membership is required for squad training",
+        "Pay Per Training ended on 1 October — season membership is required for squad training",
       status: 403,
     };
   }
@@ -75,9 +74,10 @@ export async function userIsPaygTrainingPlayer(userId: string) {
   if (!isSquadTrainingPaygAvailable()) return false;
   const member = await getPaygClubMemberForUser(userId);
   if (!member || !member.active) return false;
+  // During the PAYG window, any active squad player uses pay-per-session —
+  // even if they already signed up for season membership.
   return (
-    isPaygPlayer(member.rosterRole, member.playerPaymentType) &&
-    Boolean(member.trainingTeamKey)
+    member.rosterRole === "PLAYER" && Boolean(member.trainingTeamKey)
   );
 }
 
@@ -143,7 +143,7 @@ export async function ensureTrainingPaygAttendance(input: {
   if (
     !member ||
     !member.active ||
-    !isPaygPlayer(member.rosterRole, member.playerPaymentType) ||
+    member.rosterRole !== "PLAYER" ||
     !member.trainingTeamKey
   ) {
     return {

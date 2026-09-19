@@ -4,7 +4,6 @@ import {
   assessMembershipPaymentAccess,
   type MembershipPaymentAccess,
 } from "@/lib/membership-overdue";
-import { isPaygPlayer } from "@/lib/player-payment-type";
 import { getTrainingPaygSettings } from "@/lib/training-payg-settings";
 import { isSquadTrainingPaygAvailable } from "@/lib/membership-config";
 
@@ -107,9 +106,10 @@ export async function getMembershipPaymentAccess(
 }
 
 /**
- * While roster flag is PAYG and the season pay-per-session window is open,
- * weekly training uses the pay-per-session flow. From 2 Oct 2026 (Ireland),
- * only membership grants squad training access. Guest invite links are separate.
+ * While the season pay-per-session window is open, squad players use Pay Per
+ * Training for weekly sessions — even if they already chose or paid for
+ * membership. From 1 Oct 2026 (Ireland), only membership grants squad training
+ * access. Guest invite links are separate.
  */
 async function resolvePaygTrainingState(userId: string): Promise<boolean> {
   if (!isSquadTrainingPaygAvailable()) return false;
@@ -119,13 +119,12 @@ async function resolvePaygTrainingState(userId: string): Promise<boolean> {
     select: {
       active: true,
       rosterRole: true,
-      playerPaymentType: true,
       trainingTeamKey: true,
     },
   });
   if (
     !clubMember?.active ||
-    !isPaygPlayer(clubMember.rosterRole, clubMember.playerPaymentType) ||
+    clubMember.rosterRole !== "PLAYER" ||
     !clubMember.trainingTeamKey
   ) {
     return false;

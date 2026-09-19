@@ -48,12 +48,12 @@ export const MEMBERSHIP_FIRST_PAYMENT_DUE_LABEL = "2 October 2026";
 export const MEMBERSHIP_FIRST_PAYMENT_DUE_SHORT = "2 Oct";
 
 /**
- * From this instant (Ireland local midnight on the due date), squad players can
- * no longer use Pay Per Training — membership is required. Guest invite links
- * are unaffected.
+ * From this instant (Ireland local midnight on 1 Oct), squad players can no
+ * longer use Pay Per Training — membership is required. Guest invite links
+ * are unaffected. First membership payment remains due 2 Oct.
  */
 export const SQUAD_TRAINING_PAYG_ENDS_AT = parseDatetimeLocalAsClubTime(
-  "2026-10-02T00:00",
+  "2026-10-01T00:00",
 );
 
 export function isSquadTrainingPaygAvailable(now: Date = new Date()) {
@@ -152,10 +152,11 @@ export function firstMondayOfMonth(year: number, month: number): Date {
   return date;
 }
 
+/** Fixed calendar due dates for 2026/27: 2 Oct (Ireland), first Monday Jan/Mar. */
 function installmentDueDates(referenceDate: Date): Date[] {
   const seasonYear = getSeasonYear(referenceDate);
   return [
-    firstMondayOfMonth(seasonYear, 9),
+    parseDatetimeLocalAsClubTime(`${seasonYear}-10-02T00:00`),
     firstMondayOfMonth(seasonYear + 1, 0),
     firstMondayOfMonth(seasonYear + 1, 2),
   ];
@@ -238,9 +239,10 @@ function getInstallmentTemplates(pricing: MembershipPricing): Record<
     FULL: [
       {
         monthsCovered: pricing.durationMonths,
-        monthsUntilDue: 0,
         label: "Full payment",
         description: "Pay once upfront",
+        // Align full payment with instalment 1 due date (2 Oct).
+        dueDate: (referenceDate) => installmentDueDates(referenceDate)[0]!,
       },
     ],
   };

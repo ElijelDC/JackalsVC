@@ -41,7 +41,7 @@ export function MembershipDueNotice({
             </span>
             .
             {isPaygPlayer
-              ? " Until then you can keep attending training pay-per-session. From that date, squad training is membership-only (guest invite links still work)."
+              ? " Until 1 October you can keep attending training pay-per-session. From then, squad training is membership-only (guest invite links still work)."
               : " Choose a plan below to lock in your payment schedule."}
           </p>
           {variant === "compact" ? (

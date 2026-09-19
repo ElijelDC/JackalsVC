@@ -237,8 +237,8 @@ export default async function DashboardPage() {
         <PushNotificationsPrompt />
 
         <AnimatedPageSections className="space-y-6 sm:space-y-8">
-          {!isPaygPlayer && (
-            <MemberPaymentsPanel
+          {(!isPaygPlayer || currentMembership) && (
+          <MemberPaymentsPanel
               memberships={memberships.map((m) => ({
                 id: m.id,
                 status:
