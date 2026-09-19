@@ -1,5 +1,9 @@
 import { formatEuroFee } from "@/lib/utils";
-import { MEMBERSHIP_INCLUDES } from "@/lib/membership-2026-27";
+import {
+  MEMBERSHIP_INCLUDES,
+  MEMBERSHIP_LEAGUE_TIERS_2026_27,
+  type MembershipLeagueTier202627,
+} from "@/lib/membership-2026-27";
 import { parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
 
 export type MembershipInstallmentAmounts = [number, number, number];
@@ -505,6 +509,24 @@ export function buildMembershipPublicPaymentOptions(
       description: "Pay the full season fee upfront when you register.",
     },
   ];
+}
+
+export function buildMembershipLeagueTiers(
+  plans: Pick<MembershipPlanInstallmentSource, "name" | "price">[],
+  templates: MembershipLeagueTier202627[] = MEMBERSHIP_LEAGUE_TIERS_2026_27,
+): MembershipLeagueTier202627[] {
+  const adultPlan = plans.find((plan) => !isStudentMembershipPlanName(plan.name));
+  const studentPlan = plans.find((plan) => isStudentMembershipPlanName(plan.name));
+
+  return templates.map((tier) => ({
+    ...tier,
+    adultFee: adultPlan?.price ?? tier.adultFee,
+    studentFee: studentPlan?.price ?? tier.studentFee,
+  }));
+}
+
+export function getDefaultMembershipLeagueTiers(): MembershipLeagueTier202627[] {
+  return MEMBERSHIP_LEAGUE_TIERS_2026_27;
 }
 
 export function getDefaultMembershipPublicPaymentOptions(): MembershipPublicPaymentOption[] {

@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { buildMembershipPublicPaymentOptions } from "@/lib/membership-config";
+import {
+  buildMembershipLeagueTiers,
+  buildMembershipPublicPaymentOptions,
+} from "@/lib/membership-config";
 
 describe("buildMembershipPublicPaymentOptions", () => {
   it("uses admin instalment amounts for adult and student plans", () => {
@@ -25,5 +28,15 @@ describe("buildMembershipPublicPaymentOptions", () => {
     const instalments = options.find((option) => option.id === "installments");
     expect(instalments?.description).toContain("Adult €120 + €120 + €120");
     expect(instalments?.description).toContain("Student/U18 €105 + €105 + €105");
+  });
+
+  it("uses admin plan prices on league tier cards", () => {
+    const tiers = buildMembershipLeagueTiers([
+      { name: "Adult", price: 400 },
+      { name: "Student / U18", price: 340 },
+    ]);
+
+    expect(tiers[0]?.adultFee).toBe(400);
+    expect(tiers[0]?.studentFee).toBe(340);
   });
 });

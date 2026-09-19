@@ -21,7 +21,6 @@ import {
   MEMBERSHIP_EXCLUDES,
   MEMBERSHIP_INCLUDES,
   MEMBERSHIP_LEAGUE_COVERAGE_COPY,
-  MEMBERSHIP_LEAGUE_TIERS_2026_27,
   MEMBERSHIP_PRICE_CHANGE_NOTICE,
   MEMBERSHIP_SEASON_LABEL,
   type MembershipLeagueTier202627,
@@ -90,9 +89,7 @@ function MembershipIncludesCard() {
   );
 }
 
-function LeagueFeesComparison() {
-  const tiers = MEMBERSHIP_LEAGUE_TIERS_2026_27;
-
+function LeagueFeesComparison({ tiers }: { tiers: MembershipLeagueTier202627[] }) {
   return (
     <div className="mx-auto mt-10 max-w-4xl space-y-6">
       <StaggerIn
@@ -154,8 +151,10 @@ function ValuePillar({
 }
 
 export function Membership202627Showcase({
+  leagueTiers,
   paymentOptions,
 }: {
+  leagueTiers: MembershipLeagueTier202627[];
   paymentOptions: MembershipPublicPaymentOption[];
 }) {
   return (
@@ -192,7 +191,7 @@ export function Membership202627Showcase({
             </p>
           </AnimateIn>
           <AnimateIn variant="fade-up">
-            <LeagueFeesComparison />
+            <LeagueFeesComparison tiers={leagueTiers} />
           </AnimateIn>
         </div>
       </section>
