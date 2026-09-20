@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ultimate Setter Preseason — VLY Div 2 · Match 11 Oct 2026</title>
+  <style>
+    :root {
+      --card: #1a2332;
+      --accent: #3d8bfd;
+      --accent2: #00c896;
+      --flye: #7c5cff;
+      --home: #ff8c42;
+      --club: #5eead4;
+      --warn: #ffb020;
+      --text: #e8eef5;
+      --muted: #8b9cb3;
+      --border: #2a3548;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background: linear-gradient(165deg, #080c12 0%, #121a28 45%, #0f1419 100%);
+      color: var(--text);
+      line-height: 1.55;
+      margin: 0;
+      padding: 2rem 1rem 4rem;
+    }
+    .wrap { max-width: 940px; margin: 0 auto; }
+    header.hero {
+      text-align: center;
+      padding: 1.5rem 1rem 2rem;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(135deg, rgba(61,139,253,0.15), rgba(0,200,150,0.08));
+      border: 1px solid var(--border);
+      border-radius: 16px;
+    }
+    h1 { font-size: 2rem; margin: 0 0 0.5rem; letter-spacing: -0.03em; }
+    .tagline { color: var(--muted); font-size: 1.05rem; max-width: 640px; margin: 0 auto; }
+    .badge-row { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-top: 1.25rem; }
+    .badge {
+      background: var(--card);
+      border: 1px solid var(--border);
+      padding: 0.4rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+    .badge strong { color: var(--accent2); }
+    section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.35rem 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    h2 {
+      font-size: 1.2rem;
+      margin: 0 0 1rem;
+      color: var(--accent);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.5rem;
+    }
+    h3 { font-size: 0.95rem; color: var(--accent2); margin: 1.15rem 0 0.5rem; }
+    p { margin: 0.5rem 0; color: var(--muted); }
+    p.lead { color: var(--text); font-size: 1.02rem; }
+    ul { margin: 0.4rem 0; padding-left: 1.25rem; color: var(--muted); }
+    li { margin: 0.35rem 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin: 0.75rem 0; }
+    th, td { border: 1px solid var(--border); padding: 0.55rem 0.65rem; text-align: left; vertical-align: top; }
+    th { background: #243044; color: var(--text); }
+    td { color: var(--muted); }
+    .day { color: var(--accent2); font-weight: 600; white-space: nowrap; }
+    .loc-flye { color: var(--flye); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; }
+    .loc-home { color: var(--home); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; }
+    .loc-club { color: var(--club); font-weight: 700; font-size: 0.72rem; text-transform: uppercase; }
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 0.85rem;
+      margin: 1rem 0;
+    }
+    .pillar {
+      background: #0d1219;
+      border-radius: 10px;
+      padding: 1rem;
+      border-left: 4px solid var(--accent);
+    }
+    .pillar:nth-child(2) { border-left-color: var(--accent2); }
+    .pillar:nth-child(3) { border-left-color: var(--flye); }
+    .pillar:nth-child(4) { border-left-color: var(--home); }
+    .pillar:nth-child(5) { border-left-color: var(--warn); }
+    .pillar strong { display: block; color: var(--text); margin-bottom: 0.35rem; font-size: 0.95rem; }
+    .warn-box, .knee-box, .win-box {
+      border-radius: 8px;
+      padding: 0.85rem 1rem;
+      margin: 1rem 0;
+      font-size: 0.9rem;
+    }
+    .warn-box { background: rgba(255,176,32,0.12); border: 1px solid rgba(255,176,32,0.35); color: #ffd699; }
+    .knee-box { background: rgba(0,200,150,0.1); border: 1px solid rgba(0,200,150,0.35); color: #a8f0dc; }
+    .win-box { background: rgba(61,139,253,0.12); border: 1px solid rgba(61,139,253,0.35); color: #b8d4ff; }
+    .protocol {
+      font-family: ui-monospace, "Consolas", monospace;
+      font-size: 0.8rem;
+      background: #0a0e14;
+      padding: 1rem;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      color: #c5d4e8;
+      border: 1px solid var(--border);
+      line-height: 1.45;
+    }
+    .checklist { list-style: none; padding: 0; }
+    .checklist li { padding: 0.35rem 0 0.35rem 1.75rem; position: relative; }
+    .checklist li::before { content: "☐"; position: absolute; left: 0; color: var(--accent2); }
+    footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+    @media print { body { background: #fff; color: #111; } section { break-inside: avoid; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <h1>Ultimate Setter Preseason Plan</h1>
+      <p class="tagline">
+        Built for you: <strong style="color:var(--text)">173 cm · Setter · Volleyball Ireland Division 2</strong><br />
+        First match <strong style="color:var(--accent2)">11 October 2026</strong> · Club train <strong style="color:var(--text)">Wednesdays 19:00–21:00</strong>
+      </p>
+      <div class="badge-row">
+        <span class="badge">Vertical + blocking</span>
+        <span class="badge">Right shoulder → <strong>100%</strong></span>
+        <span class="badge">Wrist / setting strength</span>
+        <span class="badge">Knee rebuild post-injury</span>
+        <span class="badge"><strong>Gym</strong> Mon · Wed · Fri — 3× Flyefit</span>
+        <span class="badge">Chest / back / arms at Flyefit</span>
+        <span class="badge"><strong>Home volleyball</strong> Tue · Thu · Sat</span>
+        <span class="badge">Court = <strong>Wed club only</strong></span>
+      </div>
+    </header>
+
+    <section>
+      <h2>Training locations (strict — no open court needed)</h2>
+      <div class="win-box">
+        <strong>Simple split:</strong><br />
+        ① <strong>Gym (Flyefit)</strong> — <strong>Monday, Wednesday (morning), Friday</strong> — <strong>3 gym days</strong> · <strong>5–7 exercises</strong> each · legs + upper (Mon = push + block jumps · Wed = knee/hip/shoulder bridge · Fri = pull + legs; no volleyball at gym)<br />
+        ② <strong>Home</strong> — <strong>Tuesday, Thursday, Saturday</strong> — all work with <strong>1 kg setter ball + volleyball</strong> (sets, footwork, block shadows, jumps)<br />
+        ③ <strong>Club court</strong> — <strong>Wednesday 19:00–21:00</strong> (same day as Wed gym — finish Flyefit by <strong>15:00</strong>, rest + eat, prehab again before club)<br />
+        ④ <strong>Sunday</strong> — rest · 12 min prehab only<br /><br />
+        <strong>Rule:</strong> If it needs a ball or simulates setting/blocking → <strong>Tue / Thu / Sat</strong> only, not Flyefit.<br /><br />
+        <strong>No full court at home/gym</strong> — <strong>no suicides</strong>, no end-line to end-line sprints. Conditioning = short shuttles (5–8 m hallway/garden) on Sat, or whatever coach runs on <strong>Wed</strong> only.<br /><br />
+        <strong>Session size:</strong> <strong>Flyefit (Mon/Wed/Fri)</strong> = <strong>5–7 exercises</strong> each · <strong>Home (Tue/Thu/Sat)</strong> = 4–6 drills · prehab separate (12 min daily).
+      </div>
+    </section>
+
+    <section>
+      <h2>Your season checklist — what you asked for &amp; where it happens</h2>
+      <p class="lead">173 cm setter · Div 2 VLY · Match <strong>11 Oct 2026</strong> · Wed club 19:00–21:00 · Gym <strong>Mon/Wed/Fri</strong> · Home volleyball Tue/Thu/Sat</p>
+      <ul class="checklist">
+        <li><strong>Knee strengthening</strong> — Daily prehab · Tue wall sit + lunge · Mon + Wed leg press/curl · Fri squat/RDL/lunge</li>
+        <li><strong>Ankle strengthening</strong> — Daily balance · Mon + Wed calf work · Thu/Sat jumps &amp; shuffles · Tue single-leg calf if needed</li>
+        <li><strong>Hip strengthening</strong> — Daily glute bridge + side leg raise · Mon + Wed hip thrust · Fri RDL + split squat</li>
+        <li><strong>Right shoulder strengthening / rehab</strong> — Daily ER + scap · Tue shoulder combo · Wed gym ER + face pull · Fri face pull · Mon push if ≤3/10 pain</li>
+        <li><strong>Explosiveness &amp; vertical jump</strong> — Mon gym block jumps · Thu home approach + block jumps · Sat lighter jumps · Mon/Fri/Wed (AM) legs build power · Wed PM apply on court</li>
+        <li><strong>Blocking &amp; spiking transfer</strong> — Thu/Sat wall block + shuffle · Mon block jumps · Wed PM live blocking; spiking = approach + arm when shoulder OK</li>
+        <li><strong>Upper body (chest, back, arms)</strong> — Mon push + row/triceps · Wed moderate press + row + ER · Fri pull + arms + core</li>
+        <li><strong>Setter-specific + 1 kg / volleyball</strong> — Tue setting volume · Thu jump-sets &amp; back sets · Sat game-like wall sets · never at gym</li>
+        <li><strong>Extra for a strong season</strong> — Core (Pallof Fri) · grip/endurance via setting volume · knee-safe progression (no suicides, no depth drops early) · sleep + protein · track jump touch weekly</li>
+      </ul>
+      <p><strong>Each workout day:</strong> Flyefit <strong>5–7 exercises</strong> · Home <strong>4–6 drills</strong> · + separate 12 min daily prehab.</p>
+    </section>
+
+    <section>
+      <h2>Where you train (gym + home only)</h2>
+      <table>
+        <tr><th>Location</th><th>When</th><th>Use for</th></tr>
+        <tr><td><span class="loc-flye">Gym · Flyefit</span></td><td>Mon · Wed AM · Fri</td><td><strong>3 sessions/week.</strong> Mon: legs + push + block jumps. Wed AM: knee/hip/shoulder bridge (no jumps). Fri: legs + pull + arms (no jumps).</td></tr>
+        <tr><td><span class="loc-home">Home · volleyball</span></td><td>Tue · Thu · Sat</td><td>Wall sets, targets, setter footwork, block shadows, Thu/Sat jumps — 1 kg ball + volleyball.</td></tr>
+        <tr><td><span class="loc-home">Home · rest</span></td><td>Sun (+ daily 12 min prehab)</td><td>Prehab only; optional 15 easy wall sets if shoulders feel great.</td></tr>
+        <tr><td><span class="loc-club">Club court</span></td><td>Wed 19:00–21:00</td><td>Only net session. Wed gym must finish by ~15:00. No Flyefit after club.</td></tr>
+      </table>
+      <p><strong>Not required:</strong> open court, net, suicides, full-court running, partner toss drills — except Wed club training.</p>
+      <div class="knee-box"><strong>Knee:</strong> Pain ≤3/10 during/after. Swelling, giving way, or sharp pain = no jumping; see physio if repeated.</div>
+      <div class="warn-box"><strong>Shoulder:</strong> No reps through sharp pain. Blocking arm swing only when ER/prehab days feel ≤3/10. Night pain or catching → physio before loading overhead.</div>
+    </section>
+
+    <section>
+      <h2>Daily ritual — 12 min prehab (every day, home)</h2>
+      <p>Before every gym session and <strong>10–12 min before Wed club</strong>. On rest days (Sun), do it at home.</p>
+      <div class="protocol">KNEES + HIPS + ANKLES (6 min)
+• Terminal knee extension (towel): 2×15/leg
+• Sit-to-stand from chair, slow: 2×10
+• Glute bridge, 2 sec squeeze: 2×12
+• Side-lying leg raise (hip): 2×12/side
+• Single-leg balance (ankle/knee): 2×30 sec/side
+• Ankle alphabet (air-write A–Z each foot): 1× each
+
+RIGHT SHOULDER (4 min)
+• External rotation — towel or band, elbow at side: 2×12
+• Wall scap push-up: 2×12
+
+WRISTS (3 min) — setting efficiency
+• Circles, flexor/extensor stretch: 30 sec each
+• Light finger presses into wall: 2×10</div>
+    </section>
+
+    <section>
+      <h2>Weekly master calendar</h2>
+      <table>
+        <thead><tr><th>Day</th><th>Place</th><th>Session focus</th><th>~Time</th></tr></thead>
+        <tbody>
+          <tr><td class="day">Mon</td><td><span class="loc-flye">Gym</span></td><td><strong>7 exercises</strong> (5–7 rule) — legs + push + block jumps</td><td>55–65 min</td></tr>
+          <tr><td class="day">Tue</td><td><span class="loc-home">Home</span></td><td><strong>5 drills</strong> — shoulder/knee + setting</td><td>40–45 min</td></tr>
+          <tr><td class="day">Wed</td><td><span class="loc-flye">Gym</span> + <span class="loc-club">Club</span></td><td><strong>6–7 exercises</strong> AM (5–7 rule) · prehab · VLY 19:00–21:00</td><td>55–65 min + 2 h</td></tr>
+          <tr><td class="day">Thu</td><td><span class="loc-home">Home</span></td><td><strong>6 drills</strong> — jumps + block + sets</td><td>40–45 min</td></tr>
+          <tr><td class="day">Fri</td><td><span class="loc-flye">Gym</span></td><td><strong>7 exercises</strong> (5–7 rule) — legs + pull + arms</td><td>55–65 min</td></tr>
+          <tr><td class="day">Sat</td><td><span class="loc-home">Home</span></td><td><strong>5 drills</strong> — shuttles + block + sets (no suicides)</td><td>35–40 min</td></tr>
+          <tr><td class="day">Sun</td><td><span class="loc-home">Home</span></td><td>Rest · prehab only</td><td>12 min</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Overload rule:</strong> Sore knees before Wed club? Do Wed gym <strong>minimum 5</strong> (leg curl, hip thrust, ER, row, Pallof) — skip leg press. Bad Wed night? Skip Thu/Sat jumps; keep ball light. Never stack extra Flyefit after club.</p>
+    </section>
+
+    <section>
+      <h2>Monday — Flyefit · 7 exercises (min 5, max 7)</h2>
+      <p class="lead">Count each numbered row as one exercise (supersets = one slot). Rest 90–120 sec on legs, 60 sec on upper. Neutral-grip / machines if shoulder irritates. Pain ≤3/10. If time or fatigue is high, drop to <strong>5</strong> by skipping #5 and/or #7 — never skip leg work (#1–3).</p>
+      <table>
+        <tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>Notes</th></tr>
+        <tr><td>1</td><td>Leg press or hack squat</td><td>4×8–10</td><td>Main leg strength</td></tr>
+        <tr><td>2</td><td>Leg curl</td><td>3×10–12</td><td>Knee support</td></tr>
+        <tr><td>3</td><td>Hip thrust</td><td>3×10</td><td>Jump power</td></tr>
+        <tr><td>4</td><td>Step-up (box or bench)</td><td>3×8/leg</td><td>Single-leg strength</td></tr>
+        <tr><td>5</td><td>Standing calf raise</td><td>3×12–15</td><td>Ankle / last inch of jump</td></tr>
+        <tr><td>6</td><td>Machine chest press or neutral-grip DB bench</td><td>3×8–10</td><td>Chest / push</td></tr>
+        <tr><td>7</td><td>Cable row + tricep pushdown (superset) → then block jumps</td><td>3×10 each · then 3×4 jumps</td><td>Back + arms; finish with block jumps on gym floor</td></tr>
+      </table>
+      <p><strong>Week 3 taper:</strong> 2 sets per exercise; block jumps 2×3. <strong>Minimum day (5):</strong> #1–3 + #6 + #7 (no step-up/calf) or #1–4 + #6 + block jumps only on #7.</p>
+    </section>
+
+    <section>
+      <h2>Tuesday — Home · 5 drills (setting focus)</h2>
+      <p class="lead">Tape an <strong>X</strong> on the wall. Daily prehab done first (separate 12 min).</p>
+      <table>
+        <tr><th>#</th><th>Drill</th><th>Volume</th></tr>
+        <tr><td>1</td><td>Shoulder rehab combo — ER towel hold + scap push-up plus</td><td>3×20 sec + 3×10</td></tr>
+        <tr><td>2</td><td>Knee/hip/ankle — wall sit + reverse lunge + single-leg calf raise</td><td>3×30 sec · 3×8/leg · 2×12/leg</td></tr>
+        <tr><td>3</td><td>1 kg wall sets (high finish, quiet wrists)</td><td>3×25</td></tr>
+        <tr><td>4</td><td>Volleyball sets to taped X</td><td>3×15</td></tr>
+        <tr><td>5</td><td>Shuffle 3 steps L/R → set to wall</td><td>10 each way</td></tr>
+      </table>
+      <div class="win-box"><strong>Season-ready shoulder:</strong> Full Wed setting · morning-after pain ≤2/10.</div>
+    </section>
+
+    <section>
+      <h2>Wednesday — Flyefit morning · 6–7 exercises (min 5, max 7)</h2>
+      <p class="lead"><strong>Finish by 15:00</strong> (4+ h before club). Moderate effort — legs should feel warm, not destroyed. <strong>No jumping</strong> (save jumps for Mon gym + Thu/Sat home + Wed PM court). Prehab before gym; prehab again before club.</p>
+      <table>
+        <tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>Notes</th></tr>
+        <tr><td>1</td><td>Leg press (moderate load)</td><td>3×10–12</td><td>Knee strength — not a max day</td></tr>
+        <tr><td>2</td><td>Leg curl</td><td>3×10–12</td><td>Hamstring / knee support</td></tr>
+        <tr><td>3</td><td>Hip thrust</td><td>3×10</td><td>Glutes for jump — controlled</td></tr>
+        <tr><td>4</td><td>Standing or seated calf raise</td><td>3×12–15</td><td>Ankle stiffness for blocking</td></tr>
+        <tr><td>5</td><td>Incline machine press or landmine press</td><td>3×8–10</td><td>Chest — shoulder-friendly angle; skip if shoulder &gt;3/10</td></tr>
+        <tr><td>6</td><td>Cable row + band external rotation (superset)</td><td>3×10 row · 3×12 ER/side</td><td>Back + right shoulder</td></tr>
+        <tr><td>7</td><td>Face pull + Pallof press (superset)</td><td>3×15 · 3×10/side</td><td>Optional 7th — posture + core</td></tr>
+      </table>
+      <p><strong>Minimum day (5) before club:</strong> #2 + #3 + #4 + #6 + drop #7. <strong>Week 3 taper:</strong> 2 sets each; skip #7.</p>
+    </section>
+
+    <section>
+      <h2>Wednesday — Club court 19:00–21:00 (only net session)</h2>
+      <ul>
+        <li>12 min daily prehab before team warm-up (second time today — quick version OK: TKE, balance, ER)</li>
+        <li><strong>Blocking:</strong> jump with hitter (not early), penetrate hands over net, seal with MB — call early</li>
+        <li><strong>Setting:</strong> use wrists; if shoulder tight or legs heavy from AM gym, shorten range before forcing jump sets</li>
+        <li>This is where Mon/Wed/Fri gym + home work transfers to the court</li>
+        <li>Ice 10 min after if shoulder/knee hot; <strong>no Flyefit after club</strong></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Thursday — Home · 6 drills (jump + set day)</h2>
+      <p class="lead">Mark touch height on wall. Stop jumps if knee &gt;3/10.</p>
+      <table>
+        <tr><th>#</th><th>Drill</th><th>Volume</th></tr>
+        <tr><td>1</td><td>3-step approach jump — touch wall mark</td><td>5×3</td></tr>
+        <tr><td>2</td><td>Two-foot block jump (hands to tape “net” line)</td><td>4×4</td></tr>
+        <tr><td>3</td><td>Lateral shuffle ~3 m + block jump</td><td>4×3/side</td></tr>
+        <tr><td>4</td><td>Jump-set to wall (volleyball) — or hand set if knee sore</td><td>3×10</td></tr>
+        <tr><td>5</td><td>1 kg quick sets</td><td>2×20</td></tr>
+        <tr><td>6</td><td>Back set + dump footwork to wall</td><td>2×12 back · 2×10 dump</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Friday — Flyefit · 7 exercises (min 5, max 7) — no jumping</h2>
+      <p class="lead">Back &amp; arms day. Balances Monday push. <strong>Minimum day (5):</strong> #1–3 legs + #4 lat pulldown + #6 face pull (skip row/curl/Pallof if needed).</p>
+      <table>
+        <tr><th>#</th><th>Exercise</th><th>Sets × Reps</th><th>Notes</th></tr>
+        <tr><td>1</td><td>Goblet squat or leg press</td><td>4×6–8</td><td>Heavy legs</td></tr>
+        <tr><td>2</td><td>Romanian deadlift</td><td>3×8</td><td>Hamstrings</td></tr>
+        <tr><td>3</td><td>Split squat or walking lunge</td><td>3×8/leg</td><td>Short steps if knees sensitive</td></tr>
+        <tr><td>4</td><td>Lat pulldown or assisted pull-up</td><td>3×8–10</td><td>Back</td></tr>
+        <tr><td>5</td><td>Seated cable row or chest-supported row</td><td>3×10</td><td>Squeeze 1 sec</td></tr>
+        <tr><td>6</td><td>Face pull (or band pull-apart)</td><td>3×15</td><td>Right shoulder / posture</td></tr>
+        <tr><td>7</td><td>Bicep curl + Pallof press (superset)</td><td>3×10 curls · 3×10/side Pallof</td><td>Arms + anti-rotation core</td></tr>
+      </table>
+      <p><strong>Week 3 taper:</strong> 2 sets per exercise.</p>
+    </section>
+
+    <section>
+      <h2>Saturday — Home · 5 drills (no court, no suicides)</h2>
+      <p class="lead">Hallway or garden only — <strong>no full-court suicides</strong>.</p>
+      <table>
+        <tr><th>#</th><th>Drill</th><th>Volume</th></tr>
+        <tr><td>1</td><td>Short shuttle (5–8 m mark) + lateral shuffle</td><td>6× down &amp; back · then 4× each way shuffle</td></tr>
+        <tr><td>2</td><td>Wall block line — press over tape + 3×3 approach jumps</td><td>3×8 presses · 3×3 jumps</td></tr>
+        <tr><td>3</td><td>Lateral shuffle + block jump to tape line</td><td>3×3/side</td></tr>
+        <tr><td>4</td><td>Volleyball wall sets — 6 contacts per round</td><td>6 rounds</td></tr>
+        <tr><td>5</td><td>1 kg four-way sets + 20 volleyball targets to X</td><td>10 each direction · 20 to X</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>Sunday — Rest</h2>
+      <ul>
+        <li>12 min daily prehab only</li>
+        <li>Optional: 15 very easy 1 kg wall sets if shoulders feel perfect</li>
+        <li>No jumps — legs recover before Mon gym</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Blocking playbook — 173 cm setter</h2>
+      <p><strong>Home Thu/Sat:</strong> lateral shuffle + block line on wall. <strong>Mon gym:</strong> block jumps on floor.</p>
+      <p><strong>Wed club (only net time):</strong></p>
+      <ul>
+        <li><strong>Late</strong> beat <strong>high</strong> — read hitter, go on release</li>
+        <li>Hands <strong>over</strong> net, press outward; don’t swing down</li>
+        <li>Slide: one extra lateral step — trained Thu/Sat at home</li>
+        <li>With middles: early call, hold base, commit together</li>
+        <li>Strong knees from gym = stick landings on court Wed</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Knee jump progression (injury-safe vertical path)</h2>
+      <table>
+        <tr><th>Stage</th><th>You’re ready when…</th><th>Then add</th></tr>
+        <tr><td>1 — now</td><td>Mon leg press ≤2/10</td><td>Mon block jumps + Thu home jumps (low volume)</td></tr>
+        <tr><td>2</td><td>No knee swell 24 h after Wed</td><td>Full Thu home jump block; Sat block jumps</td></tr>
+        <tr><td>3 — after season if cleared</td><td>2 weeks pain-free jumping</td><td>Low box step-up jumps at Flyefit; no depth drops unless physio OK</td></tr>
+      </table>
+    </section>
+
+    <section>
+      <h2>3-week countdown to 11 October 2026</h2>
+      <table>
+        <tr><th>Week</th><th>Dates (approx)</th><th>Emphasis</th></tr>
+        <tr><td><strong>Week 1</strong></td><td>22–28 Sep</td><td>Baseline jump touch at home; Tue/Thu/Sat ball routines</td></tr>
+        <tr><td><strong>Week 2</strong></td><td>29 Sep – 5 Oct</td><td>+load Mon/Wed/Fri gym; Thu jumps if 48 h clear after Wed</td></tr>
+        <tr><td><strong>Week 3 — taper</strong></td><td>6–10 Oct</td><td>−30% sets all 3 gym days; Tue/Sat ball light; skip Thu/Sat jumps if tired</td></tr>
+      </table>
+      <div class="win-box">
+        <strong>10 Oct (day before match):</strong> no gym — 12 min prehab + 20 easy home wall sets only.<br />
+        <strong>11 Oct — Match day:</strong> warm up prehab, trust late block, set with wrists. You’ve built vertical, knees, shoulder, and hands for Div 2.
+      </div>
+    </section>
+
+    <section>
+      <h2>Track weekly (2 min Sunday)</h2>
+      <ul class="checklist">
+        <li>Approach jump touch height (cm mark on gym/home wall)</li>
+        <li>Standing block reach (cm)</li>
+        <li>Right shoulder pain 0–10 during setting (target ≤2 by 11 Oct)</li>
+        <li>Knee pain 0–10 day after Wed (target ≤2)</li>
+        <li>Setting consistency 1–10 at Wed club (only court session)</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Recovery & fuel (simple)</h2>
+      <ul>
+        <li><strong>Protein</strong> ~1.6 g/kg/day — shoulder tendons + legs</li>
+        <li><strong>Sleep</strong> 7.5–9 h — jump and pain both suffer when short</li>
+        <li><strong>Hydrate</strong> Wed evenings especially</li>
+      </ul>
+    </section>
+
+    <footer>
+      Volleyball Ireland Division 2 · Setter · Gym Mon+Wed+Fri · Home volleyball Tue+Thu+Sat · Wed club PM · Match 11 Oct 2026
+    </footer>
+  </div>
+</body>
+</html>
+
+
+
+
+
