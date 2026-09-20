@@ -26,6 +26,10 @@
       * {
         box-sizing: border-box;
       }
+      html {
+        overflow-x: hidden;
+        max-width: 100%;
+      }
       html,
       body {
         margin: 0;
@@ -34,6 +38,8 @@
         color: var(--text);
       }
       body {
+        overflow-x: hidden;
+        max-width: 100%;
         padding-bottom: calc(88px + var(--safe-bottom));
       }
       button,
@@ -49,9 +55,11 @@
         background: none;
       }
       .app {
-        max-width: 520px;
+        width: 100%;
+        max-width: min(520px, 100%);
         margin: 0 auto;
         padding: 16px 16px 0;
+        overflow-x: hidden;
       }
       .hero {
         padding: 8px 4px 20px;
@@ -164,9 +172,12 @@
         display: flex;
         gap: 8px;
         overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 100%;
         padding-bottom: 4px;
         margin-bottom: 14px;
         scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
       }
       .week-strip::-webkit-scrollbar {
         display: none;
@@ -590,6 +601,29 @@
       }
       .hero-wrap {
         position: relative;
+        overflow: hidden;
+      }
+      .video-overlay-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .video-overlay-actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        text-decoration: none;
+      }
+      .video-overlay-actions a:active {
+        transform: scale(0.98);
       }
       @media (min-width: 520px) {
         .app {
@@ -611,6 +645,7 @@
         <h2 id="video-title">Exercise demo</h2>
         <button type="button" class="btn-sm" id="video-close">Close</button>
       </div>
+      <div class="video-overlay-actions" id="video-overlay-actions"></div>
       <div class="video-frame-wrap" id="video-frame-wrap"></div>
     </div>
 
@@ -627,7 +662,8 @@
     <input type="file" accept="application/json" class="hidden-input" id="import-file" />
 
     <script>
-      const STORAGE_KEY = "setter-preseason-workout-plan-v2";
+      const STORAGE_KEY = "setter-preseason-workout-plan-v3";
+      const VIDEO_CATALOG_VERSION = 3;
       const CATEGORIES = {
         strength: { label: "Strength", color: "#e8222a" },
         plyo: { label: "Plyo", color: "#fbbf24" },
@@ -640,82 +676,140 @@
         return Math.random().toString(36).slice(2, 10);
       }
 
+      /** oEmbed-validated YouTube IDs (broken legacy IDs removed). */
+      const VALID_VIDEO_IDS = new Set([
+        "nfX7IFK9UNI",
+        "MeIiIdhvXT4",
+        "jEy_czb3RKA",
+        "LA6Uc5yIV1c",
+        "ultWZbUMPL8",
+        "4Y2ZdHCOXok",
+        "0G2_XV7slIg",
+        "IODxDxX7oi4",
+        "eGo4IYlbE5g",
+        "CAwf7n6Luuc",
+        "6TSP1TRMUzs",
+        "pYcpY20QaE8",
+        "NZ31eKoPeIo",
+        "hxldG9FX4j4",
+        "Ll8vYaIrBN8",
+        "1euTI6iZ3_I",
+        "2C-uNgKwPLE",
+        "3XDriUn0udo",
+        "9ZknEYboBOQ",
+        "7K9wTlqg_OE",
+        "y5yEmMKdW6I",
+        "xx8WkFrST2Y",
+        "kD1t1hWzIDE",
+        "b7ix5GglVjE",
+        "Ct9ZGZW7Q_4",
+        "2wnY7RfLIL4",
+        "K9X_wB1Yu84",
+        "0n4CaBJckB4",
+        "R5DwwSIQdVU",
+        "nvJ-1suJCTU",
+        "4taYjKlmihU",
+        "oQpI_jRClUo",
+        "-cQqV5q52FQ",
+        "e71IP2SLrRc",
+        "MH919hRvrVE",
+        "2bQI0iH89GI",
+        "gA8C5dsMCwg",
+        "l3S7Tyk6HX0",
+        "MPL487ToJt8",
+      ]);
+
       const VIDEO_BY_KEYWORD = [
-        ["goblet squat", "MeHQebZwcJA"],
-        ["romanian deadlift", "4FZKp6nOITg"],
-        ["pallof", "wR8oHD7xF84"],
-        ["box jump", "5U0D2HYre3E"],
-        ["dead bug", "g_BYB0R-36s"],
-        ["split squat", "Q0Bxqjfhbwo"],
+        ["goblet squat", "nfX7IFK9UNI"],
+        ["romanian deadlift", "jEy_czb3RKA"],
+        ["pallof", "LA6Uc5yIV1c"],
+        ["box jump", "hxldG9FX4j4"],
+        ["depth drop", "hxldG9FX4j4"],
+        ["jump squat", "hxldG9FX4j4"],
+        ["approach jump", "Ll8vYaIrBN8"],
+        ["dead bug", "1euTI6iZ3_I"],
+        ["split squat", "2C-uNgKwPLE"],
         ["back squat", "ultWZbUMPL8"],
         ["front squat", "ultWZbUMPL8"],
-        ["nordic", "9c06nFOWAEc"],
-        ["ham curl", "9c06nFOWAEc"],
-        ["bench", "4T9UQ7LZjIs"],
-        ["floor press", "4T9UQ7LZjIs"],
+        ["nordic", "NZ31eKoPeIo"],
+        ["ham curl", "NZ31eKoPeIo"],
+        ["bench", "4Y2ZdHCOXok"],
+        ["floor press", "0G2_XV7slIg"],
         ["push-up", "IODxDxX7oi4"],
         ["pull-up", "eGo4IYlbE5g"],
-        ["pulldown", "9efgcAjQf7g"],
-        ["row", "9efgcAjQf7g"],
-        ["med ball", "fg2BgO77WDg"],
-        ["scoop toss", "fg2BgO77WDg"],
-        ["chest pass", "fg2BgO77WDg"],
-        ["wall set", "1gQx_3KN-7U"],
-        ["pepper", "8b2_QdXhOK0"],
-        ["short court", "8b2_QdXhOK0"],
-        ["jump set", "8b2_QdXhOK0"],
-        ["depth drop", "5U0D2HYre3E"],
-        ["wrist", "i6ddqqbSvl0"],
-        ["6v6", "8b2_QdXhOK0"],
-        ["scrimmage", "8b2_QdXhOK0"],
-        ["back set", "8b2_QdXhOK0"],
-        ["live set", "8b2_QdXhOK0"],
-        ["quick release", "8b2_QdXhOK0"],
-        ["tempo set", "8b2_QdXhOK0"],
-        ["footwork", "3X9wLw17kuE"],
-        ["ladder", "3X9wLw17kuE"],
-        ["hip 90", "NGPDX3YI5v8"],
-        ["thoracic", "450BCmVdOq8"],
-        ["flow", "4LJxWvM4-xQ"],
-        ["stretch", "4LJxWvM4-xQ"],
-        ["activation", "4LJxWvM4-xQ"],
-        ["bike", "6x4p2x0VfYg"],
-        ["walk", "nJeHl7Ly504"],
-        ["suicide", "6x4p2x0VfYg"],
-        ["shuttle", "6x4p2x0VfYg"],
-        ["17", "6x4p2x0VfYg"],
-        ["interval", "6x4p2x0VfYg"],
-        ["trap bar", "Xtr49-GNyAA"],
-        ["clean pull", "Y-xWQRlHhm0"],
+        ["pulldown", "CAwf7n6Luuc"],
+        ["row", "6TSP1TRMUzs"],
+        ["med ball", "b7ix5GglVjE"],
+        ["scoop toss", "b7ix5GglVjE"],
+        ["chest pass", "Ct9ZGZW7Q_4"],
+        ["wall set", "2wnY7RfLIL4"],
+        ["pepper", "K9X_wB1Yu84"],
+        ["short court", "0n4CaBJckB4"],
+        ["jump set", "K9X_wB1Yu84"],
+        ["wrist", "R5DwwSIQdVU"],
+        ["6v6", "K9X_wB1Yu84"],
+        ["scrimmage", "K9X_wB1Yu84"],
+        ["back set", "2wnY7RfLIL4"],
+        ["live set", "K9X_wB1Yu84"],
+        ["quick release", "2wnY7RfLIL4"],
+        ["tempo set", "2wnY7RfLIL4"],
+        ["footwork", "4taYjKlmihU"],
+        ["ladder", "4taYjKlmihU"],
+        ["hip 90", "oQpI_jRClUo"],
+        ["thoracic", "e71IP2SLrRc"],
+        ["flow", "-cQqV5q52FQ"],
+        ["stretch", "MH919hRvrVE"],
+        ["activation", "nvJ-1suJCTU"],
+        ["bike", "2bQI0iH89GI"],
+        ["walk", "gA8C5dsMCwg"],
+        ["suicide", "MPL487ToJt8"],
+        ["shuttle", "l3S7Tyk6HX0"],
+        ["17", "l3S7Tyk6HX0"],
+        ["interval", "l3S7Tyk6HX0"],
+        ["trap bar", "y5yEmMKdW6I"],
+        ["clean pull", "xx8WkFrST2Y"],
         ["step-up", "9ZknEYboBOQ"],
-        ["copenhagen", "2d3DzYeBph8"],
-        ["jump squat", "5U0D2HYre3E"],
-        ["approach jump", "5U0D2HYre3E"],
-        ["serve receive", "8b2_QdXhOK0"],
-        ["dump", "8b2_QdXhOK0"],
-        ["perfect rep", "8b2_QdXhOK0"],
-        ["continuous setting", "8b2_QdXhOK0"],
-        ["out-of-system", "8b2_QdXhOK0"],
+        ["copenhagen", "kD1t1hWzIDE"],
+        ["serve receive", "0n4CaBJckB4"],
+        ["dump", "K9X_wB1Yu84"],
+        ["perfect rep", "2wnY7RfLIL4"],
+        ["continuous setting", "2wnY7RfLIL4"],
+        ["out-of-system", "K9X_wB1Yu84"],
+        ["deadlift", "jEy_czb3RKA"],
+        ["lunge", "3XDriUn0udo"],
       ];
 
       const CATEGORY_VIDEO_FALLBACK = {
         strength: "ultWZbUMPL8",
-        plyo: "5U0D2HYre3E",
-        skill: "8b2_QdXhOK0",
-        mobility: "4LJxWvM4-xQ",
-        conditioning: "6x4p2x0VfYg",
+        plyo: "hxldG9FX4j4",
+        skill: "2wnY7RfLIL4",
+        mobility: "oQpI_jRClUo",
+        conditioning: "l3S7Tyk6HX0",
       };
+
+      function sanitizeVideoId(id) {
+        if (!id || typeof id !== "string") return "";
+        const clean = id.trim();
+        return VALID_VIDEO_IDS.has(clean) ? clean : "";
+      }
 
       function lookupVideoId(name, category) {
         const n = name.toLowerCase();
         for (const [keyword, id] of VIDEO_BY_KEYWORD) {
-          if (n.includes(keyword)) return id;
+          if (n.includes(keyword)) {
+            const safe = sanitizeVideoId(id);
+            if (safe) return safe;
+          }
         }
-        return CATEGORY_VIDEO_FALLBACK[category] || CATEGORY_VIDEO_FALLBACK.strength;
+        return (
+          sanitizeVideoId(CATEGORY_VIDEO_FALLBACK[category]) ||
+          CATEGORY_VIDEO_FALLBACK.strength
+        );
       }
 
       function exerciseVideoId(ex) {
-        if (ex.videoId) return ex.videoId;
+        const custom = sanitizeVideoId(ex.videoId);
+        if (custom) return custom;
         return lookupVideoId(ex.name, ex.category);
       }
 
@@ -746,6 +840,7 @@
 
         return {
           version: 1,
+          videoCatalogVersion: VIDEO_CATALOG_VERSION,
           title: "Setter Preseason",
           subtitle: "Power · hands · repeatability",
           weeks: [
@@ -880,7 +975,9 @@
         try {
           let raw = localStorage.getItem(STORAGE_KEY);
           if (!raw) {
-            raw = localStorage.getItem("setter-preseason-workout-plan-v1");
+            raw =
+              localStorage.getItem("setter-preseason-workout-plan-v2") ||
+              localStorage.getItem("setter-preseason-workout-plan-v1");
           }
           if (!raw) return defaultPlan();
           const parsed = JSON.parse(raw);
@@ -898,6 +995,8 @@
       }
 
       function migratePlan(plan) {
+        const needsVideoRefresh =
+          !plan.videoCatalogVersion || plan.videoCatalogVersion < VIDEO_CATALOG_VERSION;
         for (const week of plan.weeks) {
           for (const day of week.days) {
             for (const ex of day.exercises) {
@@ -906,12 +1005,13 @@
                   Boolean(ex.doneSets?.[i]),
                 );
               }
-              if (!ex.videoId) {
+              if (needsVideoRefresh || !sanitizeVideoId(ex.videoId)) {
                 ex.videoId = lookupVideoId(ex.name, ex.category);
               }
             }
           }
         }
+        plan.videoCatalogVersion = VIDEO_CATALOG_VERSION;
         return plan;
       }
 
@@ -927,12 +1027,17 @@
 
       function openVideoModal(ex) {
         const videoId = exerciseVideoId(ex);
+        const watchUrl = `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
         document.getElementById("video-title").textContent = ex.name;
+        document.getElementById("video-overlay-actions").innerHTML = `<a href="${escapeAttr(
+          watchUrl,
+        )}" target="_blank" rel="noopener noreferrer">Open in YouTube</a>`;
         document.getElementById("video-frame-wrap").innerHTML = `<iframe
-          src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0"
+          src="https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?autoplay=1&rel=0&playsinline=1"
           title="${escapeAttr(ex.name)} demo"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen
+          referrerpolicy="strict-origin-when-cross-origin"
         ></iframe>`;
         document.getElementById("video-overlay").classList.add("open");
         document.getElementById("video-overlay").setAttribute("aria-hidden", "false");
@@ -940,6 +1045,7 @@
 
       function closeVideoModal() {
         document.getElementById("video-frame-wrap").innerHTML = "";
+        document.getElementById("video-overlay-actions").innerHTML = "";
         document.getElementById("video-overlay").classList.remove("open");
         document.getElementById("video-overlay").setAttribute("aria-hidden", "true");
       }
@@ -1080,7 +1186,9 @@
           </div>
         </div>`
           : `<button type="button" class="video-btn" data-action="video" data-ex="${ex.id}">
-              <img class="video-thumb" src="https://i.ytimg.com/vi/${exerciseVideoId(ex)}/mqdefault.jpg" alt="" loading="lazy" />
+              <img class="video-thumb" src="https://i.ytimg.com/vi/${encodeURIComponent(
+                exerciseVideoId(ex),
+              )}/mqdefault.jpg" alt="" loading="lazy" onerror="this.style.visibility='hidden'" />
               <span class="video-copy"><strong>Watch demo</strong><span>Form cue video for this movement</span></span>
             </button>
           <div class="set-row">${setsHtml}</div>
