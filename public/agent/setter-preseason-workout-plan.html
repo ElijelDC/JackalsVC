@@ -697,7 +697,9 @@
       const STORAGE_KEY = "setter-preseason-workout-plan-v3";
       const VIDEO_CATALOG_VERSION = 3;
       /** Bump when the default template or app fixes should merge into saved plans. */
-      const APP_RELEASE_VERSION = 2;
+      const APP_RELEASE_VERSION = 3;
+      const TEMPLATE_URL = "/agent/setter-preseason-workout-template.json";
+      let WORKOUT_TEMPLATE = null;
       const CATEGORIES = {
         strength: { label: "Strength", color: "#e8222a" },
         plyo: { label: "Plyo", color: "#fbbf24" },
@@ -811,6 +813,14 @@
         ["out-of-system", "K9X_wB1Yu84"],
         ["deadlift", "jEy_czb3RKA"],
         ["lunge", "3XDriUn0udo"],
+        ["ankle pogo", "hxldG9FX4j4"],
+        ["platform set", "2wnY7RfLIL4"],
+        ["reactive depth", "hxldG9FX4j4"],
+        ["red set", "K9X_wB1Yu84"],
+        ["jump float", "K9X_wB1Yu84"],
+        ["trap bar deadlift", "y5yEmMKdW6I"],
+        ["zone 2", "2wnY7RfLIL4"],
+        ["match tempo", "K9X_wB1Yu84"],
       ];
 
       const CATEGORY_VIDEO_FALLBACK = {
@@ -847,163 +857,75 @@
         return lookupVideoId(ex.name, ex.category);
       }
 
-      function defaultPlan() {
-        const mkEx = (name, category, sets, reps, load, restSec, notes = "", videoId = "") => ({
+      async function loadWorkoutTemplate() {
+        if (WORKOUT_TEMPLATE) return WORKOUT_TEMPLATE;
+        const res = await fetch(TEMPLATE_URL, { cache: "no-store" });
+        if (!res.ok) throw new Error("template_load_failed");
+        WORKOUT_TEMPLATE = await res.json();
+        return WORKOUT_TEMPLATE;
+      }
+
+      function targetTemplateVersion() {
+        return WORKOUT_TEMPLATE?.planTemplateVersion ?? APP_RELEASE_VERSION;
+      }
+
+      function mkExerciseFromTemplate(ex) {
+        const sets = Number(ex.sets) || 1;
+        return {
           id: uid(),
-          name,
-          category,
+          name: ex.name,
+          category: ex.category,
           sets,
-          reps,
-          load,
-          restSec,
-          notes,
-          videoId: videoId || lookupVideoId(name, category),
+          reps: ex.reps ?? "—",
+          load: ex.load ?? "—",
+          restSec: Number(ex.restSec) || 0,
+          notes: ex.notes ?? "",
+          videoId: lookupVideoId(ex.name, ex.category),
           doneSets: Array.from({ length: sets }, () => false),
-        });
+        };
+      }
 
-        const mkDay = (label, title, focus, exercises, rest = false) => ({
-          id: uid(),
-          label,
-          title,
-          focus,
-          rest,
-          exercises,
-        });
-
-        const week = (name, theme, days) => ({ id: uid(), name, theme, days });
-
+      function hydratePlanFromTemplate(tpl) {
         return {
           version: 1,
+          planTemplateVersion: tpl.planTemplateVersion,
           videoCatalogVersion: VIDEO_CATALOG_VERSION,
           appReleaseVersion: APP_RELEASE_VERSION,
-          title: "Setter Preseason",
-          subtitle: "Power · hands · repeatability",
-          weeks: [
-            week("Week 1", "Base + movement quality", [
-              mkDay("Mon", "Lower + core", "Squat pattern, anti-rotation", [
-                mkEx("Goblet squat", "strength", 4, "8", "RPE 7", 90, "Full depth, knees track toes"),
-                mkEx("Romanian deadlift", "strength", 3, "10", "Moderate", 90),
-                mkEx("Pallof press", "strength", 3, "12/side", "Band", 45),
-                mkEx("Box jumps", "plyo", 4, "5", "Low box", 75, "Stick landing, quiet feet"),
-              ]),
-              mkDay("Tue", "Setting volume", "Tempo + accuracy", [
-                mkEx("Wall sets — float", "skill", 5, "20", "—", 45, "Hold finish 1s"),
-                mkEx("Partner pepper — setter only", "skill", 4, "3 min", "—", 60),
-                mkEx("Short court targets", "skill", 4, "12", "Zones 1–5", 45),
-              ]),
-              mkDay("Wed", "Active recovery", "Mobility", [
-                mkEx("Hip 90/90 flow", "mobility", 2, "5/side", "—", 30),
-                mkEx("Thoracic openers", "mobility", 2, "10", "—", 30),
-                mkEx("Easy bike or walk", "conditioning", 1, "20 min", "Zone 1", 0),
-              ], true),
-              mkDay("Thu", "Upper + plyo", "Push + elastic", [
-                mkEx("DB bench or push-up", "strength", 4, "8–10", "RPE 7", 75),
-                mkEx("Lat pulldown / row", "strength", 3, "10", "Moderate", 75),
-                mkEx("Med ball scoop toss", "plyo", 4, "6", "Light MB", 60),
-              ]),
-              mkDay("Fri", "Game prep setting", "Decision speed", [
-                mkEx("Live sets from pass", "skill", 5, "4 min", "—", 90),
-                mkEx("Quick release reps", "skill", 4, "15", "—", 45, "No hitch"),
-                mkEx("Core: dead bug", "strength", 3, "10/side", "—", 45),
-              ]),
-              mkDay("Sat", "Conditioning", "Repeat efforts", [
-                mkEx("Court suicides", "conditioning", 6, "1", "Full court", 90),
-                mkEx("Setter footwork ladder", "skill", 4, "2 min", "—", 60),
-              ]),
-              mkDay("Sun", "Rest", "Off", [], true),
-            ]),
-            week("Week 2", "Load up, sharpen hands", [
-              mkDay("Mon", "Strength A", "Heavy lower", [
-                mkEx("Back squat or front squat", "strength", 4, "6", "RPE 8", 120),
-                mkEx("Split squat", "strength", 3, "8/leg", "DBs", 90),
-                mkEx("Nordic or ham curl", "strength", 3, "6–8", "Assisted OK", 90),
-              ]),
-              mkDay("Tue", "Setting + plyo", "Contact quality", [
-                mkEx("Jump sets to target", "skill", 4, "15", "Antenna height", 60),
-                mkEx("Depth drop to set", "plyo", 4, "6", "12 inch", 75),
-                mkEx("Wrist prep band", "mobility", 2, "15", "Light", 30),
-              ]),
-              mkDay("Wed", "Mobility", "Recovery", [
-                mkEx("Full body flow", "mobility", 1, "25 min", "—", 0),
-              ], true),
-              mkDay("Thu", "Upper power", "Explosive push", [
-                mkEx("Bench or floor press", "strength", 4, "5", "RPE 8", 120),
-                mkEx("Pull-ups or lat work", "strength", 3, "8", "BW+", 90),
-                mkEx("MB chest pass", "plyo", 4, "8", "—", 60),
-              ]),
-              mkDay("Fri", "Setter scrimmage", "In-system reps", [
-                mkEx("6v6 focus: first ball sideout", "skill", 6, "4 min", "—", 120),
-                mkEx("Back set series", "skill", 4, "10", "—", 60),
-              ]),
-              mkDay("Sat", "Intervals", "Aerobic power", [
-                mkEx("30/30 court shuttles", "conditioning", 8, "30s on", "Hard", 30),
-              ]),
-              mkDay("Sun", "Rest", "Off", [], true),
-            ]),
-            week("Week 3", "Peak strength, match tempo", [
-              mkDay("Mon", "Strength B", "Triple extension", [
-                mkEx("Trap bar or clean pull", "strength", 4, "5", "RPE 8", 120),
-                mkEx("Step-up", "strength", 3, "8/leg", "Moderate", 90),
-                mkEx("Copenhagen plank", "strength", 3, "30s/side", "—", 45),
-              ]),
-              mkDay("Tue", "High-volume sets", "Fatigue tolerance", [
-                mkEx("Continuous setting", "skill", 6, "2 min", "—", 60),
-                mkEx("Out-of-system sets", "skill", 4, "12", "—", 75),
-              ]),
-              mkDay("Wed", "Recovery", "Easy", [
-                mkEx("Walk + stretch", "mobility", 1, "30 min", "—", 0),
-              ], true),
-              mkDay("Thu", "Power upper", "Speed strength", [
-                mkEx("Speed bench", "strength", 5, "3", "60% 1RM", 90),
-                mkEx("Row variation", "strength", 3, "10", "—", 75),
-                mkEx("Approach jumps (no ball)", "plyo", 5, "4", "Full", 90),
-              ]),
-              mkDay("Fri", "Tactical setter", "Tempo + deception", [
-                mkEx("Tempo sets all zones", "skill", 5, "8/zone", "—", 60),
-                mkEx("Dump / push options", "skill", 4, "10", "—", 60),
-              ]),
-              mkDay("Sat", "Team conditioning", "Repeat sprint", [
-                mkEx("Court 17s", "conditioning", 8, "1", "Max", 75),
-              ]),
-              mkDay("Sun", "Rest", "Off", [], true),
-            ]),
-            week("Week 4", "Taper into season", [
-              mkDay("Mon", "Maintenance lift", "CNS fresh", [
-                mkEx("Squat", "strength", 3, "5", "RPE 7", 120),
-                mkEx("RDL", "strength", 2, "8", "Light", 90),
-              ]),
-              mkDay("Tue", "Sharp hands", "Low volume, high quality", [
-                mkEx("Perfect rep sets", "skill", 4, "12", "—", 60, "Only clean reps count"),
-                mkEx("Serve receive to set", "skill", 4, "6", "—", 90),
-              ]),
-              mkDay("Wed", "Mobility", "Pre-match prep", [
-                mkEx("Activation + bands", "mobility", 1, "20 min", "—", 0),
-              ], true),
-              mkDay("Thu", "Light power", "Stay elastic", [
-                mkEx("Jump squats", "plyo", 3, "5", "Bodyweight", 75),
-                mkEx("MB throws", "plyo", 3, "6", "—", 60),
-              ]),
-              mkDay("Fri", "Scrimmage", "Match rhythm", [
-                mkEx("Full 6v6", "skill", 4, "8 min", "—", 120),
-              ]),
-              mkDay("Sat", "Optional", "Feel-good", [
-                mkEx("Easy skill or rest", "skill", 1, "—", "Your call", 0),
-              ]),
-              mkDay("Sun", "Rest", "Off", [], true),
-            ]),
-          ],
+          title: tpl.title,
+          subtitle: tpl.subtitle,
+          weeks: tpl.weeks.map((w) => ({
+            id: uid(),
+            name: w.name,
+            theme: w.theme,
+            days: w.days.map((d) => ({
+              id: uid(),
+              label: d.label,
+              title: d.title,
+              focus: d.focus,
+              rest: Boolean(d.rest),
+              exercises: (d.exercises || []).map((ex) => mkExerciseFromTemplate(ex)),
+            })),
+          })),
         };
+      }
+
+      function defaultPlan() {
+        if (!WORKOUT_TEMPLATE) {
+          throw new Error("Workout template not loaded");
+        }
+        return hydratePlanFromTemplate(WORKOUT_TEMPLATE);
       }
 
       let pendingUpdateNotice = false;
 
       let state = {
-        plan: loadPlan(),
+        plan: null,
         weekIndex: 0,
         openDayId: null,
         tab: "week",
         editMode: false,
-        updateNotice: pendingUpdateNotice,
+        updateNotice: false,
+        templateVersion: null,
       };
 
       let timerInterval = null;
@@ -1021,7 +943,12 @@
           const parsed = JSON.parse(raw);
           if (!parsed.weeks?.length) return defaultPlan();
           let plan = migratePlan(parsed);
-          if (!plan.appReleaseVersion || plan.appReleaseVersion < APP_RELEASE_VERSION) {
+          const needsTemplate =
+            !plan.planTemplateVersion ||
+            plan.planTemplateVersion < targetTemplateVersion() ||
+            !plan.appReleaseVersion ||
+            plan.appReleaseVersion < APP_RELEASE_VERSION;
+          if (needsTemplate) {
             plan = applyLatestTemplateUpdates(plan);
             pendingUpdateNotice = true;
           }
@@ -1133,7 +1060,17 @@
           weeks: [...mergedWeeks, ...customWeeks],
           videoCatalogVersion: VIDEO_CATALOG_VERSION,
           appReleaseVersion: APP_RELEASE_VERSION,
+          planTemplateVersion: targetTemplateVersion(),
         };
+      }
+
+      function planNeedsTemplateUpdate(plan) {
+        return (
+          !plan.planTemplateVersion ||
+          plan.planTemplateVersion < targetTemplateVersion() ||
+          !plan.appReleaseVersion ||
+          plan.appReleaseVersion < APP_RELEASE_VERSION
+        );
       }
 
       function savePlan() {
@@ -1394,7 +1331,9 @@
       }
 
       function render() {
+        if (!state.plan) return;
         const { plan } = state;
+        state.templateVersion = plan.planTemplateVersion ?? targetTemplateVersion();
         const week = plan.weeks[state.weekIndex] || plan.weeks[0];
         const stats = completionStats();
         const todayIdx = todayDayIndex();
@@ -1408,6 +1347,11 @@
               <span class="pill">${escapeHtml(plan.subtitle || "Private")}</span>
               <span class="pill">${plan.weeks.length} weeks</span>
               <span class="pill">Saved on device</span>
+              ${
+                state.templateVersion
+                  ? `<span class="pill">Template v${state.templateVersion}</span>`
+                  : ""
+              }
             </div>
             <div class="progress-card">
               <div class="ring" style="--pct:${stats.pct}"><span>${stats.pct}%</span></div>
@@ -1420,7 +1364,7 @@
           ${
             state.updateNotice
               ? `<div class="update-banner" role="status">
-                  <p><strong>Plan updated.</strong> Your workout now uses the latest demo videos and template fixes. Logged sets for matching exercises were kept.</p>
+                  <p><strong>New preseason plan installed.</strong> Weeks 1–4 now match the latest template (v${targetTemplateVersion()}). Logged sets on matching exercises were kept.</p>
                   <button type="button" id="btn-dismiss-update">OK</button>
                 </div>`
               : ""
@@ -1468,12 +1412,12 @@
             <div class="tools-card">
               <h3>App updates</h3>
               <p>
-                Pull the newest demo videos and preseason template tweaks into your saved plan.
-                Matching exercises keep your logged sets.
+                Install the current 4-week preseason block (template v${targetTemplateVersion()}).
+                Matching exercises keep your logged sets; new sessions and exercises are added.
               </p>
               <div class="tools-actions">
                 <button type="button" class="primary" id="btn-apply-updates">
-                  Update workout from latest app version
+                  Install new workout plan
                 </button>
               </div>
             </div>
@@ -1798,7 +1742,7 @@
         reader.onload = () => {
           try {
             let plan = migratePlan(JSON.parse(String(reader.result)));
-            if (!plan.appReleaseVersion || plan.appReleaseVersion < APP_RELEASE_VERSION) {
+            if (planNeedsTemplateUpdate(plan)) {
               plan = applyLatestTemplateUpdates(plan);
               state.updateNotice = true;
             }
@@ -1833,7 +1777,20 @@
         return escapeHtml(s).replace(/'/g, "&#39;");
       }
 
-      render();
+      async function boot() {
+        const app = document.getElementById("app");
+        try {
+          await loadWorkoutTemplate();
+          state.plan = loadPlan();
+          state.updateNotice = pendingUpdateNotice;
+          render();
+        } catch {
+          app.innerHTML =
+            '<div class="empty" style="padding:32px 16px">Could not load the workout template. Check your connection and refresh.</div>';
+        }
+      }
+
+      boot();
     </script>
   </body>
 </html>
