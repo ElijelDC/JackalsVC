@@ -1,0 +1,1285 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
+    <meta name="theme-color" content="#202121" />
+    <title>Setter · Preseason</title>
+    <style>
+      :root {
+        --bg: #202121;
+        --surface: #2a2b2b;
+        --surface-muted: #252626;
+        --inset: #181919;
+        --text: #f5f5f5;
+        --muted: #a3a3a3;
+        --dim: #71717a;
+        --red: #e8222a;
+        --red-light: #ff4d54;
+        --green: #34d399;
+        --amber: #fbbf24;
+        --radius: 14px;
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+      }
+      body {
+        padding-bottom: calc(88px + var(--safe-bottom));
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+      .app {
+        max-width: 520px;
+        margin: 0 auto;
+        padding: 16px 16px 0;
+      }
+      .hero {
+        padding: 8px 4px 20px;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: 1.65rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+      }
+      .hero h1 span {
+        color: var(--red-light);
+      }
+      .hero-meta {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .progress-card {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, rgba(232, 34, 42, 0.18), rgba(42, 43, 43, 0.95));
+        border: 1px solid rgba(232, 34, 42, 0.25);
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 14px;
+        align-items: center;
+      }
+      .ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: conic-gradient(
+          var(--red) calc(var(--pct) * 1%),
+          rgba(255, 255, 255, 0.08) 0
+        );
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+      .ring::after {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        background: var(--surface-muted);
+      }
+      .ring span {
+        position: relative;
+        z-index: 1;
+        font-weight: 800;
+        font-size: 0.95rem;
+      }
+      .progress-copy strong {
+        display: block;
+        font-size: 1rem;
+        margin-bottom: 4px;
+      }
+      .progress-copy p {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+        padding: 4px;
+        background: var(--inset);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .tab {
+        flex: 1;
+        padding: 10px 8px;
+        border-radius: 9px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--muted);
+        transition: background 0.15s, color 0.15s;
+      }
+      .tab.active {
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .week-strip {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+        margin-bottom: 14px;
+        scrollbar-width: none;
+      }
+      .week-strip::-webkit-scrollbar {
+        display: none;
+      }
+      .week-chip {
+        flex: 0 0 auto;
+        min-width: 64px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--surface);
+        text-align: center;
+      }
+      .week-chip.active {
+        border-color: rgba(232, 34, 42, 0.55);
+        background: rgba(232, 34, 42, 0.12);
+      }
+      .week-chip .num {
+        font-weight: 800;
+        font-size: 1.05rem;
+      }
+      .week-chip .lbl {
+        font-size: 0.65rem;
+        color: var(--muted);
+        margin-top: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .day-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .day-card {
+        border-radius: var(--radius);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .day-card.rest {
+        opacity: 0.72;
+      }
+      .day-head {
+        width: 100%;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        text-align: left;
+      }
+      .day-head .title {
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .day-head .sub {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .day-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 5px 8px;
+        border-radius: 8px;
+        background: var(--inset);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .day-badge.done {
+        background: rgba(52, 211, 153, 0.15);
+        color: var(--green);
+      }
+      .day-body {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 0 12px 12px;
+      }
+      .exercise {
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--surface-muted);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .exercise.done {
+        border-color: rgba(52, 211, 153, 0.25);
+      }
+      .ex-top {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .cat-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-top: 6px;
+        flex-shrink: 0;
+      }
+      .ex-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .ex-name {
+        font-weight: 700;
+        font-size: 0.92rem;
+        line-height: 1.3;
+      }
+      .ex-prescription {
+        margin-top: 4px;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .ex-notes {
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: var(--dim);
+        line-height: 1.4;
+      }
+      .set-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .set-btn {
+        min-width: 44px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        font-size: 0.78rem;
+        font-weight: 600;
+        transition: transform 0.1s, border-color 0.15s, background 0.15s;
+      }
+      .set-btn:active {
+        transform: scale(0.96);
+      }
+      .set-btn.done {
+        background: rgba(52, 211, 153, 0.2);
+        border-color: rgba(52, 211, 153, 0.45);
+        color: var(--green);
+      }
+      .ex-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .btn-sm {
+        padding: 7px 10px;
+        border-radius: 9px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        color: var(--muted);
+      }
+      .btn-sm.primary {
+        background: rgba(232, 34, 42, 0.2);
+        border-color: rgba(232, 34, 42, 0.45);
+        color: var(--red-light);
+      }
+      .btn-sm.danger {
+        color: #fca5a5;
+        border-color: rgba(248, 113, 113, 0.35);
+      }
+      .edit-fields {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .edit-fields label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--dim);
+        display: block;
+        margin-bottom: 4px;
+      }
+      .edit-fields input,
+      .edit-fields select,
+      .edit-fields textarea {
+        width: 100%;
+        padding: 9px 10px;
+        border-radius: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+      }
+      .edit-fields textarea {
+        min-height: 56px;
+        resize: vertical;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .toolbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 10px 16px calc(10px + var(--safe-bottom));
+        background: rgba(24, 25, 25, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        max-width: 520px;
+        margin: 0 auto;
+      }
+      .toolbar button {
+        flex: 1;
+        max-width: 160px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--surface);
+      }
+      .toolbar button.accent {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
+      .timer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(0, 0, 0, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .timer-overlay.open {
+        display: flex;
+      }
+      .timer-card {
+        width: min(100%, 320px);
+        padding: 28px 24px;
+        border-radius: 20px;
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+      }
+      .timer-card .time {
+        font-size: 3.2rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+      }
+      .timer-card p {
+        margin: 8px 0 20px;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .tools-card {
+        padding: 16px;
+        border-radius: var(--radius);
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 12px;
+      }
+      .tools-card h3 {
+        margin: 0 0 10px;
+        font-size: 0.9rem;
+      }
+      .tools-card p {
+        margin: 0 0 12px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .tools-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .tools-actions button {
+        padding: 12px 14px;
+        border-radius: 11px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        text-align: left;
+      }
+      .hidden-input {
+        display: none;
+      }
+      .empty {
+        padding: 24px 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      @media (min-width: 520px) {
+        .app {
+          padding-top: 24px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app"></div>
+
+    <div class="toolbar" id="toolbar">
+      <button type="button" id="btn-edit">Edit plan</button>
+      <button type="button" class="accent" id="btn-add-day">+ Session</button>
+    </div>
+
+    <div class="timer-overlay" id="timer-overlay" aria-hidden="true">
+      <div class="timer-card">
+        <div class="time" id="timer-display">0:00</div>
+        <p id="timer-label">Rest</p>
+        <button type="button" class="btn-sm primary" id="timer-close" style="width: 100%">
+          Done
+        </button>
+      </div>
+    </div>
+
+    <input type="file" accept="application/json" class="hidden-input" id="import-file" />
+
+    <script>
+      const STORAGE_KEY = "setter-preseason-workout-plan-v1";
+      const CATEGORIES = {
+        strength: { label: "Strength", color: "#e8222a" },
+        plyo: { label: "Plyo", color: "#fbbf24" },
+        skill: { label: "Setting", color: "#60a5fa" },
+        mobility: { label: "Mobility", color: "#34d399" },
+        conditioning: { label: "Conditioning", color: "#c084fc" },
+      };
+
+      function uid() {
+        return Math.random().toString(36).slice(2, 10);
+      }
+
+      function defaultPlan() {
+        const mkEx = (name, category, sets, reps, load, restSec, notes = "") => ({
+          id: uid(),
+          name,
+          category,
+          sets,
+          reps,
+          load,
+          restSec,
+          notes,
+          doneSets: Array.from({ length: sets }, () => false),
+        });
+
+        const mkDay = (label, title, focus, exercises, rest = false) => ({
+          id: uid(),
+          label,
+          title,
+          focus,
+          rest,
+          exercises,
+        });
+
+        const week = (name, theme, days) => ({ id: uid(), name, theme, days });
+
+        return {
+          version: 1,
+          title: "Setter Preseason",
+          subtitle: "Power · hands · repeatability",
+          weeks: [
+            week("Week 1", "Base + movement quality", [
+              mkDay("Mon", "Lower + core", "Squat pattern, anti-rotation", [
+                mkEx("Goblet squat", "strength", 4, "8", "RPE 7", 90, "Full depth, knees track toes"),
+                mkEx("Romanian deadlift", "strength", 3, "10", "Moderate", 90),
+                mkEx("Pallof press", "strength", 3, "12/side", "Band", 45),
+                mkEx("Box jumps", "plyo", 4, "5", "Low box", 75, "Stick landing, quiet feet"),
+              ]),
+              mkDay("Tue", "Setting volume", "Tempo + accuracy", [
+                mkEx("Wall sets — float", "skill", 5, "20", "—", 45, "Hold finish 1s"),
+                mkEx("Partner pepper — setter only", "skill", 4, "3 min", "—", 60),
+                mkEx("Short court targets", "skill", 4, "12", "Zones 1–5", 45),
+              ]),
+              mkDay("Wed", "Active recovery", "Mobility", [
+                mkEx("Hip 90/90 flow", "mobility", 2, "5/side", "—", 30),
+                mkEx("Thoracic openers", "mobility", 2, "10", "—", 30),
+                mkEx("Easy bike or walk", "conditioning", 1, "20 min", "Zone 1", 0),
+              ], true),
+              mkDay("Thu", "Upper + plyo", "Push + elastic", [
+                mkEx("DB bench or push-up", "strength", 4, "8–10", "RPE 7", 75),
+                mkEx("Lat pulldown / row", "strength", 3, "10", "Moderate", 75),
+                mkEx("Med ball scoop toss", "plyo", 4, "6", "Light MB", 60),
+              ]),
+              mkDay("Fri", "Game prep setting", "Decision speed", [
+                mkEx("Live sets from pass", "skill", 5, "4 min", "—", 90),
+                mkEx("Quick release reps", "skill", 4, "15", "—", 45, "No hitch"),
+                mkEx("Core: dead bug", "strength", 3, "10/side", "—", 45),
+              ]),
+              mkDay("Sat", "Conditioning", "Repeat efforts", [
+                mkEx("Court suicides", "conditioning", 6, "1", "Full court", 90),
+                mkEx("Setter footwork ladder", "skill", 4, "2 min", "—", 60),
+              ]),
+              mkDay("Sun", "Rest", "Off", [], true),
+            ]),
+            week("Week 2", "Load up, sharpen hands", [
+              mkDay("Mon", "Strength A", "Heavy lower", [
+                mkEx("Back squat or front squat", "strength", 4, "6", "RPE 8", 120),
+                mkEx("Split squat", "strength", 3, "8/leg", "DBs", 90),
+                mkEx("Nordic or ham curl", "strength", 3, "6–8", "Assisted OK", 90),
+              ]),
+              mkDay("Tue", "Setting + plyo", "Contact quality", [
+                mkEx("Jump sets to target", "skill", 4, "15", "Antenna height", 60),
+                mkEx("Depth drop to set", "plyo", 4, "6", "12 inch", 75),
+                mkEx("Wrist prep band", "mobility", 2, "15", "Light", 30),
+              ]),
+              mkDay("Wed", "Mobility", "Recovery", [
+                mkEx("Full body flow", "mobility", 1, "25 min", "—", 0),
+              ], true),
+              mkDay("Thu", "Upper power", "Explosive push", [
+                mkEx("Bench or floor press", "strength", 4, "5", "RPE 8", 120),
+                mkEx("Pull-ups or lat work", "strength", 3, "8", "BW+", 90),
+                mkEx("MB chest pass", "plyo", 4, "8", "—", 60),
+              ]),
+              mkDay("Fri", "Setter scrimmage", "In-system reps", [
+                mkEx("6v6 focus: first ball sideout", "skill", 6, "4 min", "—", 120),
+                mkEx("Back set series", "skill", 4, "10", "—", 60),
+              ]),
+              mkDay("Sat", "Intervals", "Aerobic power", [
+                mkEx("30/30 court shuttles", "conditioning", 8, "30s on", "Hard", 30),
+              ]),
+              mkDay("Sun", "Rest", "Off", [], true),
+            ]),
+            week("Week 3", "Peak strength, match tempo", [
+              mkDay("Mon", "Strength B", "Triple extension", [
+                mkEx("Trap bar or clean pull", "strength", 4, "5", "RPE 8", 120),
+                mkEx("Step-up", "strength", 3, "8/leg", "Moderate", 90),
+                mkEx("Copenhagen plank", "strength", 3, "30s/side", "—", 45),
+              ]),
+              mkDay("Tue", "High-volume sets", "Fatigue tolerance", [
+                mkEx("Continuous setting", "skill", 6, "2 min", "—", 60),
+                mkEx("Out-of-system sets", "skill", 4, "12", "—", 75),
+              ]),
+              mkDay("Wed", "Recovery", "Easy", [
+                mkEx("Walk + stretch", "mobility", 1, "30 min", "—", 0),
+              ], true),
+              mkDay("Thu", "Power upper", "Speed strength", [
+                mkEx("Speed bench", "strength", 5, "3", "60% 1RM", 90),
+                mkEx("Row variation", "strength", 3, "10", "—", 75),
+                mkEx("Approach jumps (no ball)", "plyo", 5, "4", "Full", 90),
+              ]),
+              mkDay("Fri", "Tactical setter", "Tempo + deception", [
+                mkEx("Tempo sets all zones", "skill", 5, "8/zone", "—", 60),
+                mkEx("Dump / push options", "skill", 4, "10", "—", 60),
+              ]),
+              mkDay("Sat", "Team conditioning", "Repeat sprint", [
+                mkEx("Court 17s", "conditioning", 8, "1", "Max", 75),
+              ]),
+              mkDay("Sun", "Rest", "Off", [], true),
+            ]),
+            week("Week 4", "Taper into season", [
+              mkDay("Mon", "Maintenance lift", "CNS fresh", [
+                mkEx("Squat", "strength", 3, "5", "RPE 7", 120),
+                mkEx("RDL", "strength", 2, "8", "Light", 90),
+              ]),
+              mkDay("Tue", "Sharp hands", "Low volume, high quality", [
+                mkEx("Perfect rep sets", "skill", 4, "12", "—", 60, "Only clean reps count"),
+                mkEx("Serve receive to set", "skill", 4, "6", "—", 90),
+              ]),
+              mkDay("Wed", "Mobility", "Pre-match prep", [
+                mkEx("Activation + bands", "mobility", 1, "20 min", "—", 0),
+              ], true),
+              mkDay("Thu", "Light power", "Stay elastic", [
+                mkEx("Jump squats", "plyo", 3, "5", "Bodyweight", 75),
+                mkEx("MB throws", "plyo", 3, "6", "—", 60),
+              ]),
+              mkDay("Fri", "Scrimmage", "Match rhythm", [
+                mkEx("Full 6v6", "skill", 4, "8 min", "—", 120),
+              ]),
+              mkDay("Sat", "Optional", "Feel-good", [
+                mkEx("Easy skill or rest", "skill", 1, "—", "Your call", 0),
+              ]),
+              mkDay("Sun", "Rest", "Off", [], true),
+            ]),
+          ],
+        };
+      }
+
+      let state = {
+        plan: loadPlan(),
+        weekIndex: 0,
+        openDayId: null,
+        tab: "week",
+        editMode: false,
+      };
+
+      let timerInterval = null;
+      let timerRemaining = 0;
+
+      function loadPlan() {
+        try {
+          const raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) return defaultPlan();
+          const parsed = JSON.parse(raw);
+          if (!parsed.weeks?.length) return defaultPlan();
+          return migratePlan(parsed);
+        } catch {
+          return defaultPlan();
+        }
+      }
+
+      function migratePlan(plan) {
+        for (const week of plan.weeks) {
+          for (const day of week.days) {
+            for (const ex of day.exercises) {
+              if (!ex.doneSets || ex.doneSets.length !== ex.sets) {
+                ex.doneSets = Array.from({ length: ex.sets }, (_, i) =>
+                  Boolean(ex.doneSets?.[i]),
+                );
+              }
+            }
+          }
+        }
+        return plan;
+      }
+
+      function savePlan() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.plan));
+      }
+
+      function completionStats() {
+        let total = 0;
+        let done = 0;
+        for (const week of state.plan.weeks) {
+          for (const day of week.days) {
+            if (day.rest) continue;
+            for (const ex of day.exercises) {
+              total += ex.sets;
+              done += ex.doneSets.filter(Boolean).length;
+            }
+          }
+        }
+        return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
+      }
+
+      function weekStats(week) {
+        let total = 0;
+        let done = 0;
+        for (const day of week.days) {
+          if (day.rest) continue;
+          for (const ex of day.exercises) {
+            total += ex.sets;
+            done += ex.doneSets.filter(Boolean).length;
+          }
+        }
+        return { total, done };
+      }
+
+      function todayDayIndex() {
+        const d = new Date().getDay();
+        return d === 0 ? 6 : d - 1;
+      }
+
+      function formatRest(sec) {
+        const m = Math.floor(sec / 60);
+        const s = sec % 60;
+        return `${m}:${String(s).padStart(2, "0")}`;
+      }
+
+      function startTimer(seconds, label) {
+        timerRemaining = seconds;
+        document.getElementById("timer-label").textContent = label || "Rest";
+        document.getElementById("timer-overlay").classList.add("open");
+        document.getElementById("timer-overlay").setAttribute("aria-hidden", "false");
+        updateTimerDisplay();
+        clearInterval(timerInterval);
+        timerInterval = setInterval(() => {
+          timerRemaining -= 1;
+          updateTimerDisplay();
+          if (timerRemaining <= 0) {
+            clearInterval(timerInterval);
+            if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+          }
+        }, 1000);
+      }
+
+      function updateTimerDisplay() {
+        document.getElementById("timer-display").textContent = formatRest(
+          Math.max(0, timerRemaining),
+        );
+      }
+
+      function closeTimer() {
+        clearInterval(timerInterval);
+        document.getElementById("timer-overlay").classList.remove("open");
+        document.getElementById("timer-overlay").setAttribute("aria-hidden", "true");
+      }
+
+      function toggleSet(ex, setIndex) {
+        ex.doneSets[setIndex] = !ex.doneSets[setIndex];
+        savePlan();
+        render();
+      }
+
+      function resizeDoneSets(ex) {
+        const n = Math.max(1, Number(ex.sets) || 1);
+        ex.sets = n;
+        const prev = ex.doneSets || [];
+        ex.doneSets = Array.from({ length: n }, (_, i) => Boolean(prev[i]));
+      }
+
+      function renderExercise(ex, day) {
+        const cat = CATEGORIES[ex.category] || CATEGORIES.strength;
+        const allDone = ex.doneSets.every(Boolean);
+        const edit = state.editMode;
+
+        const setsHtml = ex.doneSets
+          .map(
+            (done, i) =>
+              `<button type="button" class="set-btn${done ? " done" : ""}" data-action="set" data-ex="${ex.id}" data-i="${i}">${
+                i + 1
+              }</button>`,
+          )
+          .join("");
+
+        const editHtml = edit
+          ? `<div class="edit-fields">
+          <div><label>Name</label><input data-field="name" data-ex="${ex.id}" value="${escapeAttr(
+              ex.name,
+            )}" /></div>
+          <div class="grid-2">
+            <div><label>Category</label><select data-field="category" data-ex="${ex.id}">
+              ${Object.entries(CATEGORIES)
+                .map(
+                  ([k, v]) =>
+                    `<option value="${k}"${ex.category === k ? " selected" : ""}>${v.label}</option>`,
+                )
+                .join("")}
+            </select></div>
+            <div><label>Sets</label><input type="number" min="1" data-field="sets" data-ex="${ex.id}" value="${ex.sets}" /></div>
+          </div>
+          <div class="grid-2">
+            <div><label>Reps / time</label><input data-field="reps" data-ex="${ex.id}" value="${escapeAttr(
+              ex.reps,
+            )}" /></div>
+            <div><label>Load</label><input data-field="load" data-ex="${ex.id}" value="${escapeAttr(
+              ex.load,
+            )}" /></div>
+          </div>
+          <div class="grid-2">
+            <div><label>Rest (sec)</label><input type="number" min="0" data-field="restSec" data-ex="${ex.id}" value="${ex.restSec}" /></div>
+          </div>
+          <div><label>Notes</label><textarea data-field="notes" data-ex="${ex.id}">${escapeHtml(
+              ex.notes || "",
+            )}</textarea></div>
+          <div class="ex-actions">
+            <button type="button" class="btn-sm" data-action="move-up" data-ex="${ex.id}" data-day="${day.id}">↑</button>
+            <button type="button" class="btn-sm" data-action="move-down" data-ex="${ex.id}" data-day="${day.id}">↓</button>
+            <button type="button" class="btn-sm danger" data-action="delete-ex" data-ex="${ex.id}" data-day="${day.id}">Delete</button>
+          </div>
+        </div>`
+          : `<div class="set-row">${setsHtml}</div>
+          <div class="ex-actions">
+            <button type="button" class="btn-sm primary" data-action="timer" data-ex="${ex.id}">Rest ${formatRest(
+              ex.restSec || 60,
+            )}</button>
+          </div>`;
+
+        return `<article class="exercise${allDone ? " done" : ""}">
+          <div class="ex-top">
+            <span class="cat-dot" style="background:${cat.color}"></span>
+            <div class="ex-info">
+              <div class="ex-name">${escapeHtml(ex.name)}</div>
+              <div class="ex-prescription">${ex.sets} × ${escapeHtml(ex.reps)} · ${escapeHtml(
+                ex.load,
+              )} · ${cat.label}</div>
+              ${ex.notes ? `<div class="ex-notes">${escapeHtml(ex.notes)}</div>` : ""}
+            </div>
+          </div>
+          ${editHtml}
+        </article>`;
+      }
+
+      function renderDay(day, week) {
+        const stats = weekStats({ days: [day] });
+        const dayDone =
+          stats.total > 0 && stats.done === stats.total
+            ? "done"
+            : stats.done > 0
+              ? ""
+              : "";
+        const open = state.openDayId === day.id;
+        const edit = state.editMode;
+
+        const head = `<button type="button" class="day-head" data-action="toggle-day" data-day="${day.id}">
+          <div>
+            <div class="title">${escapeHtml(day.label)} · ${escapeHtml(day.title)}</div>
+            <div class="sub">${escapeHtml(day.focus)}${
+              stats.total ? ` · ${stats.done}/${stats.total} sets` : ""
+            }</div>
+          </div>
+          <span class="day-badge ${dayDone}">${day.rest ? "Rest" : open ? "Open" : "Tap"}</span>
+        </button>`;
+
+        const editDay = edit
+          ? `<div class="edit-fields" style="padding:12px">
+            <div class="grid-2">
+              <div><label>Day label</label><input data-day-field="label" data-day="${day.id}" value="${escapeAttr(
+                day.label,
+              )}" /></div>
+              <div><label>Title</label><input data-day-field="title" data-day="${day.id}" value="${escapeAttr(
+                day.title,
+              )}" /></div>
+            </div>
+            <div><label>Focus</label><input data-day-field="focus" data-day="${day.id}" value="${escapeAttr(
+              day.focus,
+            )}" /></div>
+            <label style="display:flex;gap:8px;align-items:center;margin-top:8px;font-size:0.8rem;color:var(--muted)">
+              <input type="checkbox" data-day-field="rest" data-day="${day.id}" ${
+                day.rest ? "checked" : ""
+              } /> Rest / recovery day
+            </label>
+            <button type="button" class="btn-sm danger" data-action="delete-day" data-day="${day.id}" style="margin-top:8px">Delete session</button>
+          </div>`
+          : "";
+
+        const body =
+          open || edit
+            ? `<div class="day-body">
+              ${editDay}
+              ${day.exercises.map((ex) => renderExercise(ex, day)).join("")}
+              ${
+                edit
+                  ? `<button type="button" class="btn-sm primary" data-action="add-ex" data-day="${day.id}" style="margin-top:10px;width:100%">+ Exercise</button>`
+                  : ""
+              }
+            </div>`
+            : "";
+
+        return `<div class="day-card${day.rest ? " rest" : ""}">${head}${body}</div>`;
+      }
+
+      function render() {
+        const { plan } = state;
+        const week = plan.weeks[state.weekIndex] || plan.weeks[0];
+        const stats = completionStats();
+        const todayIdx = todayDayIndex();
+        const todayDay = week?.days[todayIdx];
+
+        document.getElementById("app").innerHTML = `
+          <header class="hero">
+            <h1>${escapeHtml(plan.title)} <span>plan</span></h1>
+            <div class="hero-meta">
+              <span class="pill">${escapeHtml(plan.subtitle || "Private")}</span>
+              <span class="pill">${plan.weeks.length} weeks</span>
+              <span class="pill">Saved on device</span>
+            </div>
+            <div class="progress-card">
+              <div class="ring" style="--pct:${stats.pct}"><span>${stats.pct}%</span></div>
+              <div class="progress-copy">
+                <strong>Program progress</strong>
+                <p>${stats.done} of ${stats.total} working sets logged complete. Tap set numbers as you finish them.</p>
+              </div>
+            </div>
+          </header>
+          <nav class="tabs" role="tablist">
+            <button type="button" class="tab${state.tab === "week" ? " active" : ""}" data-tab="week">Week</button>
+            <button type="button" class="tab${state.tab === "today" ? " active" : ""}" data-tab="today">Today</button>
+            <button type="button" class="tab${state.tab === "tools" ? " active" : ""}" data-tab="tools">Tools</button>
+          </nav>
+          <section class="panel${state.tab === "week" ? " active" : ""}" id="panel-week">
+            <div class="week-strip">
+              ${plan.weeks
+                .map(
+                  (w, i) => `<button type="button" class="week-chip${
+                    i === state.weekIndex ? " active" : ""
+                  }" data-week="${i}">
+                    <div class="num">${i + 1}</div>
+                    <div class="lbl">${escapeHtml(w.name.replace("Week ", "W"))}</div>
+                  </button>`,
+                )
+                .join("")}
+            </div>
+            <p style="font-size:0.8rem;color:var(--muted);margin:0 0 12px">${escapeHtml(
+              week.theme,
+            )}</p>
+            <div class="day-list">${week.days.map((d) => renderDay(d, week)).join("")}</div>
+          </section>
+          <section class="panel${state.tab === "today" ? " active" : ""}" id="panel-today">
+            ${
+              todayDay
+                ? (() => {
+                    state.openDayId = todayDay.id;
+                    return `<p style="font-size:0.85rem;color:var(--muted);margin:0 0 12px">Week ${
+                      state.weekIndex + 1
+                    } · ${escapeHtml(todayDay.label)}</p>${renderDay(todayDay, week)}`;
+                  })()
+                : '<div class="empty">No session for today in this week.</div>'
+            }
+          </section>
+          <section class="panel${state.tab === "tools" ? " active" : ""}" id="panel-tools">
+            <div class="tools-card">
+              <h3>Plan title</h3>
+              <div class="edit-fields">
+                <input id="plan-title" value="${escapeAttr(plan.title)}" />
+                <input id="plan-subtitle" value="${escapeAttr(plan.subtitle || "")}" placeholder="Subtitle" />
+              </div>
+            </div>
+            <div class="tools-card">
+              <h3>Backup</h3>
+              <p>Export JSON before big edits. Import restores a saved file.</p>
+              <div class="tools-actions">
+                <button type="button" id="btn-export">Export plan</button>
+                <button type="button" id="btn-import">Import plan</button>
+                <button type="button" id="btn-reset">Reset to default preseason template</button>
+              </div>
+            </div>
+            <div class="tools-card">
+              <h3>Weeks</h3>
+              <div class="tools-actions">
+                <button type="button" id="btn-add-week">+ Add week</button>
+                <button type="button" id="btn-dup-week">Duplicate current week</button>
+              </div>
+            </div>
+          </section>
+        `;
+
+        document.getElementById("btn-edit").textContent = state.editMode
+          ? "Done editing"
+          : "Edit plan";
+        document.getElementById("btn-add-day").style.display = state.editMode ? "block" : "none";
+        bindEvents();
+      }
+
+      function findExercise(id) {
+        for (const week of state.plan.weeks) {
+          for (const day of week.days) {
+            const ex = day.exercises.find((e) => e.id === id);
+            if (ex) return { ex, day, week };
+          }
+        }
+        return null;
+      }
+
+      function findDay(id) {
+        for (const week of state.plan.weeks) {
+          const day = week.days.find((d) => d.id === id);
+          if (day) return { day, week };
+        }
+        return null;
+      }
+
+      function bindEvents() {
+        document.querySelectorAll("[data-tab]").forEach((el) => {
+          el.addEventListener("click", () => {
+            state.tab = el.dataset.tab;
+            render();
+          });
+        });
+        document.querySelectorAll("[data-week]").forEach((el) => {
+          el.addEventListener("click", () => {
+            state.weekIndex = Number(el.dataset.week);
+            state.openDayId = null;
+            render();
+          });
+        });
+        document.querySelectorAll("[data-action='toggle-day']").forEach((el) => {
+          el.addEventListener("click", () => {
+            const id = el.dataset.day;
+            state.openDayId = state.openDayId === id ? null : id;
+            render();
+          });
+        });
+        document.querySelectorAll("[data-action='set']").forEach((el) => {
+          el.addEventListener("click", () => {
+            const found = findExercise(el.dataset.ex);
+            if (!found) return;
+            toggleSet(found.ex, Number(el.dataset.i));
+          });
+        });
+        document.querySelectorAll("[data-action='timer']").forEach((el) => {
+          el.addEventListener("click", () => {
+            const found = findExercise(el.dataset.ex);
+            if (!found) return;
+            startTimer(found.ex.restSec || 60, found.ex.name);
+          });
+        });
+        document.querySelectorAll("[data-field]").forEach((el) => {
+          const event = el.tagName === "SELECT" ? "change" : "input";
+          el.addEventListener(event, () => {
+            const found = findExercise(el.dataset.ex);
+            if (!found) return;
+            const field = el.dataset.field;
+            if (field === "sets") {
+              found.ex.sets = Number(el.value);
+              resizeDoneSets(found.ex);
+            } else {
+              found.ex[field] = el.value;
+            }
+            savePlan();
+            render();
+          });
+        });
+        document.querySelectorAll("[data-day-field]").forEach((el) => {
+          const event = el.type === "checkbox" ? "change" : "input";
+          el.addEventListener(event, () => {
+            const found = findDay(el.dataset.day);
+            if (!found) return;
+            const field = el.dataset.dayField;
+            if (field === "rest") found.day.rest = el.checked;
+            else found.day[field] = el.value;
+            savePlan();
+            render();
+          });
+        });
+        document.querySelectorAll("[data-action='add-ex']").forEach((el) => {
+          el.addEventListener("click", () => {
+            const found = findDay(el.dataset.day);
+            if (!found) return;
+            found.day.exercises.push({
+              id: uid(),
+              name: "New exercise",
+              category: "strength",
+              sets: 3,
+              reps: "10",
+              load: "—",
+              restSec: 60,
+              notes: "",
+              doneSets: [false, false, false],
+            });
+            savePlan();
+            render();
+          });
+        });
+        document.querySelectorAll("[data-action='delete-ex']").forEach((el) => {
+          el.addEventListener("click", () => {
+            const found = findDay(el.dataset.day);
+            if (!found) return;
+            found.day.exercises = found.day.exercises.filter((e) => e.id !== el.dataset.ex);
+            savePlan();
+            render();
+          });
+        });
+        document.querySelectorAll("[data-action='move-up']").forEach((el) => {
+          el.addEventListener("click", () => moveExercise(el.dataset.day, el.dataset.ex, -1));
+        });
+        document.querySelectorAll("[data-action='move-down']").forEach((el) => {
+          el.addEventListener("click", () => moveExercise(el.dataset.day, el.dataset.ex, 1));
+        });
+        document.querySelectorAll("[data-action='delete-day']").forEach((el) => {
+          el.addEventListener("click", () => {
+            const found = findDay(el.dataset.day);
+            if (!found || !confirm("Delete this session?")) return;
+            found.week.days = found.week.days.filter((d) => d.id !== el.dataset.day);
+            savePlan();
+            render();
+          });
+        });
+
+        const titleEl = document.getElementById("plan-title");
+        const subEl = document.getElementById("plan-subtitle");
+        if (titleEl) {
+          titleEl.addEventListener("change", () => {
+            state.plan.title = titleEl.value;
+            savePlan();
+            render();
+          });
+        }
+        if (subEl) {
+          subEl.addEventListener("change", () => {
+            state.plan.subtitle = subEl.value;
+            savePlan();
+            render();
+          });
+        }
+
+        const exportBtn = document.getElementById("btn-export");
+        if (exportBtn) {
+          exportBtn.onclick = () => {
+            const blob = new Blob([JSON.stringify(state.plan, null, 2)], {
+              type: "application/json",
+            });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "setter-preseason-plan.json";
+            a.click();
+            URL.revokeObjectURL(a.href);
+          };
+        }
+        const importBtn = document.getElementById("btn-import");
+        if (importBtn) {
+          importBtn.onclick = () => document.getElementById("import-file").click();
+        }
+        const resetBtn = document.getElementById("btn-reset");
+        if (resetBtn) {
+          resetBtn.onclick = () => {
+            if (!confirm("Replace your plan with the default template?")) return;
+            state.plan = defaultPlan();
+            state.weekIndex = 0;
+            savePlan();
+            render();
+          };
+        }
+        const addWeekBtn = document.getElementById("btn-add-week");
+        if (addWeekBtn) {
+          addWeekBtn.onclick = () => {
+            state.plan.weeks.push({
+              id: uid(),
+              name: `Week ${state.plan.weeks.length + 1}`,
+              theme: "Custom block",
+              days: [
+                {
+                  id: uid(),
+                  label: "Mon",
+                  title: "Session",
+                  focus: "—",
+                  rest: false,
+                  exercises: [],
+                },
+              ],
+            });
+            savePlan();
+            render();
+          };
+        }
+        const dupWeekBtn = document.getElementById("btn-dup-week");
+        if (dupWeekBtn) {
+          dupWeekBtn.onclick = () => {
+            const w = state.plan.weeks[state.weekIndex];
+            if (!w) return;
+            const copy = JSON.parse(JSON.stringify(w));
+            copy.id = uid();
+            copy.name = `${w.name} (copy)`;
+            copy.days.forEach((d) => {
+              d.id = uid();
+              d.exercises.forEach((ex) => {
+                ex.id = uid();
+              });
+            });
+            state.plan.weeks.splice(state.weekIndex + 1, 0, copy);
+            savePlan();
+            render();
+          };
+        }
+      }
+
+      function moveExercise(dayId, exId, dir) {
+        const found = findDay(dayId);
+        if (!found) return;
+        const idx = found.day.exercises.findIndex((e) => e.id === exId);
+        const next = idx + dir;
+        if (idx < 0 || next < 0 || next >= found.day.exercises.length) return;
+        const arr = found.day.exercises;
+        [arr[idx], arr[next]] = [arr[next], arr[idx]];
+        savePlan();
+        render();
+      }
+
+      document.getElementById("btn-edit").addEventListener("click", () => {
+        state.editMode = !state.editMode;
+        if (state.editMode) state.openDayId = null;
+        render();
+      });
+
+      document.getElementById("btn-add-day").addEventListener("click", () => {
+        const week = state.plan.weeks[state.weekIndex];
+        if (!week) return;
+        week.days.push({
+          id: uid(),
+          label: "New",
+          title: "Session",
+          focus: "Custom",
+          rest: false,
+          exercises: [],
+        });
+        savePlan();
+        render();
+      });
+
+      document.getElementById("import-file").addEventListener("change", (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            state.plan = migratePlan(JSON.parse(String(reader.result)));
+            savePlan();
+            render();
+          } catch {
+            alert("Could not read that file.");
+          }
+        };
+        reader.readAsText(file);
+        e.target.value = "";
+      });
+
+      document.getElementById("timer-close").addEventListener("click", closeTimer);
+      document.getElementById("timer-overlay").addEventListener("click", (e) => {
+        if (e.target.id === "timer-overlay") closeTimer();
+      });
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;");
+      }
+      function escapeAttr(s) {
+        return escapeHtml(s).replace(/'/g, "&#39;");
+      }
+
+      render();
+    </script>
+  </body>
+</html>
