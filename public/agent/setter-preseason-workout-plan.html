@@ -471,6 +471,38 @@
         background: var(--inset);
         text-align: left;
       }
+      .tools-actions button.primary {
+        background: rgba(232, 34, 42, 0.2);
+        border-color: rgba(232, 34, 42, 0.45);
+        color: var(--red-light);
+      }
+      .update-banner {
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(232, 34, 42, 0.12);
+        border: 1px solid rgba(232, 34, 42, 0.35);
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .update-banner p {
+        margin: 0;
+        flex: 1;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .update-banner button {
+        flex-shrink: 0;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: var(--surface);
+        color: var(--muted);
+      }
       .hidden-input {
         display: none;
       }
@@ -664,6 +696,8 @@
     <script>
       const STORAGE_KEY = "setter-preseason-workout-plan-v3";
       const VIDEO_CATALOG_VERSION = 3;
+      /** Bump when the default template or app fixes should merge into saved plans. */
+      const APP_RELEASE_VERSION = 2;
       const CATEGORIES = {
         strength: { label: "Strength", color: "#e8222a" },
         plyo: { label: "Plyo", color: "#fbbf24" },
@@ -841,6 +875,7 @@
         return {
           version: 1,
           videoCatalogVersion: VIDEO_CATALOG_VERSION,
+          appReleaseVersion: APP_RELEASE_VERSION,
           title: "Setter Preseason",
           subtitle: "Power · hands · repeatability",
           weeks: [
@@ -960,12 +995,15 @@
         };
       }
 
+      let pendingUpdateNotice = false;
+
       let state = {
         plan: loadPlan(),
         weekIndex: 0,
         openDayId: null,
         tab: "week",
         editMode: false,
+        updateNotice: pendingUpdateNotice,
       };
 
       let timerInterval = null;
@@ -982,7 +1020,11 @@
           if (!raw) return defaultPlan();
           const parsed = JSON.parse(raw);
           if (!parsed.weeks?.length) return defaultPlan();
-          const plan = migratePlan(parsed);
+          let plan = migratePlan(parsed);
+          if (!plan.appReleaseVersion || plan.appReleaseVersion < APP_RELEASE_VERSION) {
+            plan = applyLatestTemplateUpdates(plan);
+            pendingUpdateNotice = true;
+          }
           savePlanToStorage(plan);
           return plan;
         } catch {
@@ -1012,7 +1054,86 @@
           }
         }
         plan.videoCatalogVersion = VIDEO_CATALOG_VERSION;
+        if (!plan.appReleaseVersion) {
+          plan.appReleaseVersion = 0;
+        }
         return plan;
+      }
+
+      function exerciseProgressKey(weekName, dayLabel, exName) {
+        return `${weekName}\0${dayLabel}\0${exName}`.toLowerCase();
+      }
+
+      function resizeDoneSets(doneSets, setCount) {
+        const next = Array.from({ length: setCount }, (_, i) => Boolean(doneSets?.[i]));
+        return next;
+      }
+
+      function captureExerciseProgress(plan) {
+        const map = new Map();
+        for (const week of plan.weeks) {
+          for (const day of week.days) {
+            for (const ex of day.exercises) {
+              map.set(exerciseProgressKey(week.name, day.label, ex.name), {
+                doneSets: ex.doneSets,
+              });
+            }
+          }
+        }
+        return map;
+      }
+
+      /** Merge newest default template + demo videos; keep logged sets for matching exercises. */
+      function applyLatestTemplateUpdates(existingPlan) {
+        const progress = captureExerciseProgress(existingPlan);
+        const template = defaultPlan();
+        const mergedWeeks = template.weeks.map((tWeek) => {
+          const existingWeek = existingPlan.weeks.find((w) => w.name === tWeek.name);
+          return {
+            ...tWeek,
+            id: existingWeek?.id || tWeek.id,
+            days: tWeek.days.map((tDay) => {
+              const existingDay = existingWeek?.days.find((d) => d.label === tDay.label);
+              return {
+                ...tDay,
+                id: existingDay?.id || tDay.id,
+                exercises: tDay.exercises.map((tEx) => {
+                  const saved = progress.get(
+                    exerciseProgressKey(tWeek.name, tDay.label, tEx.name),
+                  );
+                  const ex = { ...tEx };
+                  if (saved?.doneSets) {
+                    ex.doneSets = resizeDoneSets(saved.doneSets, ex.sets);
+                  }
+                  ex.videoId = lookupVideoId(ex.name, ex.category);
+                  return ex;
+                }),
+              };
+            }),
+          };
+        });
+
+        const templateWeekNames = new Set(template.weeks.map((w) => w.name));
+        const customWeeks = existingPlan.weeks
+          .filter((w) => !templateWeekNames.has(w.name))
+          .map((week) => {
+            const copy = JSON.parse(JSON.stringify(week));
+            for (const day of copy.days) {
+              for (const ex of day.exercises) {
+                ex.videoId = lookupVideoId(ex.name, ex.category);
+              }
+            }
+            return copy;
+          });
+
+        return {
+          ...template,
+          title: existingPlan.title || template.title,
+          subtitle: existingPlan.subtitle ?? template.subtitle,
+          weeks: [...mergedWeeks, ...customWeeks],
+          videoCatalogVersion: VIDEO_CATALOG_VERSION,
+          appReleaseVersion: APP_RELEASE_VERSION,
+        };
       }
 
       function savePlan() {
@@ -1296,6 +1417,14 @@
               </div>
             </div>
           </header>
+          ${
+            state.updateNotice
+              ? `<div class="update-banner" role="status">
+                  <p><strong>Plan updated.</strong> Your workout now uses the latest demo videos and template fixes. Logged sets for matching exercises were kept.</p>
+                  <button type="button" id="btn-dismiss-update">OK</button>
+                </div>`
+              : ""
+          }
           <nav class="tabs" role="tablist">
             <button type="button" class="tab${state.tab === "week" ? " active" : ""}" data-tab="week">Week</button>
             <button type="button" class="tab${state.tab === "today" ? " active" : ""}" data-tab="today">Today</button>
@@ -1334,6 +1463,18 @@
               <div class="edit-fields">
                 <input id="plan-title" value="${escapeAttr(plan.title)}" />
                 <input id="plan-subtitle" value="${escapeAttr(plan.subtitle || "")}" placeholder="Subtitle" />
+              </div>
+            </div>
+            <div class="tools-card">
+              <h3>App updates</h3>
+              <p>
+                Pull the newest demo videos and preseason template tweaks into your saved plan.
+                Matching exercises keep your logged sets.
+              </p>
+              <div class="tools-actions">
+                <button type="button" class="primary" id="btn-apply-updates">
+                  Update workout from latest app version
+                </button>
               </div>
             </div>
             <div class="tools-card">
@@ -1546,7 +1687,31 @@
             if (!confirm("Replace your plan with the default template?")) return;
             state.plan = defaultPlan();
             state.weekIndex = 0;
+            state.updateNotice = false;
             savePlan();
+            render();
+          };
+        }
+        const applyUpdatesBtn = document.getElementById("btn-apply-updates");
+        if (applyUpdatesBtn) {
+          applyUpdatesBtn.onclick = () => {
+            if (
+              !confirm(
+                "Update this plan from the latest app version? Logged sets on matching exercises are kept; export first if you want a backup.",
+              )
+            ) {
+              return;
+            }
+            state.plan = applyLatestTemplateUpdates(state.plan);
+            state.updateNotice = true;
+            savePlan();
+            render();
+          };
+        }
+        const dismissUpdateBtn = document.getElementById("btn-dismiss-update");
+        if (dismissUpdateBtn) {
+          dismissUpdateBtn.onclick = () => {
+            state.updateNotice = false;
             render();
           };
         }
