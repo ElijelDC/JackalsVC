@@ -1,0 +1,1992 @@
+{
+  "planTemplateVersion": 5,
+  "title": "Ultimate Setter Preseason",
+  "subtitle": "VLY Div 2 · Match 11 Oct 2026 · Flyefit + home + Wed club",
+  "weeks": [
+    {
+      "name": "Week 1",
+      "theme": "Baseline · jump touch + Tue/Thu/Sat ball routines",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · legs + push + block jumps",
+          "focus": "7 exercises · prehab first · pain ≤3/10",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "strength",
+              "sets": 4,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 105,
+              "notes": "Main leg strength"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Knee support"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Jump power"
+            },
+            {
+              "name": "Step-up (box or bench)",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Single-leg strength"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "strength",
+              "sets": 3,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle / last inch of jump"
+            },
+            {
+              "name": "Machine chest press or neutral-grip DB bench",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 75,
+              "notes": "Chest / push"
+            },
+            {
+              "name": "Cable row + tricep pushdown → block jumps",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10 each · then 3×4 jumps",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Back + arms; finish block jumps on gym floor"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · setting focus",
+          "focus": "5 drills · wall X · 1 kg + volleyball",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder rehab — ER towel + scap push-up plus",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20s hold + 10 reps",
+              "load": "Light",
+              "restSec": 45,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Knee/hip/ankle — wall sit + reverse lunge + calf raise",
+              "category": "strength",
+              "sets": 3,
+              "reps": "30s · 8/leg · 12/leg",
+              "load": "Bodyweight",
+              "restSec": 60,
+              "notes": "Knee support"
+            },
+            {
+              "name": "1 kg wall sets (high finish)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "25",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Quiet wrists"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 3,
+              "reps": "15",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Accuracy"
+            },
+            {
+              "name": "Shuffle 3 steps L/R → set to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10 each way",
+              "load": "—",
+              "restSec": 45,
+              "notes": "Footwork + set"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Flyefit AM + club PM",
+          "focus": "Finish gym by 15:00 · VLY 19:00–21:00",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press (moderate load)",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10–12",
+              "load": "RPE 6",
+              "restSec": 90,
+              "notes": "Not a max day — finish by 15:00"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Hamstring / knee support"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Controlled glutes"
+            },
+            {
+              "name": "Standing or seated calf raise",
+              "category": "strength",
+              "sets": 3,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle stiffness for blocking"
+            },
+            {
+              "name": "Incline machine press or landmine press",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8–10",
+              "load": "RPE 6",
+              "restSec": 75,
+              "notes": "Skip if shoulder >3/10"
+            },
+            {
+              "name": "Cable row + band external rotation",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10 row · 12 ER/side",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Back + right shoulder"
+            },
+            {
+              "name": "Face pull + Pallof press",
+              "category": "strength",
+              "sets": 3,
+              "reps": "15 · 10/side",
+              "load": "Light",
+              "restSec": 60,
+              "notes": "Optional 7th — posture + core"
+            },
+            {
+              "name": "Prehab before team warm-up",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "TKE, balance, ER — quick OK"
+            },
+            {
+              "name": "Blocking — late read, hands over net",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Penetrate with MB; call early"
+            },
+            {
+              "name": "Setting — wrists, shorten range if needed",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Transfer gym + home work"
+            },
+            {
+              "name": "Recovery — ice if hot; no gym after",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "Post-session",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit after club"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "Home · jump + set day",
+          "focus": "6 drills · mark touch height",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump — touch wall mark",
+              "category": "plyo",
+              "sets": 5,
+              "reps": "3",
+              "load": "Max touch",
+              "restSec": 75,
+              "notes": "Stop if knee >3/10"
+            },
+            {
+              "name": "Two-foot block jump (tape net line)",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "4",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hands to tape line"
+            },
+            {
+              "name": "Lateral shuffle ~3 m + block jump",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking transfer"
+            },
+            {
+              "name": "Jump-set to wall (or hand set if sore)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "10",
+              "load": "Volleyball",
+              "restSec": 60,
+              "notes": "Or hand set if knee sore"
+            },
+            {
+              "name": "1 kg quick sets",
+              "category": "skill",
+              "sets": 2,
+              "reps": "20",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Tempo hands"
+            },
+            {
+              "name": "Back set + dump footwork to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "12 back · 10 dump",
+              "load": "—",
+              "restSec": 60,
+              "notes": "Deception footwork"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "Flyefit · pull + legs",
+          "focus": "7 exercises · no jumping",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Goblet squat or leg press",
+              "category": "strength",
+              "sets": 4,
+              "reps": "6–8",
+              "load": "RPE 7–8",
+              "restSec": 105,
+              "notes": "Heavy legs — no jumping"
+            },
+            {
+              "name": "Romanian deadlift",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Hamstrings"
+            },
+            {
+              "name": "Split squat or walking lunge",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Short steps if knees sensitive"
+            },
+            {
+              "name": "Lat pulldown or assisted pull-up",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8–10",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Back"
+            },
+            {
+              "name": "Seated cable row or chest-supported row",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Squeeze 1 sec"
+            },
+            {
+              "name": "Face pull (or band pull-apart)",
+              "category": "strength",
+              "sets": 3,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 60,
+              "notes": "Right shoulder / posture"
+            },
+            {
+              "name": "Bicep curl + Pallof press",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10 curls · 10/side Pallof",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Arms + anti-rotation"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · shuttles + block + sets",
+          "focus": "5 drills · no suicides",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Short shuttle (5–8 m) + lateral shuffle",
+              "category": "conditioning",
+              "sets": 6,
+              "reps": "down & back + shuffles",
+              "load": "—",
+              "restSec": 60,
+              "notes": "No full-court suicides"
+            },
+            {
+              "name": "Wall block line + approach jumps",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8 presses · 3×3 jumps",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hallway or garden"
+            },
+            {
+              "name": "Lateral shuffle + block jump to tape",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking pattern"
+            },
+            {
+              "name": "Volleyball wall sets — 6 contacts/round",
+              "category": "skill",
+              "sets": 6,
+              "reps": "6 contacts",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Game-like rhythm"
+            },
+            {
+              "name": "1 kg four-way sets + targets to X",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10/dir · 20 to X",
+              "load": "1 kg + ball",
+              "restSec": 45,
+              "notes": "All directions"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Rest + prehab",
+          "focus": "Track weekly metrics · 12 min protocol",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Bodyweight",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Glute bridge (2 sec squeeze)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Side-lying leg raise",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Ankle/knee"
+            },
+            {
+              "name": "Ankle alphabet",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "A–Z each foot",
+              "load": "—",
+              "restSec": 0,
+              "notes": "Ankles"
+            },
+            {
+              "name": "External rotation — towel or band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Shoulder"
+            },
+            {
+              "name": "Wrist circles + wall finger presses",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30s + 10",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Setting efficiency"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Week 2",
+      "theme": "+load Mon/Wed/Fri gym · Thu jumps if 48h clear after Wed",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · legs + push + block jumps",
+          "focus": "7 exercises · prehab first · pain ≤3/10",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "strength",
+              "sets": 5,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 105,
+              "notes": "Main leg strength · Week 2 +load"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Knee support · Week 2 +load"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Jump power · Week 2 +load"
+            },
+            {
+              "name": "Step-up (box or bench)",
+              "category": "strength",
+              "sets": 4,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Single-leg strength · Week 2 +load"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "strength",
+              "sets": 4,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle / last inch of jump · Week 2 +load"
+            },
+            {
+              "name": "Machine chest press or neutral-grip DB bench",
+              "category": "strength",
+              "sets": 4,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 75,
+              "notes": "Chest / push · Week 2 +load"
+            },
+            {
+              "name": "Cable row + tricep pushdown → block jumps",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10 each · then 3×4 jumps",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Back + arms; finish block jumps on gym floor · Week 2 +load"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · setting focus",
+          "focus": "5 drills · wall X · 1 kg + volleyball",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder rehab — ER towel + scap push-up plus",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20s hold + 10 reps",
+              "load": "Light",
+              "restSec": 45,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Knee/hip/ankle — wall sit + reverse lunge + calf raise",
+              "category": "strength",
+              "sets": 3,
+              "reps": "30s · 8/leg · 12/leg",
+              "load": "Bodyweight",
+              "restSec": 60,
+              "notes": "Knee support"
+            },
+            {
+              "name": "1 kg wall sets (high finish)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "25",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Quiet wrists"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 3,
+              "reps": "15",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Accuracy"
+            },
+            {
+              "name": "Shuffle 3 steps L/R → set to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10 each way",
+              "load": "—",
+              "restSec": 45,
+              "notes": "Footwork + set"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Flyefit AM + club PM",
+          "focus": "Finish gym by 15:00 · VLY 19:00–21:00",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press (moderate load)",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10–12",
+              "load": "RPE 6",
+              "restSec": 90,
+              "notes": "Not a max day — finish by 15:00 · Week 2 +load"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Hamstring / knee support · Week 2 +load"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Controlled glutes · Week 2 +load"
+            },
+            {
+              "name": "Standing or seated calf raise",
+              "category": "strength",
+              "sets": 4,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle stiffness for blocking · Week 2 +load"
+            },
+            {
+              "name": "Incline machine press or landmine press",
+              "category": "strength",
+              "sets": 4,
+              "reps": "8–10",
+              "load": "RPE 6",
+              "restSec": 75,
+              "notes": "Skip if shoulder >3/10 · Week 2 +load"
+            },
+            {
+              "name": "Cable row + band external rotation",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10 row · 12 ER/side",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Back + right shoulder · Week 2 +load"
+            },
+            {
+              "name": "Face pull + Pallof press",
+              "category": "strength",
+              "sets": 4,
+              "reps": "15 · 10/side",
+              "load": "Light",
+              "restSec": 60,
+              "notes": "Optional 7th — posture + core · Week 2 +load"
+            },
+            {
+              "name": "Prehab before team warm-up",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "TKE, balance, ER — quick OK"
+            },
+            {
+              "name": "Blocking — late read, hands over net",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Penetrate with MB; call early"
+            },
+            {
+              "name": "Setting — wrists, shorten range if needed",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Transfer gym + home work"
+            },
+            {
+              "name": "Recovery — ice if hot; no gym after",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "Post-session",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit after club"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "Home · jump + set day",
+          "focus": "6 drills · mark touch height",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump — touch wall mark",
+              "category": "plyo",
+              "sets": 5,
+              "reps": "3",
+              "load": "Max touch",
+              "restSec": 75,
+              "notes": "Stop if knee >3/10"
+            },
+            {
+              "name": "Two-foot block jump (tape net line)",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "4",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hands to tape line"
+            },
+            {
+              "name": "Lateral shuffle ~3 m + block jump",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking transfer"
+            },
+            {
+              "name": "Jump-set to wall (or hand set if sore)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "10",
+              "load": "Volleyball",
+              "restSec": 60,
+              "notes": "Or hand set if knee sore"
+            },
+            {
+              "name": "1 kg quick sets",
+              "category": "skill",
+              "sets": 2,
+              "reps": "20",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Tempo hands"
+            },
+            {
+              "name": "Back set + dump footwork to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "12 back · 10 dump",
+              "load": "—",
+              "restSec": 60,
+              "notes": "Deception footwork"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "Flyefit · pull + legs",
+          "focus": "7 exercises · no jumping",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Goblet squat or leg press",
+              "category": "strength",
+              "sets": 5,
+              "reps": "6–8",
+              "load": "RPE 7–8",
+              "restSec": 105,
+              "notes": "Heavy legs — no jumping · Week 2 +load"
+            },
+            {
+              "name": "Romanian deadlift",
+              "category": "strength",
+              "sets": 4,
+              "reps": "8",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Hamstrings · Week 2 +load"
+            },
+            {
+              "name": "Split squat or walking lunge",
+              "category": "strength",
+              "sets": 4,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Short steps if knees sensitive · Week 2 +load"
+            },
+            {
+              "name": "Lat pulldown or assisted pull-up",
+              "category": "strength",
+              "sets": 4,
+              "reps": "8–10",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Back · Week 2 +load"
+            },
+            {
+              "name": "Seated cable row or chest-supported row",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Squeeze 1 sec · Week 2 +load"
+            },
+            {
+              "name": "Face pull (or band pull-apart)",
+              "category": "strength",
+              "sets": 4,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 60,
+              "notes": "Right shoulder / posture · Week 2 +load"
+            },
+            {
+              "name": "Bicep curl + Pallof press",
+              "category": "strength",
+              "sets": 4,
+              "reps": "10 curls · 10/side Pallof",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Arms + anti-rotation · Week 2 +load"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · shuttles + block + sets",
+          "focus": "5 drills · no suicides",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Short shuttle (5–8 m) + lateral shuffle",
+              "category": "conditioning",
+              "sets": 6,
+              "reps": "down & back + shuffles",
+              "load": "—",
+              "restSec": 60,
+              "notes": "No full-court suicides"
+            },
+            {
+              "name": "Wall block line + approach jumps",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8 presses · 3×3 jumps",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hallway or garden"
+            },
+            {
+              "name": "Lateral shuffle + block jump to tape",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking pattern"
+            },
+            {
+              "name": "Volleyball wall sets — 6 contacts/round",
+              "category": "skill",
+              "sets": 6,
+              "reps": "6 contacts",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Game-like rhythm"
+            },
+            {
+              "name": "1 kg four-way sets + targets to X",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10/dir · 20 to X",
+              "load": "1 kg + ball",
+              "restSec": 45,
+              "notes": "All directions"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Rest + prehab",
+          "focus": "Track weekly metrics · 12 min protocol",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Bodyweight",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Glute bridge (2 sec squeeze)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Side-lying leg raise",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Ankle/knee"
+            },
+            {
+              "name": "Ankle alphabet",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "A–Z each foot",
+              "load": "—",
+              "restSec": 0,
+              "notes": "Ankles"
+            },
+            {
+              "name": "External rotation — towel or band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Shoulder"
+            },
+            {
+              "name": "Wrist circles + wall finger presses",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30s + 10",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Setting efficiency"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Week 3",
+      "theme": "Taper −30% gym sets · light Tue/Sat ball",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · legs + push + block jumps",
+          "focus": "7 exercises · prehab first · pain ≤3/10",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 105,
+              "notes": "Main leg strength"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Knee support"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Jump power"
+            },
+            {
+              "name": "Step-up (box or bench)",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Single-leg strength"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "strength",
+              "sets": 2,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle / last inch of jump"
+            },
+            {
+              "name": "Machine chest press or neutral-grip DB bench",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 75,
+              "notes": "Chest / push"
+            },
+            {
+              "name": "Cable row + tricep pushdown → block jumps",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10 each · then 2×3 jumps",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Back + arms; finish block jumps on gym floor"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · setting focus",
+          "focus": "5 drills · wall X · 1 kg + volleyball",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder rehab — ER towel + scap push-up plus",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20s hold + 10 reps",
+              "load": "Light",
+              "restSec": 45,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Knee/hip/ankle — wall sit + reverse lunge + calf raise",
+              "category": "strength",
+              "sets": 3,
+              "reps": "30s · 8/leg · 12/leg",
+              "load": "Bodyweight",
+              "restSec": 60,
+              "notes": "Knee support"
+            },
+            {
+              "name": "1 kg wall sets (high finish)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "25",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Quiet wrists"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 3,
+              "reps": "15",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Accuracy"
+            },
+            {
+              "name": "Shuffle 3 steps L/R → set to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10 each way",
+              "load": "—",
+              "restSec": 45,
+              "notes": "Footwork + set"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Flyefit AM + club PM",
+          "focus": "Finish gym by 15:00 · VLY 19:00–21:00",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press (moderate load)",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10–12",
+              "load": "RPE 6",
+              "restSec": 90,
+              "notes": "Not a max day — finish by 15:00"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Hamstring / knee support"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Controlled glutes"
+            },
+            {
+              "name": "Standing or seated calf raise",
+              "category": "strength",
+              "sets": 2,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle stiffness for blocking"
+            },
+            {
+              "name": "Incline machine press or landmine press",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8–10",
+              "load": "RPE 6",
+              "restSec": 75,
+              "notes": "Skip if shoulder >3/10"
+            },
+            {
+              "name": "Cable row + band external rotation",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10 row · 12 ER/side",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Back + right shoulder"
+            },
+            {
+              "name": "Prehab before team warm-up",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "TKE, balance, ER — quick OK"
+            },
+            {
+              "name": "Blocking — late read, hands over net",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Penetrate with MB; call early"
+            },
+            {
+              "name": "Setting — wrists, shorten range if needed",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Transfer gym + home work"
+            },
+            {
+              "name": "Recovery — ice if hot; no gym after",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "Post-session",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit after club"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "Home · jump + set day",
+          "focus": "6 drills · mark touch height · light/skips if tired",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump — touch wall mark",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3",
+              "load": "Max touch",
+              "restSec": 75,
+              "notes": "Stop if knee >3/10"
+            },
+            {
+              "name": "Two-foot block jump (tape net line)",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "4",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hands to tape line"
+            },
+            {
+              "name": "Lateral shuffle ~3 m + block jump",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking transfer"
+            },
+            {
+              "name": "Jump-set to wall (or hand set if sore)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "10",
+              "load": "Volleyball",
+              "restSec": 60,
+              "notes": "Or hand set if knee sore"
+            },
+            {
+              "name": "1 kg quick sets",
+              "category": "skill",
+              "sets": 2,
+              "reps": "20",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Tempo hands"
+            },
+            {
+              "name": "Back set + dump footwork to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "12 back · 10 dump",
+              "load": "—",
+              "restSec": 60,
+              "notes": "Deception footwork"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "Flyefit · pull + legs",
+          "focus": "7 exercises · no jumping",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Goblet squat or leg press",
+              "category": "strength",
+              "sets": 2,
+              "reps": "6–8",
+              "load": "RPE 7–8",
+              "restSec": 105,
+              "notes": "Heavy legs — no jumping"
+            },
+            {
+              "name": "Romanian deadlift",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Hamstrings"
+            },
+            {
+              "name": "Split squat or walking lunge",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Short steps if knees sensitive"
+            },
+            {
+              "name": "Lat pulldown or assisted pull-up",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8–10",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Back"
+            },
+            {
+              "name": "Seated cable row or chest-supported row",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Squeeze 1 sec"
+            },
+            {
+              "name": "Face pull (or band pull-apart)",
+              "category": "strength",
+              "sets": 2,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 60,
+              "notes": "Right shoulder / posture"
+            },
+            {
+              "name": "Bicep curl + Pallof press",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10 curls · 10/side Pallof",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Arms + anti-rotation"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · shuttles + block + sets",
+          "focus": "5 drills · no suicides · light ball",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Short shuttle (5–8 m) + lateral shuffle",
+              "category": "conditioning",
+              "sets": 4,
+              "reps": "down & back + shuffles",
+              "load": "—",
+              "restSec": 60,
+              "notes": "No full-court suicides"
+            },
+            {
+              "name": "Wall block line + approach jumps",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8 presses · 3×3 jumps",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hallway or garden"
+            },
+            {
+              "name": "Lateral shuffle + block jump to tape",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking pattern"
+            },
+            {
+              "name": "Volleyball wall sets — 6 contacts/round",
+              "category": "skill",
+              "sets": 4,
+              "reps": "6 contacts",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Game-like rhythm"
+            },
+            {
+              "name": "1 kg four-way sets + targets to X",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10/dir · 20 to X",
+              "load": "1 kg + ball",
+              "restSec": 45,
+              "notes": "All directions"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Rest + prehab",
+          "focus": "Track weekly metrics · 12 min protocol",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Bodyweight",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Glute bridge (2 sec squeeze)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Side-lying leg raise",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Ankle/knee"
+            },
+            {
+              "name": "Ankle alphabet",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "A–Z each foot",
+              "load": "—",
+              "restSec": 0,
+              "notes": "Ankles"
+            },
+            {
+              "name": "External rotation — towel or band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Shoulder"
+            },
+            {
+              "name": "Wrist circles + wall finger presses",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30s + 10",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Setting efficiency"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Week 4",
+      "theme": "Match week · 10 Oct no gym · 11 Oct match",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · legs + push + block jumps",
+          "focus": "7 exercises · prehab first · pain ≤3/10",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 105,
+              "notes": "Main leg strength"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Knee support"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Jump power"
+            },
+            {
+              "name": "Step-up (box or bench)",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Single-leg strength"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "strength",
+              "sets": 2,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle / last inch of jump"
+            },
+            {
+              "name": "Machine chest press or neutral-grip DB bench",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8–10",
+              "load": "RPE 7",
+              "restSec": 75,
+              "notes": "Chest / push"
+            },
+            {
+              "name": "Cable row + tricep pushdown → block jumps",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10 each · then 2×3 jumps",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Back + arms; finish block jumps on gym floor"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · setting focus",
+          "focus": "5 drills · wall X · 1 kg + volleyball",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder rehab — ER towel + scap push-up plus",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20s hold + 10 reps",
+              "load": "Light",
+              "restSec": 45,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Knee/hip/ankle — wall sit + reverse lunge + calf raise",
+              "category": "strength",
+              "sets": 3,
+              "reps": "30s · 8/leg · 12/leg",
+              "load": "Bodyweight",
+              "restSec": 60,
+              "notes": "Knee support"
+            },
+            {
+              "name": "1 kg wall sets (high finish)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "25",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Quiet wrists"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 3,
+              "reps": "15",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Accuracy"
+            },
+            {
+              "name": "Shuffle 3 steps L/R → set to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10 each way",
+              "load": "—",
+              "restSec": 45,
+              "notes": "Footwork + set"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Flyefit AM + club PM",
+          "focus": "Finish gym by 15:00 · VLY 19:00–21:00",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press (moderate load)",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10–12",
+              "load": "RPE 6",
+              "restSec": 90,
+              "notes": "Not a max day — finish by 15:00"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10–12",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Hamstring / knee support"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "Controlled glutes"
+            },
+            {
+              "name": "Standing or seated calf raise",
+              "category": "strength",
+              "sets": 2,
+              "reps": "12–15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle stiffness for blocking"
+            },
+            {
+              "name": "Incline machine press or landmine press",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8–10",
+              "load": "RPE 6",
+              "restSec": 75,
+              "notes": "Skip if shoulder >3/10"
+            },
+            {
+              "name": "Cable row + band external rotation",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10 row · 12 ER/side",
+              "load": "Moderate",
+              "restSec": 75,
+              "notes": "Back + right shoulder"
+            },
+            {
+              "name": "Prehab before team warm-up",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "TKE, balance, ER — quick OK"
+            },
+            {
+              "name": "Blocking — late read, hands over net",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Penetrate with MB; call early"
+            },
+            {
+              "name": "Setting — wrists, shorten range if needed",
+              "category": "skill",
+              "sets": 1,
+              "reps": "Wed club",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Transfer gym + home work"
+            },
+            {
+              "name": "Recovery — ice if hot; no gym after",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "Post-session",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit after club"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "Home · jump + set day",
+          "focus": "6 drills · mark touch height · light/skips if tired",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump — touch wall mark",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3",
+              "load": "Max touch",
+              "restSec": 75,
+              "notes": "Stop if knee >3/10"
+            },
+            {
+              "name": "Two-foot block jump (tape net line)",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "4",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hands to tape line"
+            },
+            {
+              "name": "Lateral shuffle ~3 m + block jump",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking transfer"
+            },
+            {
+              "name": "Jump-set to wall (or hand set if sore)",
+              "category": "skill",
+              "sets": 3,
+              "reps": "10",
+              "load": "Volleyball",
+              "restSec": 60,
+              "notes": "Or hand set if knee sore"
+            },
+            {
+              "name": "1 kg quick sets",
+              "category": "skill",
+              "sets": 2,
+              "reps": "20",
+              "load": "1 kg ball",
+              "restSec": 45,
+              "notes": "Tempo hands"
+            },
+            {
+              "name": "Back set + dump footwork to wall",
+              "category": "skill",
+              "sets": 2,
+              "reps": "12 back · 10 dump",
+              "load": "—",
+              "restSec": 60,
+              "notes": "Deception footwork"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "Pre-match · no gym",
+          "focus": "10 Oct rules",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "12 min prehab only",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "10 Oct: no gym — prehab + optional easy wall sets"
+            },
+            {
+              "name": "Easy 1 kg wall sets (optional)",
+              "category": "skill",
+              "sets": 1,
+              "reps": "20",
+              "load": "Light",
+              "restSec": 0,
+              "notes": "Only if shoulders feel great"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · shuttles + block + sets",
+          "focus": "5 drills · no suicides · light ball",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Short shuttle (5–8 m) + lateral shuffle",
+              "category": "conditioning",
+              "sets": 4,
+              "reps": "down & back + shuffles",
+              "load": "—",
+              "restSec": 60,
+              "notes": "No full-court suicides"
+            },
+            {
+              "name": "Wall block line + approach jumps",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8 presses · 3×3 jumps",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Hallway or garden"
+            },
+            {
+              "name": "Lateral shuffle + block jump to tape",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "—",
+              "restSec": 75,
+              "notes": "Blocking pattern"
+            },
+            {
+              "name": "Volleyball wall sets — 6 contacts/round",
+              "category": "skill",
+              "sets": 4,
+              "reps": "6 contacts",
+              "load": "Volleyball",
+              "restSec": 45,
+              "notes": "Game-like rhythm"
+            },
+            {
+              "name": "1 kg four-way sets + targets to X",
+              "category": "skill",
+              "sets": 2,
+              "reps": "10/dir · 20 to X",
+              "load": "1 kg + ball",
+              "restSec": 45,
+              "notes": "All directions"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Rest + prehab",
+          "focus": "Track weekly metrics · 12 min protocol",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Bodyweight",
+              "restSec": 30,
+              "notes": "Knees"
+            },
+            {
+              "name": "Glute bridge (2 sec squeeze)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Side-lying leg raise",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Hips"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Ankle/knee"
+            },
+            {
+              "name": "Ankle alphabet",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "A–Z each foot",
+              "load": "—",
+              "restSec": 0,
+              "notes": "Ankles"
+            },
+            {
+              "name": "External rotation — towel or band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Right shoulder"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Shoulder"
+            },
+            {
+              "name": "Wrist circles + wall finger presses",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30s + 10",
+              "load": "—",
+              "restSec": 30,
+              "notes": "Setting efficiency"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
