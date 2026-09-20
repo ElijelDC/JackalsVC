@@ -1797,7 +1797,12 @@
         const reader = new FileReader();
         reader.onload = () => {
           try {
-            state.plan = migratePlan(JSON.parse(String(reader.result)));
+            let plan = migratePlan(JSON.parse(String(reader.result)));
+            if (!plan.appReleaseVersion || plan.appReleaseVersion < APP_RELEASE_VERSION) {
+              plan = applyLatestTemplateUpdates(plan);
+              state.updateNotice = true;
+            }
+            state.plan = plan;
             savePlan();
             render();
           } catch {
