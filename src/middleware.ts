@@ -11,18 +11,32 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-DNS-Prefetch-Control": "off",
 };
 
-function buildCsp(frameAncestors: "'none'" | "'self'") {
+function buildCsp(frameAncestors: "'none'" | "'self'", agentWorkout = false) {
+  const imgSrc = agentWorkout
+    ? "'self' data: blob: https://i.ytimg.com https://img.youtube.com https://ui-avatars.com https://*.cdninstagram.com https://assets.reclub.co https://*.cloudfront.net"
+    : "'self' data: blob: https://ui-avatars.com https://*.cdninstagram.com https://assets.reclub.co https://*.cloudfront.net";
+  const frameSrc = agentWorkout
+    ? "frame-src https://www.youtube.com https://www.youtube-nocookie.com"
+    : "";
+
   return [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob: https://ui-avatars.com https://*.cdninstagram.com https://assets.reclub.co https://*.cloudfront.net",
+    `img-src ${imgSrc}`,
     "font-src 'self'",
     "connect-src 'self'",
+    frameSrc,
     `frame-ancestors ${frameAncestors}`,
     "base-uri 'self'",
     "form-action 'self'",
-  ].join("; ");
+  ]
+    .filter(Boolean)
+    .join("; ");
+}
+
+function isAgentWorkoutPage(pathname: string) {
+  return pathname.startsWith("/agent/");
 }
 
 /** Public docs that can be embedded in same-origin preview pages (like sponsors). */
@@ -35,9 +49,10 @@ function isEmbeddablePublicDoc(pathname: string) {
 
 function applySecurityHeaders(response: NextResponse, pathname = "") {
   const embeddable = isEmbeddablePublicDoc(pathname);
+  const agentWorkout = isAgentWorkoutPage(pathname);
 
   for (const [key, value] of Object.entries(SECURITY_HEADERS)) {
-    if (embeddable && key === "X-Frame-Options") {
+    if ((embeddable || agentWorkout) && key === "X-Frame-Options") {
       response.headers.set("X-Frame-Options", "SAMEORIGIN");
       continue;
     }
@@ -46,7 +61,7 @@ function applySecurityHeaders(response: NextResponse, pathname = "") {
 
   response.headers.set(
     "Content-Security-Policy",
-    buildCsp(embeddable ? "'self'" : "'none'"),
+    buildCsp(embeddable || agentWorkout ? "'self'" : "'none'", agentWorkout),
   );
 }
 

@@ -469,6 +469,128 @@
         color: var(--muted);
         font-size: 0.85rem;
       }
+      .day-card.open {
+        border-color: rgba(232, 34, 42, 0.45);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      .day-body {
+        animation: slideDown 0.22s ease-out;
+      }
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .set-btn.done {
+        animation: popDone 0.25s ease;
+      }
+      @keyframes popDone {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.08);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .video-btn {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 8px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        text-align: left;
+        overflow: hidden;
+        transition: border-color 0.15s, transform 0.1s;
+      }
+      .video-btn:active {
+        transform: scale(0.98);
+      }
+      .video-btn:hover {
+        border-color: rgba(232, 34, 42, 0.4);
+      }
+      .video-thumb {
+        width: 88px;
+        height: 52px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: #111;
+      }
+      .video-copy {
+        flex: 1;
+        min-width: 0;
+      }
+      .video-copy strong {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--red-light);
+      }
+      .video-copy span {
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+      .video-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: rgba(0, 0, 0, 0.88);
+        display: none;
+        flex-direction: column;
+        padding: 16px;
+        padding-bottom: calc(16px + var(--safe-bottom));
+      }
+      .video-overlay.open {
+        display: flex;
+      }
+      .video-overlay-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        gap: 12px;
+      }
+      .video-overlay-header h2 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+      .video-frame-wrap {
+        flex: 1;
+        min-height: 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #000;
+      }
+      .video-frame-wrap iframe {
+        width: 100%;
+        height: 100%;
+        min-height: min(56vw, 320px);
+        border: 0;
+      }
+      .hero-glow {
+        position: absolute;
+        inset: -40% -20% auto;
+        height: 200px;
+        background: radial-gradient(ellipse, rgba(232, 34, 42, 0.2), transparent 70%);
+        pointer-events: none;
+      }
+      .hero-wrap {
+        position: relative;
+      }
       @media (min-width: 520px) {
         .app {
           padding-top: 24px;
@@ -484,6 +606,14 @@
       <button type="button" class="accent" id="btn-add-day">+ Session</button>
     </div>
 
+    <div class="video-overlay" id="video-overlay" aria-hidden="true">
+      <div class="video-overlay-header">
+        <h2 id="video-title">Exercise demo</h2>
+        <button type="button" class="btn-sm" id="video-close">Close</button>
+      </div>
+      <div class="video-frame-wrap" id="video-frame-wrap"></div>
+    </div>
+
     <div class="timer-overlay" id="timer-overlay" aria-hidden="true">
       <div class="timer-card">
         <div class="time" id="timer-display">0:00</div>
@@ -497,7 +627,7 @@
     <input type="file" accept="application/json" class="hidden-input" id="import-file" />
 
     <script>
-      const STORAGE_KEY = "setter-preseason-workout-plan-v1";
+      const STORAGE_KEY = "setter-preseason-workout-plan-v2";
       const CATEGORIES = {
         strength: { label: "Strength", color: "#e8222a" },
         plyo: { label: "Plyo", color: "#fbbf24" },
@@ -510,8 +640,87 @@
         return Math.random().toString(36).slice(2, 10);
       }
 
+      const VIDEO_BY_KEYWORD = [
+        ["goblet squat", "MeHQebZwcJA"],
+        ["romanian deadlift", "4FZKp6nOITg"],
+        ["pallof", "wR8oHD7xF84"],
+        ["box jump", "5U0D2HYre3E"],
+        ["dead bug", "g_BYB0R-36s"],
+        ["split squat", "Q0Bxqjfhbwo"],
+        ["back squat", "ultWZbUMPL8"],
+        ["front squat", "ultWZbUMPL8"],
+        ["nordic", "9c06nFOWAEc"],
+        ["ham curl", "9c06nFOWAEc"],
+        ["bench", "4T9UQ7LZjIs"],
+        ["floor press", "4T9UQ7LZjIs"],
+        ["push-up", "IODxDxX7oi4"],
+        ["pull-up", "eGo4IYlbE5g"],
+        ["pulldown", "9efgcAjQf7g"],
+        ["row", "9efgcAjQf7g"],
+        ["med ball", "fg2BgO77WDg"],
+        ["scoop toss", "fg2BgO77WDg"],
+        ["chest pass", "fg2BgO77WDg"],
+        ["wall set", "1gQx_3KN-7U"],
+        ["pepper", "8b2_QdXhOK0"],
+        ["short court", "8b2_QdXhOK0"],
+        ["jump set", "8b2_QdXhOK0"],
+        ["depth drop", "5U0D2HYre3E"],
+        ["wrist", "i6ddqqbSvl0"],
+        ["6v6", "8b2_QdXhOK0"],
+        ["scrimmage", "8b2_QdXhOK0"],
+        ["back set", "8b2_QdXhOK0"],
+        ["live set", "8b2_QdXhOK0"],
+        ["quick release", "8b2_QdXhOK0"],
+        ["tempo set", "8b2_QdXhOK0"],
+        ["footwork", "3X9wLw17kuE"],
+        ["ladder", "3X9wLw17kuE"],
+        ["hip 90", "NGPDX3YI5v8"],
+        ["thoracic", "450BCmVdOq8"],
+        ["flow", "4LJxWvM4-xQ"],
+        ["stretch", "4LJxWvM4-xQ"],
+        ["activation", "4LJxWvM4-xQ"],
+        ["bike", "6x4p2x0VfYg"],
+        ["walk", "nJeHl7Ly504"],
+        ["suicide", "6x4p2x0VfYg"],
+        ["shuttle", "6x4p2x0VfYg"],
+        ["17", "6x4p2x0VfYg"],
+        ["interval", "6x4p2x0VfYg"],
+        ["trap bar", "Xtr49-GNyAA"],
+        ["clean pull", "Y-xWQRlHhm0"],
+        ["step-up", "9ZknEYboBOQ"],
+        ["copenhagen", "2d3DzYeBph8"],
+        ["jump squat", "5U0D2HYre3E"],
+        ["approach jump", "5U0D2HYre3E"],
+        ["serve receive", "8b2_QdXhOK0"],
+        ["dump", "8b2_QdXhOK0"],
+        ["perfect rep", "8b2_QdXhOK0"],
+        ["continuous setting", "8b2_QdXhOK0"],
+        ["out-of-system", "8b2_QdXhOK0"],
+      ];
+
+      const CATEGORY_VIDEO_FALLBACK = {
+        strength: "ultWZbUMPL8",
+        plyo: "5U0D2HYre3E",
+        skill: "8b2_QdXhOK0",
+        mobility: "4LJxWvM4-xQ",
+        conditioning: "6x4p2x0VfYg",
+      };
+
+      function lookupVideoId(name, category) {
+        const n = name.toLowerCase();
+        for (const [keyword, id] of VIDEO_BY_KEYWORD) {
+          if (n.includes(keyword)) return id;
+        }
+        return CATEGORY_VIDEO_FALLBACK[category] || CATEGORY_VIDEO_FALLBACK.strength;
+      }
+
+      function exerciseVideoId(ex) {
+        if (ex.videoId) return ex.videoId;
+        return lookupVideoId(ex.name, ex.category);
+      }
+
       function defaultPlan() {
-        const mkEx = (name, category, sets, reps, load, restSec, notes = "") => ({
+        const mkEx = (name, category, sets, reps, load, restSec, notes = "", videoId = "") => ({
           id: uid(),
           name,
           category,
@@ -520,6 +729,7 @@
           load,
           restSec,
           notes,
+          videoId: videoId || lookupVideoId(name, category),
           doneSets: Array.from({ length: sets }, () => false),
         });
 
@@ -668,14 +878,23 @@
 
       function loadPlan() {
         try {
-          const raw = localStorage.getItem(STORAGE_KEY);
+          let raw = localStorage.getItem(STORAGE_KEY);
+          if (!raw) {
+            raw = localStorage.getItem("setter-preseason-workout-plan-v1");
+          }
           if (!raw) return defaultPlan();
           const parsed = JSON.parse(raw);
           if (!parsed.weeks?.length) return defaultPlan();
-          return migratePlan(parsed);
+          const plan = migratePlan(parsed);
+          savePlanToStorage(plan);
+          return plan;
         } catch {
           return defaultPlan();
         }
+      }
+
+      function savePlanToStorage(plan) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(plan));
       }
 
       function migratePlan(plan) {
@@ -687,6 +906,9 @@
                   Boolean(ex.doneSets?.[i]),
                 );
               }
+              if (!ex.videoId) {
+                ex.videoId = lookupVideoId(ex.name, ex.category);
+              }
             }
           }
         }
@@ -694,7 +916,32 @@
       }
 
       function savePlan() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.plan));
+        savePlanToStorage(state.plan);
+      }
+
+      function renderPreservingScroll() {
+        const y = window.scrollY;
+        render();
+        requestAnimationFrame(() => window.scrollTo(0, y));
+      }
+
+      function openVideoModal(ex) {
+        const videoId = exerciseVideoId(ex);
+        document.getElementById("video-title").textContent = ex.name;
+        document.getElementById("video-frame-wrap").innerHTML = `<iframe
+          src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0"
+          title="${escapeAttr(ex.name)} demo"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen
+        ></iframe>`;
+        document.getElementById("video-overlay").classList.add("open");
+        document.getElementById("video-overlay").setAttribute("aria-hidden", "false");
+      }
+
+      function closeVideoModal() {
+        document.getElementById("video-frame-wrap").innerHTML = "";
+        document.getElementById("video-overlay").classList.remove("open");
+        document.getElementById("video-overlay").setAttribute("aria-hidden", "true");
       }
 
       function completionStats() {
@@ -768,7 +1015,8 @@
       function toggleSet(ex, setIndex) {
         ex.doneSets[setIndex] = !ex.doneSets[setIndex];
         savePlan();
-        render();
+        if (navigator.vibrate) navigator.vibrate(12);
+        renderPreservingScroll();
       }
 
       function resizeDoneSets(ex) {
@@ -818,6 +1066,9 @@
           </div>
           <div class="grid-2">
             <div><label>Rest (sec)</label><input type="number" min="0" data-field="restSec" data-ex="${ex.id}" value="${ex.restSec}" /></div>
+            <div><label>YouTube video ID</label><input data-field="videoId" data-ex="${ex.id}" value="${escapeAttr(
+              ex.videoId || "",
+            )}" placeholder="e.g. MeHQebZwcJA" /></div>
           </div>
           <div><label>Notes</label><textarea data-field="notes" data-ex="${ex.id}">${escapeHtml(
               ex.notes || "",
@@ -828,7 +1079,11 @@
             <button type="button" class="btn-sm danger" data-action="delete-ex" data-ex="${ex.id}" data-day="${day.id}">Delete</button>
           </div>
         </div>`
-          : `<div class="set-row">${setsHtml}</div>
+          : `<button type="button" class="video-btn" data-action="video" data-ex="${ex.id}">
+              <img class="video-thumb" src="https://i.ytimg.com/vi/${exerciseVideoId(ex)}/mqdefault.jpg" alt="" loading="lazy" />
+              <span class="video-copy"><strong>Watch demo</strong><span>Form cue video for this movement</span></span>
+            </button>
+          <div class="set-row">${setsHtml}</div>
           <div class="ex-actions">
             <button type="button" class="btn-sm primary" data-action="timer" data-ex="${ex.id}">Rest ${formatRest(
               ex.restSec || 60,
@@ -868,7 +1123,7 @@
               stats.total ? ` · ${stats.done}/${stats.total} sets` : ""
             }</div>
           </div>
-          <span class="day-badge ${dayDone}">${day.rest ? "Rest" : open ? "Open" : "Tap"}</span>
+          <span class="day-badge ${dayDone}">${day.rest ? "Rest" : open ? "Close" : "Open"}</span>
         </button>`;
 
         const editDay = edit
@@ -906,7 +1161,7 @@
             </div>`
             : "";
 
-        return `<div class="day-card${day.rest ? " rest" : ""}">${head}${body}</div>`;
+        return `<div class="day-card${day.rest ? " rest" : ""}${open ? " open" : ""}">${head}${body}</div>`;
       }
 
       function render() {
@@ -917,7 +1172,8 @@
         const todayDay = week?.days[todayIdx];
 
         document.getElementById("app").innerHTML = `
-          <header class="hero">
+          <header class="hero hero-wrap">
+            <div class="hero-glow" aria-hidden="true"></div>
             <h1>${escapeHtml(plan.title)} <span>plan</span></h1>
             <div class="hero-meta">
               <span class="pill">${escapeHtml(plan.subtitle || "Private")}</span>
@@ -958,12 +1214,9 @@
           <section class="panel${state.tab === "today" ? " active" : ""}" id="panel-today">
             ${
               todayDay
-                ? (() => {
-                    state.openDayId = todayDay.id;
-                    return `<p style="font-size:0.85rem;color:var(--muted);margin:0 0 12px">Week ${
-                      state.weekIndex + 1
-                    } · ${escapeHtml(todayDay.label)}</p>${renderDay(todayDay, week)}`;
-                  })()
+                ? `<p style="font-size:0.85rem;color:var(--muted);margin:0 0 12px">Week ${
+                    state.weekIndex + 1
+                  } · ${escapeHtml(todayDay.label)}</p>${renderDay(todayDay, week)}`
                 : '<div class="empty">No session for today in this week.</div>'
             }
           </section>
@@ -1023,6 +1276,11 @@
         document.querySelectorAll("[data-tab]").forEach((el) => {
           el.addEventListener("click", () => {
             state.tab = el.dataset.tab;
+            if (state.tab === "today") {
+              const week = state.plan.weeks[state.weekIndex];
+              const today = week?.days[todayDayIndex()];
+              if (today) state.openDayId = today.id;
+            }
             render();
           });
         });
@@ -1040,15 +1298,28 @@
             render();
           });
         });
+        document.querySelectorAll(".day-body").forEach((el) => {
+          el.addEventListener("click", (e) => e.stopPropagation());
+        });
         document.querySelectorAll("[data-action='set']").forEach((el) => {
-          el.addEventListener("click", () => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
             const found = findExercise(el.dataset.ex);
             if (!found) return;
             toggleSet(found.ex, Number(el.dataset.i));
           });
         });
+        document.querySelectorAll("[data-action='video']").forEach((el) => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
+            const found = findExercise(el.dataset.ex);
+            if (!found) return;
+            openVideoModal(found.ex);
+          });
+        });
         document.querySelectorAll("[data-action='timer']").forEach((el) => {
-          el.addEventListener("click", () => {
+          el.addEventListener("click", (e) => {
+            e.stopPropagation();
             const found = findExercise(el.dataset.ex);
             if (!found) return;
             startTimer(found.ex.restSec || 60, found.ex.name);
@@ -1095,6 +1366,7 @@
               load: "—",
               restSec: 60,
               notes: "",
+              videoId: lookupVideoId("squat", "strength"),
               doneSets: [false, false, false],
             });
             savePlan();
@@ -1266,6 +1538,10 @@
       document.getElementById("timer-close").addEventListener("click", closeTimer);
       document.getElementById("timer-overlay").addEventListener("click", (e) => {
         if (e.target.id === "timer-overlay") closeTimer();
+      });
+      document.getElementById("video-close").addEventListener("click", closeVideoModal);
+      document.getElementById("video-overlay").addEventListener("click", (e) => {
+        if (e.target.id === "video-overlay") closeVideoModal();
       });
 
       function escapeHtml(s) {
