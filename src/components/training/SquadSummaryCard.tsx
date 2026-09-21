@@ -174,6 +174,7 @@ export function SquadSummaryCard({
     attending: number;
     notAttending: number;
     unanswered: number;
+    guests?: number;
   };
   coaches: TrainingRosterGroups;
   isCoachUser: boolean;
@@ -181,6 +182,7 @@ export function SquadSummaryCard({
   compact?: boolean;
 }) {
   const visibleCoaches = getCoachesVisibleToUser(coaches, isCoachUser);
+  const guestCount = counts.guests ?? 0;
   return (
     <Card className={compact ? "border-0 bg-transparent p-0 shadow-none" : undefined}>
       {!compact ? <CardTitle className="text-base">Player summary</CardTitle> : null}
@@ -196,12 +198,21 @@ export function SquadSummaryCard({
         />
       ) : null}
 
-      <div className={cn("grid grid-cols-3 gap-2", !compact && "mt-4")}>
+      <div
+        className={cn(
+          "grid gap-2",
+          guestCount > 0 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3",
+          !compact && "mt-4",
+        )}
+      >
         <SummaryStat
           value={counts.attending}
           label={TRAINING_ATTENDANCE_LABELS.ATTENDING}
           tone="green"
         />
+        {guestCount > 0 ? (
+          <SummaryStat value={guestCount} label="Guests" tone="green" />
+        ) : null}
         <SummaryStat
           value={counts.notAttending}
           label={TRAINING_ATTENDANCE_LABELS.NOT_ATTENDING}

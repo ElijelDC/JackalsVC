@@ -188,6 +188,20 @@ export function TrainingSessionDetailView({
           tone="green"
           dense
         />
+        {guests.length > 0 ? (
+          <SquadRosterGroup
+            title="Guests"
+            members={guests}
+            tone="green"
+            dense
+            onRemoveGuest={
+              detail.canManageGuestInvites
+                ? (id) => void removeGuest(id)
+                : undefined
+            }
+            removingGuestId={removingGuestId}
+          />
+        ) : null}
         <SquadRosterGroup
           title={TRAINING_ATTENDANCE_LABELS.NOT_ATTENDING}
           members={detail.roster.notAttending}
@@ -208,7 +222,7 @@ export function TrainingSessionDetailView({
     <Card>
       <CardTitle className="text-base">Guests</CardTitle>
       <CardDescription className="mt-1 text-sm">
-        Approved invitees for this session.
+        Approved invitees attending this session.
       </CardDescription>
       <div className="mt-4">
         <SquadRosterGroup
@@ -227,12 +241,19 @@ export function TrainingSessionDetailView({
     </Card>
   );
 
-  /** Mobile guests tab: managers get invites; others get the attending list. */
-  const guestsSection = detail.canManageGuestInvites && !cancelled ? (
-    <CoachTrainingInvitePanel eventId={detail.event.id} compact />
-  ) : (
-    guestsListCard
-  );
+  /**
+   * Mobile Guests tab: managers get invite tools (+ list inside panel).
+   * Members and cover coaches get the attending guests list.
+   */
+  const guestsSection =
+    detail.canManageGuestInvites && !cancelled ? (
+      <div className="space-y-4">
+        {guests.length > 0 ? guestsListCard : null}
+        <CoachTrainingInvitePanel eventId={detail.event.id} compact />
+      </div>
+    ) : (
+      guestsListCard
+    );
 
   const showDesktopGuests =
     detail.canManageGuestInvites || guests.length > 0;
@@ -365,7 +386,10 @@ export function TrainingSessionDetailView({
 
         {showDesktopGuests ? (
           detail.canManageGuestInvites && !cancelled ? (
-            <CoachTrainingInvitePanel eventId={detail.event.id} wide />
+            <div className="space-y-4">
+              {guests.length > 0 ? guestsListCard : null}
+              <CoachTrainingInvitePanel eventId={detail.event.id} wide />
+            </div>
           ) : guests.length > 0 ? (
             guestsListCard
           ) : null
