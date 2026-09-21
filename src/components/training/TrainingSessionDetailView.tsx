@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { TrainingAttendancePicker } from "@/components/training/TrainingAttendancePicker";
 import { SquadSummaryCard } from "@/components/training/SquadSummaryCard";
+import { SessionCoachCallout } from "@/components/training/SessionCoachCallout";
 import { CoachTrainingInvitePanel } from "@/components/training/CoachTrainingInvitePanel";
 import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
@@ -203,37 +204,44 @@ export function TrainingSessionDetailView({
     </Card>
   );
 
-  const guestsSection = (
-    <div className="space-y-4">
-      <Card>
-        <CardTitle className="text-base">Guests</CardTitle>
-        <CardDescription className="mt-1 text-sm">
-          Approved invitees for this session.
-        </CardDescription>
-        <div className="mt-4">
-          <SquadRosterGroup
-            title="Attending guests"
-            members={guests}
-            tone="green"
-            dense
-            onRemoveGuest={
-              detail.isCoachUser ? (id) => void removeGuest(id) : undefined
-            }
-            removingGuestId={removingGuestId}
-          />
-        </div>
-      </Card>
-      {detail.isCoachUser && !cancelled ? (
-        <CoachTrainingInvitePanel eventId={detail.event.id} compact />
-      ) : null}
-    </div>
+  const guestsListCard = (
+    <Card>
+      <CardTitle className="text-base">Guests</CardTitle>
+      <CardDescription className="mt-1 text-sm">
+        Approved invitees for this session.
+      </CardDescription>
+      <div className="mt-4">
+        <SquadRosterGroup
+          title="Attending guests"
+          members={guests}
+          tone="green"
+          dense
+          onRemoveGuest={
+            detail.canManageGuestInvites
+              ? (id) => void removeGuest(id)
+              : undefined
+          }
+          removingGuestId={removingGuestId}
+        />
+      </div>
+    </Card>
   );
+
+  /** Mobile guests tab: managers get invites; others get the attending list. */
+  const guestsSection = detail.canManageGuestInvites && !cancelled ? (
+    <CoachTrainingInvitePanel eventId={detail.event.id} compact />
+  ) : (
+    guestsListCard
+  );
+
+  const showDesktopGuests =
+    detail.canManageGuestInvites || guests.length > 0;
 
   const mobileTabs: Array<{ id: MobileTab; label: string; icon: typeof Users }> =
     [
       { id: "you", label: "You", icon: CalendarDays },
       { id: "squad", label: "Squad", icon: Users },
-      ...(detail.isCoachUser || guests.length > 0
+      ...(detail.canManageGuestInvites || guests.length > 0
         ? ([
             {
               id: "guests" as const,
@@ -300,6 +308,13 @@ export function TrainingSessionDetailView({
               ) : null}
             </div>
 
+            {!cancelled && !detail.isCoachUser ? (
+              <SessionCoachCallout
+                coaches={detail.coaches}
+                className="mt-4 sm:mt-5"
+              />
+            ) : null}
+
             {detail.event.description ? (
               <p className="mt-3 hidden text-sm leading-relaxed text-zinc-500 sm:mt-4 sm:block">
                 {detail.event.description}
@@ -341,20 +356,20 @@ export function TrainingSessionDetailView({
             : guestsSection}
       </div>
 
-      {/* Desktop */}
-      <div className="hidden gap-6 lg:grid lg:grid-cols-5">
-        <div className="lg:col-span-2">
-          {responseCard}
-          {detail.isCoachUser && !cancelled ? (
-            <div className="mt-4">
-              <CoachTrainingInvitePanel eventId={detail.event.id} />
-            </div>
-          ) : null}
-          {(detail.isCoachUser || guests.length > 0) && (
-            <div className="mt-4">{guestsSection}</div>
-          )}
+      {/* Desktop: response + squad side by side; guests as a full-width row below */}
+      <div className="hidden space-y-6 lg:block">
+        <div className="grid items-start gap-6 lg:grid-cols-5">
+          <div className="lg:col-span-2">{responseCard}</div>
+          <div className="lg:col-span-3">{squadCard}</div>
         </div>
-        <div className="lg:col-span-3">{squadCard}</div>
+
+        {showDesktopGuests ? (
+          detail.canManageGuestInvites && !cancelled ? (
+            <CoachTrainingInvitePanel eventId={detail.event.id} wide />
+          ) : guests.length > 0 ? (
+            guestsListCard
+          ) : null
+        ) : null}
       </div>
     </PageContainer>
   );

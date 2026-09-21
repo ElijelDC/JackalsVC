@@ -1,4 +1,4 @@
-/** Member dashboard accent — D3 Women use purple; everyone else Jackals red. */
+/** Member UI accent — D3 Women use purple; everyone else Jackals red. */
 
 export type DashboardAccent = "red" | "purple";
 
@@ -6,6 +6,27 @@ export function dashboardAccentForTeam(
   trainingTeamKey: string | null | undefined,
 ): DashboardAccent {
   return trainingTeamKey === "DIV3_WOMENS" ? "purple" : "red";
+}
+
+/**
+ * Purple chrome for D3W members (and coaches whose primary squad is D3W).
+ * Also purple when DIV3_WOMENS is among their squads and they are a player.
+ */
+export function dashboardAccentForUser(input: {
+  trainingTeamKey?: string | null;
+  trainingTeamKeys?: string[];
+  rosterRole?: string | null;
+}): DashboardAccent {
+  if (dashboardAccentForTeam(input.trainingTeamKey) === "purple") {
+    return "purple";
+  }
+  if (
+    input.rosterRole === "PLAYER" &&
+    (input.trainingTeamKeys ?? []).includes("DIV3_WOMENS")
+  ) {
+    return "purple";
+  }
+  return "red";
 }
 
 export const DASHBOARD_ACCENT = {

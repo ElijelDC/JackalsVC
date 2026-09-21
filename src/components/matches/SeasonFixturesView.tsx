@@ -108,7 +108,7 @@ function TeamFilter({
               className={cn(
                 "relative z-0 isolate flex min-h-11 min-w-0 items-center justify-center overflow-hidden rounded-full border px-1.5 py-1.5 text-center transition-all sm:px-2.5",
                 selected
-                  ? "border-jackals-red/50 bg-jackals-red/15 text-white shadow-[0_0_20px_rgba(232,34,42,0.15)]"
+                  ? "border-jackals-red/50 bg-jackals-red/15 text-white shadow-[0_0_20px_rgba(var(--jackals-accent-rgb),0.15)]"
                   : "border-white/10 bg-white/[0.02] text-zinc-400 hover:border-white/20 hover:text-zinc-200",
                 isMine && !selected && "border-jackals-red/25",
               )}

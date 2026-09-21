@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
-import { coachOwnsTeam, requireCoach } from "@/lib/coach-auth";
-import { jsonError, parseJsonBody, requireAdmin } from "@/lib/api";
+import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
 import {
   getSignupInviteEventTeamKey,
   removeTrainingInviteSignup,
   setTrainingInviteSignupStatus,
+  userCanManageTrainingGuestInvites,
 } from "@/lib/training-invites";
 import { trainingInviteSignupStatusSchema } from "@/lib/validations";
 import { isTrainingInviteSignupStatus } from "@/lib/training-invite-types";
@@ -17,22 +17,17 @@ async function authorizeSignupReview(signupId: string) {
     return { ok: false as const, response: jsonError("Registration not found", 404) };
   }
 
-  const admin = await requireAdmin();
-  if (!admin.response && admin.session) {
-    return {
-      ok: true as const,
-      reviewedByUserId: admin.session.user.id,
-      eventId,
-    };
+  const { session, response } = await requireSession();
+  if (response || !session?.user?.id) {
+    return { ok: false as const, response: response ?? jsonError("Unauthorized", 401) };
   }
 
-  const { coach, session, response } = await requireCoach();
-  if (response || !coach || !session) {
-    return { ok: false as const, response: response ?? jsonError("Forbidden", 403) };
-  }
-
-  if (!coachOwnsTeam(coach, trainingTeamKey)) {
-    return { ok: false as const, response: jsonError("Registration not found", 404) };
+  const canManage = await userCanManageTrainingGuestInvites(
+    session.user.id,
+    trainingTeamKey,
+  );
+  if (!canManage) {
+    return { ok: false as const, response: jsonError("Forbidden", 403) };
   }
 
   return {

@@ -1,49 +1,64 @@
 import { NextResponse } from "next/server";
-import { coachOwnsTeam, requireCoach } from "@/lib/coach-auth";
-import { jsonError, parseJsonBody } from "@/lib/api";
+import { getCoachProfile } from "@/lib/coach-auth";
+import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
 import {
   createOrGetTrainingInvite,
   getTrainingInviteEventTeamKey,
   listTrainingInvitesForEvent,
+  userCanManageTrainingGuestInvites,
 } from "@/lib/training-invites";
 import { trainingInviteCreateSchema } from "@/lib/validations";
 
-export async function GET(request: Request) {
-  const { coach, response } = await requireCoach();
-  if (response) return response;
+async function authorizeGuestInviteManager(eventId: string) {
+  const { session, response } = await requireSession();
+  if (response || !session?.user?.id) {
+    return { ok: false as const, response: response ?? jsonError("Unauthorized", 401) };
+  }
 
+  const teamKey = await getTrainingInviteEventTeamKey(eventId);
+  if (!teamKey) {
+    return { ok: false as const, response: jsonError("Training session not found", 404) };
+  }
+
+  const canManage = await userCanManageTrainingGuestInvites(
+    session.user.id,
+    teamKey,
+  );
+  if (!canManage) {
+    return { ok: false as const, response: jsonError("Forbidden", 403) };
+  }
+
+  return { ok: true as const, session, teamKey };
+}
+
+export async function GET(request: Request) {
   const eventId = new URL(request.url).searchParams.get("eventId")?.trim();
   if (!eventId) return jsonError("eventId is required", 400);
 
-  const teamKey = await getTrainingInviteEventTeamKey(eventId);
-  if (!teamKey || !coachOwnsTeam(coach!, teamKey)) {
-    return jsonError("Training session not found", 404);
-  }
+  const authz = await authorizeGuestInviteManager(eventId);
+  if (!authz.ok) return authz.response;
 
   const invites = await listTrainingInvitesForEvent(eventId);
   return NextResponse.json({ invites });
 }
 
 export async function POST(request: Request) {
-  const { coach, session, response } = await requireCoach();
-  if (response) return response;
-
   const { data, response: parseError } = await parseJsonBody(
     request,
     trainingInviteCreateSchema,
   );
   if (parseError || !data) return parseError!;
 
-  const teamKey = await getTrainingInviteEventTeamKey(data.eventId);
-  if (!teamKey || !coachOwnsTeam(coach!, teamKey)) {
-    return jsonError("Training session not found", 404);
-  }
+  const authz = await authorizeGuestInviteManager(data.eventId);
+  if (!authz.ok) return authz.response;
+
+  const coach = await getCoachProfile(authz.session.user.id);
 
   const result = await createOrGetTrainingInvite({
     eventId: data.eventId,
     pricingType: data.pricingType,
-    createdByUserId: session!.user.id,
-    createdByClubMemberId: coach!.clubMemberId,
+    createdByUserId: authz.session.user.id,
+    createdByClubMemberId: coach?.clubMemberId ?? null,
     regenerate: data.regenerate,
     sessionFeeEur: data.sessionFeeEur,
   });

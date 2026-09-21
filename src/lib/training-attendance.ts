@@ -21,6 +21,7 @@ import { prisma } from "@/lib/prisma";
 import {
   countPendingInviteSignupsForEvent,
   listApprovedGuestAttendeesForEvent,
+  userCanManageTrainingGuestInvites,
 } from "@/lib/training-invites";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
 import { getTeamTrainingSession, getUserTrainingTeamKeys, normalizeTrainingTeamKeys } from "@/lib/training-teams";
@@ -296,6 +297,11 @@ export async function getTrainingSessionDetail(
     squadCoaches.some((coach) => coach.userId === userId) ||
     (await userHasSquadCoachAccess(userId, trainingTeamKey));
 
+  const canManageGuestInvites = await userCanManageTrainingGuestInvites(
+    userId,
+    trainingTeamKey,
+  );
+
   const rawUserStatus = signupMap.get(userId) ?? "UNANSWERED";
   const userStatus = isCoachUser
     ? resolveCoachAttendanceStatus(rawUserStatus, sessionDate)
@@ -327,6 +333,7 @@ export async function getTrainingSessionDetail(
     team,
     userStatus,
     isCoachUser,
+    canManageGuestInvites,
     coachResponseGate,
     coachReminder,
     roster,
@@ -340,6 +347,8 @@ export async function getTrainingSessionDetail(
       guests: guestMembers.length,
     },
     guestAttendees,
-    pendingGuestInviteCount,
+    pendingGuestInviteCount: canManageGuestInvites
+      ? pendingGuestInviteCount
+      : 0,
   };
 }

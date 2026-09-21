@@ -2,14 +2,17 @@ import { Suspense } from "react";
 import { auth } from "@/auth";
 import { ForceChangePasswordPrompt } from "@/components/auth/ForceChangePasswordPrompt";
 import { MembershipDueReminderPrompt } from "@/components/membership/MembershipDueReminderPrompt";
+import { DashboardAccentProvider } from "@/components/dashboard/DashboardAccentContext";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { PageTransition } from "@/components/motion/PageTransition";
 import { AuthModalProvider } from "@/components/providers/AuthModalProvider";
 import { SessionProvider } from "@/components/providers/SessionProvider";
 import { SiteEditProvider } from "@/components/providers/SiteEditProvider";
+import { dashboardAccentForTeam } from "@/lib/dashboard-accent";
 import { getSiteContentMap } from "@/lib/site-content";
 import { isSubscribedToEventNewsletter } from "@/lib/event-newsletter-subscription";
+import { getUserTrainingTeamKey } from "@/lib/training-teams";
 
 export default async function AppLayout({
   children,
@@ -36,22 +39,29 @@ export default async function AppLayout({
       ? await isSubscribedToEventNewsletter(session.user.email)
       : false;
 
+  const trainingTeamKey = session?.user?.id
+    ? await getUserTrainingTeamKey(session.user.id)
+    : null;
+  const accent = dashboardAccentForTeam(trainingTeamKey);
+
   return (
     <SessionProvider session={session}>
       <SiteEditProvider isAdmin={isAdmin} initialContent={siteContent}>
         <Suspense>
           <AuthModalProvider>
-            <Header session={session} />
-            <main className="flex-1">
-              <PageTransition>{children}</PageTransition>
-            </main>
-            <Footer
-              isLoggedIn={isLoggedIn}
-              userEmail={session?.user?.email ?? null}
-              eventNewsletterSubscribed={eventNewsletterSubscribed}
-            />
-            {isLoggedIn ? <ForceChangePasswordPrompt /> : null}
-            {isLoggedIn ? <MembershipDueReminderPrompt /> : null}
+            <DashboardAccentProvider accent={accent} className="flex min-h-full flex-1 flex-col">
+              <Header session={session} />
+              <main className="flex-1">
+                <PageTransition>{children}</PageTransition>
+              </main>
+              <Footer
+                isLoggedIn={isLoggedIn}
+                userEmail={session?.user?.email ?? null}
+                eventNewsletterSubscribed={eventNewsletterSubscribed}
+              />
+              {isLoggedIn ? <ForceChangePasswordPrompt /> : null}
+              {isLoggedIn ? <MembershipDueReminderPrompt /> : null}
+            </DashboardAccentProvider>
           </AuthModalProvider>
         </Suspense>
       </SiteEditProvider>

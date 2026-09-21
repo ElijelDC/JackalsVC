@@ -158,7 +158,8 @@ function PlanOptionCard({
       className={cn(
         "relative flex h-full flex-col overflow-hidden rounded-xl border p-5 text-left transition-all",
         selected
-          ? "border-jackals-red/60 bg-jackals-red/10 shadow-[0_0_24px_rgba(232,34,42,0.12)] ring-1 ring-jackals-red/30"
+          ? "border-jackals-red/60 bg-jackals-red/10 shadow-[0_0_24px_rgba(var(--jackals-accent-rgb),0.12)] ring-1 ring-jackals-red/30"
+
           : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]",
       )}
     >
@@ -211,7 +212,8 @@ function ScheduleOptionCard({
       className={cn(
         "relative flex flex-col rounded-xl border p-4 text-left transition-all sm:p-5",
         selected
-          ? "border-jackals-red/60 bg-jackals-red/10 shadow-[0_0_24px_rgba(232,34,42,0.12)] ring-1 ring-jackals-red/30"
+          ? "border-jackals-red/60 bg-jackals-red/10 shadow-[0_0_24px_rgba(var(--jackals-accent-rgb),0.12)] ring-1 ring-jackals-red/30"
+
           : "border-white/10 bg-white/[0.02] hover:border-white/20 hover:bg-white/[0.04]",
       )}
     >

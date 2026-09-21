@@ -6,19 +6,30 @@ import {
   type DashboardAccent,
   type DashboardAccentClasses,
 } from "@/lib/dashboard-accent";
+import { cn } from "@/lib/utils";
 
 const DashboardAccentContext = createContext<DashboardAccent>("red");
 
 export function DashboardAccentProvider({
   accent,
   children,
+  className,
 }: {
   accent: DashboardAccent;
   children: ReactNode;
+  className?: string;
 }) {
   return (
     <DashboardAccentContext.Provider value={accent}>
-      {children}
+      <div
+        className={cn(
+          accent === "purple" && "theme-accent-d3w",
+          className,
+        )}
+        data-accent={accent}
+      >
+        {children}
+      </div>
     </DashboardAccentContext.Provider>
   );
 }

@@ -1,6 +1,6 @@
 import "server-only";
 
-import { listSquadCoaches } from "@/lib/coach-session-coverage";
+import { listSquadOverseers } from "@/lib/coach-session-coverage";
 import { formatEventDateTime } from "@/lib/event-display";
 import { afterSaveNotify } from "@/lib/offer-notify";
 import {
@@ -81,8 +81,8 @@ export async function notifyTrialSessionSignupPending(signupId: string) {
 }
 
 /**
- * Email squad coaches + admins when a guest registers via a training invite link.
- * Coaches keep session-page visibility; this adds email awareness for both roles.
+ * Email squad overseers + admins when a guest registers via a training invite.
+ * Head/cover coaches do not approve guests and are not notified.
  */
 export async function notifyTrainingInviteSignupPending(signupId: string) {
   await afterSaveNotify("training-invite-signup-pending", async () => {
@@ -164,14 +164,14 @@ export async function notifyTrainingInviteSignupPending(signupId: string) {
     };
 
     const teamKey = event.trainingSession?.trainingTeamKey;
-    const coaches = teamKey ? await listSquadCoaches(teamKey) : [];
-    const coachEmails = coaches
+    const overseers = teamKey ? await listSquadOverseers(teamKey) : [];
+    const overseerEmails = overseers
       .map((coach) => coach.email)
       .filter((email): email is string => Boolean(email));
 
-    if (coachEmails.length > 0) {
+    if (overseerEmails.length > 0) {
       await sendNotificationEmail({
-        to: coachEmails,
+        to: overseerEmails,
         subject: `[Jackals VC] Guest request — ${signup.displayName} · ${event.title}`,
         replyTo: signup.email,
         content: contentBase,

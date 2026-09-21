@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getCoachesVisibleToUser,
+  getSessionCoachesForPlayers,
   hasSessionResponseDeadlinePassed,
   resolveCoachAttendanceStatus,
   resolveCoachEventAttendanceStatus,
@@ -99,5 +100,44 @@ describe("getCoachesVisibleToUser", () => {
 
   it("shows all coach statuses to coaches", () => {
     expect(getCoachesVisibleToUser(coaches, true)).toEqual(coaches);
+  });
+});
+
+describe("getSessionCoachesForPlayers", () => {
+  it("returns attending coaches only, head first", () => {
+    const coaches = {
+      attending: [
+        {
+          userId: "2",
+          name: "Cover",
+          status: "ATTENDING" as const,
+          isCurrentUser: false,
+          isHeadCoach: false,
+          coachPriority: 100,
+        },
+        {
+          userId: "1",
+          name: "Head",
+          status: "ATTENDING" as const,
+          isCurrentUser: false,
+          isHeadCoach: true,
+          coachPriority: 0,
+        },
+      ],
+      notAttending: [],
+      unanswered: [
+        {
+          userId: "3",
+          name: "Other",
+          status: "UNANSWERED" as const,
+          isCurrentUser: false,
+        },
+      ],
+    };
+
+    expect(getSessionCoachesForPlayers(coaches).map((c) => c.name)).toEqual([
+      "Head",
+      "Cover",
+    ]);
   });
 });

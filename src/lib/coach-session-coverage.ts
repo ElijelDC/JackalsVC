@@ -2,11 +2,14 @@ import { formatInClubTime } from "@/lib/datetime-form";
 import { requireMailTransporter } from "@/lib/email";
 import { emailSiteUrl } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
+import {
+  COACH_OVERSEER_PRIORITY,
+  isCoachOverseerPriority,
+} from "@/lib/coach-session-coverage-config";
 import type {
   CoachResponseGate,
   SquadCoach,
 } from "@/lib/coach-session-coverage-config";
-import { isCoachOverseerPriority } from "@/lib/coach-session-coverage-config";
 
 export type { CoachResponseGate, SquadCoach };
 export {
@@ -58,6 +61,50 @@ export async function listSquadCoaches(
   }
 
   return coaches;
+}
+
+/** Club overseers assigned to a squad (priority ≥ COACH_OVERSEER_PRIORITY). */
+export async function listSquadOverseers(
+  trainingTeamKey: string,
+): Promise<SquadCoach[]> {
+  const rows = await prisma.clubMemberCoachSquad.findMany({
+    where: {
+      trainingTeamKey,
+      priority: { gte: COACH_OVERSEER_PRIORITY },
+      clubMember: {
+        active: true,
+        rosterRole: "COACH",
+        userId: { not: null },
+      },
+    },
+    orderBy: [{ createdAt: "asc" }],
+    include: {
+      clubMember: {
+        select: {
+          id: true,
+          name: true,
+          userId: true,
+          user: { select: { email: true } },
+        },
+      },
+    },
+  });
+
+  const overseers: SquadCoach[] = [];
+  for (const row of rows) {
+    const userId = row.clubMember.userId;
+    const email = row.clubMember.user?.email;
+    if (!userId || !email) continue;
+    overseers.push({
+      clubMemberId: row.clubMember.id,
+      userId,
+      name: row.clubMember.name,
+      email,
+      priority: row.priority,
+      isHeadCoach: false,
+    });
+  }
+  return overseers;
 }
 
 /** True when the user has a coach squad link (including overseer). */

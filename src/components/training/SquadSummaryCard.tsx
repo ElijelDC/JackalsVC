@@ -9,6 +9,7 @@ import {
   getCoachesVisibleToUser,
   sortCoachesForDisplay,
   type TrainingRosterGroups,
+  type TrainingRosterMember,
 } from "@/lib/training-attendance-config";
 import { cn } from "@/lib/utils";
 
@@ -53,32 +54,59 @@ function SummaryStat({
   );
 }
 
+function coachRoleLabel(coach: TrainingRosterMember) {
+  if (coach.isHeadCoach) return "Head coach";
+  if ((coach.coachPriority ?? 100) < 999) return "Cover coach";
+  return "Coach";
+}
+
 function CoachAttendanceList({
   coaches,
   showStatusBadges,
+  playerFacing = false,
   compact = false,
 }: {
   coaches: TrainingRosterGroups;
   showStatusBadges: boolean;
+  /** Players: only attending coaches, labelled as session coaches. */
+  playerFacing?: boolean;
   compact?: boolean;
 }) {
-  const allCoaches = sortCoachesForDisplay([
-    ...coaches.attending,
-    ...coaches.notAttending,
-    ...coaches.unanswered,
-  ]);
+  const allCoaches = sortCoachesForDisplay(
+    playerFacing
+      ? coaches.attending
+      : [
+          ...coaches.attending,
+          ...coaches.notAttending,
+          ...coaches.unanswered,
+        ],
+  );
 
   if (allCoaches.length === 0) return null;
 
   return (
     <div
       className={cn(
-        "border-t border-white/10",
-        compact ? "mt-3 max-h-28 overflow-y-auto overscroll-contain pt-2" : "mt-5 pt-4",
+        playerFacing
+          ? compact
+            ? "mb-3 border-b border-white/10 pb-3"
+            : "mb-4 border-b border-white/10 pb-4"
+          : cn(
+              "border-t border-white/10",
+              compact
+                ? "mt-3 max-h-28 overflow-y-auto overscroll-contain pt-2"
+                : "mt-5 pt-4",
+            ),
       )}
     >
       <p className="mb-2 text-xs font-medium text-zinc-500">
-        {allCoaches.length === 1 ? "Coach" : "Coaches"}
+        {playerFacing
+          ? allCoaches.length === 1
+            ? "Session coach"
+            : "Session coaches"
+          : allCoaches.length === 1
+            ? "Coach"
+            : "Coaches"}
       </p>
       <ul className={cn("space-y-2", compact && "space-y-1.5")}>
         {allCoaches.map((coach) => (
@@ -108,7 +136,11 @@ function CoachAttendanceList({
                   <span className="font-normal text-zinc-500"> · you</span>
                 ) : null}
               </p>
-              {coach.isHeadCoach ? (
+              {playerFacing ? (
+                <p className="text-[10px] font-medium tracking-wide text-emerald-300/90">
+                  {coachRoleLabel(coach)} · coaching this session
+                </p>
+              ) : coach.isHeadCoach ? (
                 <p className="text-[10px] font-medium tracking-wide text-amber-300/90">
                   Head coach
                 </p>
@@ -155,6 +187,15 @@ export function SquadSummaryCard({
 
       {children ? <div className={compact ? "mb-3" : "mt-4"}>{children}</div> : null}
 
+      {!isCoachUser ? (
+        <CoachAttendanceList
+          coaches={visibleCoaches}
+          showStatusBadges={false}
+          playerFacing
+          compact={compact}
+        />
+      ) : null}
+
       <div className={cn("grid grid-cols-3 gap-2", !compact && "mt-4")}>
         <SummaryStat
           value={counts.attending}
@@ -173,11 +214,13 @@ export function SquadSummaryCard({
         />
       </div>
 
-      <CoachAttendanceList
-        coaches={visibleCoaches}
-        showStatusBadges={isCoachUser}
-        compact={compact}
-      />
+      {isCoachUser ? (
+        <CoachAttendanceList
+          coaches={visibleCoaches}
+          showStatusBadges
+          compact={compact}
+        />
+      ) : null}
     </Card>
   );
 }

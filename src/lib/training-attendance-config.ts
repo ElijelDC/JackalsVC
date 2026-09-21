@@ -259,6 +259,13 @@ export function getCoachesVisibleToUser(
   };
 }
 
+/** Coaches who have accepted — shown to players as the session coach(es). */
+export function getSessionCoachesForPlayers(
+  coaches: TrainingRosterGroups,
+): TrainingRosterMember[] {
+  return sortCoachesForDisplay(coaches.attending);
+}
+
 export type TrainingSessionDetailData = {
   event: {
     id: string;
@@ -276,6 +283,8 @@ export type TrainingSessionDetailData = {
   };
   userStatus: TrainingAttendanceStatus;
   isCoachUser: boolean;
+  /** Admin or squad overseer — create/approve guest invites. */
+  canManageGuestInvites: boolean;
   /** Cover coaches wait for head decline; locked if head already accepted. */
   coachResponseGate: import("@/lib/coach-session-coverage-config").CoachResponseGate | null;
   coachReminder: CoachReminderStatus | null;

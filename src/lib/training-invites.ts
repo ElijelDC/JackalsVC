@@ -3,6 +3,7 @@ import "server-only";
 import { randomBytes } from "crypto";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
+import { COACH_OVERSEER_PRIORITY } from "@/lib/coach-session-coverage-config";
 import { getTrainingPaygSettings } from "@/lib/training-payg-settings";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
 import {
@@ -31,6 +32,38 @@ export const TRAINING_INVITE_SIGNUP_PENDING = "PENDING";
 export const TRAINING_INVITE_SIGNUP_REJECTED = "REJECTED";
 export const TRAINING_INVITE_ACTIVE = "ACTIVE";
 export const TRAINING_INVITE_REVOKED = "REVOKED";
+
+/**
+ * Guest invite create / approve / remove is limited to site admins and
+ * club overseers for that squad. Head/cover coaches only see approved guests.
+ */
+export async function userCanManageTrainingGuestInvites(
+  userId: string | undefined,
+  trainingTeamKey: string | null | undefined,
+): Promise<boolean> {
+  if (!userId || !trainingTeamKey) return false;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (user?.role === "ADMIN") return true;
+
+  const overseerLink = await prisma.clubMemberCoachSquad.findFirst({
+    where: {
+      trainingTeamKey,
+      priority: { gte: COACH_OVERSEER_PRIORITY },
+      clubMember: {
+        userId,
+        rosterRole: "COACH",
+        active: true,
+      },
+    },
+    select: { id: true },
+  });
+
+  return Boolean(overseerLink);
+}
 
 function serializeInvite(invite: {
   id: string;

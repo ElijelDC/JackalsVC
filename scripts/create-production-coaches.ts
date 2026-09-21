@@ -53,9 +53,9 @@ const coaches: CoachSeed[] = [
     vlyNumber: null,
     coachPaymentType: "PAID",
     priorities: {
-      DIV2_MENS: 100,
-      DIV3_WOMENS: 0,
-      DIVISION_3_MENS: 100,
+      DIV2_MENS: 100, // cover
+      DIVISION_3_MENS: 0, // head
+      DIV3_WOMENS: 100, // cover
     },
   },
   {
@@ -64,9 +64,8 @@ const coaches: CoachSeed[] = [
     vlyNumber: null,
     coachPaymentType: "PAID",
     priorities: {
-      DIV2_MENS: 0,
-      DIV3_WOMENS: 100,
-      DIVISION_3_MENS: 100,
+      DIV2_MENS: 0, // head
+      DIVISION_3_MENS: 100, // cover
     },
   },
   {
@@ -74,40 +73,34 @@ const coaches: CoachSeed[] = [
     email: "chvinzons@gmail.com",
     vlyNumber: null,
     coachPaymentType: "PAID",
-    // Cover coach for every active squad
-    priorities: {
-      DIV2_MENS: 100,
-      DIV3_WOMENS: 100,
-      DIVISION_3_MENS: 100,
-    },
+    // Unassigned from all squads
+    priorities: {},
   },
   {
     name: "Orestis",
     email: "orestisal97@gmail.com",
     vlyNumber: null,
     coachPaymentType: "PAID",
-    priorities: {
-      DIV2_MENS: 100,
-    },
+    // Unassigned from all squads
+    priorities: {},
   },
   {
     name: "Viktoriia",
     email: "rost.ovtseva226@gmail.com",
     vlyNumber: null,
     coachPaymentType: "PAID",
-    priorities: {
-      DIVISION_3_MENS: 0,
-    },
+    // Unassigned — D3M head moved to Brijesh
+    priorities: {},
   },
   {
-    name: "Club Overseer",
+    name: "Elijel",
     email: "thunderjackals@gmail.com",
     vlyNumber: null,
     coachPaymentType: "VOLUNTEER",
     role: "ADMIN",
     priorities: {
+      DIV3_WOMENS: 0, // head
       DIV2_MENS: OVERSEER_PRIORITY,
-      DIV3_WOMENS: OVERSEER_PRIORITY,
       DIVISION_3_MENS: OVERSEER_PRIORITY,
     },
   },
@@ -173,7 +166,10 @@ async function upsertCoach(
   const assignedSquads = ACTIVE_SQUADS.filter(
     (key) => seed.priorities[key] != null,
   );
-  const primarySquad = assignedSquads[0] ?? ACTIVE_SQUADS[0];
+  // Prefer head squad as primary; else first assigned; null if unassigned.
+  const headSquad =
+    assignedSquads.find((key) => seed.priorities[key] === 0) ?? null;
+  const primarySquad = headSquad ?? assignedSquads[0] ?? null;
 
   const memberId = byVly?.id ?? byUser?.id;
   const clubMember = memberId
@@ -208,13 +204,15 @@ async function upsertCoach(
   await prisma.clubMemberCoachSquad.deleteMany({
     where: { clubMemberId: clubMember.id },
   });
-  await prisma.clubMemberCoachSquad.createMany({
-    data: assignedSquads.map((trainingTeamKey) => ({
-      clubMemberId: clubMember.id,
-      trainingTeamKey,
-      priority: seed.priorities[trainingTeamKey]!,
-    })),
-  });
+  if (assignedSquads.length > 0) {
+    await prisma.clubMemberCoachSquad.createMany({
+      data: assignedSquads.map((trainingTeamKey) => ({
+        clubMemberId: clubMember.id,
+        trainingTeamKey,
+        priority: seed.priorities[trainingTeamKey]!,
+      })),
+    });
+  }
 
   // Ensure exclusive head (priority 0) per squad for this seed's head assignments.
   for (const trainingTeamKey of assignedSquads) {

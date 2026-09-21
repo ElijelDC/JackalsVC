@@ -51,9 +51,12 @@ function formatFeeLabel(fee: number) {
 export function CoachTrainingInvitePanel({
   eventId,
   compact = false,
+  wide = false,
 }: {
   eventId: string;
   compact?: boolean;
+  /** Desktop full-width: links and invitees side by side. */
+  wide?: boolean;
 }) {
   const router = useRouter();
   const [invites, setInvites] = useState<InviteWithSignups[]>([]);
@@ -255,197 +258,220 @@ export function CoachTrainingInvitePanel({
 
       <div
         className={cn(
-          "rounded-lg border border-white/10 bg-black/20 p-3",
-          compact ? "mt-3" : "mt-5",
+          wide
+            ? "mt-5 grid gap-6 lg:grid-cols-2 lg:items-start"
+            : "contents",
         )}
       >
-        <Label htmlFor={`guest-fee-${eventId}`} className="text-xs text-zinc-400">
-          Paid guest fee (€)
-        </Label>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          <Input
-            id={`guest-fee-${eventId}`}
-            type="number"
-            min={1}
-            step={1}
-            inputMode="decimal"
-            value={paidFeeInput}
-            onChange={(event) => setPaidFeeInput(event.target.value)}
-            className="max-w-[8rem]"
-          />
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            disabled={savingFee || busyType === "PAID"}
-            onClick={() => void savePaidFee()}
-          >
-            {savingFee ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : null}
-            {paidInvite ? "Update fee" : "Set fee"}
-          </Button>
-        </div>
-        <p className="mt-2 text-[11px] text-zinc-500">
-          Applies to the paid invite link for this session only.
-        </p>
-      </div>
-
-      <div
-        className={cn(
-          "grid gap-2",
-          compact ? "mt-3 grid-cols-1" : "mt-4 gap-3 sm:grid-cols-2",
-        )}
-      >
-        {(
-          [
-            {
-              type: "PAID" as const,
-              label: `Paid invite (${formatFeeLabel(paidFee)})`,
-              invite: paidInvite,
-            },
-            {
-              type: "FREE" as const,
-              label: "Free invite",
-              invite: freeInvite,
-            },
-          ] as const
-        ).map(({ type, label, invite }) => (
+        <div className={wide ? "min-w-0 space-y-4" : "contents"}>
           <div
-            key={type}
-            className="rounded-lg border border-white/10 bg-black/20 p-3"
+            className={cn(
+              "rounded-lg border border-white/10 bg-black/20 p-3",
+              !wide && (compact ? "mt-3" : "mt-5"),
+            )}
           >
-            <p className="text-sm font-medium text-white">{label}</p>
-            <p className="mt-1 truncate text-xs text-zinc-500">
-              {invite
-                ? absoluteInviteUrl(invite.publicPath)
-                : "No link yet — generate to copy."}
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <Label
+              htmlFor={`guest-fee-${eventId}`}
+              className="text-xs text-zinc-400"
+            >
+              Paid guest fee (€)
+            </Label>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Input
+                id={`guest-fee-${eventId}`}
+                type="number"
+                min={1}
+                step={1}
+                inputMode="decimal"
+                value={paidFeeInput}
+                onChange={(event) => setPaidFeeInput(event.target.value)}
+                className="max-w-[8rem]"
+              />
               <Button
                 type="button"
                 size="sm"
-                variant="primary"
-                disabled={busyType === type}
-                onClick={() => void copyLink(type)}
+                variant="outline"
+                disabled={savingFee || busyType === "PAID"}
+                onClick={() => void savePaidFee()}
               >
-                {busyType === type ? (
+                {savingFee ? (
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : copiedType === type ? (
-                  <Check className="h-3.5 w-3.5" />
-                ) : (
-                  <Copy className="h-3.5 w-3.5" />
-                )}
-                {copiedType === type
-                  ? "Copied"
-                  : invite
-                    ? "Copy link"
-                    : "Create & copy"}
+                ) : null}
+                {paidInvite ? "Update fee" : "Set fee"}
               </Button>
-              {invite ? (
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={busyType === type}
-                  onClick={() => void ensureInvite(type, true)}
-                >
-                  <Link2 className="h-3.5 w-3.5" />
-                  New link
-                </Button>
-              ) : null}
             </div>
+            <p className="mt-2 text-[11px] text-zinc-500">
+              Applies to the paid invite link for this session only.
+            </p>
           </div>
-        ))}
-      </div>
 
-      <FormError message={error} />
-
-      <div
-        className={cn(
-          "border-t border-white/10",
-          compact
-            ? "mt-3 max-h-40 overflow-y-auto overscroll-contain pt-3"
-            : "mt-5 pt-4",
-        )}
-      >
-        <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
-          Invitees ({allSignups.length})
-        </p>
-        {loading ? (
-          <p className="mt-3 text-sm text-zinc-500">Loading…</p>
-        ) : allSignups.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-600">
-            No guest registrations yet.
-          </p>
-        ) : (
-          <ul className="mt-3 space-y-3">
-            {allSignups.map((signup) => (
-              <li
-                key={signup.id}
-                className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-3"
+          <div
+            className={cn(
+              "grid gap-2",
+              !wide && (compact ? "mt-3 grid-cols-1" : "mt-4 gap-3 sm:grid-cols-2"),
+              wide && "grid-cols-1 sm:grid-cols-2 gap-3",
+            )}
+          >
+            {(
+              [
+                {
+                  type: "PAID" as const,
+                  label: `Paid invite (${formatFeeLabel(paidFee)})`,
+                  invite: paidInvite,
+                },
+                {
+                  type: "FREE" as const,
+                  label: "Free invite",
+                  invite: freeInvite,
+                },
+              ] as const
+            ).map(({ type, label, invite }) => (
+              <div
+                key={type}
+                className="rounded-lg border border-white/10 bg-black/20 p-3"
               >
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-medium text-white">
-                      {signup.displayName}
-                    </p>
-                    <Badge
-                      className={cn("text-[10px]", statusClass(signup.status))}
-                    >
-                      {TRAINING_INVITE_SIGNUP_STATUS_LABELS[signup.status]}
-                    </Badge>
-                    <Badge className="border-white/10 bg-white/5 text-[10px] text-zinc-400">
-                      {signup.pricingType === "PAID" ? "Paid" : "Free"}
-                    </Badge>
-                  </div>
-                  <p className="mt-1 text-xs text-zinc-500">{signup.email}</p>
-                  {signup.paymentProofUrl ? (
-                    <a
-                      href={signup.paymentProofUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="mt-1 inline-block text-xs text-jackals-red-light hover:underline"
-                    >
-                      View receipt
-                    </a>
-                  ) : null}
-                </div>
-                {signup.status === "PENDING" ? (
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={reviewingId === signup.id}
-                      onClick={() => void reviewSignup(signup.id, "APPROVED")}
-                    >
-                      Approve
-                    </Button>
+                <p className="text-sm font-medium text-white">{label}</p>
+                <p className="mt-1 truncate text-xs text-zinc-500">
+                  {invite
+                    ? absoluteInviteUrl(invite.publicPath)
+                    : "No link yet — generate to copy."}
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="primary"
+                    disabled={busyType === type}
+                    onClick={() => void copyLink(type)}
+                  >
+                    {busyType === type ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : copiedType === type ? (
+                      <Check className="h-3.5 w-3.5" />
+                    ) : (
+                      <Copy className="h-3.5 w-3.5" />
+                    )}
+                    {copiedType === type
+                      ? "Copied"
+                      : invite
+                        ? "Copy link"
+                        : "Create & copy"}
+                  </Button>
+                  {invite ? (
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
-                      disabled={reviewingId === signup.id}
-                      onClick={() => void reviewSignup(signup.id, "REJECTED")}
+                      disabled={busyType === type}
+                      onClick={() => void ensureInvite(type, true)}
                     >
-                      Reject
+                      <Link2 className="h-3.5 w-3.5" />
+                      New link
                     </Button>
-                  </div>
-                ) : (
-                  <button
-                    type="button"
-                    aria-label={`Remove ${signup.displayName}`}
-                    disabled={reviewingId === signup.id}
-                    onClick={() => void removeSignup(signup.id)}
-                    className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition hover:border-rose-400/40 hover:bg-rose-500/15 hover:text-rose-200 disabled:opacity-50"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </li>
+                  ) : null}
+                </div>
+              </div>
             ))}
-          </ul>
-        )}
+          </div>
+
+          <FormError message={error} />
+        </div>
+
+        <div
+          className={cn(
+            wide
+              ? "min-w-0 rounded-lg border border-white/10 bg-black/20 p-4"
+              : cn(
+                  "border-t border-white/10",
+                  compact
+                    ? "mt-3 max-h-40 overflow-y-auto overscroll-contain pt-3"
+                    : "mt-5 pt-4",
+                ),
+          )}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            Invitees ({allSignups.length})
+          </p>
+          {loading ? (
+            <p className="mt-3 text-sm text-zinc-500">Loading…</p>
+          ) : allSignups.length === 0 ? (
+            <p className="mt-3 text-sm text-zinc-600">
+              No guest registrations yet.
+            </p>
+          ) : (
+            <ul
+              className={cn(
+                "mt-3 space-y-3",
+                wide && "max-h-[28rem] overflow-y-auto overscroll-contain pr-1",
+              )}
+            >
+              {allSignups.map((signup) => (
+                <li
+                  key={signup.id}
+                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg border border-white/10 bg-white/[0.02] px-3 py-3"
+                >
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-medium text-white">
+                        {signup.displayName}
+                      </p>
+                      <Badge
+                        className={cn("text-[10px]", statusClass(signup.status))}
+                      >
+                        {TRAINING_INVITE_SIGNUP_STATUS_LABELS[signup.status]}
+                      </Badge>
+                      <Badge className="border-white/10 bg-white/5 text-[10px] text-zinc-400">
+                        {signup.pricingType === "PAID" ? "Paid" : "Free"}
+                      </Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-zinc-500">{signup.email}</p>
+                    {signup.paymentProofUrl ? (
+                      <a
+                        href={signup.paymentProofUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mt-1 inline-block text-xs text-jackals-red-light hover:underline"
+                      >
+                        View receipt
+                      </a>
+                    ) : null}
+                  </div>
+                  {signup.status === "PENDING" ? (
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        disabled={reviewingId === signup.id}
+                        onClick={() => void reviewSignup(signup.id, "APPROVED")}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={reviewingId === signup.id}
+                        onClick={() => void reviewSignup(signup.id, "REJECTED")}
+                      >
+                        Reject
+                      </Button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${signup.displayName}`}
+                      disabled={reviewingId === signup.id}
+                      onClick={() => void removeSignup(signup.id)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 text-zinc-400 transition hover:border-rose-400/40 hover:bg-rose-500/15 hover:text-rose-200 disabled:opacity-50"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </Card>
   );
