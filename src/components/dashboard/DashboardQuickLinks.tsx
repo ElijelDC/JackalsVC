@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarRange, Camera, ShoppingBag } from "lucide-react";
+import { CalendarRange, Camera, Package, ShoppingBag } from "lucide-react";
 import { useDashboardAccent } from "@/components/dashboard/DashboardAccentContext";
 import { withDashboardReturn } from "@/lib/dashboard-return";
 import { cn } from "@/lib/utils";
@@ -13,6 +13,12 @@ const QUICK_LINKS = [
     icon: CalendarRange,
     buildHref: (teamKey: string | null) =>
       teamKey ? `/fixtures?team=${teamKey}` : "/fixtures?team=all",
+  },
+  {
+    id: "special-order",
+    label: "Special Order",
+    icon: Package,
+    buildHref: () => "/special-order",
   },
   {
     id: "merch",
@@ -45,7 +51,7 @@ export function DashboardQuickLinks({
         </h2>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
         {QUICK_LINKS.map(({ id, label, icon: Icon, buildHref }) => (
           <Link
             key={id}

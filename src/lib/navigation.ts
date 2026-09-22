@@ -15,6 +15,7 @@ import {
   Settings,
   Shirt,
   ShoppingBag,
+  Gift,
   Trophy,
   Users,
   Volleyball,
@@ -92,6 +93,14 @@ export const NAV_ITEMS: NavItem[] = [
     requiresAuth: true,
   },
   {
+    href: "/special-order",
+    label: "Special Order",
+    icon: Gift,
+    description:
+      "Warm-up T-shirt (free) and match quarter zip — €15 due 13 November.",
+    requiresAuth: true,
+  },
+  {
     href: "/payments",
     label: "Payments",
     icon: Wallet,
@@ -130,6 +139,7 @@ const MEMBER_PRIMARY_NAV_HREFS = [
   "/training",
   "/matches",
   "/membership",
+  "/special-order",
   "/merchandise-order",
 ] as const;
 
@@ -147,6 +157,7 @@ const COACH_PAID_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
+  "/special-order",
   "/merchandise-order",
   "/payments",
 ] as const;
@@ -157,6 +168,7 @@ const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
   "/events",
   "/training",
   "/matches",
+  "/special-order",
   "/merchandise-order",
 ] as const;
 

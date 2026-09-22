@@ -219,6 +219,24 @@ async function authorizeMerchandiseOrderProof(
   return Boolean(order);
 }
 
+async function authorizeSpecialOrderProof(
+  relativePath: string,
+  request: Request,
+) {
+  const session = await auth();
+  if (session?.user?.role === "ADMIN") return true;
+
+  const orderId = extractIdFromFilename(relativePath, "special-order-proofs");
+  if (!orderId) return false;
+  const paymentToken = new URL(request.url).searchParams.get("pt");
+  if (!paymentToken?.trim()) return false;
+  const order = await prisma.specialOrder.findFirst({
+    where: { id: orderId, paymentToken: paymentToken.trim() },
+    select: { id: true },
+  });
+  return Boolean(order);
+}
+
 async function authorizeTrainingPaygProof(relativePath: string) {
   // Filenames are `${cuid}-${timestamp}.ext` (cuid has no hyphens).
   const attendanceId = extractIdFromFilename(
@@ -302,6 +320,10 @@ export async function authorizeUploadAccess(
 
   if (relativePath.startsWith("merchandise-order-proofs/")) {
     return authorizeMerchandiseOrderProof(relativePath, request);
+  }
+
+  if (relativePath.startsWith("special-order-proofs/")) {
+    return authorizeSpecialOrderProof(relativePath, request);
   }
 
   if (relativePath.startsWith("training-payg-proofs/")) {

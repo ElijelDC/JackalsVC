@@ -29,6 +29,7 @@ model User {
   coachResponseReminders CoachResponseReminder[]
   eventNewsletterSubscription EventNewsletterSubscription?
   pushSubscriptions  PushSubscription[]
+  specialOrder       SpecialOrder?
 }
 
 model EventNewsletterSubscription {
@@ -778,6 +779,34 @@ model MerchandiseOrder {
   @@index([createdAt])
   @@index([gender, createdAt])
   @@index([paymentStatus, createdAt])
+}
+
+/// Fixed package: free warm-up T-shirt + €15 match quarter zip (due November).
+/// One order per member account (and one per email).
+model SpecialOrder {
+  id                 String    @id @default(cuid())
+  userId             String?   @unique
+  user               User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  firstName          String
+  lastName           String
+  email              String    @unique
+  phoneNumber        String    @default("")
+  tshirtSize         String
+  quarterZipSize     String
+  paymentToken       String    @unique @default(cuid())
+  /// AWAITING | PROOF_SUBMITTED | PAID
+  paymentStatus      String    @default("AWAITING")
+  proofScreenshotUrl String?
+  proofSubmittedAt   DateTime?
+  paymentEmailSentAt DateTime?
+  /// Payment not due until this date (Europe/Dublin).
+  dueDate            DateTime
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  @@index([createdAt])
+  @@index([paymentStatus, createdAt])
+  @@index([dueDate])
 }
 
 /// Singleton club settings for pay-as-you-go weekly training (id = "default").

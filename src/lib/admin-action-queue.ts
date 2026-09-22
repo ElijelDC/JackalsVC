@@ -54,6 +54,8 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     kitPaymentProofCount,
     merchandisePaymentProofs,
     merchandisePaymentProofCount,
+    specialOrderPaymentProofs,
+    specialOrderPaymentProofCount,
     coachOverduePayments,
     coachOverdueCount,
     coachingApplications,
@@ -105,6 +107,13 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       select: { firstName: true, lastName: true },
     }),
     prisma.merchandiseOrder.count({ where: KIT_PROOF_SUBMITTED_WHERE }),
+    prisma.specialOrder.findMany({
+      where: KIT_PROOF_SUBMITTED_WHERE,
+      orderBy: { proofSubmittedAt: "desc" },
+      take: 4,
+      select: { firstName: true, lastName: true },
+    }),
+    prisma.specialOrder.count({ where: KIT_PROOF_SUBMITTED_WHERE }),
     prisma.coachSalaryPayment.findMany({
       where: coachPaymentOverdueWhere(now),
       include: {
@@ -287,6 +296,22 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
     });
   }
 
+  if (specialOrderPaymentProofCount > 0) {
+    entries.push({
+      kind: "special-order-payment",
+      href: "/admin/special-orders",
+      title: "Special orders",
+      summary:
+        specialOrderPaymentProofCount === 1
+          ? "1 special order receipt to verify"
+          : `${specialOrderPaymentProofCount} special order receipts to verify`,
+      count: specialOrderPaymentProofCount,
+      previews: specialOrderPaymentProofs.map((order) =>
+        `${order.firstName} ${order.lastName}`.trim(),
+      ),
+    });
+  }
+
   if (coachOverdueCount > 0) {
     entries.push({
       kind: "coach-payment",
@@ -408,6 +433,9 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
   if (merchandisePaymentProofCount > 0) {
     badgeCounts["/admin/merchandise-orders"] = merchandisePaymentProofCount;
   }
+  if (specialOrderPaymentProofCount > 0) {
+    badgeCounts["/admin/special-orders"] = specialOrderPaymentProofCount;
+  }
   if (coachOverdueCount > 0) {
     badgeCounts["/admin/coach-payments"] = coachOverdueCount;
   }
@@ -437,6 +465,7 @@ export async function queryAdminActionQueue(): Promise<AdminActionQueue> {
       paymentCount +
       kitPaymentProofCount +
       merchandisePaymentProofCount +
+      specialOrderPaymentProofCount +
       coachOverdueCount +
       coachingApplicationCount +
       committeeInterestCount +

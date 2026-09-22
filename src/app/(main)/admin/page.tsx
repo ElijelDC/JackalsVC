@@ -47,6 +47,13 @@ const SECTIONS = [
     countKey: "merchandiseOrders" as const,
   },
   {
+    href: "/admin/special-orders",
+    title: "Special orders",
+    description: "Warm-up tee + quarter zip package",
+    icon: Package,
+    countKey: "specialOrders" as const,
+  },
+  {
     href: "/admin/membership",
     title: "Membership plans",
     description: "Pricing and features",
@@ -139,6 +146,7 @@ export default async function AdminPage() {
     roster,
     kitOrders,
     merchandiseOrders,
+    specialOrders,
     training,
     matches,
     funSessions,
@@ -156,6 +164,7 @@ export default async function AdminPage() {
     prisma.clubMember.count(),
     prisma.kitOrder.count(),
     prisma.merchandiseOrder.count(),
+    prisma.specialOrder.count(),
     prisma.trainingSession.count({
       where: { category: "WEEKLY" },
     }),
@@ -178,6 +187,7 @@ export default async function AdminPage() {
     plans,
     kitOrders,
     merchandiseOrders,
+    specialOrders,
     training,
     matches,
     funSessions,

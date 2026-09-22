@@ -141,6 +141,12 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
         icon: ShoppingBag,
         keywords: "merch order jackets training tshirt",
       },
+      {
+        href: "/admin/special-orders",
+        label: "Special orders",
+        icon: Package,
+        keywords: "special order warm-up tshirt quarter zip november",
+      },
       { href: "/admin/coach-payments", label: "Coach payments", icon: Wallet },
       {
         href: "/admin/membership",

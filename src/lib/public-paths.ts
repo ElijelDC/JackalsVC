@@ -26,6 +26,7 @@ export const PUBLIC_PATHS = {
     trainingPaygProofs: "/uploads/training-payg-proofs",
     kitOrderProofs: "/uploads/kit-order-proofs",
     merchandiseOrderProofs: "/uploads/merchandise-order-proofs",
+    specialOrderProofs: "/uploads/special-order-proofs",
     studentIdProofs: "/uploads/student-id-proofs",
     adminDocs: "/uploads/admin-docs",
     tournamentDocs: "/uploads/tournament-docs",
@@ -49,6 +50,10 @@ export const PUBLIC_PATHS = {
       "/downloads/kit-order/legea-m1194-tshirt-size-guide.png",
     kitOrderJacketSizeGuide:
       "/downloads/kit-order/legea-m1166-jacket-size-guide.png",
+    specialOrderWarmUpTshirt:
+      "/downloads/special-order/warm-up-tshirt.jpg?v=20260922a",
+    specialOrderMatchQuarterZip:
+      "/downloads/special-order/match-quarter-zip.jpg?v=20260922a",
   },
 } as const;
 

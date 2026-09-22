@@ -4,6 +4,7 @@ export type AdminActionQueueEntry = {
     | "payment"
     | "kit-payment"
     | "merchandise-payment"
+    | "special-order-payment"
     | "coach-payment"
     | "coaching-application"
     | "committee-interest"

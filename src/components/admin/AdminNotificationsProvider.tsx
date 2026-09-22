@@ -28,6 +28,7 @@ const HREF_TO_ENTRY_KIND: Record<string, AdminActionQueueEntry["kind"]> = {
   "/admin/payments": "payment",
   "/admin/kit-orders": "kit-payment",
   "/admin/merchandise-orders": "merchandise-payment",
+  "/admin/special-orders": "special-order-payment",
   "/admin/coach-payments": "coach-payment",
   "/admin/coaching-applications": "coaching-application",
   "/admin/trials-applications": "trials-application",

@@ -292,6 +292,31 @@ export async function apiRemoveMerchandiseOrderProof(
   );
 }
 
+export async function apiUploadSpecialOrderProof(
+  paymentToken: string,
+  file: File,
+  fallbackError = "Failed to upload receipt",
+): Promise<ApiResult<KitOrderProofResponse>> {
+  const formData = new FormData();
+  formData.append("paymentToken", paymentToken);
+  formData.append("screenshot", file);
+  return apiPostForm<KitOrderProofResponse>(
+    "/api/special-order/payment-proof",
+    formData,
+    fallbackError,
+  );
+}
+
+export async function apiRemoveSpecialOrderProof(
+  paymentToken: string,
+  fallbackError = "Failed to remove receipt",
+): Promise<ApiResult<KitOrderProofResponse>> {
+  return apiDelete<KitOrderProofResponse>(
+    `/api/special-order/payment-proof?paymentToken=${encodeURIComponent(paymentToken)}`,
+    fallbackError,
+  );
+}
+
 export async function apiRemoveTrialSessionPaymentProof(
   slug: string,
   proofId: string,

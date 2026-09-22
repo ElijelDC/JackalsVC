@@ -14,6 +14,7 @@ import {
   merchandiseOrderSizeIssues,
   MERCHANDISE_ORDER_QUOTE_LINE_IDS,
 } from "@/lib/merchandise-order-config";
+import { isValidSpecialOrderSize } from "@/lib/special-order-config";
 
 /** Preprocess empty strings/null/undefined → undefined for optional Zod fields */
 const emptyToUndefined = (val: unknown) =>
@@ -1129,4 +1130,39 @@ export const merchandiseOrderFreeLineItemsSchema = z.object({
     .array(z.enum(MERCHANDISE_ORDER_QUOTE_LINE_IDS))
     .max(MERCHANDISE_ORDER_QUOTE_LINE_IDS.length),
 });
+
+export const specialOrderSchema = z
+  .object({
+    firstName: kitOrderName,
+    lastName: kitOrderName,
+    email: z
+      .string()
+      .trim()
+      .email("Enter a valid email address")
+      .superRefine((value, ctx) => {
+        const typo = emailTypoError(value);
+        if (typo) {
+          ctx.addIssue({ code: "custom", message: typo });
+        }
+      }),
+    phoneNumber: z
+      .string()
+      .trim()
+      .min(7, "Enter a valid phone number")
+      .max(30, "Phone number is too long"),
+    tshirtSize: z
+      .string()
+      .trim()
+      .refine(
+        (value) => isValidSpecialOrderSize(value),
+        "Select a size for the warm-up T-shirt",
+      ),
+    quarterZipSize: z
+      .string()
+      .trim()
+      .refine(
+        (value) => isValidSpecialOrderSize(value),
+        "Select a size for the match quarter zip",
+      ),
+  });
 
