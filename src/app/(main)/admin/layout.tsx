@@ -18,7 +18,9 @@ export default async function AdminLayout({
 
   return (
     <AdminNotificationsProvider initial={notifications}>
-      <AdminShell>{children}</AdminShell>
+      <div className="theme-accent-jackals-red" data-accent="red">
+        <AdminShell>{children}</AdminShell>
+      </div>
     </AdminNotificationsProvider>
   );
 }

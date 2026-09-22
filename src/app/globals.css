@@ -29,6 +29,14 @@
   --jackals-accent-rgb: 147, 51, 234;
 }
 
+/** Force club red inside a purple-themed tree (e.g. admin panel). */
+.theme-accent-jackals-red {
+  --jackals-red: #e8222a;
+  --jackals-red-hover: #ff2d35;
+  --jackals-red-light: #ff4d54;
+  --jackals-accent-rgb: 232, 34, 42;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

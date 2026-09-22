@@ -42,7 +42,8 @@ export default async function AppLayout({
   const trainingTeamKey = session?.user?.id
     ? await getUserTrainingTeamKey(session.user.id)
     : null;
-  const accent = dashboardAccentForTeam(trainingTeamKey);
+  // Admin chrome stays Jackals red even if the account is on D3 Women.
+  const accent = isAdmin ? "red" : dashboardAccentForTeam(trainingTeamKey);
 
   return (
     <SessionProvider session={session}>
