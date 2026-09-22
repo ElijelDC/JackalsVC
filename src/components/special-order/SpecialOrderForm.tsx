@@ -14,6 +14,7 @@ import { emailTypoError } from "@/lib/email-typo";
 import { formatMembershipEuro } from "@/lib/membership-2026-27";
 import {
   SPECIAL_ORDER_DUE_LABEL,
+  SPECIAL_ORDER_IMAGE_ASPECT_CLASS,
   SPECIAL_ORDER_QUARTER_ZIP,
   SPECIAL_ORDER_QUARTER_ZIP_FEE_EUR,
   SPECIAL_ORDER_SIZES,
@@ -201,7 +202,7 @@ export function SpecialOrderForm({
 
       <FormErrorAlert ref={errorRef} message={error} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid items-stretch gap-4 lg:grid-cols-2">
         {[
           {
             item: SPECIAL_ORDER_TSHIRT,
@@ -222,11 +223,14 @@ export function SpecialOrderForm({
             priceClass: "text-white",
           },
         ].map(({ item, size, setSize, sizeId, guide, priceLabel, priceClass }) => (
-          <Card key={item.id} className="overflow-hidden p-0">
+          <Card
+            key={item.id}
+            className="flex h-full flex-col overflow-hidden p-0"
+          >
             <div
               className={cn(
-                "relative w-full bg-white",
-                item.imageAspectClass,
+                "relative w-full shrink-0 bg-white",
+                SPECIAL_ORDER_IMAGE_ASPECT_CLASS,
               )}
             >
               <Image
@@ -238,7 +242,7 @@ export function SpecialOrderForm({
                 sizes="(max-width: 1024px) 100vw, 480px"
               />
             </div>
-            <div className="space-y-3 border-t border-white/10 p-4 sm:p-5">
+            <div className="flex flex-1 flex-col space-y-3 border-t border-white/10 p-4 sm:p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-display text-lg font-semibold text-white">
@@ -251,7 +255,7 @@ export function SpecialOrderForm({
                 </p>
               </div>
               <div>{guide}</div>
-              <div>
+              <div className="mt-auto">
                 <Label htmlFor={sizeId}>Size</Label>
                 <Select
                   id={sizeId}

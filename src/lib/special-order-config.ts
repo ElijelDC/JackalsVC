@@ -30,8 +30,6 @@ export const SPECIAL_ORDER_TSHIRT = {
   subtitle: "Included free",
   imageSrc: PUBLIC_PATHS.downloads.specialOrderWarmUpTshirt,
   imageAlt: "Jackals warm-up T-shirt — front and back",
-  /** Native mockup ratio (1024×847). */
-  imageAspectClass: "aspect-[1024/847]",
 };
 
 export const SPECIAL_ORDER_QUARTER_ZIP = {
@@ -41,9 +39,10 @@ export const SPECIAL_ORDER_QUARTER_ZIP = {
   subtitle: "€15",
   imageSrc: PUBLIC_PATHS.downloads.specialOrderMatchQuarterZip,
   imageAlt: "Jackals match quarter zip — front and back",
-  /** Native mockup ratio (1024×938). */
-  imageAspectClass: "aspect-[1024/938]",
 };
+
+/** Shared frame so both product cards match on desktop. */
+export const SPECIAL_ORDER_IMAGE_ASPECT_CLASS = "aspect-[1024/938]";
 
 export {
   kitOrderJacketSizeGuideSrc as specialOrderJacketSizeGuideSrc,
