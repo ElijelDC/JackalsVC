@@ -1260,7 +1260,6 @@ function loadWorkoutTemplate() {
         if (!state.plan) return;
         const { plan } = state;
         state.templateVersion = plan.planTemplateVersion ?? targetTemplateVersion();
-        renderToolsMeta();
         const week = plan.weeks[state.weekIndex] || plan.weeks[0];
         const stats = completionStats();
         const todayIdx = todayDayIndex();
@@ -1699,7 +1698,7 @@ function loadWorkoutTemplate() {
       document.getElementById("timer-overlay").addEventListener("click", (e) => {
         if (e.target.id === "timer-overlay") closeTimer();
       });
-      document.getElementById("video-close").addEventListener("click", closeVideoModal);
+      document.getElementById("video-close").addEventListener("click", closeGuideModal);
       document.getElementById("video-overlay").addEventListener("click", (e) => {
         if (e.target.id === "video-overlay") closeGuideModal();
       });
