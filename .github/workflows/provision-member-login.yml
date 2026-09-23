@@ -1,0 +1,68 @@
+name: Provision member login
+
+on:
+  workflow_dispatch:
+    inputs:
+      full_name:
+        description: "Full name (e.g. Kirill Surname)"
+        required: true
+        type: string
+      email:
+        description: "Login email"
+        required: true
+        type: string
+      squad:
+        description: "Training squad key"
+        required: true
+        type: choice
+        options:
+          - DIV2_MENS
+          - DIV3_WOMENS
+          - DIVISION_3_MENS
+          - DIV4_MENS
+        default: DIV2_MENS
+      reset_password:
+        description: "Reset password if account already exists"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    if: github.repository == 'ElijelDC/JackalsVC'
+    steps:
+      - name: Check Hetzner secrets
+        env:
+          HETZNER_HOST: ${{ secrets.HETZNER_HOST }}
+          HETZNER_USER: ${{ secrets.HETZNER_USER }}
+          HETZNER_SSH_KEY: ${{ secrets.HETZNER_SSH_KEY }}
+          HETZNER_APP_DIR: ${{ secrets.HETZNER_APP_DIR }}
+        run: |
+          if [[ -z "$HETZNER_HOST" || -z "$HETZNER_USER" || -z "$HETZNER_SSH_KEY" || -z "$HETZNER_APP_DIR" ]]; then
+            echo "::error::Hetzner SSH secrets are not configured."
+            exit 1
+          fi
+
+      - name: Provision on production
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          command_timeout: 10m
+          script_stop: true
+          script: |
+            set -euo pipefail
+            APP_DIR="${{ secrets.HETZNER_APP_DIR }}"
+            cd "$APP_DIR"
+            git fetch origin main
+            git checkout main
+            git pull --ff-only origin main
+            docker compose exec -T app env \
+              ALLOW_PRODUCTION_SQUAD_SEED=1 \
+              PROVISION_NAME='${{ inputs.full_name }}' \
+              PROVISION_EMAIL='${{ inputs.email }}' \
+              PROVISION_SQUAD='${{ inputs.squad }}' \
+              FORCE_RESET_PLAYER_PASSWORDS='${{ inputs.reset_password }}' \
+              npx tsx scripts/provision-member-login.ts
