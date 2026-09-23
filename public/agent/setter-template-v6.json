@@ -1,0 +1,2175 @@
+{
+  "planTemplateVersion": 6,
+  "planSpecVersion": "2026-09-23",
+  "title": "Ultimate Setter Preseason Plan",
+  "subtitle": "VLY Div 2 · Match 2026-10-11 · Flyefit Mon/Thu/Fri",
+  "prehabDaily": {
+    "durationMin": "12-14",
+    "blocks": [
+      {
+        "name": "kneesHipsAnkles",
+        "items": [
+          {
+            "name": "Terminal knee extension (towel)",
+            "prescription": "2x15/leg"
+          },
+          {
+            "name": "Sit-to-stand from chair, slow",
+            "prescription": "2x10"
+          },
+          {
+            "name": "Glute bridge, 2 sec squeeze",
+            "prescription": "2x12"
+          },
+          {
+            "name": "Single-leg balance",
+            "prescription": "2x30 sec/side"
+          }
+        ]
+      },
+      {
+        "name": "rightShoulder",
+        "items": [
+          {
+            "name": "External rotation band/towel",
+            "prescription": "2x12"
+          },
+          {
+            "name": "Wall scap push-up",
+            "prescription": "2x12"
+          }
+        ]
+      },
+      {
+        "name": "wristsFingers",
+        "items": [
+          {
+            "name": "Wrist circles + stretch",
+            "prescription": "45 sec"
+          },
+          {
+            "name": "Finger spread vs rubber band",
+            "prescription": "2x15"
+          },
+          {
+            "name": "Fingertip pressure into wall",
+            "prescription": "3x20 sec"
+          },
+          {
+            "name": "1 kg or volleyball fingertip taps",
+            "prescription": "2x20"
+          }
+        ]
+      }
+    ]
+  },
+  "taperPhases": [
+    {
+      "dates": "2026-09-23 to 2026-09-28",
+      "phase": "lastNormalWeek",
+      "adjustments": "Full plan if body >=6/10"
+    },
+    {
+      "dates": "2026-09-29 to 2026-10-05",
+      "phase": "volumeMinus20",
+      "adjustments": "Gym max 3 sets; Sat jumps 3x3; cardio 8 min easy"
+    },
+    {
+      "dates": "2026-10-06 to 2026-10-08",
+      "phase": "taperMinus40",
+      "adjustments": "Legs 2 sets; block jumps 2x3; Sat 2x3 jumps + light ball"
+    },
+    {
+      "dates": "2026-10-09",
+      "phase": "preMatch",
+      "adjustments": "Optional 20 min pull+core or full rest"
+    },
+    {
+      "dates": "2026-10-10",
+      "phase": "dayBeforeMatch",
+      "adjustments": "No gym; prehab + 15 easy wall sets"
+    },
+    {
+      "dates": "2026-10-11",
+      "phase": "matchDay",
+      "adjustments": "Match; prehab + venue warm-up"
+    }
+  ],
+  "trackingWeekly": [
+    "Approach jump touch cm on wall",
+    "Standing block reach cm optional",
+    "Right shoulder pain 0-10",
+    "Knee pain 0-10 day after leg days",
+    "Setting feel 1-10"
+  ],
+  "weeks": [
+    {
+      "name": "Week 1",
+      "theme": "23–28 Sep · full plan if body ≥6/10",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · Leg A + push",
+          "focus": "12 min prehab before session · 8 items (min 6)",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Leg A main load",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/45LP"
+            },
+            {
+              "name": "Leg curl",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "10-12",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Knee stability",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/LVLC"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Vertical power; 2 sec squeeze top",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBHipThrust"
+            },
+            {
+              "name": "Step-up",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Single-leg",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWStepUp"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "12-15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWCalfRaise"
+            },
+            {
+              "name": "Chest press",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; neutral grip if shoulder tight",
+              "guideUrl": "https://exrx.net/WeightExercises/PectoralSternal/LVChestPress"
+            },
+            {
+              "name": "Shoulder press or landmine + triceps → block jumps",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8-10; 3x10; 3x4 jumps",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; max height jumps, 90 sec rest between jump sets",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/LVShoulderPress"
+            },
+            {
+              "name": "Cable crunch or plate hold + bike intervals",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "12; 8 min 30s hard/60s easy",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Core + cardio",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/WtCableCrunch"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · hands & setting",
+          "focus": "12 min prehab before session · 6 drills · no jumps",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder ER hold + scap push-up",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec + 3x10",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wall sit + reverse lunge",
+              "category": "skill",
+              "sets": 2,
+              "reps": "30 sec; 2x8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWWallSit"
+            },
+            {
+              "name": "Towel squeeze + band finger spreads",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec; 2x15",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg wall sets",
+              "category": "skill",
+              "sets": 4,
+              "reps": "20",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 4,
+              "reps": "15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Shuffle 3 steps → set to wall",
+              "category": "skill",
+              "sets": 1,
+              "reps": "10 each way",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Wednesday — Rest + optional club",
+          "focus": "No flyefit, no home workout · 12 min prehab before club if attending · Club 19:00-21:00 only if feeling >=6/10 · No gym after club",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Daily prehab (12 min) before club if attending",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit · no home workout today",
+              "guideUrl": "https://www.physio-pedia.com/Prehabilitation"
+            },
+            {
+              "name": "Optional club training 19:00–21:00",
+              "category": "skill",
+              "sets": 1,
+              "reps": "2 h",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Only if feeling ≥6/10 · no gym after",
+              "guideUrl": "https://www.fivb.com/beach-volleyball/"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "Flyefit · pull only",
+          "focus": "8 items · NO legs · prehab first",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Lat pulldown or assisted pull-up",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/LatissimusDorsi/CBFrontPulldown"
+            },
+            {
+              "name": "Seated cable row or chest-supported row",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/BackGeneral/LVSeatedRow"
+            },
+            {
+              "name": "Single-arm cable or DB row",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10/arm",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/BackGeneral/DBOneArmRow"
+            },
+            {
+              "name": "Face pull + band ER superset",
+              "category": "skill",
+              "sets": 3,
+              "reps": "15; 3x12/side",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidPosterior/CBFacePull"
+            },
+            {
+              "name": "Bicep curl",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Biceps/DBCurl"
+            },
+            {
+              "name": "Hanging knee raise + Pallof press",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10; 3x10/side",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://www.acefitness.org/resources/everyone/exercise-library/172/pallof-press-with-rotation/"
+            },
+            {
+              "name": "Farmer carry or plate pinch",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "30-40 sec",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Forearms/BBFarmerWalk"
+            },
+            {
+              "name": "Incline walk or rower cardio",
+              "category": "conditioning",
+              "sets": 1,
+              "reps": "12 min steady or 6x1 min moderate / 1 min easy",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Aerobic/Equipment/Rowing"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "Flyefit · Leg B + push",
+          "focus": "8 items · legs + push · no jumping · prehab first",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Romanian deadlift",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "3 sec eccentric lower",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/BBRDL"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10-12",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/LVLC"
+            },
+            {
+              "name": "Split squat or walking lunge",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8/leg",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWSplitSquat"
+            },
+            {
+              "name": "Glute kickback or cable pull-through",
+              "category": "strength",
+              "sets": 3,
+              "reps": "12/leg",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/CBKickback"
+            },
+            {
+              "name": "Incline press or landmine press",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/BBLandminePress"
+            },
+            {
+              "name": "Tricep pushdown or rope extension",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10-12",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Triceps/LVPushdown"
+            },
+            {
+              "name": "Ab wheel or cable chop + dead bug",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8; 3x8/side",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/BWDeadBug"
+            },
+            {
+              "name": "Bike or ski erg",
+              "category": "conditioning",
+              "sets": 1,
+              "reps": "10 min moderate",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Aerobic/Equipment/Bicycle"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · jumps & sets",
+          "focus": "12 min prehab before session · ≥48h after Fri legs",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump touch wall",
+              "category": "plyo",
+              "sets": 5,
+              "reps": "3",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalJump"
+            },
+            {
+              "name": "Two-foot block jump to tape line",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "4",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Lateral shuffle + block jump",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Short shuttle 5-8 m",
+              "category": "plyo",
+              "sets": 5,
+              "reps": "down and back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.acefitness.org/resources/everyone/exercise-library/45/shuttle-run/"
+            },
+            {
+              "name": "1 kg quick sets + fingertip wall pushes",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "15; 2x15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Volleyball targets to X + back-set footwork",
+              "category": "plyo",
+              "sets": 1,
+              "reps": "20 to X; 2x10 back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Sunday — Rest",
+          "focus": "Prehab only · No gym, ball, or jumps · track weekly metrics",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://www.physio-pedia.com/Terminal_Knee_Extension"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWSquat"
+            },
+            {
+              "name": "Glute bridge, 2 sec squeeze",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBridge"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWSingleLegBalance"
+            },
+            {
+              "name": "External rotation band/towel",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/Infraspinatus/CBExternalRotation"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wrist circles + stretch",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "45 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Finger spread vs rubber band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Fingertip pressure into wall",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg or volleyball fingertip taps",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "20",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Week 2",
+      "theme": "29 Sep–5 Oct · gym max 3 sets · Sat 3×3 jumps",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · Leg A + push",
+          "focus": "12 min prehab before session · 8 items (min 6)",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Leg A main load",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/45LP"
+            },
+            {
+              "name": "Leg curl",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "10-12",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Knee stability",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/LVLC"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Vertical power; 2 sec squeeze top",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBHipThrust"
+            },
+            {
+              "name": "Step-up",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Single-leg",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWStepUp"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "12-15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWCalfRaise"
+            },
+            {
+              "name": "Chest press",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; neutral grip if shoulder tight",
+              "guideUrl": "https://exrx.net/WeightExercises/PectoralSternal/LVChestPress"
+            },
+            {
+              "name": "Shoulder press or landmine + triceps → block jumps",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8-10; 3x10; 3x4 jumps",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; max height jumps, 90 sec rest between jump sets",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/LVShoulderPress"
+            },
+            {
+              "name": "Cable crunch or plate hold + bike intervals",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "12; 8 min 30s hard/60s easy",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Core + cardio",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/WtCableCrunch"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · hands & setting",
+          "focus": "12 min prehab before session · 6 drills · no jumps",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder ER hold + scap push-up",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec + 3x10",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wall sit + reverse lunge",
+              "category": "skill",
+              "sets": 2,
+              "reps": "30 sec; 2x8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWWallSit"
+            },
+            {
+              "name": "Towel squeeze + band finger spreads",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec; 2x15",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg wall sets",
+              "category": "skill",
+              "sets": 4,
+              "reps": "20",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 4,
+              "reps": "15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Shuffle 3 steps → set to wall",
+              "category": "skill",
+              "sets": 1,
+              "reps": "10 each way",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Wednesday — Rest + optional club",
+          "focus": "No flyefit, no home workout · 12 min prehab before club if attending · Club 19:00-21:00 only if feeling >=6/10 · No gym after club",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Daily prehab (12 min) before club if attending",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit · no home workout today",
+              "guideUrl": "https://www.physio-pedia.com/Prehabilitation"
+            },
+            {
+              "name": "Optional club training 19:00–21:00",
+              "category": "skill",
+              "sets": 1,
+              "reps": "2 h",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Only if feeling ≥6/10 · no gym after",
+              "guideUrl": "https://www.fivb.com/beach-volleyball/"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "Flyefit · pull only",
+          "focus": "8 items · NO legs · prehab first",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Lat pulldown or assisted pull-up",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/LatissimusDorsi/CBFrontPulldown"
+            },
+            {
+              "name": "Seated cable row or chest-supported row",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/BackGeneral/LVSeatedRow"
+            },
+            {
+              "name": "Single-arm cable or DB row",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10/arm",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/BackGeneral/DBOneArmRow"
+            },
+            {
+              "name": "Face pull + band ER superset",
+              "category": "skill",
+              "sets": 3,
+              "reps": "15; 3x12/side",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidPosterior/CBFacePull"
+            },
+            {
+              "name": "Bicep curl",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Biceps/DBCurl"
+            },
+            {
+              "name": "Hanging knee raise + Pallof press",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10; 3x10/side",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://www.acefitness.org/resources/everyone/exercise-library/172/pallof-press-with-rotation/"
+            },
+            {
+              "name": "Farmer carry or plate pinch",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "30-40 sec",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Forearms/BBFarmerWalk"
+            },
+            {
+              "name": "Incline walk or rower cardio",
+              "category": "conditioning",
+              "sets": 1,
+              "reps": "12 min steady or 6x1 min moderate / 1 min easy",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Aerobic/Equipment/Rowing"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "Flyefit · Leg B + push",
+          "focus": "8 items · legs + push · no jumping · prehab first",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Romanian deadlift",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "3 sec eccentric lower",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/BBRDL"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10-12",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/LVLC"
+            },
+            {
+              "name": "Split squat or walking lunge",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8/leg",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWSplitSquat"
+            },
+            {
+              "name": "Glute kickback or cable pull-through",
+              "category": "strength",
+              "sets": 3,
+              "reps": "12/leg",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/CBKickback"
+            },
+            {
+              "name": "Incline press or landmine press",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/BBLandminePress"
+            },
+            {
+              "name": "Tricep pushdown or rope extension",
+              "category": "strength",
+              "sets": 3,
+              "reps": "10-12",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Triceps/LVPushdown"
+            },
+            {
+              "name": "Ab wheel or cable chop + dead bug",
+              "category": "strength",
+              "sets": 3,
+              "reps": "8; 3x8/side",
+              "load": "RPE 7",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/BWDeadBug"
+            },
+            {
+              "name": "Bike or ski erg",
+              "category": "conditioning",
+              "sets": 1,
+              "reps": "8 min easy",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Aerobic/Equipment/Bicycle"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · jumps & sets",
+          "focus": "12 min prehab before session · ≥48h after Fri legs",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump touch wall",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalJump"
+            },
+            {
+              "name": "Two-foot block jump to tape line",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "4",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Lateral shuffle + block jump",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Short shuttle 5-8 m",
+              "category": "plyo",
+              "sets": 5,
+              "reps": "down and back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.acefitness.org/resources/everyone/exercise-library/45/shuttle-run/"
+            },
+            {
+              "name": "1 kg quick sets + fingertip wall pushes",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "15; 2x15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Volleyball targets to X + back-set footwork",
+              "category": "plyo",
+              "sets": 1,
+              "reps": "20 to X; 2x10 back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Sunday — Rest",
+          "focus": "Prehab only · No gym, ball, or jumps · track weekly metrics",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://www.physio-pedia.com/Terminal_Knee_Extension"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWSquat"
+            },
+            {
+              "name": "Glute bridge, 2 sec squeeze",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBridge"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWSingleLegBalance"
+            },
+            {
+              "name": "External rotation band/towel",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/Infraspinatus/CBExternalRotation"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wrist circles + stretch",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "45 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Finger spread vs rubber band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Fingertip pressure into wall",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg or volleyball fingertip taps",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "20",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Week 3",
+      "theme": "6–8 Oct · legs 2 sets · block 2×3 · light Sat",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · Leg A + push",
+          "focus": "12 min prehab before session · 8 items (min 6)",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Leg A main load",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/45LP"
+            },
+            {
+              "name": "Leg curl",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "10-12",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Knee stability",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/LVLC"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Vertical power; 2 sec squeeze top",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBHipThrust"
+            },
+            {
+              "name": "Step-up",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Single-leg",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWStepUp"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "12-15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWCalfRaise"
+            },
+            {
+              "name": "Chest press",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; neutral grip if shoulder tight",
+              "guideUrl": "https://exrx.net/WeightExercises/PectoralSternal/LVChestPress"
+            },
+            {
+              "name": "Shoulder press or landmine + triceps → block jumps",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "8-10; 3x10; 3x4 jumps",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; max height jumps, 90 sec rest between jump sets",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/LVShoulderPress"
+            },
+            {
+              "name": "Cable crunch or plate hold + bike intervals",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "12; 8 min 30s hard/60s easy",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Core + cardio",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/WtCableCrunch"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · hands & setting",
+          "focus": "12 min prehab before session · 6 drills · no jumps",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder ER hold + scap push-up",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec + 3x10",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wall sit + reverse lunge",
+              "category": "skill",
+              "sets": 2,
+              "reps": "30 sec; 2x8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWWallSit"
+            },
+            {
+              "name": "Towel squeeze + band finger spreads",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec; 2x15",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg wall sets",
+              "category": "skill",
+              "sets": 4,
+              "reps": "20",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 4,
+              "reps": "15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Shuffle 3 steps → set to wall",
+              "category": "skill",
+              "sets": 1,
+              "reps": "10 each way",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Wednesday — Rest + optional club",
+          "focus": "No flyefit, no home workout · 12 min prehab before club if attending · Club 19:00-21:00 only if feeling >=6/10 · No gym after club",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Daily prehab (12 min) before club if attending",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit · no home workout today",
+              "guideUrl": "https://www.physio-pedia.com/Prehabilitation"
+            },
+            {
+              "name": "Optional club training 19:00–21:00",
+              "category": "skill",
+              "sets": 1,
+              "reps": "2 h",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Only if feeling ≥6/10 · no gym after",
+              "guideUrl": "https://www.fivb.com/beach-volleyball/"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "Flyefit · pull only",
+          "focus": "8 items · NO legs · prehab first",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Lat pulldown or assisted pull-up",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/LatissimusDorsi/CBFrontPulldown"
+            },
+            {
+              "name": "Seated cable row or chest-supported row",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/BackGeneral/LVSeatedRow"
+            },
+            {
+              "name": "Single-arm cable or DB row",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10/arm",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/BackGeneral/DBOneArmRow"
+            },
+            {
+              "name": "Face pull + band ER superset",
+              "category": "skill",
+              "sets": 2,
+              "reps": "15; 3x12/side",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidPosterior/CBFacePull"
+            },
+            {
+              "name": "Bicep curl",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Biceps/DBCurl"
+            },
+            {
+              "name": "Hanging knee raise + Pallof press",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10; 3x10/side",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://www.acefitness.org/resources/everyone/exercise-library/172/pallof-press-with-rotation/"
+            },
+            {
+              "name": "Farmer carry or plate pinch",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30-40 sec",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Forearms/BBFarmerWalk"
+            },
+            {
+              "name": "Incline walk or rower cardio",
+              "category": "conditioning",
+              "sets": 1,
+              "reps": "12 min steady or 6x1 min moderate / 1 min easy",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Aerobic/Equipment/Rowing"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "Flyefit · Leg B + push",
+          "focus": "8 items · legs + push · no jumping · prehab first",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Romanian deadlift",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "3 sec eccentric lower",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/BBRDL"
+            },
+            {
+              "name": "Leg curl",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10-12",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/LVLC"
+            },
+            {
+              "name": "Split squat or walking lunge",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWSplitSquat"
+            },
+            {
+              "name": "Glute kickback or cable pull-through",
+              "category": "strength",
+              "sets": 2,
+              "reps": "12/leg",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/CBKickback"
+            },
+            {
+              "name": "Incline press or landmine press",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/BBLandminePress"
+            },
+            {
+              "name": "Tricep pushdown or rope extension",
+              "category": "strength",
+              "sets": 2,
+              "reps": "10-12",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Triceps/LVPushdown"
+            },
+            {
+              "name": "Ab wheel or cable chop + dead bug",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8; 3x8/side",
+              "load": "Moderate",
+              "restSec": 90,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/BWDeadBug"
+            },
+            {
+              "name": "Bike or ski erg",
+              "category": "conditioning",
+              "sets": 1,
+              "reps": "10 min moderate",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Aerobic/Equipment/Bicycle"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · jumps & sets",
+          "focus": "12 min prehab before session · ≥48h after Fri legs",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump touch wall",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalJump"
+            },
+            {
+              "name": "Two-foot block jump to tape line",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "4",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Lateral shuffle + block jump",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "3/side",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Short shuttle 5-8 m",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "down and back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.acefitness.org/resources/everyone/exercise-library/45/shuttle-run/"
+            },
+            {
+              "name": "1 kg quick sets + fingertip wall pushes",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "15; 2x15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Volleyball targets to X + back-set footwork",
+              "category": "plyo",
+              "sets": 1,
+              "reps": "20 to X; 2x10 back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Sunday — Rest",
+          "focus": "Prehab only · No gym, ball, or jumps · track weekly metrics",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://www.physio-pedia.com/Terminal_Knee_Extension"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWSquat"
+            },
+            {
+              "name": "Glute bridge, 2 sec squeeze",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBridge"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWSingleLegBalance"
+            },
+            {
+              "name": "External rotation band/towel",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/Infraspinatus/CBExternalRotation"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wrist circles + stretch",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "45 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Finger spread vs rubber band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Fingertip pressure into wall",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg or volleyball fingertip taps",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "20",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Week 4",
+      "theme": "Match peak · 10 Oct no gym · 11 Oct match",
+      "days": [
+        {
+          "label": "Mon",
+          "title": "Flyefit · Leg A + push",
+          "focus": "12 min prehab before session · 8 items (min 6)",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Leg press or hack squat",
+              "category": "plyo",
+              "sets": 4,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Leg A main load",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/45LP"
+            },
+            {
+              "name": "Leg curl",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "10-12",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Knee stability",
+              "guideUrl": "https://exrx.net/WeightExercises/Hamstrings/LVLC"
+            },
+            {
+              "name": "Hip thrust",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Vertical power; 2 sec squeeze top",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBHipThrust"
+            },
+            {
+              "name": "Step-up",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Single-leg",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWStepUp"
+            },
+            {
+              "name": "Standing calf raise",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "12-15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Ankle",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWCalfRaise"
+            },
+            {
+              "name": "Chest press",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "8-10",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; neutral grip if shoulder tight",
+              "guideUrl": "https://exrx.net/WeightExercises/PectoralSternal/LVChestPress"
+            },
+            {
+              "name": "Shoulder press or landmine + triceps → block jumps",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "8-10; 3x10; 3x4 jumps",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Push; max height jumps, 90 sec rest between jump sets",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidAnterior/LVShoulderPress"
+            },
+            {
+              "name": "Cable crunch or plate hold + bike intervals",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "12; 8 min 30s hard/60s easy",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "Core + cardio",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/WtCableCrunch"
+            }
+          ]
+        },
+        {
+          "label": "Tue",
+          "title": "Home · hands & setting",
+          "focus": "12 min prehab before session · 6 drills · no jumps",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Shoulder ER hold + scap push-up",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec + 3x10",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wall sit + reverse lunge",
+              "category": "skill",
+              "sets": 2,
+              "reps": "30 sec; 2x8/leg",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWWallSit"
+            },
+            {
+              "name": "Towel squeeze + band finger spreads",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec; 2x15",
+              "load": "Moderate",
+              "restSec": 45,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg wall sets",
+              "category": "skill",
+              "sets": 4,
+              "reps": "20",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Volleyball sets to taped X",
+              "category": "skill",
+              "sets": 4,
+              "reps": "15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            },
+            {
+              "name": "Shuffle 3 steps → set to wall",
+              "category": "skill",
+              "sets": 1,
+              "reps": "10 each way",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Wed",
+          "title": "Wednesday — Rest + optional club",
+          "focus": "No flyefit, no home workout · 12 min prehab before club if attending · Club 19:00-21:00 only if feeling >=6/10 · No gym after club",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Daily prehab (12 min) before club if attending",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit · no home workout today",
+              "guideUrl": "https://www.physio-pedia.com/Prehabilitation"
+            },
+            {
+              "name": "Optional club training 19:00–21:00",
+              "category": "skill",
+              "sets": 1,
+              "reps": "2 h",
+              "load": "Live",
+              "restSec": 0,
+              "notes": "Only if feeling ≥6/10 · no gym after",
+              "guideUrl": "https://www.fivb.com/beach-volleyball/"
+            },
+            {
+              "name": "Match week — prefer full rest if fatigued",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "—",
+              "load": "—",
+              "restSec": 0,
+              "notes": "Save legs for 11 Oct",
+              "guideUrl": "https://www.physio-pedia.com/Prehabilitation"
+            }
+          ]
+        },
+        {
+          "label": "Thu",
+          "title": "9 Oct — optional pull + core or rest",
+          "focus": "20 min max or full rest",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "Face pull + Pallof (optional)",
+              "category": "strength",
+              "sets": 2,
+              "reps": "12 · 10/side",
+              "load": "Light",
+              "restSec": 60,
+              "notes": "Skip if tired",
+              "guideUrl": "https://exrx.net/WeightExercises/DeltoidPosterior/CBFacePull"
+            },
+            {
+              "name": "Dead bug (optional)",
+              "category": "strength",
+              "sets": 2,
+              "reps": "8/side",
+              "load": "—",
+              "restSec": 45,
+              "notes": "Or take full rest",
+              "guideUrl": "https://exrx.net/WeightExercises/RectusAbdominis/BWDeadBug"
+            }
+          ]
+        },
+        {
+          "label": "Fri",
+          "title": "10 Oct — day before match",
+          "focus": "No gym · prehab + 15 easy wall sets",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "12 min daily prehab",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "12 min",
+              "load": "—",
+              "restSec": 0,
+              "notes": "No Flyefit",
+              "guideUrl": "https://www.physio-pedia.com/Prehabilitation"
+            },
+            {
+              "name": "15 easy 1 kg wall sets (optional)",
+              "category": "skill",
+              "sets": 1,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 0,
+              "notes": "Only if shoulders feel great",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Sat",
+          "title": "Home · jumps & sets",
+          "focus": "12 min prehab before session · ≥48h after Fri legs",
+          "rest": false,
+          "exercises": [
+            {
+              "name": "3-step approach jump touch wall",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "3",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalJump"
+            },
+            {
+              "name": "Two-foot block jump to tape line",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "4",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Lateral shuffle + block jump",
+              "category": "plyo",
+              "sets": 2,
+              "reps": "3/side",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://exrx.net/Plyometrics/VerticalBlockJump"
+            },
+            {
+              "name": "Short shuttle 5-8 m",
+              "category": "plyo",
+              "sets": 5,
+              "reps": "down and back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.acefitness.org/resources/everyone/exercise-library/45/shuttle-run/"
+            },
+            {
+              "name": "1 kg quick sets + fingertip wall pushes",
+              "category": "plyo",
+              "sets": 3,
+              "reps": "15; 2x15",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Volleyball targets to X + back-set footwork",
+              "category": "plyo",
+              "sets": 1,
+              "reps": "20 to X; 2x10 back",
+              "load": "Moderate",
+              "restSec": 60,
+              "notes": "",
+              "guideUrl": "https://www.artofcoaching.com/articles/volleyball-setting-drills"
+            }
+          ]
+        },
+        {
+          "label": "Sun",
+          "title": "Sunday — Rest",
+          "focus": "Prehab only · No gym, ball, or jumps · track weekly metrics",
+          "rest": true,
+          "exercises": [
+            {
+              "name": "Terminal knee extension (towel)",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15/leg",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://www.physio-pedia.com/Terminal_Knee_Extension"
+            },
+            {
+              "name": "Sit-to-stand from chair, slow",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "10",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Quadriceps/BWSquat"
+            },
+            {
+              "name": "Glute bridge, 2 sec squeeze",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/GluteusMaximus/BWBridge"
+            },
+            {
+              "name": "Single-leg balance",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "30 sec/side",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · kneesHipsAnkles",
+              "guideUrl": "https://exrx.net/WeightExercises/Gastrocnemius/BWSingleLegBalance"
+            },
+            {
+              "name": "External rotation band/towel",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/Infraspinatus/CBExternalRotation"
+            },
+            {
+              "name": "Wall scap push-up",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "12",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · rightShoulder",
+              "guideUrl": "https://exrx.net/WeightExercises/SerratusAnterior/BWPushUpPlus"
+            },
+            {
+              "name": "Wrist circles + stretch",
+              "category": "mobility",
+              "sets": 1,
+              "reps": "45 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Finger spread vs rubber band",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "15",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "Fingertip pressure into wall",
+              "category": "mobility",
+              "sets": 3,
+              "reps": "20 sec",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "1 kg or volleyball fingertip taps",
+              "category": "mobility",
+              "sets": 2,
+              "reps": "20",
+              "load": "Light",
+              "restSec": 30,
+              "notes": "Daily prehab · wristsFingers",
+              "guideUrl": "https://www.physio-pedia.com/Wrist_and_Hand_Exercises"
+            },
+            {
+              "name": "11 Oct — match day prep mindset",
+              "category": "skill",
+              "sets": 1,
+              "reps": "—",
+              "load": "—",
+              "restSec": 0,
+              "notes": "Prehab + venue warm-up on match day",
+              "guideUrl": "https://www.physio-pedia.com/Prehabilitation"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
