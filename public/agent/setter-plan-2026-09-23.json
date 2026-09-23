@@ -1,0 +1,173 @@
+{
+  "meta": {
+    "title": "Ultimate Setter Preseason Plan",
+    "version": "2026-09-23",
+    "athlete": {
+      "heightCm": 173,
+      "position": "setter",
+      "league": "Volleyball Ireland Division 2"
+    },
+    "matchDate": "2026-10-11",
+    "clubTraining": { "day": "wednesday", "start": "19:00", "end": "21:00", "optionalWhenFatigued": true },
+    "locations": {
+      "flyefit": ["monday", "thursday", "friday"],
+      "homeVolleyball": ["tuesday", "saturday"],
+      "restNoGymNoHome": ["wednesday", "sunday"]
+    },
+    "sessionRules": {
+      "flyefitItemsMin": 6,
+      "flyefitItemsMax": 8,
+      "homeDrills": 6,
+      "prehabMinutesDaily": 12,
+      "legDays": ["monday", "friday"],
+      "pushDays": ["monday", "friday"],
+      "pullDays": ["thursday"],
+      "thursdayNoLegs": true,
+      "painThreshold": 3
+    }
+  },
+  "weeklySchedule": [
+    { "day": "monday", "location": "flyefit", "sessionId": "mon-flyefit-leg-a-push", "durationMin": "60-70" },
+    { "day": "tuesday", "location": "home", "sessionId": "tue-home-hands", "durationMin": "35-40" },
+    { "day": "wednesday", "location": "rest", "sessionId": "wed-rest-club-optional", "clubOptional": true },
+    { "day": "thursday", "location": "flyefit", "sessionId": "thu-flyefit-pull", "durationMin": "55-65" },
+    { "day": "friday", "location": "flyefit", "sessionId": "fri-flyefit-leg-b-push", "durationMin": "60-70" },
+    { "day": "saturday", "location": "home", "sessionId": "sat-home-jumps", "durationMin": "35-45" },
+    { "day": "sunday", "location": "rest", "sessionId": "sun-rest-prehab" }
+  ],
+  "prehabDaily": {
+    "durationMin": "12-14",
+    "blocks": [
+      {
+        "name": "kneesHipsAnkles",
+        "items": [
+          { "name": "Terminal knee extension (towel)", "prescription": "2x15/leg" },
+          { "name": "Sit-to-stand from chair, slow", "prescription": "2x10" },
+          { "name": "Glute bridge, 2 sec squeeze", "prescription": "2x12" },
+          { "name": "Single-leg balance", "prescription": "2x30 sec/side" }
+        ]
+      },
+      {
+        "name": "rightShoulder",
+        "items": [
+          { "name": "External rotation band/towel", "prescription": "2x12" },
+          { "name": "Wall scap push-up", "prescription": "2x12" }
+        ]
+      },
+      {
+        "name": "wristsFingers",
+        "items": [
+          { "name": "Wrist circles + stretch", "prescription": "45 sec" },
+          { "name": "Finger spread vs rubber band", "prescription": "2x15" },
+          { "name": "Fingertip pressure into wall", "prescription": "3x20 sec" },
+          { "name": "1 kg or volleyball fingertip taps", "prescription": "2x20" }
+        ]
+      }
+    ]
+  },
+  "sessions": {
+    "mon-flyefit-leg-a-push": {
+      "title": "Monday — Flyefit · Leg A + PUSH · 8 items",
+      "tags": ["legs", "push", "plyometric", "core", "cardio"],
+      "minimumItems": 6,
+      "exercises": [
+        { "order": 1, "name": "Leg press or hack squat", "prescription": "4x8-10", "notes": "Leg A main load" },
+        { "order": 2, "name": "Leg curl", "prescription": "3x10-12", "notes": "Knee stability" },
+        { "order": 3, "name": "Hip thrust", "prescription": "3x10", "notes": "Vertical power; 2 sec squeeze top" },
+        { "order": 4, "name": "Step-up", "prescription": "3x8/leg", "notes": "Single-leg" },
+        { "order": 5, "name": "Standing calf raise", "prescription": "3x12-15", "notes": "Ankle" },
+        { "order": 6, "name": "Chest press", "prescription": "3x8-10", "notes": "Push; neutral grip if shoulder tight" },
+        { "order": 7, "name": "Shoulder press or landmine + triceps → block jumps", "prescription": "3x8-10; 3x10; 3x4 jumps", "notes": "Push; max height jumps, 90 sec rest between jump sets" },
+        { "order": 8, "name": "Cable crunch or plate hold + bike intervals", "prescription": "3x12; 8 min 30s hard/60s easy", "notes": "Core + cardio" }
+      ]
+    },
+    "tue-home-hands": {
+      "title": "Tuesday — Home · 6 drills",
+      "tags": ["home", "setting", "shoulder", "knee", "wrists"],
+      "noJumping": true,
+      "exercises": [
+        { "order": 1, "name": "Shoulder ER hold + scap push-up", "prescription": "3x20 sec + 3x10" },
+        { "order": 2, "name": "Wall sit + reverse lunge", "prescription": "2x30 sec; 2x8/leg" },
+        { "order": 3, "name": "Towel squeeze + band finger spreads", "prescription": "2x30 sec; 2x15" },
+        { "order": 4, "name": "1 kg wall sets", "prescription": "4x20" },
+        { "order": 5, "name": "Volleyball sets to taped X", "prescription": "4x15" },
+        { "order": 6, "name": "Shuffle 3 steps → set to wall", "prescription": "10 each way" }
+      ]
+    },
+    "wed-rest-club-optional": {
+      "title": "Wednesday — Rest + optional club",
+      "tags": ["rest", "club"],
+      "notes": [
+        "No flyefit, no home workout",
+        "12 min prehab before club if attending",
+        "Club 19:00-21:00 only if feeling >=6/10",
+        "No gym after club"
+      ]
+    },
+    "thu-flyefit-pull": {
+      "title": "Thursday — Flyefit · PULL · 8 items · NO LEGS",
+      "tags": ["pull", "shoulder", "core", "grip", "cardio"],
+      "noLegs": true,
+      "minimumItems": 6,
+      "exercises": [
+        { "order": 1, "name": "Lat pulldown or assisted pull-up", "prescription": "3x8-10" },
+        { "order": 2, "name": "Seated cable row or chest-supported row", "prescription": "3x10" },
+        { "order": 3, "name": "Single-arm cable or DB row", "prescription": "3x10/arm" },
+        { "order": 4, "name": "Face pull + band ER superset", "prescription": "3x15; 3x12/side" },
+        { "order": 5, "name": "Bicep curl", "prescription": "3x10" },
+        { "order": 6, "name": "Hanging knee raise + Pallof press", "prescription": "3x10; 3x10/side" },
+        { "order": 7, "name": "Farmer carry or plate pinch", "prescription": "3x30-40 sec" },
+        { "order": 8, "name": "Incline walk or rower cardio", "prescription": "12 min steady or 6x1 min moderate / 1 min easy" }
+      ]
+    },
+    "fri-flyefit-leg-b-push": {
+      "title": "Friday — Flyefit · Leg B + PUSH · 8 items",
+      "tags": ["legs", "push", "core", "cardio"],
+      "noJumping": true,
+      "minimumItems": 6,
+      "exercises": [
+        { "order": 1, "name": "Romanian deadlift", "prescription": "3x8", "notes": "3 sec eccentric lower" },
+        { "order": 2, "name": "Leg curl", "prescription": "3x10-12" },
+        { "order": 3, "name": "Split squat or walking lunge", "prescription": "3x8/leg" },
+        { "order": 4, "name": "Glute kickback or cable pull-through", "prescription": "3x12/leg" },
+        { "order": 5, "name": "Incline press or landmine press", "prescription": "3x8-10" },
+        { "order": 6, "name": "Tricep pushdown or rope extension", "prescription": "3x10-12" },
+        { "order": 7, "name": "Ab wheel or cable chop + dead bug", "prescription": "3x8; 3x8/side" },
+        { "order": 8, "name": "Bike or ski erg", "prescription": "10 min moderate" }
+      ]
+    },
+    "sat-home-jumps": {
+      "title": "Saturday — Home · 6 drills",
+      "tags": ["home", "plyometric", "setting"],
+      "notes": [">=48h after Friday legs", "Max effort jumps, ~25-35 total jump reps", "90 sec rest on approach jumps"],
+      "exercises": [
+        { "order": 1, "name": "3-step approach jump touch wall", "prescription": "5x3" },
+        { "order": 2, "name": "Two-foot block jump to tape line", "prescription": "4x4" },
+        { "order": 3, "name": "Lateral shuffle + block jump", "prescription": "3x3/side" },
+        { "order": 4, "name": "Short shuttle 5-8 m", "prescription": "5x down and back" },
+        { "order": 5, "name": "1 kg quick sets + fingertip wall pushes", "prescription": "3x15; 2x15" },
+        { "order": 6, "name": "Volleyball targets to X + back-set footwork", "prescription": "20 to X; 2x10 back" }
+      ]
+    },
+    "sun-rest-prehab": {
+      "title": "Sunday — Rest",
+      "tags": ["rest"],
+      "notes": ["Prehab only", "No gym, ball, or jumps"]
+    }
+  },
+  "taperPhases": [
+    { "dates": "2026-09-23 to 2026-09-28", "phase": "lastNormalWeek", "adjustments": "Full plan if body >=6/10" },
+    { "dates": "2026-09-29 to 2026-10-05", "phase": "volumeMinus20", "adjustments": "Gym max 3 sets; Sat jumps 3x3; cardio 8 min easy" },
+    { "dates": "2026-10-06 to 2026-10-08", "phase": "taperMinus40", "adjustments": "Legs 2 sets; block jumps 2x3; Sat 2x3 jumps + light ball" },
+    { "dates": "2026-10-09", "phase": "preMatch", "adjustments": "Optional 20 min pull+core or full rest" },
+    { "dates": "2026-10-10", "phase": "dayBeforeMatch", "adjustments": "No gym; prehab + 15 easy wall sets" },
+    { "dates": "2026-10-11", "phase": "matchDay", "adjustments": "Match; prehab + venue warm-up" }
+  ],
+  "trackingWeekly": [
+    "Approach jump touch cm on wall",
+    "Standing block reach cm optional",
+    "Right shoulder pain 0-10",
+    "Knee pain 0-10 day after leg days",
+    "Setting feel 1-10"
+  ]
+}
