@@ -285,6 +285,8 @@ export type TrainingSessionDetailData = {
   isCoachUser: boolean;
   /** Admin or squad overseer — create/approve guest invites. */
   canManageGuestInvites: boolean;
+  /** Overseer/admin: remind head coach first, then cover coaches. */
+  coachCoverageReminder: import("@/lib/coach-coverage-reminders-config").CoachCoverageReminderPreview | null;
   /** Cover coaches wait for head decline; locked if head already accepted. */
   coachResponseGate: import("@/lib/coach-session-coverage-config").CoachResponseGate | null;
   coachReminder: CoachReminderStatus | null;

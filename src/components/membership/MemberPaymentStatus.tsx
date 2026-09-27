@@ -12,6 +12,8 @@ import type { PaymentSchedule } from "@/lib/membership-config";
 import type { MembershipPaymentAccess } from "@/lib/membership-overdue";
 import { PAYMENT_OVERDUE_GRACE_DAYS } from "@/lib/membership-overdue";
 import { formatPrice } from "@/lib/utils";
+import { parseAppliedMembershipCreditEur } from "@/lib/membership-credit-config";
+import { MembershipCreditNotice } from "@/components/membership/MembershipCreditNotice";
 
 type PaymentItem = {
   id: string;
@@ -37,6 +39,11 @@ type MembershipInfo = {
   paymentDeferralExcuse?: string | null;
   paymentDeferralDueDate?: string | null;
   paymentDeferralRequestedAt?: string | null;
+};
+
+type MembershipCreditInfo = {
+  creditEur: number;
+  note: string | null;
 };
 
 type ClubBank = {
@@ -84,12 +91,14 @@ export function MemberPaymentStatus({
   payments,
   clubBank,
   paymentAccess = null,
+  membershipCredit = null,
 }: {
   memberName: string;
   membership: MembershipInfo;
   payments: PaymentItem[];
   clubBank: ClubBank;
   paymentAccess?: MembershipPaymentAccess | null;
+  membershipCredit?: MembershipCreditInfo | null;
 }) {
   const nextPayment = payments
     .filter((payment) => payment.status === "PENDING")
@@ -101,9 +110,27 @@ export function MemberPaymentStatus({
   const paidCount = payments.filter((payment) => payment.status === "COMPLETED").length;
   const isActive = membership.status === "ACTIVE";
   const overdueInstallmentNumber = paymentAccess?.overduePayment?.installmentNumber ?? null;
+  const pendingCreditEur = membershipCredit?.creditEur ?? 0;
+  const appliedOnNextPayment = nextPayment
+    ? parseAppliedMembershipCreditEur(nextPayment.description)
+    : null;
 
   return (
     <StaggerIn className="mx-auto max-w-2xl space-y-6" stagger={90}>
+      {pendingCreditEur > 0 ? (
+        <MembershipCreditNotice
+          creditEur={pendingCreditEur}
+          note={membershipCredit?.note}
+          variant="upcoming"
+        />
+      ) : appliedOnNextPayment ? (
+        <MembershipCreditNotice
+          creditEur={appliedOnNextPayment}
+          note={membershipCredit?.note}
+          variant="applied"
+        />
+      ) : null}
+
       <Card className="py-5">
         <div className="flex items-start gap-3">
           {paymentAccess?.isOverdue ? (
@@ -186,6 +213,12 @@ export function MemberPaymentStatus({
                   You can pay this early — no need to wait for the due date. Transfer
                   the amount below, then upload your receipt.
                 </p>
+                {appliedOnNextPayment ? (
+                  <p className="mt-2 text-sm text-emerald-300/90">
+                    Includes {formatPrice(appliedOnNextPayment, "EUR")} membership
+                    credit already applied — pay this reduced amount only.
+                  </p>
+                ) : null}
               </div>
             </div>
           </div>

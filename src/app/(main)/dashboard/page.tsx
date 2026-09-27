@@ -12,7 +12,9 @@ import {
   DashboardUpcomingTrainingCard,
   MemberPaymentsPanel,
 } from "@/components/dashboard/MemberDashboardPanels";
+import { MembershipCreditNotice } from "@/components/membership/MembershipCreditNotice";
 import { DASHBOARD_SCHEDULE_FETCH_LIMIT } from "@/lib/dashboard-schedule-config";
+import { parseAppliedMembershipCreditEur } from "@/lib/membership-credit-config";
 import { DashboardAccentProvider } from "@/components/dashboard/DashboardAccentContext";
 import { dashboardAccentForTeam } from "@/lib/dashboard-accent";
 import { PageContainer } from "@/components/layout/PageShell";
@@ -157,7 +159,7 @@ export default async function DashboardPage() {
   const trainingTeamKey = await getUserTrainingTeamKey(session.user.id);
   const team = await getTrainingTeamByKey(trainingTeamKey);
 
-  const [memberships, upcomingClubEvents, upcomingTraining, upcomingMatches, siteContent] =
+  const [memberships, upcomingClubEvents, upcomingTraining, upcomingMatches, siteContent, creditUser] =
     await Promise.all([
       prisma.membership.findMany({
         where: { userId: session.user.id },
@@ -184,6 +186,13 @@ export default async function DashboardPage() {
           )
         : Promise.resolve([]),
       getSiteContentMap(),
+      prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          membershipCreditEur: true,
+          membershipCreditNote: true,
+        },
+      }),
     ]);
 
   const vodPlaylists =
@@ -198,6 +207,12 @@ export default async function DashboardPage() {
         orderBy: [{ dueDate: "asc" }, { installmentNumber: "asc" }, { createdAt: "asc" }],
       })
     : [];
+
+  const pendingCreditEur = creditUser?.membershipCreditEur ?? 0;
+  const nextPendingPayment = payments.find((payment) => payment.status === "PENDING");
+  const appliedCreditEur = nextPendingPayment
+    ? parseAppliedMembershipCreditEur(nextPendingPayment.description)
+    : null;
 
   const membershipStatus = currentMembership
     ? await syncMembershipArrearsStatus({
@@ -237,7 +252,21 @@ export default async function DashboardPage() {
         <PushNotificationsPrompt />
 
         <AnimatedPageSections className="space-y-6 sm:space-y-8">
-          {(!isPaygPlayer || currentMembership) && (
+          {pendingCreditEur > 0 ? (
+            <MembershipCreditNotice
+              creditEur={pendingCreditEur}
+              note={creditUser?.membershipCreditNote}
+              variant="upcoming"
+            />
+          ) : appliedCreditEur ? (
+            <MembershipCreditNotice
+              creditEur={appliedCreditEur}
+              note={creditUser?.membershipCreditNote}
+              variant="applied"
+            />
+          ) : null}
+
+          {(!isPaygPlayer || currentMembership || pendingCreditEur > 0) && (
           <MemberPaymentsPanel
               memberships={memberships.map((m) => ({
                 id: m.id,
@@ -261,6 +290,7 @@ export default async function DashboardPage() {
                 dueDate: p.dueDate?.toISOString() ?? null,
               }))}
               paymentAccess={paymentAccess}
+              membershipCreditEur={pendingCreditEur}
             />
           )}
 

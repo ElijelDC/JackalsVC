@@ -16,6 +16,7 @@ import { TrainingAttendancePicker } from "@/components/training/TrainingAttendan
 import { SquadSummaryCard } from "@/components/training/SquadSummaryCard";
 import { SessionCoachCallout } from "@/components/training/SessionCoachCallout";
 import { CoachTrainingInvitePanel } from "@/components/training/CoachTrainingInvitePanel";
+import { OverseerRemindCoachesButton } from "@/components/training/OverseerRemindCoachesButton";
 import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
@@ -150,7 +151,13 @@ export function TrainingSessionDetailView({
         </Link>
       )}
 
-      <div className="mt-4 lg:mt-5">
+      <div className="mt-4 lg:mt-5 space-y-3">
+        {detail.coachCoverageReminder ? (
+          <OverseerRemindCoachesButton
+            eventId={detail.event.id}
+            initialPreview={detail.coachCoverageReminder}
+          />
+        ) : null}
         <SquadSummaryCard
           counts={detail.counts}
           coaches={detail.coaches}

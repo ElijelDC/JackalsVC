@@ -2,13 +2,15 @@
  * Import 2026/27 season fixtures into TeamMatch.
  *
  * Sources:
- *   - Home: Jackals Home Fixtures.xlsx (authoritative for all HOME rows)
- *   - Away: jackals-fixture-emails All Opponent Fixtures (AWAY rows only)
+ *   - Home: docs/jackals-home-fixtures-2026-27.xlsx (or HOME_FIXTURES_XLSX)
+ *   - Away: docs/jackals-fixture-emails-2026-27.xlsx All Opponent Fixtures (AWAY rows only)
  *           + Confirmed Away overrides for times/venues when available
  *
  * Usage (production):
  *   ALLOW_PRODUCTION_FIXTURE_IMPORT=1 \
  *   DATABASE_URL=file:/data/jackals.db \
+ *   HOME_FIXTURES_XLSX=/path/to/home.xlsx \
+ *   ALL_FIXTURES_XLSX=/path/to/emails.xlsx \
  *   npx tsx scripts/import-season-fixtures.ts
  *
  * Dry run (no writes):
@@ -21,10 +23,10 @@ import { PrismaClient } from "../src/generated/prisma/client";
 const CLUB_TIMEZONE = "Europe/Dublin";
 const HOME_FILE =
   process.env.HOME_FIXTURES_XLSX ??
-  "/Users/viktoriiarostovtseva/Downloads/Jackals Home Fixtures (1).xlsx";
+  "docs/jackals-home-fixtures-2026-27.xlsx";
 const ALL_FIXTURES_FILE =
   process.env.ALL_FIXTURES_XLSX ??
-  "/Users/viktoriiarostovtseva/Downloads/jackals-fixture-emails-2026-27.xlsx";
+  "docs/jackals-fixture-emails-2026-27.xlsx";
 
 const TEAM_KEY_BY_LABEL: Record<string, string> = {
   "d2 men": "DIV2_MENS",

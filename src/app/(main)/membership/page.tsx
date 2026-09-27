@@ -14,6 +14,7 @@ import {
   type PaymentSchedule,
 } from "@/lib/membership-config";
 import { MembershipDueNotice } from "@/components/membership/MembershipDueNotice";
+import { MembershipCreditNotice } from "@/components/membership/MembershipCreditNotice";
 import { StudentIdStatusCard } from "@/components/membership/StudentIdStatusCard";
 import { getClubBankDetails } from "@/lib/payments";
 import { assessMembershipPaymentAccess } from "@/lib/membership-overdue";
@@ -42,7 +43,7 @@ export default async function MembershipPage({
   const showDashboardBack = isDashboardReturn(from);
   const isPaygPlayer = Boolean(session.user.isPaygPlayer);
 
-  const [membership, activePlans] = await Promise.all([
+  const [membership, activePlans, creditUser] = await Promise.all([
     prisma.membership.findFirst({
       where: {
         userId: session.user.id,
@@ -55,7 +56,22 @@ export default async function MembershipPage({
       where: { active: true },
       orderBy: [{ price: "desc" }, { name: "asc" }],
     }),
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        membershipCreditEur: true,
+        membershipCreditNote: true,
+      },
+    }),
   ]);
+
+  const membershipCredit =
+    creditUser && creditUser.membershipCreditEur > 0
+      ? {
+          creditEur: creditUser.membershipCreditEur,
+          note: creditUser.membershipCreditNote,
+        }
+      : null;
 
   if (membership) {
     if (isCoachMembershipStatus(membership.status)) {
@@ -133,6 +149,7 @@ export default async function MembershipPage({
               membership.paymentDeferralRequestedAt?.toISOString() ?? null,
           }}
           paymentAccess={paymentAccess}
+          membershipCredit={membershipCredit}
           payments={payments.map((payment) => ({
             id: payment.id,
             amount: payment.amount,
@@ -195,6 +212,16 @@ export default async function MembershipPage({
         description="Choose your membership type, then pick how you want to pay."
         centered
       />
+
+      {membershipCredit ? (
+        <AnimatedBlock delay={20} className="mx-auto mb-6 max-w-4xl">
+          <MembershipCreditNotice
+            creditEur={membershipCredit.creditEur}
+            note={membershipCredit.note}
+            variant="upcoming"
+          />
+        </AnimatedBlock>
+      ) : null}
 
       <AnimatedBlock delay={40} className="mx-auto mb-6 max-w-4xl">
         <MembershipDueNotice isPaygPlayer={isPaygPlayer} />

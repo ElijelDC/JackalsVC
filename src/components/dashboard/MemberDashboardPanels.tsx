@@ -109,12 +109,14 @@ type MemberPaymentsPanelProps = {
   memberships: MembershipRecord[];
   payments: PaymentRecord[];
   paymentAccess: MembershipPaymentAccess | null;
+  membershipCreditEur?: number;
 };
 
 export function MemberPaymentsPanel({
   memberships,
   payments,
   paymentAccess,
+  membershipCreditEur = 0,
 }: MemberPaymentsPanelProps) {
   const accent = useDashboardAccent();
   const currentMembership = memberships.find((m) => new Date(m.endDate) > new Date());
@@ -240,9 +242,17 @@ export function MemberPaymentsPanel({
                 ) : null}
               </>
             ) : (
-              <p className="text-sm text-zinc-400">
-                No membership yet. Set one up to get started.
-              </p>
+              <>
+                <p className="text-sm text-zinc-400">
+                  No membership yet. Set one up to get started.
+                </p>
+                {membershipCreditEur > 0 ? (
+                  <p className="mt-2 text-sm text-emerald-300/90">
+                    You have {formatPrice(membershipCreditEur, "EUR")} credit
+                    toward your upcoming membership payment.
+                  </p>
+                ) : null}
+              </>
             )}
           </div>
         </div>

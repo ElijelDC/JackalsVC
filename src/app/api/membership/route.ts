@@ -17,6 +17,7 @@ import {
   validateStudentIdProofFile,
 } from "@/lib/student-id-proof.server";
 import { createMembershipPayments } from "@/lib/sumup-reconcile";
+import { applyUserMembershipCredit } from "@/lib/membership-credit";
 import { membershipSubscribeSchema } from "@/lib/validations";
 import { NextResponse } from "next/server";
 
@@ -174,6 +175,8 @@ export async function POST(request: Request) {
         scheduleLabel,
         installments,
       });
+
+      await applyUserMembershipCredit(tx, session!.user.id);
 
       // Keep Pay Per Training until 1 Oct even after membership signup/payment.
       // Only flip the roster flag once the PAYG window has closed.

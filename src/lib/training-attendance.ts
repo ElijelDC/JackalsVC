@@ -16,6 +16,7 @@ import {
   userHasSquadCoachAccess,
 } from "@/lib/coach-session-coverage";
 import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
+import { getCoachCoverageReminderPreview } from "@/lib/coach-coverage-reminders";
 import { enrichEventRecords, serializeEnrichedEvent } from "@/lib/event-enrichment";
 import { prisma } from "@/lib/prisma";
 import {
@@ -320,6 +321,17 @@ export async function getTrainingSessionDetail(
       })
     : null;
 
+  const coachCoverageReminder =
+    canManageGuestInvites &&
+    !enriched.occurrenceCancelled &&
+    sessionDate.getTime() > Date.now()
+      ? await getCoachCoverageReminderPreview({
+          eventId,
+          trainingTeamKey,
+          actorUserId: userId,
+        })
+      : null;
+
   return {
     event: {
       id: serialized.id,
@@ -334,6 +346,7 @@ export async function getTrainingSessionDetail(
     userStatus,
     isCoachUser,
     canManageGuestInvites,
+    coachCoverageReminder,
     coachResponseGate,
     coachReminder,
     roster,
