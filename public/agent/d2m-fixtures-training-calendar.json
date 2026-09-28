@@ -1,0 +1,857 @@
+{
+  "version": "2026-09-27-f",
+  "masterPlanVersion": "2026-09-27-f",
+  "fixtures": [
+    {
+      "matchDay": 1,
+      "dayOfWeek": "Sun",
+      "date": "2026-10-11",
+      "homeAway": "Home",
+      "opponent": "BMP Titans",
+      "warmUp": "12:30",
+      "kickOff": "13:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 2,
+      "dayOfWeek": "Sun",
+      "date": "2026-10-18",
+      "homeAway": "Home",
+      "opponent": "Gardians Masters",
+      "warmUp": "14:30",
+      "kickOff": "15:30",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 3,
+      "dayOfWeek": "Sun",
+      "date": "2026-10-25",
+      "homeAway": "Away",
+      "opponent": "Dalkey Devils",
+      "warmUp": "09:00",
+      "kickOff": "10:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 4,
+      "dayOfWeek": "Sun",
+      "date": "2026-11-15",
+      "homeAway": "Home",
+      "opponent": "Kilkenny Spartans",
+      "warmUp": "09:30",
+      "kickOff": "10:30",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 5,
+      "dayOfWeek": "Sun",
+      "date": "2026-11-29",
+      "homeAway": "Away",
+      "opponent": "IVI Dinosaurs",
+      "warmUp": "15:00",
+      "kickOff": "16:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 6,
+      "dayOfWeek": "Sun",
+      "date": "2026-12-06",
+      "homeAway": "Home",
+      "opponent": "Gardians Panda",
+      "warmUp": "09:30",
+      "kickOff": "10:30",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 7,
+      "dayOfWeek": "Sun",
+      "date": "2026-12-13",
+      "homeAway": "Home",
+      "opponent": "Impact Macroom",
+      "warmUp": "12:00",
+      "kickOff": "13:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 8,
+      "dayOfWeek": "Sat",
+      "date": "2027-01-09",
+      "homeAway": "Away",
+      "opponent": "BMP Titans",
+      "warmUp": "14:30",
+      "kickOff": "15:30",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySaturday"
+    },
+    {
+      "matchDay": 9,
+      "dayOfWeek": "Sat",
+      "date": "2027-01-23",
+      "homeAway": "Away",
+      "opponent": "Gardians Masters",
+      "warmUp": "17:30",
+      "kickOff": "18:30",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySaturday"
+    },
+    {
+      "matchDay": 10,
+      "dayOfWeek": "Sun",
+      "date": "2027-02-14",
+      "homeAway": "Home",
+      "opponent": "Dalkey Devils",
+      "warmUp": "12:00",
+      "kickOff": "13:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 11,
+      "dayOfWeek": "Sat",
+      "date": "2027-03-06",
+      "homeAway": "Away",
+      "opponent": "Kilkenny Spartans",
+      "warmUp": "15:00",
+      "kickOff": "16:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySaturday"
+    },
+    {
+      "matchDay": 12,
+      "dayOfWeek": "Sun",
+      "date": "2027-03-14",
+      "homeAway": "Home",
+      "opponent": "IVI Dinosaurs",
+      "warmUp": "09:30",
+      "kickOff": "10:30",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    },
+    {
+      "matchDay": 13,
+      "dayOfWeek": "Sat",
+      "date": "2027-04-10",
+      "homeAway": "Away",
+      "opponent": "Gardians Panda",
+      "warmUp": "15:00",
+      "kickOff": "16:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySaturday"
+    },
+    {
+      "matchDay": 14,
+      "dayOfWeek": "Sun",
+      "date": "2027-04-18",
+      "homeAway": "Away",
+      "opponent": "Impact Macroom",
+      "warmUp": "13:00",
+      "kickOff": "14:00",
+      "venue": "TBC",
+      "status": "confirmed",
+      "microcycleTemplate": "matchDaySunday"
+    }
+  ],
+  "trainingCalendarByWeek": [
+    {
+      "weekStarting": "2026-09-28",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-10-05",
+      "phase": "deloadPreMD1",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 1,
+        "dayOfWeek": "Sun",
+        "date": "2026-10-11",
+        "homeAway": "Home",
+        "opponent": "BMP Titans",
+        "warmUp": "12:30",
+        "kickOff": "13:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {
+        "saturday": "Prehab + easy wall sets only (no gym)"
+      },
+      "taperTier": "B_preMD1Deload",
+      "homeJumpPolicy": "noHomeJumping",
+      "notes": [
+        "MD1 Sun 11 Oct 13:00 vs BMP Titans (Home, warm-up 12:30). Sat 10 Oct: no Flyefit — prehab + easy wall sets only."
+      ]
+    },
+    {
+      "weekStarting": "2026-10-12",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 2,
+        "dayOfWeek": "Sun",
+        "date": "2026-10-18",
+        "homeAway": "Home",
+        "opponent": "Gardians Masters",
+        "warmUp": "14:30",
+        "kickOff": "15:30",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-10-19",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 3,
+        "dayOfWeek": "Sun",
+        "date": "2026-10-25",
+        "homeAway": "Away",
+        "opponent": "Dalkey Devils",
+        "warmUp": "09:00",
+        "kickOff": "10:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-10-26",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-11-02",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-11-09",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 4,
+        "dayOfWeek": "Sun",
+        "date": "2026-11-15",
+        "homeAway": "Home",
+        "opponent": "Kilkenny Spartans",
+        "warmUp": "09:30",
+        "kickOff": "10:30",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-11-16",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "A_mesocycleDeload",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-11-23",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 5,
+        "dayOfWeek": "Sun",
+        "date": "2026-11-29",
+        "homeAway": "Away",
+        "opponent": "IVI Dinosaurs",
+        "warmUp": "15:00",
+        "kickOff": "16:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-11-30",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 6,
+        "dayOfWeek": "Sun",
+        "date": "2026-12-06",
+        "homeAway": "Home",
+        "opponent": "Gardians Panda",
+        "warmUp": "09:30",
+        "kickOff": "10:30",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-12-07",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 7,
+        "dayOfWeek": "Sun",
+        "date": "2026-12-13",
+        "homeAway": "Home",
+        "opponent": "Impact Macroom",
+        "warmUp": "12:00",
+        "kickOff": "13:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-12-14",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "A_mesocycleDeload",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-12-21",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2026-12-28",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-01-04",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySaturday",
+      "d2mMatch": {
+        "matchDay": 8,
+        "dayOfWeek": "Sat",
+        "date": "2027-01-09",
+        "homeAway": "Away",
+        "opponent": "BMP Titans",
+        "warmUp": "14:30",
+        "kickOff": "15:30",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySaturday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-match-eve-activation",
+        "saturday": "sat-match-day",
+        "sunday": "sun-recovery-prehab"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-01-11",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "A_mesocycleDeload",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-01-18",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySaturday",
+      "d2mMatch": {
+        "matchDay": 9,
+        "dayOfWeek": "Sat",
+        "date": "2027-01-23",
+        "homeAway": "Away",
+        "opponent": "Gardians Masters",
+        "warmUp": "17:30",
+        "kickOff": "18:30",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySaturday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-match-eve-activation",
+        "saturday": "sat-match-day",
+        "sunday": "sun-recovery-prehab"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-01-25",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-02-01",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-02-08",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 10,
+        "dayOfWeek": "Sun",
+        "date": "2027-02-14",
+        "homeAway": "Home",
+        "opponent": "Dalkey Devils",
+        "warmUp": "12:00",
+        "kickOff": "13:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-02-15",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-02-22",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-03-01",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySaturday",
+      "d2mMatch": {
+        "matchDay": 11,
+        "dayOfWeek": "Sat",
+        "date": "2027-03-06",
+        "homeAway": "Away",
+        "opponent": "Kilkenny Spartans",
+        "warmUp": "15:00",
+        "kickOff": "16:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySaturday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-match-eve-activation",
+        "saturday": "sat-match-day",
+        "sunday": "sun-recovery-prehab"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-03-08",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 12,
+        "dayOfWeek": "Sun",
+        "date": "2027-03-14",
+        "homeAway": "Home",
+        "opponent": "IVI Dinosaurs",
+        "warmUp": "09:30",
+        "kickOff": "10:30",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-03-15",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-03-22",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-03-29",
+      "phase": "inSeasonByeWeek",
+      "microcycleTemplate": "developmentWeek",
+      "d2mMatch": null,
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo",
+        "tuesday": "tue-hands",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-push",
+        "saturday": "sat-home-small-space",
+        "sunday": "sun-prehab-track"
+      },
+      "dailyOutline": {},
+      "taperTier": "buildOrBye",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-04-05",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySaturday",
+      "d2mMatch": {
+        "matchDay": 13,
+        "dayOfWeek": "Sat",
+        "date": "2027-04-10",
+        "homeAway": "Away",
+        "opponent": "Gardians Panda",
+        "warmUp": "15:00",
+        "kickOff": "16:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySaturday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-match-eve-activation",
+        "saturday": "sat-match-day",
+        "sunday": "sun-recovery-prehab"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    },
+    {
+      "weekStarting": "2027-04-12",
+      "phase": "inSeasonMatchWeek",
+      "microcycleTemplate": "matchDaySunday",
+      "d2mMatch": {
+        "matchDay": 14,
+        "dayOfWeek": "Sun",
+        "date": "2027-04-18",
+        "homeAway": "Away",
+        "opponent": "Impact Macroom",
+        "warmUp": "13:00",
+        "kickOff": "14:00",
+        "venue": "TBC",
+        "status": "confirmed",
+        "microcycleTemplate": "matchDaySunday"
+      },
+      "sessionIds": {
+        "monday": "mon-leg-a-push-plyo-inseason-reduced",
+        "tuesday": "tue-hands-light-small-space",
+        "wednesday": "wed-club-only",
+        "thursday": "thu-pull-core",
+        "friday": "fri-leg-b-light-inseason",
+        "saturday": "sat-match-eve-activation-small-space",
+        "sunday": "sun-match-day"
+      },
+      "dailyOutline": {},
+      "taperTier": "C_matchWeekMicroTaper",
+      "homeJumpPolicy": "noHomeJumping"
+    }
+  ]
+}

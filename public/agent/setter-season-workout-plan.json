@@ -1,0 +1,856 @@
+{
+  "version": "2026-09-27-f",
+  "masterPlanVersion": "2026-09-27-f",
+  "meta": {
+    "version": "2026-09-27-f",
+    "title": "Setter S&C · D2M Jackals 2026–27",
+    "timezone": "Europe/Dublin",
+    "noCatchUpHeavyLegs": true,
+    "athlete": {
+      "position": "Setter",
+      "heightCm": 172,
+      "team": "D2M Jackals",
+      "league": "Volleyball Ireland Division 2 Men",
+      "standingVertBaselineCm": 58.4,
+      "injuryContext": "Post-knee issues, right shoulder — use session notes & substitutions"
+    },
+    "anchors": {
+      "flyefitDays": [
+        "monday",
+        "thursday",
+        "friday"
+      ],
+      "homeDays": [
+        "tuesday",
+        "saturday"
+      ],
+      "clubDay": "wednesday",
+      "clubWindow": "19:00–21:00",
+      "homeConstraints": {
+        "noRunningShuttles": true,
+        "noHomeJumping": true
+      },
+      "goalCoverage": {
+        "setting": "Daily prehab, Tue/Sat home, Thu grip, Wed club",
+        "knees": "Daily TKE/balance, Mon/Fri legs, home wall sit/calf/TKE",
+        "jump": "Mon Flyefit jumps + Wed/NL court; never home max jumps",
+        "upperBody": "Mon + Fri push, Thu pull",
+        "lean": "Thu/Fri cardio, protein ~1.6 g/kg, sleep"
+      }
+    },
+    "olympicLiftProgression": {
+      "kneeShoulderRules": "Weeks 1–2 hang high pull 4×4 (no catch). Week 3+ hang power clean Mon. Knee → partial catch; shoulder pain → high pull only; no heavy cleans 48 h before match."
+    },
+    "realisticTargets": {
+      "note": "8–12 weeks (good adherence): often +2–5 cm early; up to +3–7 cm over ~12 weeks — individual variation ±2–3 cm. Log standing two-foot only (same wall, same shoes)."
+    }
+  },
+  "sessions": {
+    "mon-leg-a-push-plyo": {
+      "title": "Monday · Flyefit · Leg A + push + plyo",
+      "location": "Flyefit",
+      "items": [
+        {
+          "n": 1,
+          "name": "Leg press or hack squat",
+          "scheme": "5×3–5",
+          "role": "mainStrength",
+          "rpe": "8–9",
+          "restMin": 2.5
+        },
+        {
+          "n": 2,
+          "name": "Leg curl",
+          "scheme": "3×10–12",
+          "role": "legs",
+          "rpe": "7"
+        },
+        {
+          "n": 3,
+          "name": "Hang power clean (or high pull)",
+          "scheme": "4×3",
+          "role": "olympicLift",
+          "rpe": "7–8",
+          "restMin": 2,
+          "notes": "Weeks 1–2: hang high pull 4×4 (no catch). Knee → partial catch; shoulder pain → high pull only."
+        },
+        {
+          "n": 4,
+          "name": "Hip thrust",
+          "scheme": "2×8",
+          "role": "legs",
+          "rpe": "7–8"
+        },
+        {
+          "n": 5,
+          "name": "Standing calf raise",
+          "scheme": "3×12",
+          "role": "legs"
+        },
+        {
+          "n": 6,
+          "name": "Chest or neutral-grip press",
+          "scheme": "3×6–8",
+          "role": "push",
+          "rpe": "7–8"
+        },
+        {
+          "n": 7,
+          "name": "Shoulder press or landmine + triceps",
+          "scheme": "3×8",
+          "role": "push"
+        },
+        {
+          "n": 8,
+          "name": "Standing two-foot vertical 4×3 + block jumps 4×3–4",
+          "scheme": "4×3 + 4×3–4",
+          "role": "plyo",
+          "restSec": 90,
+          "notes": "90 s rest, max height. Then 3×12 crunch and 8 min bike."
+        }
+      ]
+    },
+    "mon-leg-a-push-plyo-inseason-reduced": {
+      "title": "Monday · Flyefit · Reduced (match/deload week)",
+      "location": "Flyefit",
+      "items": [
+        {
+          "n": 1,
+          "name": "Leg press",
+          "scheme": "3×3–5",
+          "role": "mainStrength",
+          "rpe": "8"
+        },
+        {
+          "n": 2,
+          "name": "Leg curl",
+          "scheme": "2×10",
+          "role": "legs"
+        },
+        {
+          "n": 3,
+          "name": "Hang power clean",
+          "scheme": "2×3",
+          "role": "olympicLift",
+          "notes": "Or high pull. Skip if match <48 h or knee >3/10."
+        },
+        {
+          "n": 4,
+          "name": "Calf raise",
+          "scheme": "2×12",
+          "role": "legs"
+        },
+        {
+          "n": 5,
+          "name": "Push pair",
+          "scheme": "2×8",
+          "role": "push"
+        },
+        {
+          "n": 6,
+          "name": "Standing vert + block",
+          "scheme": "2×3 each",
+          "role": "plyo",
+          "restSec": 90
+        }
+      ]
+    },
+    "tue-hands": {
+      "title": "Tuesday · Home · Hands / knees / setting",
+      "location": "Home",
+      "smallSpace": true,
+      "noJumping": true,
+      "items": [
+        {
+          "n": 1,
+          "name": "Shoulder ER hold + scap push-up",
+          "scheme": "3×20 s + 3×10",
+          "role": "prehab"
+        },
+        {
+          "n": 2,
+          "name": "Wall sit + short split squat",
+          "scheme": "2×30 s · 2×8/leg",
+          "role": "legs"
+        },
+        {
+          "n": 3,
+          "name": "Single-leg calf raise (wall)",
+          "scheme": "2×12/leg",
+          "role": "legs"
+        },
+        {
+          "n": 4,
+          "name": "Towel squeeze + finger band spreads",
+          "scheme": "2×30 s · 2×15",
+          "role": "prehab"
+        },
+        {
+          "n": 5,
+          "name": "1 kg wall sets",
+          "scheme": "4×20",
+          "role": "skill"
+        },
+        {
+          "n": 6,
+          "name": "Volleyball to taped X",
+          "scheme": "4×15",
+          "role": "skill"
+        },
+        {
+          "n": 7,
+          "name": "Setter footwork in place",
+          "scheme": "3×20 s",
+          "role": "skill"
+        }
+      ]
+    },
+    "tue-hands-light-small-space": {
+      "title": "Tuesday · Home · Light (match week)",
+      "location": "Home",
+      "smallSpace": true,
+      "noJumping": true,
+      "items": [
+        {
+          "n": 1,
+          "name": "Prehab ER + fingers",
+          "scheme": "8 min",
+          "role": "prehab"
+        },
+        {
+          "n": 2,
+          "name": "1 kg wall sets",
+          "scheme": "3×15",
+          "role": "skill"
+        },
+        {
+          "n": 3,
+          "name": "Volleyball to X",
+          "scheme": "3×12",
+          "role": "skill"
+        },
+        {
+          "n": 4,
+          "name": "Wall sit",
+          "scheme": "2×25 s",
+          "role": "isometric"
+        }
+      ]
+    },
+    "thu-pull-core": {
+      "title": "Thursday · Flyefit · Pull + core (no legs)",
+      "location": "Flyefit",
+      "noLegs": true,
+      "items": [
+        {
+          "n": 1,
+          "name": "Lat pulldown or pull-up",
+          "scheme": "4×6–8",
+          "role": "pull",
+          "rpe": "7–8"
+        },
+        {
+          "n": 2,
+          "name": "Seated row",
+          "scheme": "3×10",
+          "role": "pull"
+        },
+        {
+          "n": 3,
+          "name": "Single-arm row",
+          "scheme": "2×10/arm",
+          "role": "pull"
+        },
+        {
+          "n": 4,
+          "name": "Face pull + ER",
+          "scheme": "3×15 + 3×12",
+          "role": "pull"
+        },
+        {
+          "n": 5,
+          "name": "Bicep curl",
+          "scheme": "3×10",
+          "role": "pull"
+        },
+        {
+          "n": 6,
+          "name": "Hanging knee raise + Pallof",
+          "scheme": "3×10",
+          "role": "core"
+        },
+        {
+          "n": 7,
+          "name": "Farmer or plate pinch",
+          "scheme": "3×40 s",
+          "role": "grip"
+        },
+        {
+          "n": 8,
+          "name": "Cardio incline walk or row",
+          "scheme": "12 min",
+          "role": "cardio"
+        }
+      ]
+    },
+    "fri-leg-b-push": {
+      "title": "Friday · Flyefit · Leg B + clean + push (bye weeks)",
+      "location": "Flyefit",
+      "items": [
+        {
+          "n": 1,
+          "name": "Romanian deadlift",
+          "scheme": "4×4–6",
+          "role": "mainStrength",
+          "rpe": "8–9",
+          "restMin": 2.5,
+          "notes": "3 s eccentric"
+        },
+        {
+          "n": 2,
+          "name": "Leg curl",
+          "scheme": "3×10–12",
+          "role": "legs"
+        },
+        {
+          "n": 3,
+          "name": "Power clean (floor) or hang clean",
+          "scheme": "4×3",
+          "role": "olympicLift",
+          "rpe": "7–8",
+          "notes": "Bye weeks only. Alternate floor vs hang. No heavy cleans within 48 h of NL."
+        },
+        {
+          "n": 4,
+          "name": "Split squat",
+          "scheme": "2×6–8/leg",
+          "role": "legs"
+        },
+        {
+          "n": 5,
+          "name": "Incline or landmine press",
+          "scheme": "3×6–8",
+          "role": "push"
+        },
+        {
+          "n": 6,
+          "name": "Triceps",
+          "scheme": "3×10",
+          "role": "push"
+        },
+        {
+          "n": 7,
+          "name": "Pallof + dead bug",
+          "scheme": "3×10/side",
+          "role": "core"
+        },
+        {
+          "n": 8,
+          "name": "Cardio",
+          "scheme": "10 min moderate",
+          "role": "cardio"
+        }
+      ]
+    },
+    "fri-leg-b-light-inseason": {
+      "title": "Friday · Flyefit · Light legs (Sunday NL)",
+      "location": "Flyefit",
+      "items": [
+        {
+          "n": 1,
+          "name": "Romanian deadlift",
+          "scheme": "2×5",
+          "role": "mainStrength",
+          "rpe": "7"
+        },
+        {
+          "n": 2,
+          "name": "Leg curl",
+          "scheme": "2×10",
+          "role": "legs"
+        },
+        {
+          "n": 3,
+          "name": "Split squat",
+          "scheme": "2×6/leg",
+          "role": "legs"
+        },
+        {
+          "n": 4,
+          "name": "Core",
+          "scheme": "2 rounds",
+          "role": "core",
+          "notes": "Skip session if Wednesday crushed legs."
+        }
+      ]
+    },
+    "fri-match-eve-activation": {
+      "title": "Friday · Home · Match eve activation (Saturday NL)",
+      "location": "Home",
+      "smallSpace": true,
+      "noJumping": true,
+      "items": [
+        {
+          "n": 1,
+          "name": "Prehab",
+          "scheme": "12 min",
+          "role": "prehab"
+        },
+        {
+          "n": 2,
+          "name": "Shadow block + calf",
+          "scheme": "2×8 · 2×15",
+          "role": "activation"
+        },
+        {
+          "n": 3,
+          "name": "1 kg wall sets",
+          "scheme": "2×15",
+          "role": "skill"
+        },
+        {
+          "n": 4,
+          "name": "Walk or easy bike",
+          "scheme": "10 min",
+          "role": "cardio"
+        }
+      ]
+    },
+    "sat-home-small-space": {
+      "title": "Saturday · Home · Small space",
+      "location": "Home",
+      "smallSpace": true,
+      "noJumping": true,
+      "matchWeekVariant": {
+        "within48hItemNumbers": [
+          1,
+          5,
+          6
+        ]
+      },
+      "items": [
+        {
+          "n": 1,
+          "name": "Wrist curls 1 kg + fingertip wall presses",
+          "scheme": "2×15 · 3×15",
+          "role": "prehab"
+        },
+        {
+          "n": 2,
+          "name": "Single-leg calf + quad hold",
+          "scheme": "3×12/leg · 2×20 s/leg",
+          "role": "legs"
+        },
+        {
+          "n": 3,
+          "name": "Wall sit + towel TKE",
+          "scheme": "2×35 s · 2×15/leg",
+          "role": "isometric"
+        },
+        {
+          "n": 4,
+          "name": "Shadow block in place (no jump)",
+          "scheme": "3×8",
+          "role": "skill"
+        },
+        {
+          "n": 5,
+          "name": "1 kg four-way wall sets + quick hands",
+          "scheme": "10 each · 2×20",
+          "role": "skill"
+        },
+        {
+          "n": 6,
+          "name": "Volleyball targets + back-set footwork",
+          "scheme": "25 to X · 2×10 back",
+          "role": "skill"
+        }
+      ]
+    },
+    "sat-match-eve-activation-small-space": {
+      "title": "Saturday · Home · Match eve (Sunday NL)",
+      "location": "Home",
+      "smallSpace": true,
+      "noJumping": true,
+      "items": [
+        {
+          "n": 1,
+          "name": "Prehab",
+          "scheme": "12 min",
+          "role": "prehab"
+        },
+        {
+          "n": 2,
+          "name": "Calf raises + shadow block",
+          "scheme": "2×12 · 2×6",
+          "role": "activation"
+        },
+        {
+          "n": 3,
+          "name": "Easy volleyball to wall",
+          "scheme": "15 reps",
+          "role": "skill"
+        }
+      ]
+    },
+    "sat-match-day": {
+      "title": "Saturday · NL match day",
+      "location": "Match",
+      "match": true,
+      "warmUp": "prehab + team warm-up"
+    },
+    "sun-match-day": {
+      "title": "Sunday · NL match day",
+      "location": "Match",
+      "match": true,
+      "warmUp": "prehab + team warm-up"
+    },
+    "sun-recovery-prehab": {
+      "title": "Sunday · Recovery & prehab",
+      "location": "Home",
+      "smallSpace": true,
+      "noJumping": true,
+      "items": [
+        {
+          "n": 1,
+          "name": "Daily prehab",
+          "scheme": "12 min",
+          "role": "prehab"
+        },
+        {
+          "n": 2,
+          "name": "Optional walk",
+          "scheme": "easy",
+          "role": "recovery"
+        }
+      ]
+    },
+    "sun-prehab-track": {
+      "title": "Sunday · Prehab + tracking",
+      "location": "Home",
+      "smallSpace": true,
+      "noJumping": true,
+      "tracking": [
+        {
+          "id": "touchCm",
+          "label": "Standing wall touch (cm)"
+        },
+        {
+          "id": "knee",
+          "label": "Knee pain 0–10"
+        },
+        {
+          "id": "shoulder",
+          "label": "Shoulder pain 0–10"
+        }
+      ],
+      "items": [
+        {
+          "n": 1,
+          "name": "Daily prehab circuit",
+          "scheme": "12 min",
+          "role": "prehab"
+        }
+      ]
+    },
+    "wed-club-only": {
+      "title": "Wednesday · Club training",
+      "location": "Club",
+      "prehabBeforeClub": "12 min",
+      "description": "Jackals D2M 19:00–21:00 — no extra gym"
+    }
+  },
+  "warmups": {
+    "durationMin": 15,
+    "protocol": "15 min RAMP after optional daily prehab. See blocks for Flyefit Mon (full vs in-season), Thu pull, Fri bye vs light, home, club, match.",
+    "bySessionId": {
+      "mon-leg-a-push-plyo": {
+        "title": "Flyefit Monday (full bye week)",
+        "blocks": [
+          {
+            "phase": "Raise",
+            "min": 3,
+            "items": [
+              "Bike/row easy → moderate"
+            ]
+          },
+          {
+            "phase": "Activate",
+            "min": 4,
+            "items": [
+              "TKE 2×12/leg",
+              "Glute bridge 2×10",
+              "Hip abduction 2×10/side",
+              "Balance 2×20 s/side",
+              "Band ER 2×10/side"
+            ]
+          },
+          {
+            "phase": "Mobilize",
+            "min": 3,
+            "items": [
+              "Leg swings",
+              "Ankle rocks",
+              "90/90 hip",
+              "Open books"
+            ]
+          },
+          {
+            "phase": "Potentiate",
+            "min": 5,
+            "items": [
+              "Empty RDL",
+              "Hang high pull ramp",
+              "Leg press warm sets",
+              "2 easy reaches before jumps"
+            ]
+          }
+        ]
+      },
+      "mon-leg-a-push-plyo-inseason-reduced": {
+        "title": "Flyefit Monday (in-season / deload)",
+        "blocks": [
+          {
+            "phase": "Raise",
+            "min": 3,
+            "items": [
+              "Bike easy"
+            ]
+          },
+          {
+            "phase": "Activate",
+            "min": 4,
+            "items": [
+              "TKE",
+              "Bridge",
+              "ER",
+              "Calf"
+            ]
+          },
+          {
+            "phase": "Mobilize",
+            "min": 3,
+            "items": [
+              "Leg swings",
+              "Ankles",
+              "Scap push-ups"
+            ]
+          },
+          {
+            "phase": "Potentiate",
+            "min": 5,
+            "items": [
+              "Clean ramp",
+              "1 leg press set",
+              "1 easy + 1×80% jump"
+            ]
+          }
+        ]
+      },
+      "thu-pull-core": {
+        "title": "Flyefit Thursday (pull — no legs)",
+        "blocks": [
+          {
+            "phase": "Raise",
+            "min": 3,
+            "items": [
+              "Row or bike"
+            ]
+          },
+          {
+            "phase": "Activate",
+            "min": 4,
+            "items": [
+              "Band",
+              "Scap",
+              "Dead bug",
+              "Wrist"
+            ]
+          },
+          {
+            "phase": "Mobilize",
+            "min": 4,
+            "items": [
+              "T-spine",
+              "Shoulders"
+            ]
+          },
+          {
+            "phase": "Potentiate",
+            "min": 4,
+            "items": [
+              "Light pulldown + row ramp"
+            ]
+          }
+        ]
+      },
+      "fri-leg-b-push": {
+        "title": "Flyefit Friday (bye — RDL + clean + push)",
+        "blocks": [
+          {
+            "phase": "Raise",
+            "min": 3,
+            "items": [
+              "Bike"
+            ]
+          },
+          {
+            "phase": "Activate",
+            "min": 4,
+            "items": [
+              "TKE",
+              "Glute",
+              "Ham",
+              "Balance"
+            ]
+          },
+          {
+            "phase": "Mobilize",
+            "min": 3,
+            "items": [
+              "Hinge",
+              "Leg swings"
+            ]
+          },
+          {
+            "phase": "Potentiate",
+            "min": 5,
+            "items": [
+              "RDL + clean + light press ramp"
+            ]
+          }
+        ]
+      },
+      "fri-leg-b-light-inseason": {
+        "title": "Flyefit Friday (light — before Sun match)",
+        "blocks": [
+          {
+            "phase": "Raise",
+            "min": 3,
+            "items": [
+              "Bike"
+            ]
+          },
+          {
+            "phase": "Activate",
+            "min": 5,
+            "items": [
+              "Activate circuit"
+            ]
+          },
+          {
+            "phase": "Mobilize",
+            "min": 4,
+            "items": [
+              "Mobilize"
+            ]
+          },
+          {
+            "phase": "Potentiate",
+            "min": 3,
+            "items": [
+              "RDL empty + 50%×5 only (no heavy clean)"
+            ]
+          }
+        ]
+      },
+      "tue-hands": {
+        "title": "Home Tue / Sat / match eve",
+        "blocks": [
+          {
+            "phase": "Raise",
+            "min": 3,
+            "items": [
+              "March or walk"
+            ]
+          },
+          {
+            "phase": "Activate",
+            "min": 5,
+            "items": [
+              "Wrists",
+              "ER",
+              "Knees"
+            ]
+          },
+          {
+            "phase": "Mobilize",
+            "min": 4,
+            "items": [
+              "Mobility"
+            ]
+          },
+          {
+            "phase": "Potentiate",
+            "min": 4,
+            "items": [
+              "Easy wall sets"
+            ]
+          }
+        ]
+      },
+      "wed-club-only": {
+        "title": "Wed club 19:00",
+        "blocks": [
+          {
+            "phase": "Raise",
+            "min": 3,
+            "items": [
+              "Jog"
+            ]
+          },
+          {
+            "phase": "Activate",
+            "min": 4,
+            "items": [
+              "Knee",
+              "Hip",
+              "ER"
+            ]
+          },
+          {
+            "phase": "Mobilize",
+            "min": 4,
+            "items": [
+              "Mobility"
+            ]
+          },
+          {
+            "phase": "Potentiate",
+            "min": 4,
+            "items": [
+              "Team warm-up + easy sets (submax jumps only if knee ≤3/10)"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "prehabDaily": {
+    "durationMin": 12,
+    "items": [
+      "Terminal knee extension 2×15/leg",
+      "Sit-to-stand 2×10",
+      "Glute bridge 2×12",
+      "Single-leg balance 2×30 s/side",
+      "External rotation 2×12",
+      "Wall scap push-up 2×12",
+      "Finger band spreads 2×15",
+      "Fingertip wall pressure 3×20 s"
+    ]
+  },
+  "microcycleTemplates": {
+    "matchDaySunday": "Sun NL — Fri light legs, Sat eve activation",
+    "matchDaySaturday": "Sat NL — Fri home activation, Sun recovery",
+    "developmentWeek": "Bye / build week — full gym template"
+  },
+  "weeklyScheduleByeWeek": {
+    "monday": "mon-leg-a-push-plyo",
+    "tuesday": "tue-hands",
+    "wednesday": "wed-club-only",
+    "thursday": "thu-pull-core",
+    "friday": "fri-leg-b-push",
+    "saturday": "sat-home-small-space",
+    "sunday": "sun-prehab-track"
+  }
+}
