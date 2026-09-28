@@ -313,22 +313,22 @@ interface Fixture {
 
 ## 11. Fixtures list (static schedule)
 
-| MD | Date | Day | Opponent | KO |
-|----|------|-----|----------|-----|
-| 1 | 2026-10-11 | Sun | BMP Titans | 13:00 |
-| 2 | 2026-10-18 | Sun | Gardians Masters | 15:30 |
-| 3 | 2026-10-25 | Sun | Dalkey Devils | 10:00 |
-| 4 | 2026-11-15 | Sun | Kilkenny Spartans | 10:30 |
-| 5 | 2026-11-29 | Sun | IVI Dinosaurs | 16:00 |
-| 6 | 2026-12-06 | Sun | Gardians Panda | 10:30 |
-| 7 | 2026-12-13 | Sun | Impact Macroom | 13:00 |
-| 8 | 2027-01-09 | Sat | BMP Titans | 15:30 |
-| 9 | 2027-01-23 | Sat | Gardians Masters | 18:30 |
-| 10 | 2027-02-14 | Sun | Dalkey Devils | 13:00 |
-| 11 | 2027-03-06 | Sat | Kilkenny Spartans | 16:00 |
-| 12 | 2027-03-14 | Sun | IVI Dinosaurs | 10:30 |
-| 13 | 2027-04-10 | Sat | Gardians Panda | 16:00 |
-| 14 | 2027-04-18 | Sun | Impact Macroom | 14:00 |
+| MD | Date | Day | H/A | Opponent | KO |
+|----|------|-----|-----|----------|-----|
+| 1 | 2026-10-11 | Sun | Home | BMP Titans | 13:00 |
+| 2 | 2026-10-18 | Sun | Home | Gardians Masters | 15:30 |
+| 3 | 2026-10-25 | Sun | Away | Dalkey Devils | 10:00 |
+| 4 | 2026-11-15 | Sun | Home | Kilkenny Spartans | 10:30 |
+| 5 | 2026-11-29 | Sun | Away | IVI Dinosaurs | 16:00 |
+| 6 | 2026-12-06 | Sun | Home | Gardians Panda | 10:30 |
+| 7 | 2026-12-13 | Sun | Home | Impact Macroom | 13:00 |
+| 8 | 2027-01-09 | Sat | Away | BMP Titans | 15:30 |
+| 9 | 2027-01-23 | Sat | Away | Gardians Masters | 18:30 |
+| 10 | 2027-02-14 | Sun | Home | Dalkey Devils | 13:00 |
+| 11 | 2027-03-06 | Sat | Away | Kilkenny Spartans | 16:00 |
+| 12 | 2027-03-14 | Sun | Home | IVI Dinosaurs | 10:30 |
+| 13 | 2027-04-10 | Sat | Away | Gardians Panda | 16:00 |
+| 14 | 2027-04-18 | Sun | Away | Impact Macroom | 14:00 |
 
 **Saturday NL weeks (MD 8, 9, 11, 13):** Friday = home activation (`fri-match-eve-activation`), not heavy Flyefit legs.
 
