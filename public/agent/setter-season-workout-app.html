@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#202121" />
+    <title>Setter S&amp;C · D2M 2026–27</title>
+    <style>
+      :root {
+        --bg: #202121;
+        --surface: #2a2b2b;
+        --text: #f5f5f5;
+        --muted: #a3a3a3;
+        --red: #ff4d54;
+        --green: #34d399;
+        --amber: #fbbf24;
+        --radius: 14px;
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+        font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
+      body { padding-bottom: calc(76px + var(--safe-bottom)); }
+      .app { max-width: 520px; margin: 0 auto; padding: 16px; }
+      h1 { margin: 0; font-size: 1.5rem; font-weight: 800; }
+      .sub { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+      .badge { display: inline-block; font-size: 0.7rem; padding: 3px 8px; border-radius: 999px; background: #333; margin-right: 6px; margin-top: 8px; }
+      .badge.match { background: rgba(255, 77, 84, 0.2); color: var(--red); }
+      .card { background: var(--surface); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
+      .warn { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); color: var(--amber); font-size: 0.85rem; }
+      nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 4px; padding: 8px 12px calc(8px + var(--safe-bottom)); background: #1a1b1b; border-top: 1px solid rgba(255,255,255,.08); }
+      nav button { flex: 1; padding: 10px 4px; border-radius: 10px; color: var(--muted); font-size: 0.75rem; font-weight: 600; }
+      nav button.active { background: rgba(255,77,84,.15); color: var(--red); }
+      .loc { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
+      ul.items { list-style: none; padding: 0; margin: 12px 0 0; }
+      ul.items li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.06); }
+      ul.items input { margin-top: 4px; }
+      .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 12px; }
+      .week-grid button { font-size: 0.65rem; padding: 8px 2px; border-radius: 8px; background: #333; color: var(--muted); min-height: 52px; }
+      .week-grid button.today { outline: 2px solid var(--red); color: var(--text); }
+      .week-grid button.match { background: rgba(255,77,84,.18); }
+      label { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
+      input[type="number"], input[type="date"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); background: #181919; color: var(--text); margin-top: 4px; }
+      .empty { color: var(--muted); text-align: center; padding: 40px 16px; }
+      a { color: var(--red); }
+    </style>
+  </head>
+  <body>
+    <div class="app" id="app">
+      <div class="empty">Loading plan…</div>
+    </div>
+    <nav id="nav" hidden>
+      <button type="button" data-tab="today" class="active">Today</button>
+      <button type="button" data-tab="week">Week</button>
+      <button type="button" data-tab="prehab">Prehab</button>
+      <button type="button" data-tab="tools">Tools</button>
+    </nav>
+    <script type="module">
+      import {
+        DAY_KEYS,
+        findCalendarWeek,
+        resolveDayPlan,
+        taperTierLabel,
+        validatePlanBundle,
+        weekDayPlans,
+      } from "./setter-season-lib.mjs";
+
+      const STORAGE_KEY = "setter-season-app-state-v1";
+      const PLAN_URL = "./setter-season-workout-plan.json";
+      const CAL_URL = "./d2m-fixtures-training-calendar.json";
+
+      const state = {
+        tab: "today",
+        selectedDate: todayIso(),
+        plan: null,
+        calendar: null,
+        appState: loadState(),
+      };
+
+      function todayIso() {
+        return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Dublin" });
+      }
+
+      function loadState() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+        } catch {
+          return {};
+        }
+      }
+
+      function saveState() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.appState));
+      }
+
+      function completionKey(date, sessionId) {
+        return `${date}:${sessionId}`;
+      }
+
+      function toggleItem(date, sessionId, n, checked) {
+        state.appState.completions = state.appState.completions || {};
+        state.appState.completions[completionKey(date, sessionId) + ":" + n] = checked;
+        saveState();
+      }
+
+      function isItemDone(date, sessionId, n) {
+        return Boolean(state.appState.completions?.[completionKey(date, sessionId) + ":" + n]);
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function renderToday() {
+        const day = resolveDayPlan(state.plan, state.calendar, state.selectedDate, state.appState);
+        const tier = taperTierLabel(day.taperTier);
+        const match = day.match;
+        let html = `<h1>${escapeHtml(day.session.title || day.sessionId)}</h1>
+          <p class="sub">${escapeHtml(state.selectedDate)} · ${escapeHtml(day.dayKey)}</p>
+          <span class="badge">${escapeHtml(tier)}</span>
+          <span class="badge">${escapeHtml(day.phase)}</span>
+          ${day.session.location ? `<span class="loc">${escapeHtml(day.session.location)}</span>` : ""}`;
+
+        if (day.flags.emergencyDeload) {
+          html += `<div class="card warn">Emergency deload active — prehab + Wed club only. No catch-up heavy legs.</div>`;
+        }
+        if (day.flags.within48hOfMatch && match) {
+          html += `<div class="card warn">Within 48h of NL kick-off (${escapeHtml(match.kickOff)}). Keep activation light.</div>`;
+        }
+        if (day.dailyOutline) {
+          html += `<div class="card"><strong>Outline</strong><p class="sub">${escapeHtml(day.dailyOutline)}</p></div>`;
+        }
+        if (match) {
+          html += `<div class="card"><span class="badge match">NL MD${match.matchDay}</span>
+            <p><strong>${escapeHtml(match.opponent)}</strong> · ${escapeHtml(match.homeAway)}</p>
+            <p class="sub">Warm-up ${escapeHtml(match.warmUp)} · KO ${escapeHtml(match.kickOff)}</p>
+            <p class="sub">${escapeHtml(match.venue)}</p></div>`;
+        }
+        if (day.warmup?.blocks?.length) {
+          html += `<div class="card"><strong>Warm-up · ${day.warmup.title}</strong>`;
+          for (const block of day.warmup.blocks) {
+            html += `<p class="sub">${escapeHtml(block.phase)} (${block.min} min)</p><ul>`;
+            for (const item of block.items) html += `<li>${escapeHtml(item)}</li>`;
+            html += `</ul>`;
+          }
+          html += `</div>`;
+        }
+        if (day.session.prehabBeforeClub) {
+          html += `<div class="card"><strong>Before club</strong><p>${escapeHtml(day.session.prehabBeforeClub)} prehab</p></div>`;
+        }
+        if (day.visibleItems.length) {
+          html += `<div class="card"><strong>Main</strong><ul class="items">`;
+          for (const item of day.visibleItems) {
+            const done = isItemDone(state.selectedDate, day.sessionId, item.n);
+            html += `<li><input type="checkbox" data-n="${item.n}" ${done ? "checked" : ""} />
+              <div><div>${escapeHtml(item.name)}</div><div class="sub">${escapeHtml(item.scheme)}${item.notes ? " · " + escapeHtml(item.notes) : ""}</div></div></li>`;
+          }
+          html += `</ul></div>`;
+        }
+        if (day.sessionId === "sun-prehab-track" && day.session.tracking) {
+          const log = state.appState.sundayLogs?.[state.selectedDate] || {};
+          const baseline = state.plan.meta.athlete.standingVertBaselineCm;
+          html += `<div class="card"><strong>Sunday tracking</strong>`;
+          for (const field of day.session.tracking) {
+            html += `<label>${escapeHtml(field.label)}<input type="number" step="0.1" data-track="${field.id}" value="${log[field.id] ?? ""}" /></label>`;
+          }
+          if (log.touchCm) {
+            const delta = (Number(log.touchCm) - baseline).toFixed(1);
+            html += `<p class="sub">Δ vs baseline ${baseline} cm: ${delta} cm</p>`;
+          }
+          html += `</div>`;
+        }
+        if (state.plan.meta.noCatchUpHeavyLegs) {
+          html += `<p class="sub">Skipped gym days are not stacked — no catch-up heavy legs.</p>`;
+        }
+        return html;
+      }
+
+      function renderWeek() {
+        const weekRow = findCalendarWeek(state.calendar, state.selectedDate);
+        if (!weekRow) return `<div class="empty">No calendar week for this date.</div>`;
+        const days = weekDayPlans(state.plan, state.calendar, weekRow.weekStarting, state.appState);
+        const today = todayIso();
+        let html = `<h1>Week of ${escapeHtml(weekRow.weekStarting)}</h1>
+          <p class="sub">${escapeHtml(taperTierLabel(weekRow.taperTier))}</p>`;
+        if (weekRow.notes?.length) {
+          html += `<div class="card warn">${weekRow.notes.map(escapeHtml).join("<br>")}</div>`;
+        }
+        html += `<div class="week-grid">`;
+        for (const day of days) {
+          const label = day.dayKey.slice(0, 3);
+          const cls = [day.date === today ? "today" : "", day.match ? "match" : ""].filter(Boolean).join(" ");
+          html += `<button type="button" class="${cls}" data-date="${day.date}">${escapeHtml(label)}<br><span style="font-size:0.55rem">${escapeHtml(day.sessionId.split("-")[0])}</span></button>`;
+        }
+        html += `</div>`;
+        html += renderToday();
+        return html;
+      }
+
+      function renderPrehab() {
+        const p = state.plan.prehabDaily;
+        let html = `<h1>Daily prehab</h1><p class="sub">${p.durationMin} min · every morning</p><div class="card"><ul>`;
+        for (const item of p.items) html += `<li>${escapeHtml(item)}</li>`;
+        html += `</ul></div>`;
+        return html;
+      }
+
+      function renderTools() {
+        const deload = state.appState.emergencyDeloadUntil;
+        let html = `<h1>Tools</h1>
+          <div class="card">
+            <p><strong>Plan version</strong> ${escapeHtml(state.plan.meta.version)}</p>
+            <p class="sub">${escapeHtml(state.plan.meta.athlete.injuryContext || "")}</p>
+            <p><a href="./WEBAPP-ENGINEER-HANDOFF.md" target="_blank" rel="noreferrer">Engineer handoff</a> ·
+            <a href="./setter-season-workout-plan.json" target="_blank" rel="noreferrer">Master JSON</a> ·
+            <a href="./d2m-fixtures-training-calendar.json" target="_blank" rel="noreferrer">Calendar JSON</a></p>
+          </div>
+          <div class="card">
+            <label>View date<input type="date" id="view-date" value="${escapeHtml(state.selectedDate)}" /></label>
+            <p class="sub">Timezone: Europe/Dublin for “today”.</p>
+          </div>
+          <div class="card">
+            <strong>Emergency deload (5 days)</strong>
+            <p class="sub">Prehab + Wed club only. Triggers: 2× vert down, knee &gt;3/10, or 3 poor sleep nights (manual).</p>
+            <button type="button" id="toggle-deload" style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--red);color:#fff;font-weight:600;width:100%">
+              ${deload && deload >= todayIso() ? "End emergency deload" : "Start 5-day emergency deload"}
+            </button>
+          </div>`;
+        return html;
+      }
+
+      function render() {
+        const app = document.getElementById("app");
+        if (!state.plan || !state.calendar) return;
+        let body = "";
+        if (state.tab === "today") body = renderToday();
+        else if (state.tab === "week") body = renderWeek();
+        else if (state.tab === "prehab") body = renderPrehab();
+        else body = renderTools();
+        app.innerHTML = body;
+        bindInteractive();
+      }
+
+      function bindInteractive() {
+        document.querySelectorAll('input[type="checkbox"][data-n]').forEach((el) => {
+          el.addEventListener("change", () => {
+            const day = resolveDayPlan(state.plan, state.calendar, state.selectedDate, state.appState);
+            toggleItem(state.selectedDate, day.sessionId, Number(el.dataset.n), el.checked);
+          });
+        });
+        document.querySelectorAll("[data-track]").forEach((el) => {
+          el.addEventListener("change", () => {
+            state.appState.sundayLogs = state.appState.sundayLogs || {};
+            state.appState.sundayLogs[state.selectedDate] =
+              state.appState.sundayLogs[state.selectedDate] || {};
+            state.appState.sundayLogs[state.selectedDate][el.dataset.track] = Number(el.value);
+            saveState();
+            render();
+          });
+        });
+        document.querySelectorAll(".week-grid button[data-date]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            state.selectedDate = btn.dataset.date;
+            state.tab = "today";
+            document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "today"));
+            render();
+          });
+        });
+        const viewDate = document.getElementById("view-date");
+        if (viewDate) {
+          viewDate.addEventListener("change", () => {
+            state.selectedDate = viewDate.value;
+            render();
+          });
+        }
+        const toggle = document.getElementById("toggle-deload");
+        if (toggle) {
+          toggle.addEventListener("click", () => {
+            const today = todayIso();
+            if (state.appState.emergencyDeloadUntil && state.appState.emergencyDeloadUntil >= today) {
+              state.appState.emergencyDeloadUntil = null;
+            } else {
+              const end = new Date();
+              end.setDate(end.getDate() + 4);
+              state.appState.emergencyDeloadUntil = end.toLocaleDateString("en-CA", { timeZone: "Europe/Dublin" });
+            }
+            saveState();
+            render();
+          });
+        }
+      }
+
+      document.getElementById("nav").addEventListener("click", (e) => {
+        const btn = e.target.closest("button[data-tab]");
+        if (!btn) return;
+        state.tab = btn.dataset.tab;
+        document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b === btn));
+        render();
+      });
+
+      async function boot() {
+        try {
+          const [plan, calendar] = await Promise.all([
+            fetch(PLAN_URL).then((r) => r.json()),
+            fetch(CAL_URL).then((r) => r.json()),
+          ]);
+          const errors = validatePlanBundle(plan, calendar);
+          if (errors.length) throw new Error(errors.join("; "));
+          state.plan = plan;
+          state.calendar = calendar;
+          document.getElementById("nav").hidden = false;
+          render();
+        } catch (err) {
+          document.getElementById("app").innerHTML =
+            `<div class="empty">Could not load plan: ${escapeHtml(err.message)}</div>`;
+        }
+      }
+
+      boot();
+    </script>
+  </body>
+</html>

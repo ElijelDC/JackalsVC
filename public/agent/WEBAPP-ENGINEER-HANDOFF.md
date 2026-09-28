@@ -4,8 +4,6 @@
 **Plan version:** `2026-09-27-f` (sync `meta.version` in master JSON, `masterPlanVersion` in calendar JSON, root `version` in master JSON).  
 **Scope:** Full NL season **2026-09-27 → 2027-04-18** (29 calendar weeks, 14 confirmed fixtures). Not preseason-only.
 
-**Repo implementation (JackalsVC):** Static app at [`/agent/setter-season-workout-plan.html`](./setter-season-workout-plan.html). Resolver source: `src/lib/setter-season/`. Regenerate JSON + browser bundle: `npm run build:setter-season`. Short import notes: [`WEBAPP-IMPORT.md`](./WEBAPP-IMPORT.md).
-
 ---
 
 ## 1. Source files (bundle these)
@@ -14,14 +12,13 @@
 |------|------|
 | `setter-season-workout-plan.json` | Master plan: `meta`, `sessions`, `warmups`, `prehabDaily`, `microcycleTemplates`, `weeklyScheduleByeWeek`, prescriptions |
 | `d2m-fixtures-training-calendar.json` | Authoritative **week-by-week** `sessionIds` + match metadata |
-| `setter-season-workout-plan.html` | Interactive athlete app (Today / Week / Prehab / Tools) |
-| `setter-season-workout-plan.reference.html` | Short human-readable pointer (optional “about”) |
+| `setter-season-workout-plan.html` | Human-readable reference (optional in-app “about”) |
 | `setter-jump-periodization-guide.md` | Short rep-scheme cheat sheet |
-| `setter-season-lib.mjs` | Bundled plan resolver for the static app (from `src/lib/setter-season/`) |
-| `WEBAPP-IMPORT.md` | Minimal import notes |
-| `WEBAPP-ENGINEER-HANDOFF.md` | This document |
+| `WEBAPP-IMPORT.md` | Minimal import notes (this doc supersedes for implementation) |
 
-**Legacy:** Files named `setter-preseason-workout-plan.*` are preseason-only; do not import old names for the full-season product.
+**Legacy:** Files named `setter-preseason-workout-plan.*` were renamed; do not import old names.
+
+**JackalsVC repo also ships:** `WEBAPP-ENGINEER-HANDOFF.md` (this file), `setter-season-workout-app.html` (interactive UI), `setter-season-lib.mjs` (bundled resolver). Regenerate JSON/bundle: `npm run build:setter-season`. Resolver source: `src/lib/setter-season/`.
 
 ---
 
@@ -70,8 +67,6 @@
 - **Templates (`microcycleTemplates`)** are documentation + fallback if you regenerate calendar; **do not re-derive weekly plan from templates** if calendar row exists.  
 - **`weeklyScheduleByeWeek`** equals `developmentWeek` template; use for “generic bye week” preview only.
 
-**In this repo:** `resolveDayPlan`, `weekDayPlans`, `findCalendarWeek` live in `src/lib/setter-season/plan-resolver.ts` and are bundled to `setter-season-lib.mjs`.
-
 ---
 
 ## 4. Core resolution algorithm
@@ -79,7 +74,7 @@
 ### 4.1 Find calendar week for a date
 
 - Weeks use **`weekStarting`** (ISO date, Monday).  
-- For any user date `D`, find the row where `weekStarting <= D < weekStarting + 7 days` (use consistent timezone; athlete is Ireland / `Europe/Dublin`).
+- For any user date `D`, find the row where `weekStarting <= D < weekStarting + 7 days` (use consistent timezone; athlete is Ireland).
 
 ### 4.2 Get session for weekday
 
@@ -299,8 +294,6 @@ interface Fixture {
 }
 ```
 
-Canonical types in repo: `src/lib/setter-season/types.ts`.
-
 ---
 
 ## 10. Import / sync checklist
@@ -315,8 +308,6 @@ Canonical types in repo: `src/lib/setter-season/types.ts`.
 - [ ] Unit test: week `2026-10-05` Sunday → `sun-match-day` + MD1 metadata.  
 - [ ] Unit test: bye week → Monday `mon-leg-a-push-plyo`.  
 - [ ] Unit test: Thu always `thu-pull-core`.
-
-**Automated in repo:** `src/lib/setter-season/setter-season.test.ts` + `validatePlanBundle()`.
 
 ---
 

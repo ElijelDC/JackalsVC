@@ -4,7 +4,7 @@ export const metadata = {
   title: "Admin · Setter S&C plan",
 };
 
-const SEASON_URL = "/agent/setter-season-workout-plan.html";
+const SEASON_URL = "/agent/setter-season-workout-app.html";
 const LEGACY_URL = "/agent/setter-preseason-workout-plan.html";
 
 export default function AdminSetterWorkoutPage() {
