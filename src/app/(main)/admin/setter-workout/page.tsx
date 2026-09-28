@@ -14,9 +14,8 @@ export default function AdminSetterWorkoutPage() {
         <div className="max-w-2xl space-y-1">
           <h1 className="text-2xl font-bold text-white">Setter S&amp;C (D2M 2026–27)</h1>
           <p className="text-sm text-zinc-400">
-            Full-season calendar (NL fixtures + gym/home/club). Progress, Sunday vert logs, and
-            emergency deload are stored in the athlete&apos;s browser. Share the link only with
-            people who should have access.
+            Private on-device tracker. It is a static file under /agent and is not loaded by the
+            public site. Open it only when you want to log a session.
           </p>
           <p className="text-xs text-zinc-500">
             Legacy preseason app:{" "}
@@ -34,11 +33,6 @@ export default function AdminSetterWorkoutPage() {
           Open full screen
         </Link>
       </div>
-      <iframe
-        src={SEASON_URL}
-        title="Setter season workout plan"
-        className="min-h-[min(72vh,900px)] w-full flex-1 rounded-xl border border-white/10 bg-[#202121]"
-      />
     </div>
   );
 }

@@ -3,325 +3,1054 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content="noindex, nofollow, noarchive" />
     <meta name="theme-color" content="#202121" />
-    <title>Setter S&amp;C · D2M 2026–27</title>
+    <title>Setter · Season</title>
     <style>
       :root {
         --bg: #202121;
         --surface: #2a2b2b;
+        --surface-muted: #252626;
+        --inset: #181919;
         --text: #f5f5f5;
         --muted: #a3a3a3;
-        --red: #ff4d54;
+        --dim: #71717a;
+        --red: #e8222a;
+        --red-light: #ff4d54;
         --green: #34d399;
         --amber: #fbbf24;
         --radius: 14px;
         --safe-bottom: env(safe-area-inset-bottom, 0px);
         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       }
-      * { box-sizing: border-box; }
-      html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); }
-      body { padding-bottom: calc(76px + var(--safe-bottom)); }
-      .app { max-width: 520px; margin: 0 auto; padding: 16px; }
-      h1 { margin: 0; font-size: 1.5rem; font-weight: 800; }
-      .sub { color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
-      .badge { display: inline-block; font-size: 0.7rem; padding: 3px 8px; border-radius: 999px; background: #333; margin-right: 6px; margin-top: 8px; }
-      .badge.match { background: rgba(255, 77, 84, 0.2); color: var(--red); }
-      .card { background: var(--surface); border: 1px solid rgba(255,255,255,.08); border-radius: var(--radius); padding: 14px; margin-top: 12px; }
-      .warn { border-color: rgba(251,191,36,.35); background: rgba(251,191,36,.08); color: var(--amber); font-size: 0.85rem; }
-      nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 4px; padding: 8px 12px calc(8px + var(--safe-bottom)); background: #1a1b1b; border-top: 1px solid rgba(255,255,255,.08); }
-      nav button { flex: 1; padding: 10px 4px; border-radius: 10px; color: var(--muted); font-size: 0.75rem; font-weight: 600; }
-      nav button.active { background: rgba(255,77,84,.15); color: var(--red); }
-      .loc { font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; }
-      ul.items { list-style: none; padding: 0; margin: 12px 0 0; }
-      ul.items li { display: flex; gap: 10px; align-items: flex-start; padding: 10px 0; border-top: 1px solid rgba(255,255,255,.06); }
-      ul.items input { margin-top: 4px; }
-      .week-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-top: 12px; }
-      .week-grid button { font-size: 0.65rem; padding: 8px 2px; border-radius: 8px; background: #333; color: var(--muted); min-height: 52px; }
-      .week-grid button.today { outline: 2px solid var(--red); color: var(--text); }
-      .week-grid button.match { background: rgba(255,77,84,.18); }
-      label { display: block; font-size: 0.8rem; color: var(--muted); margin-top: 10px; }
-      input[type="number"], input[type="date"] { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,.12); background: #181919; color: var(--text); margin-top: 4px; }
-      .empty { color: var(--muted); text-align: center; padding: 40px 16px; }
-      a { color: var(--red); }
+      * {
+        box-sizing: border-box;
+      }
+      html {
+        overflow-x: hidden;
+        max-width: 100%;
+      }
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+      }
+      body {
+        overflow-x: hidden;
+        max-width: 100%;
+        padding-bottom: calc(88px + var(--safe-bottom));
+      }
+      button,
+      input,
+      select,
+      textarea {
+        font: inherit;
+        color: inherit;
+      }
+      button {
+        cursor: pointer;
+        border: none;
+        background: none;
+      }
+      .app {
+        width: 100%;
+        max-width: min(520px, 100%);
+        margin: 0 auto;
+        padding: 16px 16px 0;
+        overflow-x: hidden;
+      }
+      .hero {
+        padding: 8px 4px 20px;
+      }
+      .hero h1 {
+        margin: 0;
+        font-size: 1.65rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+      }
+      .hero h1 span {
+        color: var(--red-light);
+      }
+      .hero-meta {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        font-size: 0.8rem;
+        color: var(--muted);
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .progress-card {
+        margin-top: 16px;
+        padding: 16px;
+        border-radius: var(--radius);
+        background: linear-gradient(135deg, rgba(232, 34, 42, 0.18), rgba(42, 43, 43, 0.95));
+        border: 1px solid rgba(232, 34, 42, 0.25);
+        display: grid;
+        grid-template-columns: 72px 1fr;
+        gap: 14px;
+        align-items: center;
+      }
+      .ring {
+        width: 72px;
+        height: 72px;
+        border-radius: 50%;
+        background: conic-gradient(
+          var(--red) calc(var(--pct) * 1%),
+          rgba(255, 255, 255, 0.08) 0
+        );
+        display: grid;
+        place-items: center;
+        position: relative;
+      }
+      .ring::after {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        background: var(--surface-muted);
+      }
+      .ring span {
+        position: relative;
+        z-index: 1;
+        font-weight: 800;
+        font-size: 0.95rem;
+      }
+      .progress-copy strong {
+        display: block;
+        font-size: 1rem;
+        margin-bottom: 4px;
+      }
+      .progress-copy p {
+        margin: 0;
+        font-size: 0.82rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 16px;
+        padding: 4px;
+        background: var(--inset);
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .tab {
+        flex: 1;
+        padding: 10px 8px;
+        border-radius: 9px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--muted);
+        transition: background 0.15s, color 0.15s;
+      }
+      .tab.active {
+        background: var(--surface);
+        color: var(--text);
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+      }
+      .panel {
+        display: none;
+      }
+      .panel.active {
+        display: block;
+      }
+      .week-strip {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        max-width: 100%;
+        padding-bottom: 4px;
+        margin-bottom: 14px;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+      }
+      .week-strip::-webkit-scrollbar {
+        display: none;
+      }
+      .week-chip {
+        flex: 0 0 auto;
+        min-width: 64px;
+        padding: 10px 12px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--surface);
+        text-align: center;
+      }
+      .week-chip.active {
+        border-color: rgba(232, 34, 42, 0.55);
+        background: rgba(232, 34, 42, 0.12);
+      }
+      .week-chip .num {
+        font-weight: 800;
+        font-size: 1.05rem;
+      }
+      .week-chip .lbl {
+        font-size: 0.65rem;
+        color: var(--muted);
+        margin-top: 2px;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+      }
+      .day-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .day-card {
+        border-radius: var(--radius);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: var(--surface);
+        overflow: hidden;
+      }
+      .day-card.rest {
+        opacity: 0.72;
+      }
+      .day-head {
+        width: 100%;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        text-align: left;
+      }
+      .day-head .title {
+        font-weight: 700;
+        font-size: 0.95rem;
+      }
+      .day-head .sub {
+        font-size: 0.75rem;
+        color: var(--muted);
+        margin-top: 3px;
+      }
+      .day-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        padding: 5px 8px;
+        border-radius: 8px;
+        background: var(--inset);
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .day-badge.done {
+        background: rgba(52, 211, 153, 0.15);
+        color: var(--green);
+      }
+      .day-body {
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        padding: 0 12px 12px;
+      }
+      .exercise {
+        margin-top: 10px;
+        padding: 12px;
+        border-radius: 12px;
+        background: var(--surface-muted);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .exercise.done {
+        border-color: rgba(52, 211, 153, 0.25);
+      }
+      .ex-top {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .cat-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-top: 6px;
+        flex-shrink: 0;
+      }
+      .ex-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .ex-name {
+        font-weight: 700;
+        font-size: 0.92rem;
+        line-height: 1.3;
+      }
+      .ex-prescription {
+        margin-top: 4px;
+        font-size: 0.78rem;
+        color: var(--muted);
+      }
+      .ex-notes {
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: var(--dim);
+        line-height: 1.4;
+      }
+      .set-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .set-btn {
+        min-width: 44px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        font-size: 0.78rem;
+        font-weight: 600;
+        transition: transform 0.1s, border-color 0.15s, background 0.15s;
+      }
+      .set-btn:active {
+        transform: scale(0.96);
+      }
+      .set-btn.done {
+        background: rgba(52, 211, 153, 0.2);
+        border-color: rgba(52, 211, 153, 0.45);
+        color: var(--green);
+      }
+      .ex-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin-top: 10px;
+      }
+      .btn-sm {
+        padding: 7px 10px;
+        border-radius: 9px;
+        font-size: 0.72rem;
+        font-weight: 600;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        color: var(--muted);
+      }
+      .btn-sm.primary {
+        background: rgba(232, 34, 42, 0.2);
+        border-color: rgba(232, 34, 42, 0.45);
+        color: var(--red-light);
+      }
+      .btn-sm.danger {
+        color: #fca5a5;
+        border-color: rgba(248, 113, 113, 0.35);
+      }
+      .edit-fields {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+      .edit-fields label {
+        font-size: 0.68rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--dim);
+        display: block;
+        margin-bottom: 4px;
+      }
+      .edit-fields input,
+      .edit-fields select,
+      .edit-fields textarea {
+        width: 100%;
+        padding: 9px 10px;
+        border-radius: 9px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+      }
+      .edit-fields textarea {
+        min-height: 56px;
+        resize: vertical;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .toolbar {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 10px 16px calc(10px + var(--safe-bottom));
+        background: rgba(24, 25, 25, 0.92);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        max-width: 520px;
+        margin: 0 auto;
+      }
+      .toolbar button {
+        flex: 1;
+        max-width: 160px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-size: 0.82rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--surface);
+      }
+      .toolbar button.accent {
+        background: var(--red);
+        border-color: var(--red);
+        color: #fff;
+      }
+      .timer-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 50;
+        background: rgba(0, 0, 0, 0.75);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .timer-overlay.open {
+        display: flex;
+      }
+      .timer-card {
+        width: min(100%, 320px);
+        padding: 28px 24px;
+        border-radius: 20px;
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: center;
+      }
+      .timer-card .time {
+        font-size: 3.2rem;
+        font-weight: 800;
+        font-variant-numeric: tabular-nums;
+        letter-spacing: -0.03em;
+      }
+      .timer-card p {
+        margin: 8px 0 20px;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .tools-card {
+        padding: 16px;
+        border-radius: var(--radius);
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        margin-bottom: 12px;
+      }
+      .tools-card h3 {
+        margin: 0 0 10px;
+        font-size: 0.9rem;
+      }
+      .tools-card p {
+        margin: 0 0 12px;
+        font-size: 0.8rem;
+        color: var(--muted);
+        line-height: 1.45;
+      }
+      .tools-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .tools-actions button {
+        padding: 12px 14px;
+        border-radius: 11px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        text-align: left;
+      }
+      .tools-actions button.primary {
+        background: rgba(232, 34, 42, 0.2);
+        border-color: rgba(232, 34, 42, 0.45);
+        color: var(--red-light);
+      }
+      .update-banner {
+        margin-bottom: 14px;
+        padding: 12px 14px;
+        border-radius: 12px;
+        background: rgba(232, 34, 42, 0.12);
+        border: 1px solid rgba(232, 34, 42, 0.35);
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+      }
+      .update-banner p {
+        margin: 0;
+        flex: 1;
+        font-size: 0.8rem;
+        line-height: 1.45;
+        color: var(--text);
+      }
+      .update-banner button {
+        flex-shrink: 0;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        background: var(--surface);
+        color: var(--muted);
+      }
+      .hidden-input {
+        display: none;
+      }
+      .empty {
+        padding: 24px 16px;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .day-card.open {
+        border-color: rgba(232, 34, 42, 0.45);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+      }
+      .day-body {
+        animation: slideDown 0.22s ease-out;
+      }
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-6px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .set-btn.done {
+        animation: popDone 0.25s ease;
+      }
+      @keyframes popDone {
+        0% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(1.08);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+      .video-btn {
+        margin-top: 12px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding: 8px;
+        border-radius: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: var(--inset);
+        text-align: left;
+        overflow: hidden;
+        transition: border-color 0.15s, transform 0.1s;
+      }
+      .video-btn:active {
+        transform: scale(0.98);
+      }
+      .video-btn:hover {
+        border-color: rgba(232, 34, 42, 0.4);
+      }
+      a.video-btn.guide-btn {
+        text-decoration: none;
+        color: inherit;
+      }
+      .guide-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 8px;
+        flex-shrink: 0;
+        display: grid;
+        place-items: center;
+        font-size: 1.25rem;
+        background: rgba(232, 34, 42, 0.15);
+        border: 1px solid rgba(232, 34, 42, 0.25);
+      }
+      .video-thumb {
+        width: 88px;
+        height: 52px;
+        border-radius: 8px;
+        object-fit: cover;
+        flex-shrink: 0;
+        background: #111;
+      }
+      .video-copy {
+        flex: 1;
+        min-width: 0;
+      }
+      .video-copy strong {
+        display: block;
+        font-size: 0.78rem;
+        color: var(--red-light);
+      }
+      .video-copy span {
+        font-size: 0.72rem;
+        color: var(--muted);
+      }
+      .video-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 60;
+        background: rgba(0, 0, 0, 0.88);
+        display: none;
+        flex-direction: column;
+        padding: 16px;
+        padding-bottom: calc(16px + var(--safe-bottom));
+      }
+      .video-overlay.open {
+        display: flex;
+      }
+      .video-overlay-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        gap: 12px;
+      }
+      .video-overlay-header h2 {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        line-height: 1.3;
+      }
+      .video-frame-wrap {
+        flex: 1;
+        min-height: 0;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #000;
+      }
+      .video-frame-wrap iframe {
+        width: 100%;
+        height: 100%;
+        min-height: min(56vw, 320px);
+        border: 0;
+      }
+      .hero-glow {
+        position: absolute;
+        inset: -40% -20% auto;
+        height: 200px;
+        background: radial-gradient(ellipse, rgba(232, 34, 42, 0.2), transparent 70%);
+        pointer-events: none;
+      }
+      .hero-wrap {
+        position: relative;
+        overflow: hidden;
+      }
+      .video-overlay-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+      .video-overlay-actions a {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 12px;
+        border-radius: 10px;
+        font-size: 0.78rem;
+        font-weight: 600;
+        color: var(--text);
+        background: var(--surface);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        text-decoration: none;
+      }
+      .video-overlay-actions a:active {
+        transform: scale(0.98);
+      }
+      @media (min-width: 520px) {
+        .app {
+          padding-top: 24px;
+        }
+      }
     </style>
   </head>
   <body>
-    <div class="app" id="app">
-      <div class="empty">Loading plan…</div>
+    <div class="app" id="app"><div class="empty">Loading plan…</div></div>
+    <div class="toolbar">
+      <button type="button" class="accent" id="btn-today">Today</button>
+      <a href="./setter-season-workout-plan.html" style="flex:1;max-width:160px;padding:12px 14px;border-radius:12px;font-weight:700;font-size:0.82rem;border:1px solid rgba(255,255,255,.1);background:var(--surface);text-align:center;text-decoration:none;color:inherit">Plan</a>
     </div>
-    <nav id="nav" hidden>
-      <button type="button" data-tab="today" class="active">Today</button>
-      <button type="button" data-tab="week">Week</button>
-      <button type="button" data-tab="prehab">Prehab</button>
-      <button type="button" data-tab="tools">Tools</button>
-    </nav>
-    <script type="module">
-      import {
-        DAY_KEYS,
-        findCalendarWeek,
-        resolveDayPlan,
-        taperTierLabel,
-        validatePlanBundle,
-        weekDayPlans,
-      } from "./setter-season-lib.mjs";
-
-      const STORAGE_KEY = "setter-season-app-state-v1";
-      const PLAN_URL = "./setter-season-workout-plan.json";
-      const CAL_URL = "./d2m-fixtures-training-calendar.json";
-
-      const state = {
-        tab: "today",
-        selectedDate: todayIso(),
-        plan: null,
-        calendar: null,
-        appState: loadState(),
+    <div class="timer-overlay" id="timer-overlay">
+      <div class="timer-card">
+        <div class="time" id="timer-display">0:00</div>
+        <p>Rest</p>
+        <button type="button" class="btn-sm primary" id="timer-close" style="width:100%">Done</button>
+      </div>
+    </div>
+    <script>
+      const STORAGE_KEY = "setter-season-tracker-v1";
+      const DAYS = ["monday","tuesday","wednesday","thursday","friday","saturday","sunday"];
+      const DAY_SHORT = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+      const CATS = {
+        strength: { label: "Strength", color: "#e8222a" },
+        plyo: { label: "Plyo", color: "#fbbf24" },
+        skill: { label: "Setting", color: "#60a5fa" },
+        mobility: { label: "Mobility", color: "#34d399" },
+        conditioning: { label: "Conditioning", color: "#c084fc" },
+      };
+      const TIERS = {
+        buildOrBye: "Build week",
+        B_preMD1Deload: "Deload — MD1",
+        A_mesocycleDeload: "Deload week",
+        C_matchWeekMicroTaper: "Micro-taper",
       };
 
+      const state = {
+        plan: null,
+        calendar: null,
+        tab: "week",
+        weekIndex: 0,
+        openDayId: null,
+        log: loadLog(),
+        timer: null,
+      };
+
+      function loadLog() {
+        try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); }
+        catch { return {}; }
+      }
+      function saveLog() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.log));
+      }
       function todayIso() {
         return new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Dublin" });
       }
-
-      function loadState() {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-        } catch {
-          return {};
+      function addDays(iso, n) {
+        const [y,m,d] = iso.split("-").map(Number);
+        const dt = new Date(Date.UTC(y, m-1, d+n));
+        return dt.toISOString().slice(0,10);
+      }
+      function dayKey(iso) {
+        const [y,m,d] = iso.split("-").map(Number);
+        const dow = new Date(Date.UTC(y, m-1, d)).getUTCDay();
+        return DAYS[dow === 0 ? 6 : dow - 1];
+      }
+      function findWeekIndex(iso) {
+        const weeks = state.calendar.trainingCalendarByWeek;
+        for (let i = 0; i < weeks.length; i++) {
+          const start = weeks[i].weekStarting;
+          if (iso >= start && iso < addDays(start, 7)) return i;
         }
+        return 0;
       }
-
-      function saveState() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.appState));
-      }
-
-      function completionKey(date, sessionId) {
-        return `${date}:${sessionId}`;
-      }
-
-      function toggleItem(date, sessionId, n, checked) {
-        state.appState.completions = state.appState.completions || {};
-        state.appState.completions[completionKey(date, sessionId) + ":" + n] = checked;
-        saveState();
-      }
-
-      function isItemDone(date, sessionId, n) {
-        return Boolean(state.appState.completions?.[completionKey(date, sessionId) + ":" + n]);
-      }
-
       function escapeHtml(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;");
+        return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
       }
-
-      function renderToday() {
-        const day = resolveDayPlan(state.plan, state.calendar, state.selectedDate, state.appState);
-        const tier = taperTierLabel(day.taperTier);
-        const match = day.match;
-        let html = `<h1>${escapeHtml(day.session.title || day.sessionId)}</h1>
-          <p class="sub">${escapeHtml(state.selectedDate)} · ${escapeHtml(day.dayKey)}</p>
-          <span class="badge">${escapeHtml(tier)}</span>
-          <span class="badge">${escapeHtml(day.phase)}</span>
-          ${day.session.location ? `<span class="loc">${escapeHtml(day.session.location)}</span>` : ""}`;
-
-        if (day.flags.emergencyDeload) {
-          html += `<div class="card warn">Emergency deload active — prehab + Wed club only. No catch-up heavy legs.</div>`;
-        }
-        if (day.flags.within48hOfMatch && match) {
-          html += `<div class="card warn">Within 48h of NL kick-off (${escapeHtml(match.kickOff)}). Keep activation light.</div>`;
-        }
-        if (day.dailyOutline) {
-          html += `<div class="card"><strong>Outline</strong><p class="sub">${escapeHtml(day.dailyOutline)}</p></div>`;
-        }
-        if (match) {
-          html += `<div class="card"><span class="badge match">NL MD${match.matchDay}</span>
-            <p><strong>${escapeHtml(match.opponent)}</strong> · ${escapeHtml(match.homeAway)}</p>
-            <p class="sub">Warm-up ${escapeHtml(match.warmUp)} · KO ${escapeHtml(match.kickOff)}</p>
-            <p class="sub">${escapeHtml(match.venue)}</p></div>`;
-        }
-        if (day.warmup?.blocks?.length) {
-          html += `<div class="card"><strong>Warm-up · ${day.warmup.title}</strong>`;
-          for (const block of day.warmup.blocks) {
-            html += `<p class="sub">${escapeHtml(block.phase)} (${block.min} min)</p><ul>`;
-            for (const item of block.items) html += `<li>${escapeHtml(item)}</li>`;
-            html += `</ul>`;
-          }
-          html += `</div>`;
-        }
-        if (day.session.prehabBeforeClub) {
-          html += `<div class="card"><strong>Before club</strong><p>${escapeHtml(day.session.prehabBeforeClub)} prehab</p></div>`;
-        }
-        if (day.visibleItems.length) {
-          html += `<div class="card"><strong>Main</strong><ul class="items">`;
-          for (const item of day.visibleItems) {
-            const done = isItemDone(state.selectedDate, day.sessionId, item.n);
-            html += `<li><input type="checkbox" data-n="${item.n}" ${done ? "checked" : ""} />
-              <div><div>${escapeHtml(item.name)}</div><div class="sub">${escapeHtml(item.scheme)}${item.notes ? " · " + escapeHtml(item.notes) : ""}</div></div></li>`;
-          }
-          html += `</ul></div>`;
-        }
-        if (day.sessionId === "sun-prehab-track" && day.session.tracking) {
-          const log = state.appState.sundayLogs?.[state.selectedDate] || {};
-          const baseline = state.plan.meta.athlete.standingVertBaselineCm;
-          html += `<div class="card"><strong>Sunday tracking</strong>`;
-          for (const field of day.session.tracking) {
-            html += `<label>${escapeHtml(field.label)}<input type="number" step="0.1" data-track="${field.id}" value="${log[field.id] ?? ""}" /></label>`;
-          }
-          if (log.touchCm) {
-            const delta = (Number(log.touchCm) - baseline).toFixed(1);
-            html += `<p class="sub">Δ vs baseline ${baseline} cm: ${delta} cm</p>`;
-          }
-          html += `</div>`;
-        }
-        if (state.plan.meta.noCatchUpHeavyLegs) {
-          html += `<p class="sub">Skipped gym days are not stacked — no catch-up heavy legs.</p>`;
-        }
-        return html;
+      function setCount(scheme) {
+        const m = String(scheme || "").match(/(\d+)\s*[x×]/i);
+        return m ? Math.max(1, Number(m[1])) : 1;
       }
-
-      function renderWeek() {
-        const weekRow = findCalendarWeek(state.calendar, state.selectedDate);
-        if (!weekRow) return `<div class="empty">No calendar week for this date.</div>`;
-        const days = weekDayPlans(state.plan, state.calendar, weekRow.weekStarting, state.appState);
-        const today = todayIso();
-        let html = `<h1>Week of ${escapeHtml(weekRow.weekStarting)}</h1>
-          <p class="sub">${escapeHtml(taperTierLabel(weekRow.taperTier))}</p>`;
-        if (weekRow.notes?.length) {
-          html += `<div class="card warn">${weekRow.notes.map(escapeHtml).join("<br>")}</div>`;
-        }
-        html += `<div class="week-grid">`;
-        for (const day of days) {
-          const label = day.dayKey.slice(0, 3);
-          const cls = [day.date === today ? "today" : "", day.match ? "match" : ""].filter(Boolean).join(" ");
-          html += `<button type="button" class="${cls}" data-date="${day.date}">${escapeHtml(label)}<br><span style="font-size:0.55rem">${escapeHtml(day.sessionId.split("-")[0])}</span></button>`;
-        }
-        html += `</div>`;
-        html += renderToday();
-        return html;
+      function catFor(item, session) {
+        const role = (item.role || "").toLowerCase();
+        const name = item.name.toLowerCase();
+        if (role === "plyo" || name.includes("jump") || name.includes("vert")) return "plyo";
+        if (role === "skill" || name.includes("set") || name.includes("wall")) return "skill";
+        if (role === "cardio" || name.includes("bike") || name.includes("walk")) return "conditioning";
+        if (role === "prehab" || role === "mobility" || session.noJumping) return "mobility";
+        return "strength";
       }
-
-      function renderPrehab() {
-        const p = state.plan.prehabDaily;
-        let html = `<h1>Daily prehab</h1><p class="sub">${p.durationMin} min · every morning</p><div class="card"><ul>`;
-        for (const item of p.items) html += `<li>${escapeHtml(item)}</li>`;
-        html += `</ul></div>`;
-        return html;
+      function isPlyo(item) {
+        const role = (item.role || "").toLowerCase();
+        const n = item.name.toLowerCase();
+        return role === "plyo" || n.includes("jump") || n.includes("vertical") || n.includes("vert");
       }
-
-      function renderTools() {
-        const deload = state.appState.emergencyDeloadUntil;
-        let html = `<h1>Tools</h1>
-          <div class="card">
-            <p><strong>Plan version</strong> ${escapeHtml(state.plan.meta.version)}</p>
-            <p class="sub">${escapeHtml(state.plan.meta.athlete.injuryContext || "")}</p>
-            <p><a href="./setter-season-workout-plan.html">Plan reference (printable)</a> ·
-            <a href="./WEBAPP-ENGINEER-HANDOFF.md" target="_blank" rel="noreferrer">Engineer handoff</a> ·
-            <a href="./setter-season-workout-plan.json" target="_blank" rel="noreferrer">Master JSON</a> ·
-            <a href="./d2m-fixtures-training-calendar.json" target="_blank" rel="noreferrer">Calendar JSON</a></p>
+      function visibleItems(session, sessionId, week, day, date) {
+        let items = (session.items || []).slice();
+        const home = (session.location || "").toLowerCase().includes("home") || session.noJumping || session.smallSpace;
+        if (home || week.homeJumpPolicy === "noHomeJumping" && (session.noJumping || home)) {
+          if (session.noJumping || home) items = items.filter((it) => !isPlyo(it));
+        }
+        if (session.noLegs || sessionId === "thu-pull-core") {
+          items = items.filter((it) => {
+            const n = it.name.toLowerCase();
+            const role = (it.role || "").toLowerCase();
+            if (role.includes("leg") && role !== "pull") return false;
+            return !(n.includes("squat") || n.includes("leg press") || n.includes("rdl") || n.includes("lunge"));
+          });
+        }
+        if (sessionId === "sat-home-small-space" && session.matchWeekVariant && within48(week, date)) {
+          const keep = new Set(session.matchWeekVariant.within48hItemNumbers || []);
+          items = items.filter((it) => keep.has(it.n));
+        }
+        return items;
+      }
+      function within48(week, date) {
+        const m = week.d2mMatch;
+        if (!m) return false;
+        const parts = (m.kickOff || "").split(":");
+        if (parts.length < 2) return false;
+        const [y, mo, d] = m.date.split("-").map(Number);
+        const ko = Date.UTC(y, mo - 1, d, Number(parts[0]) - 1, Number(parts[1]));
+        const now = Date.parse(date + "T12:00:00Z");
+        const ms = ko - now;
+        return ms > 0 && ms <= 48 * 3600 * 1000;
+      }
+      function emergencyOn(date) {
+        const until = state.log.emergencyUntil;
+        return Boolean(until && date <= until);
+      }
+      function sessionFor(week, day, date) {
+        let id = week.sessionIds[day];
+        if (emergencyOn(date)) id = day === "wednesday" ? "wed-club-only" : "sun-prehab-track";
+        return { id, session: state.plan.sessions[id] };
+      }
+      function doneKey(date, n, i) {
+        return date + ":" + n + ":" + i;
+      }
+      function setsDone(date, n, count) {
+        const bag = state.log.sets || {};
+        let done = 0;
+        for (let i = 0; i < count; i++) if (bag[doneKey(date, n, i)]) done++;
+        return done;
+      }
+      function weekStats(week) {
+        let total = 0, done = 0;
+        for (let i = 0; i < 7; i++) {
+          const date = addDays(week.weekStarting, i);
+          const day = DAYS[i];
+          const { id, session } = sessionFor(week, day, date);
+          if (!session) continue;
+          for (const item of visibleItems(session, id, week, day, date)) {
+            const c = setCount(item.scheme);
+            total += c;
+            done += setsDone(date, item.n, c);
+          }
+        }
+        return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
+      }
+      function seasonStats() {
+        let total = 0, done = 0;
+        for (const week of state.calendar.trainingCalendarByWeek) {
+          const s = weekStats(week);
+          total += s.total; done += s.done;
+        }
+        return { total, done, pct: total ? Math.round((done / total) * 100) : 0 };
+      }
+      function warmupHtml(sessionId, session) {
+        const w = state.plan.warmups.bySessionId[sessionId];
+        if (w) {
+          return w.blocks.map((b) => `<div class="ex-notes"><strong>${escapeHtml(b.phase)}</strong> ${b.min} min — ${b.items.map(escapeHtml).join(" · ")}</div>`).join("");
+        }
+        if (session.match) return `<div class="ex-notes">Prehab ${state.plan.prehabDaily.durationMin} min + team warm-up.</div>`;
+        return `<div class="ex-notes">${escapeHtml(state.plan.warmups.protocol)}</div>`;
+      }
+      function renderExercise(item, date, session) {
+        const cat = CATS[catFor(item, session)];
+        const count = setCount(item.scheme);
+        const buttons = Array.from({ length: count }, (_, i) => {
+          const on = state.log.sets && state.log.sets[doneKey(date, item.n, i)];
+          return `<button type="button" class="set-btn${on ? " done" : ""}" data-action="set" data-date="${date}" data-n="${item.n}" data-i="${i}">${i + 1}</button>`;
+        }).join("");
+        const rest = item.restSec || (item.restMin ? Math.round(item.restMin * 60) : 90);
+        const all = setsDone(date, item.n, count) === count;
+        return `<article class="exercise${all ? " done" : ""}">
+          <div class="ex-top">
+            <span class="cat-dot" style="background:${cat.color}"></span>
+            <div class="ex-info">
+              <div class="ex-name">${escapeHtml(item.name)}</div>
+              <div class="ex-prescription">${escapeHtml(item.scheme)}${item.rpe ? " · RPE " + escapeHtml(item.rpe) : ""} · ${cat.label}</div>
+              ${item.notes ? `<div class="ex-notes">${escapeHtml(item.notes)}</div>` : ""}
+            </div>
           </div>
-          <div class="card">
-            <label>View date<input type="date" id="view-date" value="${escapeHtml(state.selectedDate)}" /></label>
-            <p class="sub">Timezone: Europe/Dublin for “today”.</p>
+          <div class="set-row">${buttons}</div>
+          <div class="ex-actions">
+            <button type="button" class="btn-sm primary" data-action="timer" data-rest="${rest}">Rest ${rest >= 60 ? Math.round(rest/60) + " min" : rest + "s"}</button>
           </div>
-          <div class="card">
-            <strong>Emergency deload (5 days)</strong>
-            <p class="sub">Prehab + Wed club only. Triggers: 2× vert down, knee &gt;3/10, or 3 poor sleep nights (manual).</p>
-            <button type="button" id="toggle-deload" style="margin-top:10px;padding:10px 14px;border-radius:8px;background:var(--red);color:#fff;font-weight:600;width:100%">
-              ${deload && deload >= todayIso() ? "End emergency deload" : "Start 5-day emergency deload"}
-            </button>
-          </div>`;
-        return html;
+        </article>`;
       }
-
+      function renderDayCard(week, dayIndex, forceOpen) {
+        const date = addDays(week.weekStarting, dayIndex);
+        const day = DAYS[dayIndex];
+        const { id, session } = sessionFor(week, day, date);
+        if (!session) return "";
+        const items = visibleItems(session, id, week, day, date);
+        let total = 0, done = 0;
+        for (const item of items) {
+          const c = setCount(item.scheme);
+          total += c; done += setsDone(date, item.n, c);
+        }
+        const open = forceOpen || state.openDayId === date;
+        const loc = session.location || "";
+        const match = (day === "sunday" && week.d2mMatch && week.d2mMatch.dayOfWeek === "Sun") ||
+          (day === "saturday" && week.d2mMatch && week.d2mMatch.dayOfWeek === "Sat")
+          ? week.d2mMatch : null;
+        const outline = week.dailyOutline && week.dailyOutline[day];
+        const sub = [loc, outline || session.title || id, total ? done + "/" + total + " sets" : ""].filter(Boolean).join(" · ");
+        const restish = session.match || id.startsWith("sun-");
+        const body = open ? `<div class="day-body">
+          ${match ? `<div class="update-banner"><p><strong>NL MD${match.matchDay}</strong> ${escapeHtml(match.opponent)} · ${escapeHtml(match.homeAway)} · warm-up ${escapeHtml(match.warmUp)} · KO ${escapeHtml(match.kickOff)}</p></div>` : ""}
+          ${within48(week, date) ? `<div class="ex-notes">Within 48 h of kick-off — keep it light. No catch-up heavy legs.</div>` : ""}
+          ${warmupHtml(id, session)}
+          ${session.prehabBeforeClub ? `<div class="ex-notes">${escapeHtml(session.prehabBeforeClub)} prehab before club. No extra gym.</div>` : ""}
+          ${items.map((item) => renderExercise(item, date, session)).join("")}
+          ${id === "sun-prehab-track" ? trackFields(date) : ""}
+        </div>` : "";
+        return `<div class="day-card${restish ? " rest" : ""}${open ? " open" : ""}">
+          <button type="button" class="day-head" data-action="toggle" data-date="${date}">
+            <div>
+              <div class="title">${DAY_SHORT[dayIndex]} · ${escapeHtml(session.title || id)}</div>
+              <div class="sub">${escapeHtml(sub)}</div>
+            </div>
+            <span class="day-badge${done && done === total ? " done" : ""}">${open ? "Close" : restish ? "Rest" : "Open"}</span>
+          </button>
+          ${body}
+        </div>`;
+      }
+      function trackFields(date) {
+        const log = (state.log.sunday && state.log.sunday[date]) || {};
+        const base = state.plan.meta.athlete.standingVertBaselineCm;
+        const delta = log.touchCm != null && log.touchCm !== "" ? (Number(log.touchCm) - base).toFixed(1) : null;
+        return `<div class="tools-card" style="margin-top:12px">
+          <h3>Sunday log</h3>
+          <div class="edit-fields">
+            <div><label>Standing touch (cm)</label><input type="number" step="0.1" data-track="touchCm" data-date="${date}" value="${log.touchCm ?? ""}" /></div>
+            <div class="grid-2">
+              <div><label>Knee 0–10</label><input type="number" min="0" max="10" data-track="knee" data-date="${date}" value="${log.knee ?? ""}" /></div>
+              <div><label>Shoulder 0–10</label><input type="number" min="0" max="10" data-track="shoulder" data-date="${date}" value="${log.shoulder ?? ""}" /></div>
+            </div>
+          </div>
+          <p style="margin-top:8px">Baseline ${base} cm${delta != null ? " · Δ " + delta + " cm" : ""}. Standing two-foot only.</p>
+        </div>`;
+      }
       function render() {
-        const app = document.getElementById("app");
-        if (!state.plan || !state.calendar) return;
-        let body = "";
-        if (state.tab === "today") body = renderToday();
-        else if (state.tab === "week") body = renderWeek();
-        else if (state.tab === "prehab") body = renderPrehab();
-        else body = renderTools();
-        app.innerHTML = body;
-        bindInteractive();
+        const weeks = state.calendar.trainingCalendarByWeek;
+        const week = weeks[state.weekIndex];
+        const stats = seasonStats();
+        const today = todayIso();
+        const todayWeek = findWeekIndex(today);
+        const todayDay = DAYS.indexOf(dayKey(today));
+        document.getElementById("app").innerHTML = `
+          <header class="hero hero-wrap">
+            <div class="hero-glow" aria-hidden="true"></div>
+            <h1>Setter <span>season</span></h1>
+            <div class="hero-meta">
+              <span class="pill">D2M · ${escapeHtml(state.plan.meta.version)}</span>
+              <span class="pill">${weeks.length} weeks</span>
+              <span class="pill">Saved on device</span>
+            </div>
+            <div class="progress-card">
+              <div class="ring" style="--pct:${stats.pct}"><span>${stats.pct}%</span></div>
+              <div class="progress-copy">
+                <strong>Sets logged</strong>
+                <p>${stats.done} of ${stats.total} working sets. Tap set numbers as you finish them. Skipped days stay skipped.</p>
+              </div>
+            </div>
+          </header>
+          ${emergencyOn(today) ? `<div class="update-banner"><p>Emergency deload is on through ${escapeHtml(state.log.emergencyUntil)}. Prehab + Wednesday club only.</p></div>` : ""}
+          <nav class="tabs" role="tablist">
+            <button type="button" class="tab${state.tab==="week"?" active":""}" data-tab="week">Week</button>
+            <button type="button" class="tab${state.tab==="today"?" active":""}" data-tab="today">Today</button>
+            <button type="button" class="tab${state.tab==="tools"?" active":""}" data-tab="tools">Tools</button>
+          </nav>
+          <section class="panel${state.tab==="week"?" active":""}">
+            <div class="week-strip">${weeks.map((w,i)=>`<button type="button" class="week-chip${i===state.weekIndex?" active":""}" data-week="${i}"><div class="num">${i+1}</div><div class="lbl">${w.d2mMatch?"MD"+w.d2mMatch.matchDay:w.weekStarting.slice(5)}</div></button>`).join("")}</div>
+            <p style="font-size:0.8rem;color:var(--muted);margin:0 0 12px">${escapeHtml(TIERS[week.taperTier]||week.taperTier)}${week.d2mMatch?" · "+week.d2mMatch.opponent+" ("+week.d2mMatch.homeAway+")":" · bye"}${(week.notes||[]).length?" · "+week.notes[0]:""}</p>
+            <div class="day-list">${DAYS.map((_,i)=>renderDayCard(week,i,false)).join("")}</div>
+          </section>
+          <section class="panel${state.tab==="today"?" active":""}">
+            <p style="font-size:0.85rem;color:var(--muted);margin:0 0 12px">${escapeHtml(today)} · week ${todayWeek+1}</p>
+            ${renderDayCard(weeks[todayWeek], todayDay, true)}
+          </section>
+          <section class="panel${state.tab==="tools"?" active":""}">
+            <div class="tools-card"><h3>Daily prehab (${state.plan.prehabDaily.durationMin} min)</h3>
+              <ul style="margin:0;padding-left:1.1rem;color:var(--muted);font-size:0.85rem">${state.plan.prehabDaily.items.map((x)=>"<li>"+escapeHtml(x)+"</li>").join("")}</ul>
+            </div>
+            <div class="tools-card"><h3>Emergency deload</h3>
+              <p>Vert down two Sundays, knee above 3/10, or three bad sleep nights → five days of prehab and Wednesday club only. No catch-up gym.</p>
+              <div class="tools-actions"><button type="button" class="primary" id="btn-deload">${emergencyOn(today)?"End deload":"Start 5-day deload"}</button></div>
+            </div>
+            <div class="tools-card"><h3>Printable plan</h3>
+              <p>Full session text, fixtures, and dosing.</p>
+              <div class="tools-actions"><a class="btn-sm primary" href="./setter-season-workout-plan.html" style="display:inline-flex;text-decoration:none;align-items:center">Open plan reference</a></div>
+            </div>
+          </section>`;
+        bind();
       }
-
-      function bindInteractive() {
-        document.querySelectorAll('input[type="checkbox"][data-n]').forEach((el) => {
-          el.addEventListener("change", () => {
-            const day = resolveDayPlan(state.plan, state.calendar, state.selectedDate, state.appState);
-            toggleItem(state.selectedDate, day.sessionId, Number(el.dataset.n), el.checked);
-          });
+      function bind() {
+        document.querySelectorAll("[data-tab]").forEach((b)=>b.addEventListener("click",()=>{ state.tab=b.dataset.tab; render(); }));
+        document.querySelectorAll("[data-week]").forEach((b)=>b.addEventListener("click",()=>{ state.weekIndex=Number(b.dataset.week); state.tab="week"; render(); }));
+        document.querySelectorAll('[data-action="toggle"]').forEach((b)=>b.addEventListener("click",()=>{
+          state.openDayId = state.openDayId === b.dataset.date ? null : b.dataset.date;
+          render();
+        }));
+        document.querySelectorAll('[data-action="set"]').forEach((b)=>b.addEventListener("click",()=>{
+          state.log.sets = state.log.sets || {};
+          const k = doneKey(b.dataset.date, b.dataset.n, b.dataset.i);
+          state.log.sets[k] = !state.log.sets[k];
+          saveLog();
+          render();
+        }));
+        document.querySelectorAll('[data-action="timer"]').forEach((b)=>b.addEventListener("click",()=>startTimer(Number(b.dataset.rest)||90)));
+        document.querySelectorAll("[data-track]").forEach((el)=>el.addEventListener("change",()=>{
+          state.log.sunday = state.log.sunday || {};
+          const date = el.dataset.date;
+          state.log.sunday[date] = state.log.sunday[date] || {};
+          state.log.sunday[date][el.dataset.track] = el.value;
+          saveLog();
+        }));
+        const deload = document.getElementById("btn-deload");
+        if (deload) deload.addEventListener("click", ()=>{
+          const today = todayIso();
+          if (emergencyOn(today)) state.log.emergencyUntil = null;
+          else state.log.emergencyUntil = addDays(today, 4);
+          saveLog();
+          render();
         });
-        document.querySelectorAll("[data-track]").forEach((el) => {
-          el.addEventListener("change", () => {
-            state.appState.sundayLogs = state.appState.sundayLogs || {};
-            state.appState.sundayLogs[state.selectedDate] =
-              state.appState.sundayLogs[state.selectedDate] || {};
-            state.appState.sundayLogs[state.selectedDate][el.dataset.track] = Number(el.value);
-            saveState();
-            render();
-          });
-        });
-        document.querySelectorAll(".week-grid button[data-date]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            state.selectedDate = btn.dataset.date;
-            state.tab = "today";
-            document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.tab === "today"));
-            render();
-          });
-        });
-        const viewDate = document.getElementById("view-date");
-        if (viewDate) {
-          viewDate.addEventListener("change", () => {
-            state.selectedDate = viewDate.value;
-            render();
-          });
-        }
-        const toggle = document.getElementById("toggle-deload");
-        if (toggle) {
-          toggle.addEventListener("click", () => {
-            const today = todayIso();
-            if (state.appState.emergencyDeloadUntil && state.appState.emergencyDeloadUntil >= today) {
-              state.appState.emergencyDeloadUntil = null;
-            } else {
-              const end = new Date();
-              end.setDate(end.getDate() + 4);
-              state.appState.emergencyDeloadUntil = end.toLocaleDateString("en-CA", { timeZone: "Europe/Dublin" });
-            }
-            saveState();
-            render();
-          });
-        }
       }
-
-      document.getElementById("nav").addEventListener("click", (e) => {
-        const btn = e.target.closest("button[data-tab]");
-        if (!btn) return;
-        state.tab = btn.dataset.tab;
-        document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b === btn));
+      function startTimer(sec) {
+        clearInterval(state.timer);
+        const overlay = document.getElementById("timer-overlay");
+        const display = document.getElementById("timer-display");
+        overlay.classList.add("open");
+        let left = sec;
+        const tick = () => {
+          const m = Math.floor(left/60), s = left%60;
+          display.textContent = m + ":" + String(s).padStart(2,"0");
+        };
+        tick();
+        state.timer = setInterval(()=>{ left -= 1; if (left < 0) { clearInterval(state.timer); left = 0; } tick(); }, 1000);
+      }
+      document.getElementById("timer-close").addEventListener("click", ()=>{
+        clearInterval(state.timer);
+        document.getElementById("timer-overlay").classList.remove("open");
+      });
+      document.getElementById("btn-today").addEventListener("click", ()=>{
+        const today = todayIso();
+        state.weekIndex = findWeekIndex(today);
+        state.openDayId = today;
+        state.tab = "today";
         render();
       });
-
       async function boot() {
-        try {
-          const [plan, calendar] = await Promise.all([
-            fetch(PLAN_URL).then((r) => r.json()),
-            fetch(CAL_URL).then((r) => r.json()),
-          ]);
-          const errors = validatePlanBundle(plan, calendar);
-          if (errors.length) throw new Error(errors.join("; "));
-          state.plan = plan;
-          state.calendar = calendar;
-          document.getElementById("nav").hidden = false;
-          render();
-        } catch (err) {
-          document.getElementById("app").innerHTML =
-            `<div class="empty">Could not load plan: ${escapeHtml(err.message)}</div>`;
-        }
+        const [plan, calendar] = await Promise.all([
+          fetch("./setter-season-workout-plan.json").then((r)=>r.json()),
+          fetch("./d2m-fixtures-training-calendar.json").then((r)=>r.json()),
+        ]);
+        state.plan = plan;
+        state.calendar = calendar;
+        const today = todayIso();
+        state.weekIndex = findWeekIndex(today);
+        state.openDayId = today;
+        render();
       }
-
-      boot();
-    </script>
+      boot().catch((err)=>{
+        document.getElementById("app").innerHTML = '<div class="empty">Could not load the plan. '+escapeHtml(err.message)+'</div>';
+      });
+</script>
   </body>
 </html>
