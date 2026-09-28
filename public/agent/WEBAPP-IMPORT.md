@@ -25,4 +25,4 @@ npm run build:setter-season
 - Thursday: `thu-pull-core` (`noLegs`).
 - No catch-up for skipped heavy leg days (`meta.noCatchUpHeavyLegs`).
 
-See the engineer handoff (2026-09-27-f) for validation checklist and UI scope.
+Full spec: [`WEBAPP-ENGINEER-HANDOFF.md`](./WEBAPP-ENGINEER-HANDOFF.md) (also served at `/agent/WEBAPP-ENGINEER-HANDOFF.md`).
