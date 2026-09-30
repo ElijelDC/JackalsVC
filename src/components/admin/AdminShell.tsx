@@ -169,9 +169,9 @@ const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/training", label: "Weekly training", icon: Dumbbell },
       {
         href: "/admin/setter-workout",
-        label: "Setter preseason app",
+        label: "Setter season app",
         icon: Volleyball,
-        keywords: "workout plan agent private setter",
+        keywords: "workout plan agent private setter season inseason",
       },
       {
         href: "/admin/one-off-sessions",
