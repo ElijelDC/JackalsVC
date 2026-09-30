@@ -1,27 +1,20 @@
 import Link from "next/link";
 
 export const metadata = {
-  title: "Admin · Setter S&C plan",
+  title: "Admin · Setter season workout",
 };
 
 const SEASON_URL = "/agent/setter-season-workout-app.html";
-const LEGACY_URL = "/agent/setter-preseason-workout-plan.html";
 
 export default function AdminSetterWorkoutPage() {
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="max-w-2xl space-y-1">
-          <h1 className="text-2xl font-bold text-white">Setter S&amp;C (D2M 2026–27)</h1>
+          <h1 className="text-2xl font-bold text-white">Setter season workout (D2M 2026–27)</h1>
           <p className="text-sm text-zinc-400">
-            Private on-device tracker. It is a static file under /agent and is not loaded by the
-            public site. Open it only when you want to log a session.
-          </p>
-          <p className="text-xs text-zinc-500">
-            Legacy preseason app:{" "}
-            <Link href={LEGACY_URL} className="text-jackals-red-light hover:underline">
-              setter-preseason-workout-plan.html
-            </Link>
+            Private in-season S&amp;C tracker. Static file under /agent — not loaded by the public
+            site. Progress stays in the athlete&apos;s browser.
           </p>
         </div>
         <Link
