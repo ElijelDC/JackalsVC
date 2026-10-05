@@ -9,13 +9,18 @@ import {
   type TrainingRosterMember,
 } from "@/lib/training-attendance-config";
 import type { CoachReminderStatus } from "@/lib/coach-unanswered-config";
+import { getCoachCoverageReminderPreview } from "@/lib/coach-coverage-reminders";
+import type { CoachCoverageReminderPreview } from "@/lib/coach-coverage-reminders-config";
 import {
+  getCoachResponseGate,
   listSquadCoaches,
   userHasSquadCoachAccess,
+  type CoachResponseGate,
 } from "@/lib/coach-session-coverage";
 import { getCoachReminderStatus } from "@/lib/coach-response-reminders";
 import { formatMatchTitle } from "@/lib/match-config";
 import { prisma } from "@/lib/prisma";
+import { userCanManageTrainingGuestInvites } from "@/lib/training-invites";
 import { getTrainingTeamByKey } from "@/lib/training-squads";
 import { getUserTrainingTeamKeys } from "@/lib/training-teams";
 
@@ -40,6 +45,9 @@ export type MatchDetailData = {
   isSquadMember: boolean;
   userStatus: TrainingAttendanceStatus;
   isCoachUser: boolean;
+  canManageGuestInvites: boolean;
+  coachCoverageReminder: CoachCoverageReminderPreview | null;
+  coachResponseGate: CoachResponseGate | null;
   coachReminder: CoachReminderStatus | null;
   roster: TrainingRosterGroups;
   coaches: TrainingRosterGroups;
@@ -108,6 +116,9 @@ export async function getMatchDetail(
       isSquadMember: false,
       userStatus: "UNANSWERED",
       isCoachUser: false,
+      canManageGuestInvites: false,
+      coachCoverageReminder: null,
+      coachResponseGate: null,
       coachReminder: null,
       roster: EMPTY_ROSTER_GROUPS,
       coaches: EMPTY_ROSTER_GROUPS,
@@ -162,6 +173,7 @@ export async function getMatchDetail(
       name: member.user!.name,
       status: signupMap.get(member.userId!) ?? "UNANSWERED",
       isCurrentUser: member.userId === userId,
+      playingPosition: member.playingPosition ?? null,
     }));
 
   const coachMembers: TrainingRosterMember[] = squadCoaches.map((coach) => {
@@ -192,12 +204,39 @@ export async function getMatchDetail(
       ? await getCoachReminderStatus(userId, "match", matchId)
       : null;
 
+  const canManageGuestInvites = await userCanManageTrainingGuestInvites(
+    userId,
+    match.trainingTeamKey,
+  );
+
+  const coachResponseGate = isCoachUser
+    ? await getCoachResponseGate({
+        matchId,
+        userId,
+        trainingTeamKey: match.trainingTeamKey,
+      })
+    : null;
+
+  const coachCoverageReminder =
+    canManageGuestInvites &&
+    !match.cancelled &&
+    match.matchStart.getTime() > Date.now()
+      ? await getCoachCoverageReminderPreview({
+          matchId,
+          trainingTeamKey: match.trainingTeamKey,
+          actorUserId: userId,
+        })
+      : null;
+
   return {
     match: matchPayload,
     team,
     isSquadMember: true,
     userStatus,
     isCoachUser,
+    canManageGuestInvites,
+    coachCoverageReminder,
+    coachResponseGate,
     coachReminder,
     roster,
     coaches,

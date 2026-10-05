@@ -11,10 +11,14 @@ import { cn } from "@/lib/utils";
 
 export function OverseerRemindCoachesButton({
   eventId,
+  matchId,
   initialPreview,
+  itemLabel = "session",
 }: {
-  eventId: string;
+  eventId?: string;
+  matchId?: string;
   initialPreview: CoachCoverageReminderPreview;
+  itemLabel?: "session" | "match";
 }) {
   const [preview, setPreview] = useState(initialPreview);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -49,7 +53,10 @@ export function OverseerRemindCoachesButton({
         preview: CoachCoverageReminderPreview;
         notifiedCount: number;
         recipientNames: string[];
-      }>("/api/coach/remind-coach-coverage", { eventId });
+      }>(
+        "/api/coach/remind-coach-coverage",
+        matchId ? { matchId } : { eventId },
+      );
 
       if (!result.ok) {
         setError(result.error);
@@ -143,7 +150,7 @@ export function OverseerRemindCoachesButton({
                 <strong className="text-zinc-200">
                   {preview.headCoachName ?? "the head coach"}
                 </strong>{" "}
-                asking them to accept or decline this session first?
+                asking them to accept or decline this {itemLabel} first?
               </>
             ) : (
               <>

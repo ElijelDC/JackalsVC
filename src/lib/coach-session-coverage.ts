@@ -1,5 +1,6 @@
 import { formatInClubTime } from "@/lib/datetime-form";
 import { requireMailTransporter } from "@/lib/email";
+import { formatMatchTitle } from "@/lib/match-config";
 import { emailSiteUrl } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import {
@@ -156,9 +157,23 @@ export async function findOtherAttendingCoaches(input: {
   });
 }
 
-async function getCoachSignupStatus(userId: string, eventId: string) {
+async function getCoachSignupStatus(
+  userId: string,
+  target: { eventId: string } | { matchId: string },
+) {
+  if ("matchId" in target) {
+    const signup = await prisma.matchSignup.findUnique({
+      where: { userId_matchId: { userId, matchId: target.matchId } },
+      select: { status: true },
+    });
+    if (signup?.status === "ATTENDING" || signup?.status === "NOT_ATTENDING") {
+      return signup.status;
+    }
+    return null;
+  }
+
   const signup = await prisma.eventSignup.findUnique({
-    where: { userId_eventId: { userId, eventId } },
+    where: { userId_eventId: { userId, eventId: target.eventId } },
     select: { status: true },
   });
   if (signup?.status === "ATTENDING" || signup?.status === "NOT_ATTENDING") {
@@ -169,10 +184,18 @@ async function getCoachSignupStatus(userId: string, eventId: string) {
 
 /** Null when the current user may respond. */
 export async function getCoachResponseGate(input: {
-  eventId: string;
+  eventId?: string;
+  matchId?: string;
   userId: string;
   trainingTeamKey: string;
 }): Promise<CoachResponseGate | null> {
+  const target = input.matchId
+    ? { matchId: input.matchId }
+    : input.eventId
+      ? { eventId: input.eventId }
+      : null;
+  if (!target) return null;
+
   const coaches = await listSquadCoaches(input.trainingTeamKey);
   const self = coaches.find((coach) => coach.userId === input.userId);
   if (!self || self.isHeadCoach) return null;
@@ -180,7 +203,7 @@ export async function getCoachResponseGate(input: {
   const head = coaches.find((coach) => coach.isHeadCoach);
   if (!head) return null;
 
-  const headStatus = await getCoachSignupStatus(head.userId, input.eventId);
+  const headStatus = await getCoachSignupStatus(head.userId, target);
   if (!headStatus) {
     return { kind: "waiting_for_head", headCoachName: head.name };
   }
@@ -198,11 +221,20 @@ export async function getCoachResponseGate(input: {
  * Check + demotion run in one transaction with the signup upsert (caller must upsert after).
  */
 export async function enforceExclusiveCoachAttendance(input: {
-  eventId: string;
+  eventId?: string;
+  matchId?: string;
   userId: string;
   trainingTeamKey: string;
   status: string;
 }): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  const target = input.matchId
+    ? { matchId: input.matchId }
+    : input.eventId
+      ? { eventId: input.eventId }
+      : null;
+  if (!target) return { ok: true };
+
+  const itemLabel = "matchId" in target ? "match" : "session";
   const coaches = await listSquadCoaches(input.trainingTeamKey);
   const self = coaches.find((coach) => coach.userId === input.userId);
   if (!self) return { ok: true };
@@ -210,7 +242,7 @@ export async function enforceExclusiveCoachAttendance(input: {
   if (!self.isHeadCoach) {
     const head = coaches.find((coach) => coach.isHeadCoach);
     if (head) {
-      const headStatus = await getCoachSignupStatus(head.userId, input.eventId);
+      const headStatus = await getCoachSignupStatus(head.userId, target);
       if (!headStatus) {
         return {
           ok: false,
@@ -241,29 +273,52 @@ export async function enforceExclusiveCoachAttendance(input: {
       const others =
         coachUserIds.length === 0
           ? []
-          : await tx.eventSignup.findMany({
-              where: {
-                eventId: input.eventId,
-                status: "ATTENDING",
-                userId: { in: coachUserIds },
-              },
-              select: {
-                userId: true,
-                user: { select: { name: true } },
-              },
-            });
+          : "matchId" in target
+            ? await tx.matchSignup.findMany({
+                where: {
+                  matchId: target.matchId,
+                  status: "ATTENDING",
+                  userId: { in: coachUserIds },
+                },
+                select: {
+                  userId: true,
+                  user: { select: { name: true } },
+                },
+              })
+            : await tx.eventSignup.findMany({
+                where: {
+                  eventId: target.eventId,
+                  status: "ATTENDING",
+                  userId: { in: coachUserIds },
+                },
+                select: {
+                  userId: true,
+                  user: { select: { name: true } },
+                },
+              });
 
       if (others.length === 0) return;
 
       if (self.isHeadCoach) {
-        await tx.eventSignup.updateMany({
-          where: {
-            eventId: input.eventId,
-            userId: { in: others.map((row) => row.userId) },
-            status: "ATTENDING",
-          },
-          data: { status: "NOT_ATTENDING" },
-        });
+        if ("matchId" in target) {
+          await tx.matchSignup.updateMany({
+            where: {
+              matchId: target.matchId,
+              userId: { in: others.map((row) => row.userId) },
+              status: "ATTENDING",
+            },
+            data: { status: "NOT_ATTENDING" },
+          });
+        } else {
+          await tx.eventSignup.updateMany({
+            where: {
+              eventId: target.eventId,
+              userId: { in: others.map((row) => row.userId) },
+              status: "ATTENDING",
+            },
+            data: { status: "NOT_ATTENDING" },
+          });
+        }
         return;
       }
 
@@ -274,8 +329,8 @@ export async function enforceExclusiveCoachAttendance(input: {
       throw Object.assign(
         new Error(
           names
-            ? `${names} has already accepted this session. Only one coach can cover at a time.`
-            : "Another coach has already accepted this session. Only one coach can cover at a time.",
+            ? `${names} has already accepted this ${itemLabel}. Only one coach can cover at a time.`
+            : `Another coach has already accepted this ${itemLabel}. Only one coach can cover at a time.`,
         ),
         { statusCode: 409 },
       );
@@ -300,21 +355,14 @@ export async function enforceExclusiveCoachAttendance(input: {
 }
 
 export async function notifyCoverCoachesAfterHeadDecline(input: {
-  eventId: string;
+  eventId?: string;
+  matchId?: string;
   headUserId: string;
   trainingTeamKey: string;
 }) {
   const coaches = await listSquadCoaches(input.trainingTeamKey);
   const head = coaches.find((coach) => coach.userId === input.headUserId);
   if (!head?.isHeadCoach) return { notified: 0 };
-
-  const event = await prisma.event.findUnique({
-    where: { id: input.eventId },
-    include: {
-      trainingSession: { select: { trainingTeamKey: true } },
-    },
-  });
-  if (!event || event.type !== "TRAINING") return { notified: 0 };
 
   const coverCoaches = coaches.filter(
     (coach) => coach.userId !== input.headUserId,
@@ -326,22 +374,59 @@ export async function notifyCoverCoachesAfterHeadDecline(input: {
     select: { name: true },
   });
   const teamName = squad?.name ?? input.trainingTeamKey;
-  const sessionLabel = [
-    event.title,
-    formatInClubTime(event.startDate, {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    }),
-  ]
-    .filter(Boolean)
-    .join(" · ");
 
-  const sessionUrl = emailSiteUrl(`/calendar/${event.id}`);
+  let sessionLabel = "";
+  let sessionUrl = "";
+  let activityLabel: "training" | "match" = "training";
+
+  if (input.matchId) {
+    const match = await prisma.teamMatch.findUnique({
+      where: { id: input.matchId },
+    });
+    if (!match || match.cancelled) return { notified: 0 };
+    activityLabel = "match";
+    sessionLabel = [
+      formatMatchTitle(match.opponentName, match.venue),
+      formatInClubTime(match.matchStart, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    sessionUrl = emailSiteUrl(`/matches/${match.id}`);
+  } else if (input.eventId) {
+    const event = await prisma.event.findUnique({
+      where: { id: input.eventId },
+      include: {
+        trainingSession: { select: { trainingTeamKey: true } },
+      },
+    });
+    if (!event || event.type !== "TRAINING") return { notified: 0 };
+    sessionLabel = [
+      event.title,
+      formatInClubTime(event.startDate, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    sessionUrl = emailSiteUrl(`/calendar/${event.id}`);
+  } else {
+    return { notified: 0 };
+  }
+
   let notified = 0;
 
   for (const coach of coverCoaches) {
@@ -353,6 +438,7 @@ export async function notifyCoverCoachesAfterHeadDecline(input: {
         teamName,
         sessionLabel,
         sessionUrl,
+        activityLabel,
       });
       notified += 1;
     } catch (error) {
@@ -374,14 +460,16 @@ async function sendCoachCoverRequestEmail(input: {
   teamName: string;
   sessionLabel: string;
   sessionUrl: string;
+  activityLabel: "training" | "match";
 }) {
   const { transporter, from } = requireMailTransporter();
+  const itemWord = input.activityLabel === "match" ? "match" : "session";
 
-  const subject = `Cover needed — ${input.teamName} training`;
+  const subject = `Cover needed — ${input.teamName} ${input.activityLabel}`;
   const text = [
     `Hi ${input.coachName},`,
     "",
-    `${input.headCoachName} (head coach) can't cover this upcoming ${input.teamName} session:`,
+    `${input.headCoachName} (head coach) can't cover this upcoming ${input.teamName} ${itemWord}:`,
     "",
     input.sessionLabel,
     "",
@@ -394,10 +482,10 @@ async function sendCoachCoverRequestEmail(input: {
 
   const html = [
     `<p>Hi ${input.coachName},</p>`,
-    `<p><strong>${input.headCoachName}</strong> (head coach) can't cover this upcoming <strong>${input.teamName}</strong> session:</p>`,
+    `<p><strong>${input.headCoachName}</strong> (head coach) can't cover this upcoming <strong>${input.teamName}</strong> ${itemWord}:</p>`,
     `<p>${input.sessionLabel}</p>`,
     `<p>If you can cover, mark yourself as <strong>Attending</strong> here (only one coach can accept):</p>`,
-    `<p><a href="${input.sessionUrl}">Open session</a></p>`,
+    `<p><a href="${input.sessionUrl}">Open ${itemWord}</a></p>`,
     "<p>Thanks,<br>Jackals VC</p>",
   ].join("");
 

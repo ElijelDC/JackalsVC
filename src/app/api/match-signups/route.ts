@@ -1,4 +1,8 @@
 import { jsonError, parseJsonBody, requireSession } from "@/lib/api";
+import {
+  enforceExclusiveCoachAttendance,
+  notifyCoverCoachesAfterHeadDecline,
+} from "@/lib/coach-session-coverage";
 import { getAttendanceAccessInfo } from "@/lib/membership";
 import { prisma } from "@/lib/prisma";
 import {
@@ -69,6 +73,16 @@ export async function POST(request: Request) {
     const windowError = validateResponseWindow(result.match.matchStart);
     if (windowError) return windowError;
 
+    const exclusive = await enforceExclusiveCoachAttendance({
+      matchId: data.matchId,
+      userId: session!.user.id,
+      trainingTeamKey: result.match.trainingTeamKey,
+      status,
+    });
+    if (!exclusive.ok) {
+      return jsonError(exclusive.error, exclusive.status);
+    }
+
     const signup = await prisma.matchSignup.upsert({
       where: {
         userId_matchId: {
@@ -83,6 +97,16 @@ export async function POST(request: Request) {
       },
       update: { status },
     });
+
+    if (status === "NOT_ATTENDING") {
+      void notifyCoverCoachesAfterHeadDecline({
+        matchId: data.matchId,
+        headUserId: session!.user.id,
+        trainingTeamKey: result.match.trainingTeamKey,
+      }).catch((error) => {
+        console.error("[coach-cover-match] notify failed", error);
+      });
+    }
 
     return NextResponse.json({ signup }, { status: 201 });
   } catch {

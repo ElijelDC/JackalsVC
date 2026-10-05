@@ -14,6 +14,7 @@ import type {
   CoachCoverageReminderPreview,
 } from "@/lib/coach-coverage-reminders-config";
 import { enrichEventRecords } from "@/lib/event-enrichment";
+import { formatMatchTitle } from "@/lib/match-config";
 import { normalizeSignupStatus } from "@/lib/training-attendance-config";
 import { userCanManageTrainingGuestInvites } from "@/lib/training-invites";
 
@@ -22,11 +23,38 @@ export type {
   CoachCoverageReminderPreview,
 } from "@/lib/coach-coverage-reminders-config";
 
-const COVERAGE_REMINDER_KIND = "coach-coverage";
+type CoverageActivity = "training" | "match";
+type CoverageTarget = { eventId: string } | { matchId: string };
 
-async function getCoachSignupStatus(userId: string, eventId: string) {
+const COVERAGE_REMINDER_KIND_TRAINING = "coach-coverage";
+const COVERAGE_REMINDER_KIND_MATCH = "coach-coverage-match";
+
+function coverageReminderKind(activity: CoverageActivity) {
+  return activity === "match"
+    ? COVERAGE_REMINDER_KIND_MATCH
+    : COVERAGE_REMINDER_KIND_TRAINING;
+}
+
+function coverageTargetId(target: CoverageTarget) {
+  return "matchId" in target ? target.matchId : target.eventId;
+}
+
+async function getCoachSignupStatus(userId: string, target: CoverageTarget) {
+  if ("matchId" in target) {
+    const signup = await prisma.matchSignup.findUnique({
+      where: { userId_matchId: { userId, matchId: target.matchId } },
+      select: { status: true },
+    });
+    if (!signup) return null;
+    const status = normalizeSignupStatus(signup.status);
+    if (status === "ATTENDING" || status === "NOT_ATTENDING") {
+      return status;
+    }
+    return null;
+  }
+
   const signup = await prisma.eventSignup.findUnique({
-    where: { userId_eventId: { userId, eventId } },
+    where: { userId_eventId: { userId, eventId: target.eventId } },
     select: { status: true },
   });
   if (!signup) return null;
@@ -37,13 +65,17 @@ async function getCoachSignupStatus(userId: string, eventId: string) {
   return null;
 }
 
-async function getCoverageReminderCooldown(actorUserId: string, eventId: string) {
+async function getCoverageReminderCooldown(
+  actorUserId: string,
+  target: CoverageTarget,
+  activity: CoverageActivity,
+) {
   const record = await prisma.coachResponseReminder.findUnique({
     where: {
       coachUserId_targetKind_targetId: {
         coachUserId: actorUserId,
-        targetKind: COVERAGE_REMINDER_KIND,
-        targetId: eventId,
+        targetKind: coverageReminderKind(activity),
+        targetId: coverageTargetId(target),
       },
     },
     select: { lastSentAt: true },
@@ -68,7 +100,7 @@ async function getCoverageReminderCooldown(actorUserId: string, eventId: string)
 }
 
 async function resolveCoverageTargets(input: {
-  eventId: string;
+  target: CoverageTarget;
   trainingTeamKey: string;
 }): Promise<{
   phase: CoachCoverageReminderPhase;
@@ -81,7 +113,7 @@ async function resolveCoverageTargets(input: {
     return { phase: "none_no_head", recipients: [], head: null };
   }
 
-  const headStatus = await getCoachSignupStatus(head.userId, input.eventId);
+  const headStatus = await getCoachSignupStatus(head.userId, input.target);
   if (!headStatus) {
     return { phase: "head", recipients: [head], head };
   }
@@ -93,7 +125,7 @@ async function resolveCoverageTargets(input: {
   const coverStatuses = await Promise.all(
     covers.map(async (coach) => ({
       coach,
-      status: await getCoachSignupStatus(coach.userId, input.eventId),
+      status: await getCoachSignupStatus(coach.userId, input.target),
     })),
   );
 
@@ -116,13 +148,15 @@ function previewCopy(
   phase: CoachCoverageReminderPhase,
   recipients: SquadCoach[],
   head: SquadCoach | null,
+  activity: CoverageActivity,
 ): Pick<CoachCoverageReminderPreview, "buttonLabel" | "description" | "canSend"> {
+  const itemWord = activity === "match" ? "match" : "session";
   switch (phase) {
     case "head":
       return {
         canSend: true,
         buttonLabel: "Remind head coach",
-        description: `Ask ${head?.name ?? "the head coach"} to accept or decline this session first.`,
+        description: `Ask ${head?.name ?? "the head coach"} to accept or decline this ${itemWord} first.`,
       };
     case "cover":
       return {
@@ -143,7 +177,7 @@ function previewCopy(
       return {
         canSend: false,
         buttonLabel: "Cover accepted",
-        description: "A cover coach has already accepted this session.",
+        description: `A cover coach has already accepted this ${itemWord}.`,
       };
     case "none_no_head":
       return {
@@ -162,15 +196,38 @@ function previewCopy(
 }
 
 export async function getCoachCoverageReminderPreview(input: {
-  eventId: string;
+  eventId?: string;
+  matchId?: string;
   trainingTeamKey: string;
   actorUserId: string;
 }): Promise<CoachCoverageReminderPreview> {
-  const { phase, recipients, head } = await resolveCoverageTargets(input);
-  const copy = previewCopy(phase, recipients, head);
+  const target: CoverageTarget | null = input.matchId
+    ? { matchId: input.matchId }
+    : input.eventId
+      ? { eventId: input.eventId }
+      : null;
+  if (!target) {
+    return {
+      phase: "none_all_set",
+      canSend: false,
+      buttonLabel: "Unavailable",
+      description: "Missing match or training target.",
+      recipientNames: [],
+      headCoachName: null,
+      cooldown: { canSend: true, lastSentAt: null, nextAvailableAt: null },
+    };
+  }
+  const activity: CoverageActivity =
+    "matchId" in target ? "match" : "training";
+  const { phase, recipients, head } = await resolveCoverageTargets({
+    target,
+    trainingTeamKey: input.trainingTeamKey,
+  });
+  const copy = previewCopy(phase, recipients, head, activity);
   const cooldown = await getCoverageReminderCooldown(
     input.actorUserId,
-    input.eventId,
+    target,
+    activity,
   );
   return {
     phase,
@@ -189,13 +246,15 @@ async function sendHeadCoachAcceptReminderEmail(input: {
   sessionLabel: string;
   sessionUrl: string;
   overseerName: string;
+  activity: CoverageActivity;
 }) {
   const { transporter, from } = requireMailTransporter();
-  const subject = `Please respond — ${input.teamName} training`;
+  const itemWord = input.activity === "match" ? "match" : "session";
+  const subject = `Please respond — ${input.teamName} ${input.activity}`;
   const text = [
     `Hi ${input.coachName},`,
     "",
-    `${input.overseerName} asked you (head coach) to accept or decline this upcoming ${input.teamName} session:`,
+    `${input.overseerName} asked you (head coach) to accept or decline this upcoming ${input.teamName} ${itemWord}:`,
     "",
     input.sessionLabel,
     "",
@@ -209,10 +268,10 @@ async function sendHeadCoachAcceptReminderEmail(input: {
   ].join("\n");
   const html = [
     `<p>Hi ${input.coachName},</p>`,
-    `<p><strong>${input.overseerName}</strong> asked you (head coach) to accept or decline this upcoming <strong>${input.teamName}</strong> session:</p>`,
+    `<p><strong>${input.overseerName}</strong> asked you (head coach) to accept or decline this upcoming <strong>${input.teamName}</strong> ${itemWord}:</p>`,
     `<p>${input.sessionLabel}</p>`,
     `<p>Please mark <strong>Attending</strong> or <strong>Can't make it</strong> here:</p>`,
-    `<p><a href="${input.sessionUrl}">Open session</a></p>`,
+    `<p><a href="${input.sessionUrl}">Open ${itemWord}</a></p>`,
     `<p>Cover coaches can only respond after you decline.</p>`,
     "<p>Thanks,<br>Jackals VC</p>",
   ].join("");
@@ -234,13 +293,15 @@ async function sendCoverCoachAcceptReminderEmail(input: {
   sessionLabel: string;
   sessionUrl: string;
   overseerName: string;
+  activity: CoverageActivity;
 }) {
   const { transporter, from } = requireMailTransporter();
-  const subject = `Cover needed — ${input.teamName} training`;
+  const itemWord = input.activity === "match" ? "match" : "session";
+  const subject = `Cover needed — ${input.teamName} ${input.activity}`;
   const text = [
     `Hi ${input.coachName},`,
     "",
-    `${input.overseerName} is following up: ${input.headCoachName} (head coach) can't cover this upcoming ${input.teamName} session:`,
+    `${input.overseerName} is following up: ${input.headCoachName} (head coach) can't cover this upcoming ${input.teamName} ${itemWord}:`,
     "",
     input.sessionLabel,
     "",
@@ -252,10 +313,10 @@ async function sendCoverCoachAcceptReminderEmail(input: {
   ].join("\n");
   const html = [
     `<p>Hi ${input.coachName},</p>`,
-    `<p><strong>${input.overseerName}</strong> is following up: <strong>${input.headCoachName}</strong> (head coach) can't cover this upcoming <strong>${input.teamName}</strong> session:</p>`,
+    `<p><strong>${input.overseerName}</strong> is following up: <strong>${input.headCoachName}</strong> (head coach) can't cover this upcoming <strong>${input.teamName}</strong> ${itemWord}:</p>`,
     `<p>${input.sessionLabel}</p>`,
     `<p>If you can cover, mark yourself as <strong>Attending</strong> here (only one coach can accept):</p>`,
-    `<p><a href="${input.sessionUrl}">Open session</a></p>`,
+    `<p><a href="${input.sessionUrl}">Open ${itemWord}</a></p>`,
     "<p>Thanks,<br>Jackals VC</p>",
   ].join("");
 
@@ -269,7 +330,8 @@ async function sendCoverCoachAcceptReminderEmail(input: {
 }
 
 export async function sendCoachCoverageReminders(input: {
-  eventId: string;
+  eventId?: string;
+  matchId?: string;
   actorUserId: string;
 }): Promise<
   | {
@@ -281,39 +343,106 @@ export async function sendCoachCoverageReminders(input: {
     }
   | { ok: false; error: string; status: number }
 > {
-  const event = await prisma.event.findUnique({
-    where: { id: input.eventId },
-    include: {
-      trainingSession: { select: { trainingTeamKey: true } },
-    },
-  });
-  if (!event || event.type !== "TRAINING") {
-    return { ok: false, status: 404, error: "Training session not found." };
-  }
-  const [enriched] = await enrichEventRecords([event]);
-  if (enriched?.occurrenceCancelled) {
+  let target: CoverageTarget;
+  let activity: CoverageActivity;
+  let trainingTeamKey: string;
+  let sessionLabel: string;
+  let sessionUrl: string;
+
+  if (input.matchId) {
+    const match = await prisma.teamMatch.findUnique({
+      where: { id: input.matchId },
+    });
+    if (!match) {
+      return { ok: false, status: 404, error: "Match not found." };
+    }
+    if (match.cancelled) {
+      return { ok: false, status: 400, error: "This match is cancelled." };
+    }
+    if (match.matchStart.getTime() <= Date.now()) {
+      return {
+        ok: false,
+        status: 400,
+        error: "This match has already started.",
+      };
+    }
+    target = { matchId: match.id };
+    activity = "match";
+    trainingTeamKey = match.trainingTeamKey;
+    sessionLabel = [
+      formatMatchTitle(match.opponentName, match.venue),
+      formatInClubTime(match.matchStart, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    sessionUrl = emailSiteUrl(`/matches/${match.id}`);
+  } else if (input.eventId) {
+    const event = await prisma.event.findUnique({
+      where: { id: input.eventId },
+      include: {
+        trainingSession: { select: { trainingTeamKey: true } },
+      },
+    });
+    if (!event || event.type !== "TRAINING") {
+      return { ok: false, status: 404, error: "Training session not found." };
+    }
+    const [enriched] = await enrichEventRecords([event]);
+    if (enriched?.occurrenceCancelled) {
+      return {
+        ok: false,
+        status: 400,
+        error: "This session is cancelled.",
+      };
+    }
+    if (event.startDate.getTime() <= Date.now()) {
+      return {
+        ok: false,
+        status: 400,
+        error: "This session has already started.",
+      };
+    }
+    const key =
+      event.trainingSession?.trainingTeamKey ??
+      enriched?.trainingTeamKey ??
+      null;
+    if (!key) {
+      return {
+        ok: false,
+        status: 400,
+        error: "This session is not linked to a squad.",
+      };
+    }
+    target = { eventId: event.id };
+    activity = "training";
+    trainingTeamKey = key;
+    sessionLabel = [
+      event.title,
+      formatInClubTime(event.startDate, {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }),
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    sessionUrl = emailSiteUrl(`/calendar/${event.id}`);
+  } else {
     return {
       ok: false,
       status: 400,
-      error: "This session is cancelled.",
-    };
-  }
-  if (event.startDate.getTime() <= Date.now()) {
-    return {
-      ok: false,
-      status: 400,
-      error: "This session has already started.",
-    };
-  }
-  const trainingTeamKey =
-    event.trainingSession?.trainingTeamKey ??
-    enriched?.trainingTeamKey ??
-    null;
-  if (!trainingTeamKey) {
-    return {
-      ok: false,
-      status: 400,
-      error: "This session is not linked to a squad.",
+      error: "Match or training session is required.",
     };
   }
 
@@ -337,7 +466,8 @@ export async function sendCoachCoverageReminders(input: {
 
   const cooldown = await getCoverageReminderCooldown(
     input.actorUserId,
-    input.eventId,
+    target,
+    activity,
   );
   if (!cooldown.canSend) {
     return {
@@ -348,11 +478,11 @@ export async function sendCoachCoverageReminders(input: {
   }
 
   const { phase, recipients, head } = await resolveCoverageTargets({
-    eventId: input.eventId,
+    target,
     trainingTeamKey,
   });
   if (phase !== "head" && phase !== "cover") {
-    const copy = previewCopy(phase, recipients, head);
+    const copy = previewCopy(phase, recipients, head, activity);
     return { ok: false, status: 400, error: copy.description };
   }
   if (recipients.length === 0) {
@@ -364,21 +494,6 @@ export async function sendCoachCoverageReminders(input: {
     select: { name: true },
   });
   const teamName = squad?.name ?? trainingTeamKey;
-  const sessionLabel = [
-    event.title,
-    formatInClubTime(event.startDate, {
-      weekday: "short",
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      hourCycle: "h23",
-    }),
-  ]
-    .filter(Boolean)
-    .join(" · ");
-  const sessionUrl = emailSiteUrl(`/calendar/${event.id}`);
 
   let notifiedCount = 0;
   for (const coach of recipients) {
@@ -391,6 +506,7 @@ export async function sendCoachCoverageReminders(input: {
           sessionLabel,
           sessionUrl,
           overseerName,
+          activity,
         });
       } else {
         await sendCoverCoachAcceptReminderEmail({
@@ -401,6 +517,7 @@ export async function sendCoachCoverageReminders(input: {
           sessionLabel,
           sessionUrl,
           overseerName,
+          activity,
         });
       }
       notifiedCount += 1;
@@ -422,25 +539,29 @@ export async function sendCoachCoverageReminders(input: {
   }
 
   const now = new Date();
+  const targetId = coverageTargetId(target);
+  const targetKind = coverageReminderKind(activity);
   await prisma.coachResponseReminder.upsert({
     where: {
       coachUserId_targetKind_targetId: {
         coachUserId: input.actorUserId,
-        targetKind: COVERAGE_REMINDER_KIND,
-        targetId: input.eventId,
+        targetKind,
+        targetId,
       },
     },
     create: {
       coachUserId: input.actorUserId,
-      targetKind: COVERAGE_REMINDER_KIND,
-      targetId: input.eventId,
+      targetKind,
+      targetId,
       lastSentAt: now,
     },
     update: { lastSentAt: now },
   });
 
   const preview = await getCoachCoverageReminderPreview({
-    eventId: input.eventId,
+    ...( "matchId" in target
+      ? { matchId: target.matchId }
+      : { eventId: target.eventId }),
     trainingTeamKey,
     actorUserId: input.actorUserId,
   });

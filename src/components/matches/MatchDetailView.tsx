@@ -19,6 +19,7 @@ import { PageContainer } from "@/components/layout/PageShell";
 import { SquadSummaryCard } from "@/components/training/SquadSummaryCard";
 import { SquadResponsesPanelHeader } from "@/components/coach/SquadResponsesPanelHeader";
 import { SquadRosterGroup } from "@/components/training/SquadRosterGroup";
+import { OverseerRemindCoachesButton } from "@/components/training/OverseerRemindCoachesButton";
 import { TrainingAttendancePicker } from "@/components/training/TrainingAttendancePicker";
 import { TrainingResponsesLockedNotice } from "@/components/training/TrainingResponsesLocked";
 import {
@@ -225,7 +226,11 @@ export function MatchDetailView({
                   : !canRespond
                     ? `Responses open ${TRAINING_RESPONSE_OPENS_DAYS} days before the match — from ${format(responseOpensOn, "d MMMM")}.`
                     : detail.isCoachUser
-                      ? "Let your squad know if you're attending this match."
+                      ? detail.coachResponseGate?.kind === "waiting_for_head"
+                        ? `Waiting for ${detail.coachResponseGate.headCoachName} (head coach) to respond first.`
+                        : detail.coachResponseGate?.kind === "head_accepted"
+                          ? `${detail.coachResponseGate.headCoachName} accepted — no cover needed.`
+                          : "Let your squad know if you're attending this match."
                       : "Let coaches and teammates know if you're playing."}
             </CardDescription>
 
@@ -245,6 +250,7 @@ export function MatchDetailView({
                   showLockedNotice={false}
                   itemLabel="match"
                   coachMode={detail.isCoachUser}
+                  coachResponseGate={detail.coachResponseGate}
                 />
               </div>
             )}
@@ -260,6 +266,16 @@ export function MatchDetailView({
                 <ChevronRight className="h-4 w-4" />
               </Link>
             )}
+
+            <div className="mt-4 space-y-3">
+              {detail.coachCoverageReminder ? (
+                <OverseerRemindCoachesButton
+                  matchId={match.id}
+                  initialPreview={detail.coachCoverageReminder}
+                  itemLabel="match"
+                />
+              ) : null}
+            </div>
           </Card>
 
           <div className="mt-4">
