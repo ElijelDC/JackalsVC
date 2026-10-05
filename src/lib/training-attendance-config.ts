@@ -220,6 +220,8 @@ export type TrainingRosterMember = {
   coachPriority?: number;
   /** Approved once-off guest invitee (not a squad member). */
   isGuest?: boolean;
+  /** Court position from ClubMember.playingPosition */
+  playingPosition?: string | null;
 };
 
 export type TrainingRosterGroups = {

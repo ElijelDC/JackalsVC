@@ -59,6 +59,8 @@ model ClubMember {
   /// MEMBERSHIP (default) | PAYG — pay-per-training before season membership starts
   playerPaymentType String         @default("MEMBERSHIP")
   trainingTeamKey String?
+  /// Playing position (Wing / Middle / Opposite / Setter / Libero / DS). Source of truth for attendance, profile, and public teams sync.
+  playingPosition        String?
   profileImageUrl        String?
   vlyMembershipPhotoUrl  String?
   playerNumber           Int?
