@@ -25,7 +25,6 @@ function weeklySession(
     attendanceUrl: null,
     paymentUrl: null,
     createdAt: new Date(),
-    updatedAt: new Date(),
     ...overrides,
   };
 }
