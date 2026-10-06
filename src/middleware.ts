@@ -7,8 +7,13 @@ const SECURITY_HEADERS: Record<string, string> = {
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Referrer-Policy": "strict-origin-when-cross-origin",
-  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Permissions-Policy":
+    "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
   "X-DNS-Prefetch-Control": "off",
+  "Cross-Origin-Opener-Policy": "same-origin",
+  "Cross-Origin-Resource-Policy": "same-site",
+  // Caddy terminates TLS; tell browsers to stay on HTTPS.
+  "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
 };
 
 function buildCsp(frameAncestors: "'none'" | "'self'", agentWorkout = false) {
@@ -21,15 +26,19 @@ function buildCsp(frameAncestors: "'none'" | "'self'", agentWorkout = false) {
 
   return [
     "default-src 'self'",
+    // Next.js App Router still needs inline/eval for hydration in production.
     "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     `img-src ${imgSrc}`,
     "font-src 'self'",
     "connect-src 'self'",
+    "object-src 'none'",
+    "worker-src 'self' blob:",
     frameSrc,
     `frame-ancestors ${frameAncestors}`,
     "base-uri 'self'",
     "form-action 'self'",
+    "upgrade-insecure-requests",
   ]
     .filter(Boolean)
     .join("; ");

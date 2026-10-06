@@ -21,6 +21,9 @@ export function getMailTransporter() {
       user: process.env.SMTP_USER!.trim(),
       pass: process.env.SMTP_PASS!.trim(),
     },
+    // Harden against known nodemailer file/URL access bypass advisories.
+    disableFileAccess: true,
+    disableUrlAccess: true,
   });
 }
 

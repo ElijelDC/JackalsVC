@@ -1,3 +1,21 @@
 jackalsvolleyball.com {
-    reverse_proxy app:3000
+	encode gzip zstd
+
+	header {
+		# Defense in depth — app middleware also sets these.
+		Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+		-Server
+	}
+
+	# Block common scanner / probe paths before they hit the app.
+	@probes {
+		path /.env /.env.* /.git* /wp-admin* /wp-login.php /xmlrpc.php /.aws* /server-status /actuator*
+	}
+	respond @probes 404
+
+	reverse_proxy app:3000
 }
