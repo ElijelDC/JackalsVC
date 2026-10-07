@@ -39,6 +39,30 @@ describe("assessMembershipPaymentAccess arrears", () => {
     expect(access.hasOverride).toBe(true);
   });
 
+  it("allows training access for PENDING_PAYMENT with active override", () => {
+    const access = assessMembershipPaymentAccess({
+      membershipStatus: "PENDING_PAYMENT",
+      paymentSchedule: "INSTALLMENTS",
+      paymentOverdueOverride: true,
+      paymentOverdueOverrideUntil: "2026-10-19",
+      payments: unpaidPastGrace,
+      now: new Date("2026-10-06"),
+    });
+    expect(access.canAccessTrainingAndMatches).toBe(true);
+    expect(access.hasOverride).toBe(true);
+  });
+
+  it("blocks PENDING_PAYMENT without override", () => {
+    const access = assessMembershipPaymentAccess({
+      membershipStatus: "PENDING_PAYMENT",
+      paymentSchedule: "INSTALLMENTS",
+      paymentOverdueOverride: false,
+      payments: unpaidPastGrace,
+      now: new Date("2026-10-06"),
+    });
+    expect(access.canAccessTrainingAndMatches).toBe(false);
+  });
+
   it("marks ACTIVE memberships overdue after grace", () => {
     const installment = assessInstallmentPaymentState({
       paymentSchedule: "INSTALLMENTS",
@@ -56,5 +80,18 @@ describe("assessMembershipPaymentAccess arrears", () => {
     });
     expect(access.canAccessTrainingAndMatches).toBe(false);
     expect(access.isOverdue).toBe(true);
+  });
+
+  it("allows ACTIVE overdue members with an admin override", () => {
+    const access = assessMembershipPaymentAccess({
+      membershipStatus: "ACTIVE",
+      paymentSchedule: "INSTALLMENTS",
+      paymentOverdueOverride: true,
+      paymentOverdueOverrideUntil: "2027-05-15",
+      payments: unpaidPastGrace,
+      now: new Date("2026-02-01"),
+    });
+    expect(access.canAccessTrainingAndMatches).toBe(true);
+    expect(access.hasOverride).toBe(true);
   });
 });

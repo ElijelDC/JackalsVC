@@ -165,16 +165,37 @@ export function assessMembershipPaymentAccess(input: {
     };
   }
 
-  // Explicit arrears status: blocked unless admin override is active.
+  // Admin override always unlocks training/match responses while active,
+  // regardless of ACTIVE / PENDING_PAYMENT / ARREARS status.
+  if (overrideActive) {
+    return {
+      ...base,
+      ...installment,
+      isOverdue:
+        input.membershipStatus === "ARREARS" ? true : installment.isOverdue,
+      isPastDue:
+        input.membershipStatus === "ARREARS" ? true : installment.isPastDue,
+      canAccessTrainingAndMatches: true,
+      hasOverride: true,
+      overrideUntil,
+    };
+  }
+
   if (input.membershipStatus === "ARREARS") {
     return {
       ...base,
       ...installment,
       isOverdue: true,
       isPastDue: true,
-      canAccessTrainingAndMatches: overrideActive,
-      hasOverride: overrideActive,
-      overrideUntil,
+      canAccessTrainingAndMatches: false,
+    };
+  }
+
+  if (input.membershipStatus === "PENDING_PAYMENT") {
+    return {
+      ...base,
+      ...installment,
+      canAccessTrainingAndMatches: false,
     };
   }
 
@@ -186,16 +207,6 @@ export function assessMembershipPaymentAccess(input: {
     return {
       ...base,
       canAccessTrainingAndMatches: true,
-    };
-  }
-
-  if (overrideActive) {
-    return {
-      ...base,
-      ...installment,
-      canAccessTrainingAndMatches: true,
-      hasOverride: true,
-      overrideUntil,
     };
   }
 
