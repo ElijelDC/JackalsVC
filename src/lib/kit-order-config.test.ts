@@ -67,8 +67,13 @@ describe("kit order config", () => {
     const photos = kitOrderPhotosFor("women", "libero");
     expect(photos).toHaveLength(1);
     expect(photos[0]?.id).toBe("womens-kit-libero");
+    expect(kitOrderPhotosFor("women", "player").map((item) => item.id)).toEqual([
+      "womens-kit-home",
+      "womens-kit-player-home",
+    ]);
     expect(kitOrderPhotosForGender("men")).toHaveLength(2);
     expect(kitOrderPhotosFor("men", "both")).toHaveLength(2);
+    expect(kitOrderPhotosForGender("women")).toHaveLength(3);
   });
 
   it("labels gender, kit type, and pieces", () => {
