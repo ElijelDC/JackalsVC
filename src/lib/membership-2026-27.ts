@@ -33,7 +33,18 @@ export const MEMBERSHIP_MATCH_KITS_2026_27: MembershipMerchItem202627[] = [
     title: "Men's club kit",
     subtitle: "Black & red — home",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/mens-kit-home.png`,
-    imageAlt: "Men's Jackals home kit in black and red — jersey and shorts front and back",
+    imageAlt:
+      "Men's Jackals home kit in red and black with sleeve sponsor logos — jersey and shorts front and back",
+    accent: "red",
+    category: "men",
+  },
+  {
+    id: "mens-kit-player-home",
+    title: "Men's club kit",
+    subtitle: "Black & red — on player",
+    imageSrc: `${MEMBERSHIP_MERCH_BASE}/mens-kit-home-player.jpg`,
+    imageAlt:
+      "Men's Jackals home kit worn by a player, with Technologies on the right sleeve and the sponsor mark on the left sleeve",
     accent: "red",
     category: "men",
   },
@@ -51,7 +62,18 @@ export const MEMBERSHIP_MATCH_KITS_2026_27: MembershipMerchItem202627[] = [
     title: "Women's kit",
     subtitle: "Black & purple — home",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/womens-kit-home.png`,
-    imageAlt: "Women's Jackals home kit in black and purple — jersey and shorts front and back",
+    imageAlt:
+      "Women's Jackals home kit in black and purple with sleeve sponsor logos and number 12 — jersey and shorts front and back",
+    accent: "purple",
+    category: "women",
+  },
+  {
+    id: "womens-kit-player-home",
+    title: "Women's kit",
+    subtitle: "Black & purple — on player",
+    imageSrc: `${MEMBERSHIP_MERCH_BASE}/womens-kit-home-player.jpg`,
+    imageAlt:
+      "Women's Jackals home kit worn on court, number 12 in the match font, with sleeve sponsor logos",
     accent: "purple",
     category: "women",
   },
