@@ -33,7 +33,18 @@ export const MEMBERSHIP_MATCH_KITS_2026_27: MembershipMerchItem202627[] = [
     title: "Men's club kit",
     subtitle: "Black & red — home",
     imageSrc: `${MEMBERSHIP_MERCH_BASE}/mens-kit-home.png`,
-    imageAlt: "Men's Jackals home kit in black and red — jersey and shorts front and back",
+    imageAlt:
+      "Men's Jackals home kit in red and black with sleeve sponsor logos — jersey and shorts front and back",
+    accent: "red",
+    category: "men",
+  },
+  {
+    id: "mens-kit-player-home",
+    title: "Men's club kit",
+    subtitle: "Black & red — on player",
+    imageSrc: `${MEMBERSHIP_MERCH_BASE}/mens-kit-home-player.jpg`,
+    imageAlt:
+      "Men's Jackals home kit worn by a player, with Technologies on the right sleeve and the sponsor mark on the left sleeve",
     accent: "red",
     category: "men",
   },

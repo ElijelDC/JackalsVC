@@ -71,8 +71,12 @@ describe("kit order config", () => {
       "womens-kit-home",
       "womens-kit-player-home",
     ]);
-    expect(kitOrderPhotosForGender("men")).toHaveLength(2);
-    expect(kitOrderPhotosFor("men", "both")).toHaveLength(2);
+    expect(kitOrderPhotosFor("men", "player").map((item) => item.id)).toEqual([
+      "mens-kit-home",
+      "mens-kit-player-home",
+    ]);
+    expect(kitOrderPhotosForGender("men")).toHaveLength(3);
+    expect(kitOrderPhotosFor("men", "both")).toHaveLength(3);
     expect(kitOrderPhotosForGender("women")).toHaveLength(3);
   });
 
