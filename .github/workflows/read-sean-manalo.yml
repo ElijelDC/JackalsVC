@@ -32,8 +32,5 @@ jobs:
               exit 1
             fi
             cd "$APP_DIR"
-            printf '%s' 'Y29uc3QgRGF0YWJhc2UgPSByZXF1aXJlKCJiZXR0ZXItc3FsaXRlMyIpOwpjb25zdCBkYiA9IG5ldyBEYXRhYmFzZSgiL2RhdGEvamFja2Fscy5kYiIsIHsgcmVhZG9ubHk6IHRydWUsIGZpbGVNdXN0RXhpc3Q6IHRydWUgfSk7Cgpjb25zdCBzZXNzaW9ucyA9IGRiCiAgLnByZXBhcmUoCiAgICBgU0VMRUNUIGlkLCB0aXRsZSwgY2F0ZWdvcnksIHRyYWluaW5nVGVhbUtleSwgZGF5T2ZXZWVrCiAgICAgRlJPTSBUcmFpbmluZ1Nlc3Npb24KICAgICBXSEVSRSB0cmFpbmluZ1RlYW1LZXkgPSAnRElWMl9NRU5TJyBPUiBsb3dlcih0aXRsZSkgTElLRSAnJWQyJScgT1IgbG93ZXIodGl0bGUpIExJS0UgJyVkaXZpc2lvbiAyJScKICAgICBPUkRFUiBCWSB0aXRsZWAsCiAgKQogIC5hbGwoKTsKCmNvbnN0IHNlYW4gPSBkYgogIC5wcmVwYXJlKAogICAgYFNFTEVDVCBjbS5wbGF5ZXJQYXltZW50VHlwZSBBUyBwYXksCiAgICAgICAgICAgIGNtLmNyZWF0ZWRBdCBBUyBtZW1iZXJDcmVhdGVkLAogICAgICAgICAgICB1LmNyZWF0ZWRBdCBBUyB1c2VyQ3JlYXRlZCwKICAgICAgICAgICAgdS5tdXN0Q2hhbmdlUGFzc3dvcmQgQVMgbXVzdENoYW5nZSwKICAgICAgICAgICAgQ0FTRSBXSEVOIGxvd2VyKHUuZW1haWwpID0gbG93ZXIoY20ucmVnaXN0cmF0aW9uQ29udGFjdEVtYWlsKSBUSEVOIDEgRUxTRSAwIEVORCBBUyBlbWFpbE1hdGNoLAogICAgICAgICAgICAoU0VMRUNUIENPVU5UKCopIEZST00gTWVtYmVyc2hpcCBtIFdIRVJFIG0udXNlcklkID0gdS5pZCkgQVMgbWVtYmVyc2hpcHMKICAgICBGUk9NIENsdWJNZW1iZXIgY20KICAgICBKT0lOIFVzZXIgdSBPTiB1LmlkID0gY20udXNlcklkCiAgICAgV0hFUkUgY20uaWQgPSAnY211dmFlbnppMDAwY2QxbjJhd2hnM2k1ZydgLAogICkKICAuZ2V0KCk7Cgpjb25zb2xlLmxvZyhKU09OLnN0cmluZ2lmeSh7IHNlYW4sIHNlc3Npb25zIH0sIG51bGwsIDIpKTsK' | openssl base64 -d -A > /tmp/sean-sessions.cjs
-            docker compose --env-file .env.production cp /tmp/sean-sessions.cjs app:/tmp/sean-sessions.cjs
-            docker compose --env-file .env.production exec -T -e NODE_PATH=/app/node_modules app node /tmp/sean-sessions.cjs
-            rm -f /tmp/sean-sessions.cjs
-            docker compose --env-file .env.production exec -T app rm -f /tmp/sean-sessions.cjs
+            echo "CONTAINER $(docker inspect -f '{{.Created}}' "$(docker compose --env-file .env.production ps -q app)")"
+            docker compose --env-file .env.production exec -T app sh -c 'echo HITS; grep -R -o "No team assigned" .next | head -3 || true'
