@@ -98,6 +98,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         );
       }
 
+      // Auth.js stores the user id on token.sub. Sessions that never copied it
+      // onto token.id cannot resolve a squad, so the dashboard looks unassigned.
+      if (!token.id && typeof token.sub === "string" && token.sub) {
+        token.id = token.sub;
+      }
+
       if (trigger === "update" && updateSession?.email) {
         token.email = updateSession.email as string;
       }
@@ -148,7 +154,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       try {
         if (session.user) {
-          session.user.id = token.id as string;
+          session.user.id =
+            (typeof token.id === "string" && token.id) ||
+            (typeof token.sub === "string" && token.sub) ||
+            session.user.id;
           session.user.role = (token.role as string) ?? "MEMBER";
           session.user.mustChangePassword = Boolean(token.mustChangePassword);
           if (token.email) {

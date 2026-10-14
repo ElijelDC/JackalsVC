@@ -90,15 +90,23 @@ function MemberUpcomingScheduleCard({
           summary: teamName ? null : "No team assigned",
           message: teamName ? null : "Ask an admin to assign your team.",
         };
+  const scheduleSummary = buildDashboardScheduleSummary(
+    items,
+    needsResponse,
+    config.noun,
+    { unavailableLabel: unavailable.summary },
+  );
 
   return (
     <DashboardUpcomingScheduleCard
       icon={config.icon}
       heading={config.heading}
       shortHeading={config.shortHeading}
-      summary={buildDashboardScheduleSummary(items, needsResponse, config.noun, {
-        unavailableLabel: unavailable.summary,
-      })}
+      summary={
+        teamName && !unavailable.summary
+          ? `${teamName} · ${scheduleSummary}`
+          : scheduleSummary
+      }
       items={items}
       unavailableMessage={unavailable.message}
       topBanner={

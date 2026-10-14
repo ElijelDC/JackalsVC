@@ -15,6 +15,7 @@ import {
 } from "@/lib/membership-status";
 import { isSubscribedToEventNewsletter } from "@/lib/event-newsletter-subscription";
 import { prisma } from "@/lib/prisma";
+import { getTrainingTeamByKey } from "@/lib/training-teams";
 
 export const metadata = {
   title: "Profile | Jackals VC",
@@ -41,6 +42,7 @@ export default async function ProfilePage() {
     ? await isSubscribedToEventNewsletter(session.user.email)
     : false;
 
+  const squad = await getTrainingTeamByKey(clubMember?.trainingTeamKey);
   const displayName = clubMember?.name ?? session.user.name ?? "Member";
   const isCoach =
     clubMember?.rosterRole === "COACH" ||
@@ -90,6 +92,17 @@ export default async function ProfilePage() {
                 {displayName}
               </dd>
             </div>
+
+            {squad ? (
+              <div>
+                <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+                  Squad
+                </dt>
+                <dd className="mt-1 text-lg font-semibold text-white">
+                  {squad.name}
+                </dd>
+              </div>
+            ) : null}
 
             {membershipStatusLabel && (
               <div>
