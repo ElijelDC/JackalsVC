@@ -35,21 +35,18 @@ export function normalizeTrainingTeamKeys(
   return uniqueTeamKeys(Array.isArray(keys) ? keys : [keys]);
 }
 
-/** All squads the user belongs to (coaches may have multiple via coachSquads). */
-export async function getUserTrainingTeamKeys(userId: string | undefined) {
-  if (!userId) return [] as string[];
+const clubMemberTeamSelect = {
+  id: true,
+  rosterRole: true,
+  trainingTeamKey: true,
+  coachSquads: { select: { trainingTeamKey: true } },
+} as const;
 
-  const clubMember = await prisma.clubMember.findFirst({
-    where: { userId },
-    select: {
-      rosterRole: true,
-      trainingTeamKey: true,
-      coachSquads: { select: { trainingTeamKey: true } },
-    },
-  });
-
-  if (!clubMember) return [];
-
+function teamKeysFromClubMember(clubMember: {
+  rosterRole: string;
+  trainingTeamKey: string | null;
+  coachSquads: Array<{ trainingTeamKey: string }>;
+}) {
   if (clubMember.rosterRole === "COACH") {
     const fromJoin = clubMember.coachSquads.map((row) => row.trainingTeamKey);
     const keys = uniqueTeamKeys([...fromJoin, clubMember.trainingTeamKey]);
@@ -66,6 +63,80 @@ export async function getUserTrainingTeamKeys(userId: string | undefined) {
   }
 
   return clubMember.trainingTeamKey ? [clubMember.trainingTeamKey] : [];
+}
+
+/**
+ * If a login User exists but the roster row was never linked (or was unlinked),
+ * attach the active PLAYER/COACH row that matches their email so the dashboard
+ * sees their squad instead of "No team assigned".
+ */
+async function linkOrphanClubMemberForUser(userId: string) {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { email: true, name: true },
+  });
+  if (!user?.email) return null;
+
+  const email = user.email.trim().toLowerCase();
+  const name = user.name.trim();
+
+  // Prefer email match (accounts store emails lowercased). Name is a fallback
+  // only when exactly one active roster row shares that display name.
+  let orphan = await prisma.clubMember.findFirst({
+    where: {
+      userId: null,
+      active: true,
+      registrationContactEmail: email,
+    },
+    select: clubMemberTeamSelect,
+    orderBy: { createdAt: "asc" },
+  });
+
+  if (!orphan && name) {
+    const sameName = await prisma.clubMember.findMany({
+      where: { active: true, name, userId: null },
+      select: clubMemberTeamSelect,
+      orderBy: { createdAt: "asc" },
+    });
+    if (sameName.length === 1) {
+      orphan = sameName[0] ?? null;
+    }
+  }
+
+  if (!orphan) return null;
+
+  try {
+    await prisma.clubMember.update({
+      where: { id: orphan.id },
+      data: { userId },
+    });
+  } catch {
+    // Another request linked a different user to this row — re-read by userId.
+    return prisma.clubMember.findFirst({
+      where: { userId },
+      select: clubMemberTeamSelect,
+    });
+  }
+
+  return orphan;
+}
+
+/** All squads the user belongs to (coaches may have multiple via coachSquads). */
+export async function getUserTrainingTeamKeys(userId: string | undefined) {
+  if (!userId) return [] as string[];
+
+  let clubMember = await prisma.clubMember.findFirst({
+    where: { userId },
+    select: clubMemberTeamSelect,
+  });
+
+  if (!clubMember) {
+    clubMember = await linkOrphanClubMemberForUser(userId);
+  }
+
+  if (!clubMember) return [];
+
+  return teamKeysFromClubMember(clubMember);
 }
 
 /** Head (priority 0) vs cover / overseer for each squad the coach is assigned to. */

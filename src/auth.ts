@@ -91,11 +91,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user, trigger, session: updateSession }) {
       if (user) {
         token.id = user.id;
+        token.sub = user.id;
         token.role = (user as { role?: string }).role ?? "MEMBER";
         token.email = user.email;
         token.mustChangePassword = Boolean(
           (user as { mustChangePassword?: boolean }).mustChangePassword,
         );
+      }
+
+      // Auth.js stores the user id on `sub`; keep `token.id` in sync for app code.
+      const userId =
+        (typeof token.id === "string" && token.id) ||
+        (typeof token.sub === "string" && token.sub) ||
+        null;
+      if (userId) {
+        token.id = userId;
       }
 
       if (trigger === "update" && updateSession?.email) {
@@ -109,15 +119,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.mustChangePassword = updateSession.mustChangePassword;
       }
 
-      if (token.id) {
+      if (userId) {
         try {
           const [dbUser, clubMember] = await Promise.all([
             prisma.user.findUnique({
-              where: { id: token.id as string },
+              where: { id: userId },
               select: { role: true, mustChangePassword: true },
             }),
             prisma.clubMember.findUnique({
-              where: { userId: token.id as string },
+              where: { userId },
               select: {
                 profileImageUrl: true,
                 rosterRole: true,
@@ -148,7 +158,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       try {
         if (session.user) {
-          session.user.id = token.id as string;
+          session.user.id =
+            (typeof token.id === "string" && token.id) ||
+            (typeof token.sub === "string" && token.sub) ||
+            "";
           session.user.role = (token.role as string) ?? "MEMBER";
           session.user.mustChangePassword = Boolean(token.mustChangePassword);
           if (token.email) {
