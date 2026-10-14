@@ -243,9 +243,14 @@ export default async function DashboardPage() {
         <DashboardWelcomeSection
           title={`Welcome, ${session.user.name?.split(" ")[0] ?? "Member"}`}
           description={
-            isPaygPlayer
-              ? "Your training and matches at a glance — membership is available when you're ready"
-              : "Your membership, training, and matches at a glance"
+            [
+              team?.name,
+              isPaygPlayer
+                ? "Your training and matches at a glance — membership is available when you're ready"
+                : "Your membership, training, and matches at a glance",
+            ]
+              .filter(Boolean)
+              .join(" · ")
           }
         />
         <InstallHomeScreenPrompt />
