@@ -1,0 +1,39 @@
+name: Read Sean Manalo roster link
+
+on:
+  push:
+    branches:
+      - cursor/sean-manalo-d2m-link-75cb
+
+jobs:
+  read:
+    runs-on: ubuntu-latest
+    if: github.repository == 'ElijelDC/JackalsVC'
+    steps:
+      - name: Read production sqlite
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HETZNER_HOST }}
+          username: ${{ secrets.HETZNER_USER }}
+          key: ${{ secrets.HETZNER_SSH_KEY }}
+          script_stop: true
+          command_timeout: 3m
+          script: |
+            set -euo pipefail
+            APP_DIR=""
+            for candidate in /opt/app /root/JackalsVC /root/app; do
+              if [[ -d "$candidate/.git" ]]; then
+                APP_DIR="$candidate"
+                break
+              fi
+            done
+            if [[ -z "$APP_DIR" ]]; then
+              echo "Could not find the app directory."
+              exit 1
+            fi
+            cd "$APP_DIR"
+            printf '%s' 'Y29uc3QgRGF0YWJhc2UgPSByZXF1aXJlKCJiZXR0ZXItc3FsaXRlMyIpOwoKY29uc3QgZGIgPSBuZXcgRGF0YWJhc2UoIi9kYXRhL2phY2thbHMuZGIiLCB7CiAgcmVhZG9ubHk6IHRydWUsCiAgZmlsZU11c3RFeGlzdDogdHJ1ZSwKfSk7CmRiLnByYWdtYSgiYnVzeV90aW1lb3V0ID0gNTAwMCIpOwoKZnVuY3Rpb24gbWFza0VtYWlsKGVtYWlsKSB7CiAgY29uc3QgdmFsdWUgPSBTdHJpbmcoZW1haWwgfHwgIiIpOwogIGNvbnN0IGF0ID0gdmFsdWUuaW5kZXhPZigiQCIpOwogIGlmIChhdCA8IDEpIHJldHVybiB2YWx1ZSA/ICIoc2V0KSIgOiAiIjsKICByZXR1cm4gYCR7dmFsdWUuc2xpY2UoMCwgMSl9KioqJHt2YWx1ZS5zbGljZShhdCl9YDsKfQoKY29uc3QgbWVtYmVycyA9IGRiCiAgLnByZXBhcmUoCiAgICBgU0VMRUNUIGlkLCBuYW1lLCB2bHlOdW1iZXIsIGFjdGl2ZSwgcm9zdGVyUm9sZSwgdHJhaW5pbmdUZWFtS2V5LCB1c2VySWQsCiAgICAgICAgICAgIHJlZ2lzdHJhdGlvbkNvbnRhY3RFbWFpbCwgcmVnaXN0cmF0aW9uUmV2aWV3U3RhdHVzCiAgICAgRlJPTSBDbHViTWVtYmVyCiAgICAgV0hFUkUgbG93ZXIobmFtZSkgTElLRSAnJW1hbmFsbyUnCiAgICAgICAgT1IgbG93ZXIoY29hbGVzY2UocmVnaXN0cmF0aW9uQ29udGFjdEVtYWlsLCAnJykpIExJS0UgJyVtYW5hbG8lJ2AsCiAgKQogIC5hbGwoKTsKCmNvbnN0IHVzZXJzID0gZGIKICAucHJlcGFyZSgKICAgIGBTRUxFQ1QgaWQsIG5hbWUsIGVtYWlsLCByb2xlCiAgICAgRlJPTSBVc2VyCiAgICAgV0hFUkUgbG93ZXIobmFtZSkgTElLRSAnJW1hbmFsbyUnCiAgICAgICAgT1IgbG93ZXIoZW1haWwpIExJS0UgJyVtYW5hbG8lJ2AsCiAgKQogIC5hbGwoKTsKCmNvbnN0IG1lbWJlcklkcyA9IG1lbWJlcnMubWFwKChtZW1iZXIpID0+IG1lbWJlci5pZCk7CmNvbnN0IHVzZXJJZHMgPSB1c2Vycy5tYXAoKHVzZXIpID0+IHVzZXIuaWQpOwoKY29uc3QgbGlua2VkTWVtYmVycyA9IHVzZXJJZHMubGVuZ3RoCiAgPyBkYgogICAgICAucHJlcGFyZSgKICAgICAgICBgU0VMRUNUIGlkLCBuYW1lLCB2bHlOdW1iZXIsIGFjdGl2ZSwgcm9zdGVyUm9sZSwgdHJhaW5pbmdUZWFtS2V5LCB1c2VySWQKICAgICAgICAgRlJPTSBDbHViTWVtYmVyCiAgICAgICAgIFdIRVJFIHVzZXJJZCBJTiAoJHt1c2VySWRzLm1hcCgoKSA9PiAiPyIpLmpvaW4oIiwiKX0pYCwKICAgICAgKQogICAgICAuYWxsKC4uLnVzZXJJZHMpCiAgOiBbXTsKCmNvbnN0IHRlYW1Sb3dzID0gbWVtYmVySWRzLmxlbmd0aAogID8gZGIKICAgICAgLnByZXBhcmUoCiAgICAgICAgYFNFTEVDVCBjdG0uaWQsIGN0bS5uYW1lLCBjdG0ucm9sZSwgY3RtLmNsdWJNZW1iZXJJZCwgY3QubmFtZSBBUyB0ZWFtTmFtZSwgY3QudHJhaW5pbmdUZWFtS2V5CiAgICAgICAgIEZST00gQ2x1YlRlYW1NZW1iZXIgY3RtCiAgICAgICAgIEpPSU4gQ2x1YlRlYW0gY3QgT04gY3QuaWQgPSBjdG0udGVhbUlkCiAgICAgICAgIFdIRVJFIGN0bS5jbHViTWVtYmVySWQgSU4gKCR7bWVtYmVySWRzLm1hcCgoKSA9PiAiPyIpLmpvaW4oIiwiKX0pCiAgICAgICAgICAgIE9SIGxvd2VyKGN0bS5uYW1lKSBMSUtFICclbWFuYWxvJSdgLAogICAgICApCiAgICAgIC5hbGwoLi4ubWVtYmVySWRzKQogIDogZGIKICAgICAgLnByZXBhcmUoCiAgICAgICAgYFNFTEVDVCBjdG0uaWQsIGN0bS5uYW1lLCBjdG0ucm9sZSwgY3RtLmNsdWJNZW1iZXJJZCwgY3QubmFtZSBBUyB0ZWFtTmFtZSwgY3QudHJhaW5pbmdUZWFtS2V5CiAgICAgICAgIEZST00gQ2x1YlRlYW1NZW1iZXIgY3RtCiAgICAgICAgIEpPSU4gQ2x1YlRlYW0gY3QgT04gY3QuaWQgPSBjdG0udGVhbUlkCiAgICAgICAgIFdIRVJFIGxvd2VyKGN0bS5uYW1lKSBMSUtFICclbWFuYWxvJSdgLAogICAgICApCiAgICAgIC5hbGwoKTsKCmNvbnNvbGUubG9nKAogIEpTT04uc3RyaW5naWZ5KAogICAgewogICAgICBtZW1iZXJzOiBtZW1iZXJzLm1hcCgobWVtYmVyKSA9PiAoewogICAgICAgIC4uLm1lbWJlciwKICAgICAgICByZWdpc3RyYXRpb25Db250YWN0RW1haWw6IG1hc2tFbWFpbChtZW1iZXIucmVnaXN0cmF0aW9uQ29udGFjdEVtYWlsKSwKICAgICAgICB1c2VyTGlua2VkOiBCb29sZWFuKG1lbWJlci51c2VySWQpLAogICAgICB9KSksCiAgICAgIHVzZXJzOiB1c2Vycy5tYXAoKHVzZXIpID0+ICh7CiAgICAgICAgaWQ6IHVzZXIuaWQsCiAgICAgICAgbmFtZTogdXNlci5uYW1lLAogICAgICAgIHJvbGU6IHVzZXIucm9sZSwKICAgICAgICBlbWFpbDogbWFza0VtYWlsKHVzZXIuZW1haWwpLAogICAgICB9KSksCiAgICAgIGxpbmtlZE1lbWJlcnMsCiAgICAgIHRlYW1Sb3dzLAogICAgfSwKICAgIG51bGwsCiAgICAyLAogICksCik7Cg==' | openssl base64 -d -A > /tmp/sean-manalo-lookup.cjs
+            docker compose --env-file .env.production cp /tmp/sean-manalo-lookup.cjs app:/tmp/sean-manalo-lookup.cjs
+            docker compose --env-file .env.production exec -T -e NODE_PATH=/app/node_modules app node /tmp/sean-manalo-lookup.cjs
+            rm -f /tmp/sean-manalo-lookup.cjs
+            docker compose --env-file .env.production exec -T app rm -f /tmp/sean-manalo-lookup.cjs
