@@ -1,6 +1,9 @@
 import "server-only";
 
-import { isCoachOverseerPriority } from "@/lib/coach-session-coverage-config";
+import {
+  isCoachAssistantPriority,
+  isCoachOverseerPriority,
+} from "@/lib/coach-session-coverage-config";
 import { getScheduleMonthWindow } from "@/lib/schedule-month-groups";
 import { prisma } from "@/lib/prisma";
 import { SESSION_CATEGORIES } from "@/lib/training-utils";
@@ -159,7 +162,9 @@ export async function getUserCoachSquadRoles(userId: string | undefined) {
         ? ("head" as const)
         : isCoachOverseerPriority(row.priority)
           ? ("overseer" as const)
-          : ("cover" as const),
+          : isCoachAssistantPriority(row.priority)
+            ? ("assistant" as const)
+            : ("cover" as const),
     ]),
   ) as Record<string, CoachSquadRole>;
 }

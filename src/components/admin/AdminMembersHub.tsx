@@ -54,6 +54,7 @@ import {
 import { cn, formatPrice } from "@/lib/utils";
 
 const HEAD_COACH_PRIORITY = 0;
+const ASSISTANT_COACH_PRIORITY = 50;
 const COVER_COACH_PRIORITY = 100;
 
 type RoleFilter = "ALL" | "PLAYER" | "COACH" | "ACCOUNT";
@@ -832,7 +833,7 @@ function PersonDetail({
             ) : (
               <DetailBlock
                 title="Coach squads"
-                description="Tick squads they cover, then set Head or Cover."
+                description="Tick squads they cover, then set Head, Assistant, or Cover."
               >
                 <div className="overflow-hidden rounded-lg border border-white/10">
                   {trainingTeams.map((team, index) => {
@@ -880,6 +881,10 @@ function PersonDetail({
                             {(
                               [
                                 { value: HEAD_COACH_PRIORITY, label: "Head" },
+                                {
+                                  value: ASSISTANT_COACH_PRIORITY,
+                                  label: "Assist",
+                                },
                                 { value: COVER_COACH_PRIORITY, label: "Cover" },
                               ] as const
                             ).map((option) => (

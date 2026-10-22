@@ -1,6 +1,57 @@
 import type { TrainingAttendanceStatus } from "@/lib/training-attendance-config";
+import { CLUB_TIMEZONE, parseDatetimeLocalAsClubTime } from "@/lib/datetime-form";
 
 export const COACH_SESSION_RATE_EUR = 25;
+
+/** Paid when an assistant coach marks Attending (alongside the head). */
+export const COACH_ASSISTANT_SESSION_RATE_EUR = 20;
+
+/** First day coach payroll counts sessions (inclusive, Europe/Dublin). */
+export const COACH_PAYMENTS_TRACKING_START = parseDatetimeLocalAsClubTime(
+  "2026-10-05T00:00",
+);
+
+export const COACH_PAYMENTS_TRACKING_START_LABEL = "5 October 2026";
+
+function clubCalendarParts(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: CLUB_TIMEZONE,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).formatToParts(date);
+
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((part) => part.type === type)?.value ?? "0");
+
+  return { year: get("year"), month: get("month"), day: get("day") };
+}
+
+/** First calendar month (year + 1–12 month) included in coach payroll. */
+export function coachPaymentTrackingMonthFloor(
+  trackingStart: Date = COACH_PAYMENTS_TRACKING_START,
+) {
+  const { year, month } = clubCalendarParts(trackingStart);
+  return { year, month };
+}
+
+export function isCoachPaymentMonthTracked(
+  year: number,
+  month: number,
+  trackingStart: Date = COACH_PAYMENTS_TRACKING_START,
+) {
+  const floor = coachPaymentTrackingMonthFloor(trackingStart);
+  if (year > floor.year) return true;
+  if (year < floor.year) return false;
+  return month >= floor.month;
+}
+
+export function isCoachSessionEligibleForPay(
+  sessionStart: Date,
+  trackingStart: Date = COACH_PAYMENTS_TRACKING_START,
+) {
+  return sessionStart.getTime() >= trackingStart.getTime();
+}
 
 export const COACH_PAYMENT_STATUSES = ["PENDING", "PAID"] as const;
 

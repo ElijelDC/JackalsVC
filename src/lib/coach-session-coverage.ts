@@ -5,6 +5,8 @@ import { emailSiteUrl } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import {
   COACH_OVERSEER_PRIORITY,
+  isCoachAssistantPriority,
+  isCoachCoverPriority,
   isCoachOverseerPriority,
 } from "@/lib/coach-session-coverage-config";
 import type {
@@ -14,7 +16,11 @@ import type {
 
 export type { CoachResponseGate, SquadCoach };
 export {
+  COACH_ASSISTANT_PRIORITY,
+  COACH_COVER_PRIORITY,
   COACH_OVERSEER_PRIORITY,
+  isCoachAssistantPriority,
+  isCoachCoverPriority,
   isCoachOverseerPriority,
 } from "@/lib/coach-session-coverage-config";
 
@@ -58,6 +64,7 @@ export async function listSquadCoaches(
       email,
       priority: row.priority,
       isHeadCoach: row.priority === 0,
+      isAssistantCoach: isCoachAssistantPriority(row.priority),
     });
   }
 
@@ -103,6 +110,7 @@ export async function listSquadOverseers(
       email,
       priority: row.priority,
       isHeadCoach: false,
+      isAssistantCoach: false,
     });
   }
   return overseers;
@@ -198,7 +206,8 @@ export async function getCoachResponseGate(input: {
 
   const coaches = await listSquadCoaches(input.trainingTeamKey);
   const self = coaches.find((coach) => coach.userId === input.userId);
-  if (!self || self.isHeadCoach) return null;
+  // Head and assistants may always respond (assistants attend alongside head).
+  if (!self || self.isHeadCoach || self.isAssistantCoach) return null;
 
   const head = coaches.find((coach) => coach.isHeadCoach);
   if (!head) return null;
@@ -239,7 +248,8 @@ export async function enforceExclusiveCoachAttendance(input: {
   const self = coaches.find((coach) => coach.userId === input.userId);
   if (!self) return { ok: true };
 
-  if (!self.isHeadCoach) {
+  // Cover coaches wait for head decline; assistants may attend alongside head.
+  if (!self.isHeadCoach && !self.isAssistantCoach) {
     const head = coaches.find((coach) => coach.isHeadCoach);
     if (head) {
       const headStatus = await getCoachSignupStatus(head.userId, target);
@@ -262,23 +272,30 @@ export async function enforceExclusiveCoachAttendance(input: {
 
   if (input.status !== "ATTENDING") return { ok: true };
 
+  // Assistants never block (or get blocked by) exclusive cover claims.
+  if (self.isAssistantCoach) return { ok: true };
+
   // Serialize cover claims: re-check attending coaches inside a transaction and
-  // demote others when the head reclaims, or reject if another cover already claimed.
+  // demote covers when the head reclaims, or reject if another cover already claimed.
+  // Assistants are left attending alongside head/cover.
   try {
     await prisma.$transaction(async (tx) => {
-      const coachUserIds = coaches
-        .map((coach) => coach.userId)
-        .filter((id) => id !== input.userId);
+      const coverUserIds = coaches
+        .filter(
+          (coach) =>
+            coach.userId !== input.userId && isCoachCoverPriority(coach.priority),
+        )
+        .map((coach) => coach.userId);
 
       const others =
-        coachUserIds.length === 0
+        coverUserIds.length === 0
           ? []
           : "matchId" in target
             ? await tx.matchSignup.findMany({
                 where: {
                   matchId: target.matchId,
                   status: "ATTENDING",
-                  userId: { in: coachUserIds },
+                  userId: { in: coverUserIds },
                 },
                 select: {
                   userId: true,
@@ -289,7 +306,7 @@ export async function enforceExclusiveCoachAttendance(input: {
                 where: {
                   eventId: target.eventId,
                   status: "ATTENDING",
-                  userId: { in: coachUserIds },
+                  userId: { in: coverUserIds },
                 },
                 select: {
                   userId: true,
@@ -365,7 +382,8 @@ export async function notifyCoverCoachesAfterHeadDecline(input: {
   if (!head?.isHeadCoach) return { notified: 0 };
 
   const coverCoaches = coaches.filter(
-    (coach) => coach.userId !== input.headUserId,
+    (coach) =>
+      coach.userId !== input.headUserId && isCoachCoverPriority(coach.priority),
   );
   if (coverCoaches.length === 0) return { notified: 0 };
 

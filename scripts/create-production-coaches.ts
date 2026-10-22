@@ -53,9 +53,9 @@ const coaches: CoachSeed[] = [
     vlyNumber: null,
     coachPaymentType: "PAID",
     priorities: {
-      DIV2_MENS: 100, // cover
+      DIV2_MENS: 50, // assistant (€20 when attending)
       DIVISION_3_MENS: 0, // head
-      DIV3_WOMENS: 100, // cover
+      DIV3_WOMENS: 0, // head
     },
   },
   {
@@ -99,7 +99,7 @@ const coaches: CoachSeed[] = [
     coachPaymentType: "VOLUNTEER",
     role: "ADMIN",
     priorities: {
-      DIV3_WOMENS: 0, // head
+      DIV3_WOMENS: OVERSEER_PRIORITY,
       DIV2_MENS: OVERSEER_PRIORITY,
       DIVISION_3_MENS: OVERSEER_PRIORITY,
     },

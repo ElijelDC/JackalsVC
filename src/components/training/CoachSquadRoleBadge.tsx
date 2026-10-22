@@ -11,9 +11,11 @@ export function CoachSquadRoleBadge({
   const label =
     role === "head"
       ? "Head coach"
-      : role === "overseer"
-        ? "Overseer"
-        : "Cover coach";
+      : role === "assistant"
+        ? "Assistant coach"
+        : role === "overseer"
+          ? "Overseer"
+          : "Cover coach";
 
   return (
     <span

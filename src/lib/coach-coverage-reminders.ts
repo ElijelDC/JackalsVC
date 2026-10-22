@@ -121,7 +121,9 @@ async function resolveCoverageTargets(input: {
     return { phase: "none_head_accepted", recipients: [], head };
   }
 
-  const covers = coaches.filter((coach) => !coach.isHeadCoach);
+  const covers = coaches.filter(
+    (coach) => !coach.isHeadCoach && !coach.isAssistantCoach,
+  );
   const coverStatuses = await Promise.all(
     covers.map(async (coach) => ({
       coach,

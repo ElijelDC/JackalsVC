@@ -16,7 +16,7 @@ export type TrainingTeam = {
   coachRole?: CoachSquadRole;
 };
 
-export type CoachSquadRole = "head" | "cover" | "overseer";
+export type CoachSquadRole = "head" | "assistant" | "cover" | "overseer";
 
 export function getTrainingTeamFromList(
   teams: TrainingTeam[],
