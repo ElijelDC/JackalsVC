@@ -1,6 +1,5 @@
 /**
  * Rebuild calendar Event rows from TrainingSession start/end times.
- * Self-contained so it runs inside the production Docker image (no src/lib copy).
  *
  * Usage (production):
  *   docker compose exec -T app npx tsx scripts/resync-training-events.ts
@@ -13,6 +12,7 @@ import {
   type TrainingOccurrenceException,
   type TrainingSession,
 } from "../src/generated/prisma/client";
+import { isIrishBankHoliday } from "../src/lib/ireland-bank-holidays";
 
 const CLUB_TIMEZONE = "Europe/Dublin";
 const TRAINING_CALENDAR_WEEKS = 12;
@@ -231,6 +231,13 @@ function buildTrainingOccurrences(
     const defaultStart = applyClubWallTimeToDate(current, session.startTime);
     const defaultEnd = applyClubWallTimeToDate(current, session.endTime);
     const override = overrides.get(occurrenceDateKey(occurrenceDate));
+
+    // Keep in sync with src/lib/training-events.ts — no training on Irish
+    // bank holidays unless a coach kept the occurrence via override.
+    if (isIrishBankHoliday(current) && (!override || override.cancelled)) {
+      current = addWeeks(current, interval);
+      continue;
+    }
 
     if (override) {
       occurrences.push(

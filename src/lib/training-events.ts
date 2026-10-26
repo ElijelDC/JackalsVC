@@ -10,6 +10,7 @@ import {
   startOfOccurrenceDay,
 } from "@/lib/training-occurrence";
 import { applyClubWallTimeToDate } from "@/lib/datetime-form";
+import { isIrishBankHoliday } from "@/lib/ireland-bank-holidays";
 import {
   buildTrainingEventDescription,
   calendarEventTypeForCategory,
@@ -110,6 +111,10 @@ export function buildTrainingOccurrences(
     const defaultEnd = applyClubWallTimeToDate(day, session.endTime);
     const override = overrides.get(occurrenceDateKey(occurrenceDate));
 
+    if (isIrishBankHoliday(day) && (!override || override.cancelled)) {
+      return [];
+    }
+
     if (override) {
       return [
         applyOverride(
@@ -139,6 +144,13 @@ export function buildTrainingOccurrences(
     const defaultStart = applyClubWallTimeToDate(current, session.startTime);
     const defaultEnd = applyClubWallTimeToDate(current, session.endTime);
     const override = overrides.get(occurrenceDateKey(occurrenceDate));
+
+    // No regular weekly training on Irish bank holidays (unless a coach
+    // explicitly kept / rescheduled the occurrence via a non-cancel override).
+    if (isIrishBankHoliday(current) && (!override || override.cancelled)) {
+      current = addWeeks(current, interval);
+      continue;
+    }
 
     if (override) {
       occurrences.push(

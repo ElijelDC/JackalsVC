@@ -41,6 +41,7 @@ COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 # URLs used by the navbar Logo via next/image.
 COPY --from=builder /app/next.config.ts ./next.config.ts
 COPY --from=builder /app/src/generated ./src/generated
+COPY --from=builder /app/src/lib/ireland-bank-holidays.ts ./src/lib/ireland-bank-holidays.ts
 COPY --from=builder /app/scripts ./scripts
 COPY scripts/fly-entrypoint.sh /fly-entrypoint.sh
 RUN chmod +x /fly-entrypoint.sh
