@@ -14,6 +14,7 @@ import { Modal } from "@/components/ui/Modal";
 import { apiPost } from "@/lib/client-api";
 import {
   KIT_ORDER_FEE_EUR,
+  KIT_ORDER_TOP_FEE_EUR,
   KIT_ORDER_GENDER_LABELS,
   KIT_ORDER_JACKETS,
   KIT_ORDER_KIT_TYPE_HINTS,
@@ -336,6 +337,7 @@ function KitTypePicker({
 export function KitOrderForm() {
   const [gender, setGender] = useState<KitOrderGender>("men");
   const [kitType, setKitType] = useState<KitOrderKitType | null>(null);
+  const [pieceMode, setPieceMode] = useState<"full" | "jersey">("full");
   const [kitSlideIndex, setKitSlideIndex] = useState(0);
   const [jacketSlideIndex, setJacketSlideIndex] = useState(0);
   const [jerseySize, setJerseySize] = useState("");
@@ -376,6 +378,7 @@ export function KitOrderForm() {
     if (draft) {
       setGender(draft.gender);
       setKitType(draft.kitType);
+      setPieceMode(draft.gender === "women" ? draft.pieceMode : "full");
       setJerseySize(draft.jerseySize);
       setShortsSize(draft.shortsSize);
       setFirstName(draft.firstName);
@@ -405,6 +408,7 @@ export function KitOrderForm() {
       buildKitOrderDraft({
         gender,
         kitType,
+        pieceMode,
         jerseySize,
         shortsSize,
         firstName,
@@ -430,6 +434,7 @@ export function KitOrderForm() {
     success,
     gender,
     kitType,
+    pieceMode,
     jerseySize,
     shortsSize,
     firstName,
@@ -458,8 +463,9 @@ export function KitOrderForm() {
   const activeJacket = jackets[jacketSlideIndex] ?? jackets[0]!;
   const printedName = jerseyBackName(lastName);
   const isWomen = gender === "women";
+  const activePieceMode = isWomen && pieceMode === "jersey" ? "jersey" : "full";
   const pieces = kitType
-    ? piecesFromKitSelection(kitType, "full")
+    ? piecesFromKitSelection(kitType, activePieceMode)
     : {
         playerJersey: false,
         playerShorts: false,
@@ -473,6 +479,7 @@ export function KitOrderForm() {
   const quote = kitType
     ? kitOrderQuote({
         kitType,
+        pieces,
         jerseySize,
         shortsSize,
         trainingTshirt,
@@ -528,6 +535,7 @@ export function KitOrderForm() {
 
   const applyGender = (next: KitOrderGender) => {
     setGender(next);
+    if (next === "men") setPieceMode("full");
     const nextSizes = kitOrderSizesForGender(next);
     const keep = (size: string) =>
       (nextSizes as readonly string[]).includes(size) ? size : "";
@@ -696,8 +704,15 @@ export function KitOrderForm() {
             </span>
           </h2>
           <p className="mt-1 text-sm text-zinc-400">
-            {formatMembershipEuro(KIT_ORDER_FEE_EUR)} per full kit (jersey +
-            shorts), due late August. Jersey and shorts sizes can be different.
+            {formatMembershipEuro(KIT_ORDER_FEE_EUR)} for a full kit (jersey and
+            shorts)
+            {isWomen
+              ? `, or ${formatMembershipEuro(KIT_ORDER_TOP_FEE_EUR)} for the top only`
+              : ""}
+            , due late August.
+            {activePieceMode === "full"
+              ? " Jersey and shorts sizes can be different."
+              : ""}
           </p>
         </div>
 
@@ -729,10 +744,58 @@ export function KitOrderForm() {
           </KitOrderCarousel>
         ) : null}
 
+        {kitType && isWomen ? (
+          <div className="grid grid-cols-2 gap-1 rounded-lg bg-black/25 p-1">
+            {(
+              [
+                {
+                  id: "full" as const,
+                  label: "Full kit",
+                  price: KIT_ORDER_FEE_EUR,
+                },
+                {
+                  id: "jersey" as const,
+                  label: "Top only",
+                  price: KIT_ORDER_TOP_FEE_EUR,
+                },
+              ] as const
+            ).map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => {
+                  setPieceMode(option.id);
+                  if (option.id === "jersey") setShortsSize("");
+                }}
+                className={cn(
+                  "rounded-md px-4 py-2.5 text-sm font-semibold transition",
+                  pieceMode === option.id
+                    ? "bg-jackals-purple text-white shadow-sm"
+                    : "text-zinc-400 hover:text-white",
+                )}
+              >
+                {option.label}
+                <span className="mt-0.5 block text-xs font-medium opacity-80">
+                  {formatMembershipEuro(option.price)}
+                </span>
+              </button>
+            ))}
+          </div>
+        ) : null}
+
         {kitType ? (
-        <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+        <div
+          className={cn(
+            "grid gap-3 sm:items-end",
+            wantsShorts
+              ? "sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+              : "sm:grid-cols-[minmax(0,1fr)_auto]",
+          )}
+        >
           <div>
-            <Label htmlFor="kit-order-jersey-size">Jersey size</Label>
+            <Label htmlFor="kit-order-jersey-size">
+              {activePieceMode === "jersey" ? "Top size" : "Jersey size"}
+            </Label>
             <SizeSelect
               id="kit-order-jersey-size"
               value={jerseySize}
@@ -742,17 +805,19 @@ export function KitOrderForm() {
               onChange={setJerseySize}
             />
           </div>
-          <div>
-            <Label htmlFor="kit-order-shorts-size">Shorts size</Label>
-            <SizeSelect
-              id="kit-order-shorts-size"
-              value={shortsSize}
-              gender={gender}
-              disabled={loading}
-              required
-              onChange={setShortsSize}
-            />
-          </div>
+          {wantsShorts ? (
+            <div>
+              <Label htmlFor="kit-order-shorts-size">Shorts size</Label>
+              <SizeSelect
+                id="kit-order-shorts-size"
+                value={shortsSize}
+                gender={gender}
+                disabled={loading}
+                required
+                onChange={setShortsSize}
+              />
+            </div>
+          ) : null}
           <div className="pb-2 sm:pb-3">
             <KitSizeGuide gender={gender} />
           </div>
@@ -1005,16 +1070,21 @@ export function KitOrderForm() {
                 <dt className="text-zinc-500">Kit</dt>
                 <dd className="text-right text-white">
                   {KIT_ORDER_KIT_TYPE_LABELS[kitType]}
+                  {activePieceMode === "jersey" ? " · top only" : ""}
                 </dd>
               </div>
               <div className="flex justify-between gap-4">
-                <dt className="text-zinc-500">Jersey size</dt>
+                <dt className="text-zinc-500">
+                  {activePieceMode === "jersey" ? "Top size" : "Jersey size"}
+                </dt>
                 <dd className="text-right text-white">{jerseySize || "—"}</dd>
               </div>
-              <div className="flex justify-between gap-4">
-                <dt className="text-zinc-500">Shorts size</dt>
-                <dd className="text-right text-white">{shortsSize || "—"}</dd>
-              </div>
+              {wantsShorts ? (
+                <div className="flex justify-between gap-4">
+                  <dt className="text-zinc-500">Shorts size</dt>
+                  <dd className="text-right text-white">{shortsSize || "—"}</dd>
+                </div>
+              ) : null}
               <div className="flex justify-between gap-4">
                 <dt className="text-zinc-500">Name / numbers</dt>
                 <dd className="text-right text-white">

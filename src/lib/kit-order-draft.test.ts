@@ -8,6 +8,7 @@ const draft = {
   version: 1,
   gender: "women" as const,
   kitType: "libero" as const,
+  pieceMode: "full" as const,
   jerseySize: "M",
   shortsSize: "S",
   firstName: "Alex",

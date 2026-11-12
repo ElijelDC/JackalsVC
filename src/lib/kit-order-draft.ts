@@ -13,6 +13,7 @@ export type KitOrderDraft = {
   version: number;
   gender: KitOrderGender;
   kitType: KitOrderKitType | null;
+  pieceMode: "full" | "jersey";
   jerseySize: string;
   shortsSize: string;
   firstName: string;
@@ -75,6 +76,8 @@ export function parseKitOrderDraft(raw: unknown): KitOrderDraft | null {
 
   const gender = value.gender;
   const kitType = isKitType(value.kitType) ? value.kitType : null;
+  const pieceMode: KitOrderDraft["pieceMode"] =
+    gender === "women" && value.pieceMode === "jersey" ? "jersey" : "full";
   const trainingTshirt = asBoolean(value.trainingTshirt);
   const trainingTop = asBoolean(value.trainingTop);
   const jacketHoodie = asBoolean(value.jacketHoodie);
@@ -85,6 +88,7 @@ export function parseKitOrderDraft(raw: unknown): KitOrderDraft | null {
     version: KIT_ORDER_DRAFT_VERSION,
     gender,
     kitType,
+    pieceMode,
     jerseySize: merchSize(gender, true, value.jerseySize),
     shortsSize: merchSize(gender, true, value.shortsSize),
     firstName: asString(value.firstName),
