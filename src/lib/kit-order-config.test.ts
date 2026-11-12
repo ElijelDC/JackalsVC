@@ -138,7 +138,7 @@ describe("kit order config", () => {
         jacketFullZip: false,
         jacketFullZipSize: "",
       }).totalEur,
-    ).toBe(45);
+    ).toBe(60);
 
     const bothWithExtras = kitOrderQuote({
       kitType: "both",
@@ -160,11 +160,62 @@ describe("kit order config", () => {
       "training-tshirt",
       "quarter-zip",
     ]);
-    expect(bothWithExtras.totalEur).toBe(130);
+    expect(bothWithExtras.totalEur).toBe(160);
     expect(bothWithExtras.items[0]?.details).toEqual([
       "Jersey size M",
       "Shorts size L",
     ]);
+  });
+
+  it("prices a women's top at €40 and a full kit at €60", () => {
+    const top = kitOrderQuote({
+      kitType: "player",
+      pieces: {
+        playerJersey: true,
+        playerShorts: false,
+        liberoJersey: false,
+        liberoShorts: false,
+      },
+      jerseySize: "S",
+      shortsSize: "",
+      trainingTshirt: false,
+      trainingTshirtSize: "",
+      trainingTop: false,
+      trainingTopSize: "",
+      jacketHoodie: false,
+      jacketHoodieSize: "",
+      jacketHighCollar: false,
+      jacketHighCollarSize: "",
+      jacketFullZip: false,
+      jacketFullZipSize: "",
+    });
+    expect(top.totalEur).toBe(40);
+    expect(top.items[0]?.label).toBe("Player top");
+    expect(top.items[0]?.details).toEqual(["Jersey size S"]);
+
+    const bothTops = kitOrderQuote({
+      kitType: "both",
+      pieces: {
+        playerJersey: true,
+        playerShorts: false,
+        liberoJersey: true,
+        liberoShorts: false,
+      },
+      jerseySize: "M",
+      shortsSize: "",
+      trainingTshirt: false,
+      trainingTshirtSize: "",
+      trainingTop: false,
+      trainingTopSize: "",
+      jacketHoodie: false,
+      jacketHoodieSize: "",
+      jacketHighCollar: false,
+      jacketHighCollarSize: "",
+      jacketFullZip: false,
+      jacketFullZipSize: "",
+    });
+    expect(bothTops.totalEur).toBe(80);
+    expect(bothTops.items[0]?.label).toBe("Player top + Libero top");
   });
 });
 
@@ -235,14 +286,25 @@ describe("kitOrderSchema", () => {
     expect(parsed.success).toBe(false);
   });
 
-  it("allows shorts only without a jersey size", () => {
+  it("allows a women's top without shorts", () => {
     const parsed = kitOrderSchema.safeParse({
       ...validOrder,
-      playerJersey: false,
-      playerShorts: true,
-      jerseySize: "",
-      shortsSize: "M",
+      gender: "women",
+      playerJersey: true,
+      playerShorts: false,
+      jerseySize: "M",
+      shortsSize: "",
     });
     expect(parsed.success).toBe(true);
+  });
+
+  it("requires men's orders to include jersey and shorts", () => {
+    const parsed = kitOrderSchema.safeParse({
+      ...validOrder,
+      playerJersey: true,
+      playerShorts: false,
+      shortsSize: "",
+    });
+    expect(parsed.success).toBe(false);
   });
 });
