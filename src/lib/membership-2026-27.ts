@@ -1,6 +1,6 @@
 export const MEMBERSHIP_SEASON_LABEL = "October 2026 – May 2027";
 
-export const KIT_FEE_EUR = 45;
+export const KIT_FEE_EUR = 60;
 
 export const CLUB_JACKET_FEE_EUR = 25;
 

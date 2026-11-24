@@ -992,6 +992,22 @@ export const kitOrderSchema = z
       });
     }
 
+    if (data.gender === "men") {
+      const playerPartial =
+        (data.playerJersey || data.playerShorts) &&
+        !(data.playerJersey && data.playerShorts);
+      const liberoPartial =
+        (data.liberoJersey || data.liberoShorts) &&
+        !(data.liberoJersey && data.liberoShorts);
+      if (playerPartial || liberoPartial) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["playerShorts"],
+          message: "Men's orders include the full kit (jersey and shorts).",
+        });
+      }
+    }
+
     if (hasAnyJersey(pieces) && !isValidKitOrderSize(data.gender, data.jerseySize)) {
       ctx.addIssue({
         code: "custom",

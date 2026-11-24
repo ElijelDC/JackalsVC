@@ -38,6 +38,7 @@ export type KitOrderSize =
   | (typeof KIT_ORDER_WOMEN_SIZES)[number];
 
 export const KIT_ORDER_FEE_EUR = KIT_FEE_EUR;
+export const KIT_ORDER_TOP_FEE_EUR = 40;
 export const KIT_ORDER_LAYER_FEE_EUR = CLUB_JACKET_FEE_EUR;
 export const KIT_ORDER_TRAINING_TSHIRT_FEE_EUR = 15;
 
@@ -307,8 +308,38 @@ export function applyKitOrderFreeLineItems(
   });
 }
 
+function kitPieceFee(jersey: boolean, shorts: boolean) {
+  if (jersey && shorts) return KIT_ORDER_FEE_EUR;
+  if (jersey) return KIT_ORDER_TOP_FEE_EUR;
+  if (shorts) return KIT_ORDER_FEE_EUR;
+  return 0;
+}
+
+export function kitOrderPiecesFee(pieces: KitOrderPieces) {
+  return (
+    kitPieceFee(pieces.playerJersey, pieces.playerShorts) +
+    kitPieceFee(pieces.liberoJersey, pieces.liberoShorts)
+  );
+}
+
+export function kitOrderPiecesQuoteLabel(
+  pieces: KitOrderPieces,
+  kitType: KitOrderKitType,
+) {
+  const parts: string[] = [];
+  const add = (name: string, jersey: boolean, shorts: boolean) => {
+    if (jersey && shorts) parts.push(`${name} kit`);
+    else if (jersey) parts.push(`${name} top`);
+    else if (shorts) parts.push(`${name} shorts`);
+  };
+  add("Player", pieces.playerJersey, pieces.playerShorts);
+  add("Libero", pieces.liberoJersey, pieces.liberoShorts);
+  return parts.length > 0 ? parts.join(" + ") : KIT_ORDER_KIT_TYPE_LABELS[kitType];
+}
+
 export function kitOrderQuote(input: {
   kitType: KitOrderKitType;
+  pieces?: KitOrderPieces;
   jerseySize: string;
   shortsSize: string;
   trainingTshirt: boolean;
@@ -323,21 +354,20 @@ export function kitOrderQuote(input: {
   jacketFullZipSize: string;
   freeLineItemIds?: string[] | null;
 }): { items: KitOrderLineItem[]; totalEur: number } {
-  const kitCount = kitOrderKitCount(input.kitType);
+  const pieces = input.pieces ?? piecesFromKitSelection(input.kitType, "full");
+  const includeJersey = hasAnyJersey(pieces);
+  const includeShorts = hasAnyShorts(pieces);
   const kitDetails = [
-    input.jerseySize ? `Jersey size ${input.jerseySize}` : "",
-    input.shortsSize ? `Shorts size ${input.shortsSize}` : "",
+    includeJersey && input.jerseySize ? `Jersey size ${input.jerseySize}` : "",
+    includeShorts && input.shortsSize ? `Shorts size ${input.shortsSize}` : "",
   ].filter(Boolean);
 
   const items: KitOrderLineItem[] = [
     {
       id: "match-kit",
-      label:
-        kitCount === 2
-          ? "Player kit + libero kit"
-          : KIT_ORDER_KIT_TYPE_LABELS[input.kitType],
+      label: kitOrderPiecesQuoteLabel(pieces, input.kitType),
       details: kitDetails,
-      amountEur: KIT_ORDER_FEE_EUR * kitCount,
+      amountEur: kitOrderPiecesFee(pieces),
     },
   ];
 

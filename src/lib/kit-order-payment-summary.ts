@@ -36,6 +36,12 @@ function kitTypeForQuote(order: KitOrderRecord): KitOrderKitType {
 export function buildKitOrderPaymentQuote(order: KitOrderRecord) {
   return kitOrderQuote({
     kitType: kitTypeForQuote(order),
+    pieces: {
+      playerJersey: order.playerJersey,
+      playerShorts: order.playerShorts,
+      liberoJersey: order.liberoJersey,
+      liberoShorts: order.liberoShorts,
+    },
     jerseySize: order.jerseySize,
     shortsSize: order.shortsSize,
     trainingTshirt: order.trainingTshirt,

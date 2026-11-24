@@ -59,7 +59,7 @@ describe("buildKitOrderPaymentReference", () => {
 describe("buildKitOrderPaymentQuote", () => {
   it("totals kit and optional merch", () => {
     const quote = buildKitOrderPaymentQuote(sampleOrder());
-    expect(quote.totalEur).toBe(60);
+    expect(quote.totalEur).toBe(75);
     expect(quote.items.map((item) => item.label)).toEqual([
       "Player kit",
       "Training t-shirt",
@@ -77,14 +77,14 @@ describe("buildKitOrderPaymentQuote", () => {
         trainingTshirtSize: "",
       }),
     );
-    expect(quote.totalEur).toBe(90);
+    expect(quote.totalEur).toBe(120);
   });
 
   it("zeroes waived line items for payment emails", () => {
     const quote = buildKitOrderPaymentQuote(
       sampleOrder({ freeLineItemIds: ["training-tshirt"] }),
     );
-    expect(quote.totalEur).toBe(45);
+    expect(quote.totalEur).toBe(60);
     expect(
       quote.items.find((item) => item.id === "training-tshirt")?.amountEur,
     ).toBe(0);
@@ -94,7 +94,7 @@ describe("buildKitOrderPaymentQuote", () => {
 describe("buildKitOrderPaymentEmailDetails", () => {
   it("includes order lines and kit details", () => {
     const details = buildKitOrderPaymentEmailDetails(sampleOrder());
-    expect(details.some((row) => row.label === "Total due" && row.value === "€60")).toBe(
+    expect(details.some((row) => row.label === "Total due" && row.value === "€75")).toBe(
       true,
     );
     expect(details.some((row) => row.label === "Jersey back" && row.value === "MURPHY")).toBe(
