@@ -1,5 +1,5 @@
 export function merchandiseOrderPaymentPath(paymentToken: string) {
-  return `/merchandise-order/pay/${paymentToken}`;
+  return `/merch/pay/${paymentToken}`;
 }
 
 export function merchandiseOrderProofImageUrl(

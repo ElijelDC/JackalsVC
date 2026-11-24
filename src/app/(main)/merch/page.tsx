@@ -7,7 +7,7 @@ export const metadata = pageMetadata({
   title: "2026/27 merchandise order",
   description:
     "Order a Jackals VC training t-shirt, quarter zip, zip hoodie, high collar jacket, or full zip jacket.",
-  path: "/merchandise-order",
+  path: "/merch",
   noIndex: true,
 });
 

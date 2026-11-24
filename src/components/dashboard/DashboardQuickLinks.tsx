@@ -24,7 +24,7 @@ const QUICK_LINKS = [
     id: "merch",
     label: "Merch",
     icon: ShoppingBag,
-    buildHref: () => "/merchandise-order",
+    buildHref: () => "/merch",
   },
   {
     id: "gallery",

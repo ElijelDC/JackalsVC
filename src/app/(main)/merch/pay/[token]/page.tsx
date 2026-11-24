@@ -9,7 +9,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Merchandise order payment",
   description: "Pay for your Jackals VC merchandise order by bank transfer.",
-  path: "/merchandise-order/pay",
+  path: "/merch/pay",
   noIndex: true,
 });
 
