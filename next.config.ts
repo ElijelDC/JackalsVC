@@ -25,6 +25,16 @@ const nextConfig: NextConfig = {
         destination: "/session/:slug",
         permanent: true,
       },
+      {
+        source: "/merchandise-order",
+        destination: "/merch",
+        permanent: true,
+      },
+      {
+        source: "/merchandise-order/pay/:token",
+        destination: "/merch/pay/:token",
+        permanent: true,
+      },
     ];
   },
   async rewrites() {

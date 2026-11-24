@@ -760,7 +760,7 @@ async function main() {
     );
 
     // —— 8. Merch ——
-    await gotoSafe(page, "/merchandise-order?from=dashboard");
+    await gotoSafe(page, "/merch?from=dashboard");
     await narrate(page, {
       step: 8,
       title: "Club merch",

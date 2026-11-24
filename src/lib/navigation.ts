@@ -85,7 +85,7 @@ export const NAV_ITEMS: NavItem[] = [
     requiresAuth: true,
   },
   {
-    href: "/merchandise-order",
+    href: "/merch",
     label: "Merch",
     icon: Shirt,
     description:
@@ -140,7 +140,7 @@ const MEMBER_PRIMARY_NAV_HREFS = [
   "/matches",
   "/membership",
   "/special-order",
-  "/merchandise-order",
+  "/merch",
 ] as const;
 
 export const MEMBER_MOBILE_QUICK_NAV_HREFS = [
@@ -158,7 +158,7 @@ const COACH_PAID_PRIMARY_NAV_HREFS = [
   "/training",
   "/matches",
   "/special-order",
-  "/merchandise-order",
+  "/merch",
   "/payments",
 ] as const;
 
@@ -169,7 +169,7 @@ const COACH_VOLUNTEER_PRIMARY_NAV_HREFS = [
   "/training",
   "/matches",
   "/special-order",
-  "/merchandise-order",
+  "/merch",
 ] as const;
 
 const COACH_PAID_MOBILE_QUICK_NAV_HREFS = [
